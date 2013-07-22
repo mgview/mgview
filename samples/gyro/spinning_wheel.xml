@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<scene name="mechanism1"
+       up="0 0 1"
+       newtonion_frame="N"
+       scene_origin="No"
+       workspace_size="1.0"
+       camera_eye_position="3 3 3"
+       camera_focus_position="0 0 0"
+       >
+
+    <simulation_file name="spinning_wheel/wheel.1:3" />
+    <simulation_settings name="spinning_wheel/wheel.in" />
+
+    <frame name="A" />
+
+    <frame name="B" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder length="0.4" radius="0.05" >
+                    <origin rpy="0 0 1.5708 " xyz="0.2 0 0"/>
+                    <material name="SHINY_RED" />
+                </cylinder>
+            </geometry>
+            
+        </visual>
+    </frame>
+
+    <frame name="C" use_rotation_of_frame="B" draw_basis="false">
+        <visual>
+            
+            <geometry>
+                <cylinder length="0.05" radius="0.5">
+                    <origin rpy="0 0 1.5708" xyz="0 0 0"/>
+                    <material name="SHINY_SILVER" />
+                </cylinder>
+            </geometry>
+            
+        </visual>
+    </frame>
+
+</scene>

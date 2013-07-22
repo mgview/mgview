@@ -1,0 +1,351 @@
+{
+    "name": "Wooden Phantom",
+    "newtonianFrame": "N",
+    "sceneOrigin": "No",
+    "showAxes": true,
+    "cameraUp": [
+        0,
+        0,
+        1
+    ],
+    "cameraEye": [
+        1,
+        0.3,
+        0.3
+    ],
+    "cameraFocus": [
+        0.2,
+        0,
+        0.15
+    ],
+    "cameraFrame": "N",
+    "speedFactor": 1,
+    "workspaceSize": 0.3,
+    "simulationData": [
+        "wooden_phantom.2:6"
+    ],
+    "simulationSettings": "wooden_phantom.in",
+    "customMaterials": {
+        "MY_CUSTOM_BLUE": {
+            "color": {
+                "rgb": [
+                    0,
+                    0.7,
+                    1
+                ]
+            }
+        },
+        "MY_CUSTOM_BROWN": {
+            "color": {
+                "rgb": [
+                    0.6,
+                    0.3,
+                    0
+                ]
+            }
+        }
+    },
+    "objects": {
+        "N": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "N",
+                    "scale": 0.0375,
+                    "position": {
+                        "x": 0.024999999999999998,
+                        "y": 0.009375,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.075,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                },
+                "support": {
+                    "type": "box",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "text": "",
+                    "size": {
+                        "x": 0.2,
+                        "y": 0.2,
+                        "z": 0.02
+                    }
+                }
+            }
+        },
+        "A": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": false,
+                    "type": "text",
+                    "text": "A",
+                    "scale": 0.0375,
+                    "position": {
+                        "x": 0.024999999999999998,
+                        "y": 0.009375,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.075,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                },
+                "link": {
+                    "type": "mesh",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "text": "",
+                    "scale": 1,
+                    "path": "LinkA.obj"
+                }
+            }
+        },
+        "B": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": false,
+                    "type": "text",
+                    "text": "B",
+                    "scale": 0.0375,
+                    "position": {
+                        "x": 0.024999999999999998,
+                        "y": 0.009375,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.075,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                },
+                "link": {
+                    "type": "mesh",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "text": "",
+                    "scale": 1,
+                    "path": "LinkB.obj"
+                }
+            }
+        },
+        "C": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": false,
+                    "type": "text",
+                    "text": "C",
+                    "scale": 0.0375,
+                    "position": {
+                        "x": 0.024999999999999998,
+                        "y": 0.009375,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.075,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                },
+                "link": {
+                    "type": "mesh",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "text": "",
+                    "scale": 1,
+                    "path": "LinkC.obj"
+                }
+            }
+        },
+        "Q": {
+            "type": "point",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "Q",
+                    "scale": 0.0375,
+                    "position": {
+                        "x": 0.024999999999999998,
+                        "y": 0.009375,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                },
+                "point": {
+                    "type": "sphere",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "text": "",
+                    "radius": 0.01,
+                    "segments_width": 8,
+                    "segments_height": 8
+                }
+            }
+        },
+        "P": {
+            "type": "point",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "P",
+                    "scale": 0.0375,
+                    "position": {
+                        "x": 0.024999999999999998,
+                        "y": 0.009375,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.075,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_SILVER"
+                }
+            }
+        }
+    }
+}

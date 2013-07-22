@@ -1,0 +1,14 @@
+{
+    "name"                  : "myFileName",
+    "simulationSettings"    : "myFileName.in",
+    "simulationData"        : ["myFileName.1:5"],
+    "newtonianFrame"        : "N",
+    "sceneOrigin"           : "No",
+    "showAxes"              : true,
+    "workspaceSize"         : 1,
+    "cameraParentFrame"     : "N",
+    "cameraUp"              : [0, 0, 1],
+    "cameraEye"             : [3, 3, 3],
+    "cameraFocus"           : [0, 0, 0],
+    "speedFactor"           : 1.0
+}

@@ -1,0 +1,51 @@
+File: robot_arm.in
+----------------------------------------------------------+------------------
+Description          Quantity             Units           | Value
+----------------------------------------------------------|------------------
+Constant             g                    m/sec^2         |  9.81
+Constant             h                    m               |  0.6
+Constant             Lb                   m               |  0.8
+Constant             Lc                   m               |  1.2
+Constant             mB                   kg              |  20
+Constant             mC                   UNITS           |  20
+Constant             mD                   kg              |  800
+Constant             mE                   kg              |  50
+Constant             r                    m               |  0.4
+
+Initial Value        e0                   UNITS           |  1
+Initial Value        e1                   UNITS           |  0
+Initial Value        e2                   UNITS           |  0
+Initial Value        e3                   UNITS           |  0
+Initial Value        qA                   UNITS           |  0
+Initial Value        qB                   UNITS           |  0.3490658503988659
+Initial Value        qC                   degrees         |  3.517118986585047
+Initial Value        WorkA                UNITS           |  0
+Initial Value        WorkB                UNITS           |  0
+Initial Value        WorkCd               UNITS           |  0
+Initial Value        WorkEn               UNITS           |  0
+Initial Value        wx                   UNITS           |  0
+Initial Value        wy                   UNITS           |  0
+Initial Value        wz                   UNITS           |  0
+Initial Value        qA'                  UNITS           |  0
+Initial Value        qB'                  UNITS           |  0
+Initial Value        qC'                  UNITS           |  0
+
+Initial Time         tInitial             second          |  0.0
+Final Time           tFinal               second          |  16
+Integration Step     integStp             second          |  0.05
+Print-Integer        printIntScreen       0 or +integer   |  1
+Print-Integer        printIntFile         0 or +integer   |  1
+Absolute Error       absError                             |  1.0E-8
+Relative Error       relError                             |  1.0E-08
+----------------------------------------------------------+------------------
+Note: Use spaces not tabs while editing this file.
+
+      printInt * integStp  is the time-interval for writing of output.
+              printInt = 0 suppresses writing output.
+
+      absError should be set equal to 10^(-8)*Xsmall, where Xsmall is the estimated
+               smallest maximum absolute value of the variables being integrated.
+
+      relError should be set equal to 10^(-d), where d is no less than the desired
+               number of significant digits of numerical integration results.
+-----------------------------------------------------------------------------

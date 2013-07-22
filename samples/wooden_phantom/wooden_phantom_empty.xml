@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<scene  name="wooden phantom"
+        newtonion_frame="N"
+        scene_origin="No"
+        workspace_size="0.3"
+        up="0 0 1"
+        camera_eye_position="1 0.3 0.3"
+        camera_focus_position="0.2 0 0.15"
+        >
+
+    <simulation_file name="wooden_phantom.2:6" />
+    <simulation_settings name="wooden_phantom.in" />
+
+</scene>

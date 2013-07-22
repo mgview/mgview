@@ -1,0 +1,28 @@
+{
+    "name": "fourbar",
+    "newtonianFrame": "N",
+    "sceneOrigin": "Na",
+    "showAxes": true,
+    "cameraUp": [
+        -1,
+        0,
+        0
+    ],
+    "cameraEye": [
+        1,
+        1,
+        7
+    ],
+    "cameraFocus": [
+        1,
+        1,
+        0
+    ],
+    "cameraParentFrame": "N",
+    "speedFactor": 1,
+    "workspaceSize": 2,
+    "simulationData": [
+        "normal/fourbar.1:3"
+    ],
+    "simulationSettings": "normal/fourbar.in"
+}

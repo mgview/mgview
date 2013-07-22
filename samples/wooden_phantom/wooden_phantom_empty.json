@@ -1,0 +1,15 @@
+{
+    "name" : "Wooden Phantom",
+    "newtonianFrame"    : "N",
+    "sceneOrigin"       : "No",
+    "showAxes"          : true,
+    "cameraUp"          : [0, 0, 1],
+    "cameraEye"         : [1, 0.3, 0.3],
+    "cameraFocus"       : [0.2, 0, 0.15],
+    "cameraParentFrame" : "N",
+    "speedFactor"       : 1.0,
+    "workspaceSize"     : 0.3,
+
+    "simulationData" : ["wooden_phantom.2:6"],
+    "simulationSettings" : "wooden_phantom.in"
+}

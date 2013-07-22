@@ -1,0 +1,32 @@
+File: particle_pendulum.in
+----------------------------------------------------------+------------------
+Description          Quantity             Units           | Value
+----------------------------------------------------------|------------------
+Constant             g                    m/sec^2         |  9.8
+Constant             L                    cm              |  50
+Constant             m                    kg              |  2
+
+Initial Value        theta                deg             |  30
+Initial Value        theta'               deg/sec         |  0
+
+Initial Time         tInitial             second          |  0.0
+Final Time           tFinal               sec             |  10
+Integration Step     integStp             sec             |  0.02
+Print-Integer        printIntScreen       0 or +integer   |  1
+Print-Integer        printIntFile         0 or +integer   |  1
+Absolute Error       absError                             |  1.0E-08
+Relative Error       relError                             |  1.0E-08
+----------------------------------------------------------+------------------
+Note: UnitSystem: kilogram, meter, second
+
+Note: Use spaces not tabs while editing this file.
+
+      printInt * integStp  is the time-interval for writing of output.
+              printInt = 0 suppresses writing output.
+
+      absError should be set equal to 10^(-8)*Xsmall, where Xsmall is the estimated
+               smallest maximum absolute value of the variables being integrated.
+
+      relError should be set equal to 10^(-d), where d is no less than the desired
+               number of significant digits of numerical integration results.
+-----------------------------------------------------------------------------

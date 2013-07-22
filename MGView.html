@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>MGView</title>
+
+    <link type="text/css" rel="stylesheet" href="app/css/ui-darkness/jquery-ui-1.10.0.custom.min.css">
+    <link type="text/css" rel="stylesheet" href="app/css/sv.css">
+
+    <link rel="stylesheet" href="app/js/codemirror/blackboard.css">
+    <link rel="stylesheet" href="app/js/codemirror/codemirror.css">
+
+    <link type="text/css" rel="stylesheet" href="app/js/jquery/plugin/spectrum.css">
+
+
+    <!--<link rel="stylesheet/less" type="text/css" href="app/less/mgview.less" />-->
+    <!--<script src="app/less/less-1.3.3.min.js" type="text/javascript"></script>-->
+
+
+    <script src="app/js/jquery/jquery-1.9.0.js" > </script>
+    <script src="app/js/jquery/jquery-ui-1.10.0.custom.min.js" > </script>
+
+    <script src="app/js/codemirror/codemirror.min.js" ></script>
+    <script src="app/js/jsonlint/jsl.format.js"></script>
+    <script src="app/js/jsonlint/jsl.parser.js"></script>
+
+    <!--<script type="text/javascript" src="app/js/jquery/plugin/jquery.uid.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/jquery/plugin/spectrum.js"></script>-->
+
+    <!--<script type="text/javascript" src="app/js/util/class.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/util/underscore-1.1.6.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/util/modernizr-2.0.6.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/util/webgl-util.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/util/stats-r8.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/util/sprintf-0.7-beta1.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/util/querystring.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/util/xmlhelpers.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/util/ajaxupload.3.6.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/util/logUtil.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/util/DAT.GUI.min.js"></script>-->
+
+
+    <!--<script src="app/js/three/Three.r56dev.min.js"></script>-->
+    <!--<script src="app/js/three/loaders/ColladaLoader.js"></script>-->
+    <!--<script src="app/js/three/loaders/OBJLoader.js"></script>-->
+    <!--<script src="app/js/three/loaders/STLLoader.js"></script>-->
+    <!--<script src="app/js/three/controls/OrbitControls.js"></script>-->
+    <!--<script src="app/js/three/al/LoadUtils.js"></script>-->
+
+    <!--<script type="text/javascript" src="app/js/mgview/extraUtil.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/mgview/sv.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/mgview/class.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/mgview/colors.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/mgview/world.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/mgview/sceneModel.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/mgview/scene.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/mgview/canvas.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/mgview/objectDialog.js"></script>-->
+    <!--<script type="text/javascript" src="app/js/mgview/editor.js"></script>-->
+
+    <!--<script src="app/js/fonts/optimer_bold.typeface.js"></script>-->
+    <!--<script src="app/js/fonts/optimer_regular.typeface.js"></script>-->
+
+    <!--<script type="text/javascript" src="app/js/main.js"></script>-->
+
+    <script type="text/javascript" src="app/js/mgview.min.js"></script>
+
+
+
+
+</head>
+    <body>
+
+    <div id="SV">
+
+        <div class="Topbar">
+
+            <div class="FileLoad">
+                <input type="text"   class="file" id="scenefile_input"
+                       placeholder='type the path to your scene file and click "load" ' />
+            </div>
+
+            <!--<div class="verticalDivider"> </div>-->
+
+            <div class="StartStop">
+                <input type="button" class="Button" id="model_load_button"   value="Load"/>
+                <input type="button" class="Button"  id="open_model_editor"  value="Save/Edit"/>
+            </div>
+
+            <div class="verticalDivider"> </div>
+
+            <div class="TimeControl">
+                <div class="scrubWidget">
+                    <div class="Horizontal Label" >
+                        <div class="label">Time</div>
+                    </div>
+
+                    <div class="Horizontal Sliders" >
+                        <div class="" id="time_scrub"></div>
+                    </div>
+
+                    <div class="Horizontal Text">
+                        <input type="text"  class="number"  id="time_text" value="0.0" />
+                    </div>
+                </div>
+
+                <div class="scrubWidget">
+                    <div class="Horizontal Label" >
+                        <div class="label">Speed</div>
+                    </div>
+
+                    <div class="Horizontal Sliders" >
+                        <div class="" id="speed_scrub"></div>
+                    </div>
+
+                    <div class="Horizontal Text">
+                        <input type="text"  class="number"  id="speed_text" value="1.0" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="verticalDivider"> </div>
+
+            <div class="StartStop">
+                <input type="button" class="Start Button" id="animation_start_button"   value="Start"/>
+                <input type="button" class="Stop Button"  id="animation_stop_button"  value="Stop"/>
+            </div>
+
+
+
+
+            <div class="verticalDivider"> </div>
+
+            <!--<a href="data:application/octet-stream;charset=utf-8;base64,Zm9vIGJhcg==">text file</a>-->
+
+            <!--<input type="button" value="Subscribe" onclick="subscribe();"></input>-->
+            <!--<input type="button" value="Unsubscribe" onclick="unsubscribe();"></input>-->
+        </div>
+        <div class="MainContent">
+            <div class="Sidebar">
+                <div class="Label">Camera Frame</div>
+                <select class="" id="fixedFrameSelect"></select>
+                <div class="Label">Objects</div>
+                <!--<ol id="visualizerObjects"></ol>-->
+                <div id="visualizerObjects"></div>
+            </div>
+
+
+            <div class="RenderWindow">
+            </div>
+        </div>
+
+    </div>
+
+
+    </body>
+</html>
+

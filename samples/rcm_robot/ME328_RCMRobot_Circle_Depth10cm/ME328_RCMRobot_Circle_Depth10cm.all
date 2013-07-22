@@ -1,0 +1,464 @@
+   (1) % SIMULATION DETAILS
+   (2) % ==================
+   (3) % NAME: ME 328, Remote Center of Motion Robot, Circle at 10 cm
+   (4) % AUTHOR: Fidel Hernandez
+   (5) % DATE: April 30, 2012
+   (6) %SetWorkingDirectory ME328Homework3/ME328_RCMRobot_Circle_Depth10cm
+   (7) %
+   (8) % SIMULATION DESCRIPTION
+   (9) % ======================
+   (10) % In this simulation, we control a remote center of motion robot so that
+   (11) % its end effector traces a circle of radius 20 cm at a distance of
+   (12) % 20 cm directly below the remote center of motion point at a set 
+   (13) % frequency of 1 revolution around the circle per second.
+   (14) %
+   (15) % FRAMES, BODIES, AND POINTS
+   (16) % ==========================
+   (17) NewtonianFrame N   % Newtonian/Global/Ground Frame, with Point No
+   (18) RigidFrame     A   % Intermediate Frame, with Point Ao
+   (19) RigidBody      B   % Link 1, Cylinder, with Points Bo, Bcm
+   (20) RigidBody      C   % Link 2, Cylinder, with Points Co, Ccm
+   (21) RigidBody      D   % Link 3, Cylinder, with Points Do, Dcm
+   (22) RigidBody      E   % Link 4, Cylinder, with Points Eo, Ecm
+   (23) Point       BC(B)  % Revolute joint point between B/C (fixed on B) 
+   (24) Point       CD(C)  % Revolute joint point between C/D (fixed on C)
+   (25) Point      Eff(E)  % End-effector (fixed on E)
+   (26) Point      RCM(N)  % Remote center of motion (fixed on N)
+   (27) %
+   (28) % DYNAMICS VARIABLES AND CONSTANTS
+   (29) % ================================
+   (30) Variable     qx''  % Angle from Nz> to Az> about +Nx>
+   (31) Variable     qy''  % Angle from Az> to Bz> about -Ay>
+   (32) Variable     dz''  % -Bz> measure of Eff from Rcm
+   (33) Constant    rLink  % Radius of links B, C, D, and E
+   (34) Constant    lLink  % Length of links B, C, D, and E
+   (35) Specified      Tx  % +Nx> measure of torque on A from N, motor
+   (36) Specified      Ty  % -Ay> measure of torque on B from A, motor
+   (37) Specified      Fz  % -Bz> measure of force on Ecm from Dcm, motor
+   (38) %
+   (39) % MASS AND INERTIA
+   (40) % ================
+   (41) Constant density
+   (42) m = density*pi*rLink^2*lLink
+-> (43) m = 3.141593*density*lLink*rLink^2
+
+   (44) B.SetMass( m )
+   (45) C.SetMass( m )
+   (46) D.SetMass( m )
+   (47) E.SetMass( m )
+   (48) I = 1/2*m*rLink^2                  % Moment of inertia, long axis
+-> (49) I = 0.5*rLink^2*m
+
+   (50) J = 1/12*m*( 3*rLink^2+lLink^2 )   % Moment of inertia, transverse axis
+-> (51) J = 0.08333333*(lLink^2+3*rLink^2)*m
+
+   (52) B.SetInertia( Bcm, J, J, I )       % Inertia (about Bcm, bx>, by>, bz>)
+   (53) C.SetInertia( Ccm, I, J, J )       % Inertia (about Ccm, ax>, ay>, az>)
+   (54) D.SetInertia( Dcm, J, J, I )       % Inertia (about Dcm, bx>, by>, bz>)
+   (55) E.SetInertia( Ecm, J, J, I )       % Inertia (about Ecm, bx>, by>, bz>)
+   (56) %
+   (57) % ROTATIONAL KINEMATICS
+   (58) % =====================
+   (59) A.RotatePositiveX( N, qx )
+-> (60) A_N = [1, 0, 0; 0, cos(qx), sin(qx); 0, -sin(qx), cos(qx)]
+-> (61) w_A_N> = qx'*Ax>
+-> (62) alf_A_N> = qx''*Ax>
+
+   (63) B.RotateNegativeY( A, qy )      
+-> (64) B_A = [cos(qy), 0, sin(qy); 0, 1, 0; -sin(qy), 0, cos(qy)]
+-> (65) w_B_A> = -qy'*By>
+-> (66) w_B_N> = cos(qy)*qx'*Bx> - qy'*By> - sin(qy)*qx'*Bz>
+-> (67) alf_B_A> = -qy''*By>
+-> (68) alf_B_N> = (cos(qy)*qx''-sin(qy)*qx'*qy')*Bx> - qy''*By> + (-cos(qy)*
+        qx'*qy'-sin(qy)*qx'')*Bz>
+
+   (69) C.RotatePositiveZ( A, 0 )          % C is always parallel to A
+-> (70) C_A = [1, 0, 0; 0, 1, 0; 0, 0, 1]
+-> (71) w_C_A> = 0>
+-> (72) w_C_N> = qx'*Cx>
+-> (73) alf_C_A> = 0>
+-> (74) alf_C_N> = qx''*Cx>
+
+   (75) D.RotatePositiveZ( B, 0 )          % D is always parallel to B
+-> (76) D_B = [1, 0, 0; 0, 1, 0; 0, 0, 1]
+-> (77) w_D_B> = 0>
+-> (78) w_D_N> = cos(qy)*qx'*Dx> - qy'*Dy> - sin(qy)*qx'*Dz>
+-> (79) alf_D_B> = 0>
+-> (80) alf_D_N> = (cos(qy)*qx''-sin(qy)*qx'*qy')*Dx> - qy''*Dy> + (-cos(qy)*
+        qx'*qy'-sin(qy)*qx'')*Dz>
+
+   (81) E.RotatePositiveZ( D, 0 )          % Prismatic joint between D and E
+-> (82) E_D = [1, 0, 0; 0, 1, 0; 0, 0, 1]
+-> (83) w_E_D> = 0>
+-> (84) w_E_N> = cos(qy)*qx'*Ex> - qy'*Ey> - sin(qy)*qx'*Ez>
+-> (85) alf_E_D> = 0>
+-> (86) alf_E_N> = (cos(qy)*qx''-sin(qy)*qx'*qy')*Ex> - qy''*Ey> + (-cos(qy)*
+        qx'*qy'-sin(qy)*qx'')*Ez>
+
+   (87) %
+   (88) % TRANSLATIONAL KINEMATICS
+   (89) % ========================
+   (90) Bcm.Translate( No, lLink/2*bz> )   % Bcm, measured from origin, No
+-> (91) p_No_Bcm> = 0.5*lLink*Bz>
+-> (92) v_Bcm_N> = -0.5*lLink*qy'*Bx> - 0.5*lLink*cos(qy)*qx'*By>
+-> (93) a_Bcm_N> = -0.5*lLink*(sin(qy)*cos(qy)*qx'^2+qy'')*Bx> + 0.5*lLink*(2*
+        sin(qy)*qx'*qy'-cos(qy)*qx'')*By> - 0.5*lLink*(qy'^2+cos(qy)^2*qx'^2)*
+        Bz>
+
+   (94) BC.Translate( No, lLink*bz> )	   % BC, measured from origin, No
+-> (95) p_No_BC> = lLink*Bz>
+-> (96) v_BC_N> = -lLink*qy'*Bx> - lLink*cos(qy)*qx'*By>
+-> (97) a_BC_N> = -lLink*(sin(qy)*cos(qy)*qx'^2+qy'')*Bx> + lLink*(2*sin(qy)*
+        qx'*qy'-cos(qy)*qx'')*By> - lLink*(qy'^2+cos(qy)^2*qx'^2)*Bz>
+
+   (98) Ccm.Translate( BC, lLink/2*ax> )   % Ccm, measured from BC
+-> (99) p_BC_Ccm> = 0.5*lLink*Ax>
+-> (100) v_Ccm_N> = -lLink*qy'*Bx> - lLink*cos(qy)*qx'*By>
+-> (101) a_Ccm_N> = -lLink*(sin(qy)*cos(qy)*qx'^2+qy'')*Bx> + lLink*(2*sin(qy)*
+         qx'*qy'-cos(qy)*qx'')*By> - lLink*(qy'^2+cos(qy)^2*qx'^2)*Bz>
+
+   (102) CD.Translate( BC, lLink*ax> )      % CD, measured from BC
+-> (103) p_BC_CD> = lLink*Ax>
+-> (104) v_CD_N> = -lLink*qy'*Bx> - lLink*cos(qy)*qx'*By>
+-> (105) a_CD_N> = -lLink*(sin(qy)*cos(qy)*qx'^2+qy'')*Bx> + lLink*(2*sin(qy)*
+         qx'*qy'-cos(qy)*qx'')*By> - lLink*(qy'^2+cos(qy)^2*qx'^2)*Bz>
+
+   (106) RCM.Translate( No, lLink*nx> )     % RCM, measured from origin, No
+-> (107) p_No_RCM> = lLink*Nx>
+-> (108) v_RCM_N> = 0>
+-> (109) a_RCM_N> = 0>
+
+   (110) Dcm.Translate( RCM, lLink/2*bz> )  % Dcm, measured from RCM
+-> (111) p_RCM_Dcm> = 0.5*lLink*Bz>
+-> (112) v_Dcm_N> = -0.5*lLink*qy'*Bx> - 0.5*lLink*cos(qy)*qx'*By>
+-> (113) a_Dcm_N> = -0.5*lLink*(sin(qy)*cos(qy)*qx'^2+qy'')*Bx> + 0.5*lLink*(2*
+         sin(qy)*qx'*qy'-cos(qy)*qx'')*By> - 0.5*lLink*(qy'^2+cos(qy)^2*qx'^2)*
+         Bz>
+
+   (114) Eff.Translate( RCM, -dz*bz> )      % End effector, measured from RCM
+-> (115) p_RCM_Eff> = -dz*Bz>
+-> (116) v_Eff_N> = dz*qy'*Bx> + dz*cos(qy)*qx'*By> - dz'*Bz>
+-> (117) a_Eff_N> = (2*dz'*qy'+dz*sin(qy)*cos(qy)*qx'^2+dz*qy'')*Bx> + (2*cos(
+         qy)*dz'*qx'+dz*cos(qy)*qx''-2*dz*sin(qy)*qx'*qy')*By> + (dz*qy'^2+dz*
+         cos(qy)^2*qx'^2-dz'')*Bz>
+
+   (118) Ecm.Translate( Eff, lLink/2*bz> )  % Ecm, measured from end effector
+-> (119) p_Eff_Ecm> = 0.5*lLink*Bz>
+-> (120) v_Ecm_N> = -0.5*(lLink-2*dz)*qy'*Bx> - 0.5*cos(qy)*(lLink-2*dz)*qx'*
+         By> - dz'*Bz>
+-> (121) a_Ecm_N> = (2*dz'*qy'+dz*sin(qy)*cos(qy)*qx'^2+dz*qy''-0.5*lLink*sin(
+         qy)*cos(qy)*qx'^2-0.5*lLink*qy'')*Bx> + (2*cos(qy)*dz'*qx'+lLink*sin(
+         qy)*qx'*qy'+dz*cos(qy)*qx''-2*dz*sin(qy)*qx'*qy'-0.5*lLink*cos(qy)*qx
+         '')*By> + (dz*qy'^2+dz*cos(qy)^2*qx'^2-0.5*lLink*(qy'^2+cos(qy)^2*qx'^
+         2)-dz'')*Bz>
+
+   (122) %
+   (123) % FORCES AND TORQUES
+   (124) % ==================
+   (125) A.AddTorque( N, Tx*ax> )        % Controlled revolute motor torque
+-> (126) Torque_A_N> = Tx*Ax>
+
+   (127) B.AddTorque( A, -Ty*ay> )       % Controlled revolute motor torque
+-> (128) Torque_B_A> = -Ty*Ay>
+
+   (129) Ecm.AddForce( Dcm, -Fz*bz> )    % Controlled prismatic motor torque
+-> (130) Force_Ecm_Dcm> = -Fz*Bz>
+
+   (131) %
+   (132) % LAGRANGE EQUATION
+   (133) % =================
+   (134) Constant      kT                % Body wall, soft torsional stiffness
+   (135) Constant      bT                % Dissipation, total torsional damping
+   (136) Constant       b                % Dissipation, total linear damping
+   (137) V = 1/2*kT*qx^2 + 1/2*kT*qy^2   % System potential energy
+-> (138) V = 0.5*kT*(qx^2+qy^2)
+
+   (139) K = System.GetKineticEnergy()   % System kinetic energy
+-> (140) K = 0.5*I*qx'^2 + 1.5*J*qx'^2 + 1.5*J*qy'^2 + 1.5*(I-J)*sin(qy)^2*qx'^
+         2 + 0.75*lLink^2*m*(qy'^2+cos(qy)^2*qx'^2) + 0.125*m*(4*dz'^2+(lLink-2
+         *dz)^2*qy'^2+cos(qy)^2*(lLink-2*dz)^2*qx'^2)
+
+   (141) Lagrangian = K - V
+-> (142) Lagrangian = K - V
+
+   (143) MechanicalEnergy = K + V
+-> (144) MechanicalEnergy = V + K
+
+   (145) SetGeneralizedSpeed( qx', qy', dz')
+   (146) Qr = System.GetGeneralizedForce()
+-> (147) Qr = [Tx; Ty; Fz]
+
+   (148) Dissipation = 1/2*bT*( qx' )^2 + 1/2*bT*( qy' )^2 + 1/2*b*( dz' )^2 
+-> (149) Dissipation = 0.5*b*dz'^2 + 0.5*bT*qx'^2 + 0.5*bT*qy'^2
+
+   (150) Eqn[1] = Dt( D( K, qx' ) ) - D( Lagrangian, qx ) - Qr[1] + D( Dissipation, qx' )
+-> (151) Eqn[1] = kT*qx + bT*qx' + 6*(I-J)*sin(qy)*cos(qy)*qy'*qx' + I*qx'' + 3
+         *J*qx'' + 3*(I-J)*sin(qy)^2*qx'' - Tx - 1.5*lLink^2*m*cos(qy)*(2*sin(
+         qy)*qy'*qx'-cos(qy)*qx'') - 0.25*m*cos(qy)*(lLink-2*dz)*(4*cos(qy)*dz'
+         *qx'+2*sin(qy)*(lLink-2*dz)*qy'*qx'-cos(qy)*(lLink-2*dz)*qx'')
+
+   (152) Eqn[2] = Dt( D( K, qy' ) ) - D( Lagrangian, qy ) - Qr[2] + D( Dissipation, qy' ) 
+-> (153) Eqn[2] = kT*qy + bT*qy' + 3*J*qy'' + 1.5*lLink^2*m*qy'' - Ty - 0.25*
+         sin(qy)*cos(qy)*(12*I-12*J-6*lLink^2*m-m*(lLink-2*dz)^2)*qx'^2 - 0.25*
+         m*(lLink-2*dz)*(4*dz'*qy'-(lLink-2*dz)*qy'')
+
+   (154) Eqn[3] = Dt( D( K, dz' ) ) - D( Lagrangian, dz ) - Qr[3] + D( Dissipation, dz' )
+-> (155) Eqn[3] = b*dz' + 0.5*m*(lLink-2*dz)*(qy'^2+cos(qy)^2*qx'^2) + m*dz''
+          - Fz
+
+   (156) Solve( Eqn, qx'', qy'', dz'' )
+-> (157) qx'' = -2*(2*kT*qx+2*bT*qx'+12*(I-J)*sin(qy)*cos(qy)*qy'*qx'-2*Tx-6*
+         lLink^2*m*sin(qy)*cos(qy)*qy'*qx'-m*cos(qy)*(lLink-2*dz)*(2*cos(qy)*
+         dz'+sin(qy)*(lLink-2*dz)*qy')*qx')/(4*I+12*J+6*lLink^2*m*cos(qy)^2+12*
+         (I-J)*sin(qy)^2+m*cos(qy)^2*(lLink-2*dz)^2)
+
+-> (158) qy'' = -(4*kT*qy+4*bT*qy'-4*Ty-4*m*(lLink-2*dz)*dz'*qy'-sin(qy)*cos(
+         qy)*(12*I-12*J-6*lLink^2*m-m*(lLink-2*dz)^2)*qx'^2)/(12*J+6*lLink^2*m+
+         m*(lLink-2*dz)^2)
+
+-> (159) dz'' = (Fz-b*dz')/m - 0.5*(lLink-2*dz)*(qy'^2+cos(qy)^2*qx'^2)
+
+   (160) %
+   (161) % END EFFECTOR DESIRED PATH, DEFINITION
+   (162) % =====================================
+   (163) Specified                 x'       % Nx> measure, desired Eff position
+   (164) Specified                 y'       % Ny> measure, desired Eff position
+   (165) Specified                 z'       % Nz> measure, desired Eff position
+   (166) Constant      traceFrequency       % End effector tracing frequency
+   (167) Constant          thetaStart       % Tracing circle starting theta
+   (168) Constant        circleRadius       % Tracing circle radius
+   (169) Constant         circleDepth       % Tracing circle distance below RCM
+   (170) SetDt( x = circleRadius*cos( thetaStart + traceFrequency*t ) )
+-> (171) x = circleRadius*cos(thetaStart+traceFrequency*t)
+-> (172) x' = -circleRadius*traceFrequency*sin(thetaStart+traceFrequency*t)
+
+   (173) SetDt( y = circleRadius*sin( thetaStart + traceFrequency*t ) )
+-> (174) y = circleRadius*sin(thetaStart+traceFrequency*t)
+-> (175) y' = circleRadius*traceFrequency*cos(thetaStart+traceFrequency*t)
+
+   (176) SetDt( z = -circleDepth )
+-> (177) z = -circleDepth
+-> (178) z' = 0
+
+   (179) %
+   (180) % END EFFECTOR DESIRED PATH, INVERSE KINEMATICS
+   (181) % =============================================
+   (182) Specified   qxDesired'         % Value of qx' that traces desired path
+   (183) Specified   qyDesired'         % Value of qy' that traces desired path
+   (184) Specified   dzDesired'         % Value of dz' that traces desired path
+   (185) qxDesired = asin( y/sqrt( y^2 + z^2 ) )
+-> (186) qxDesired = asin(y/sqrt(y^2+z^2))
+
+   (187) qyDesired = asin( x/sqrt( x^2 + y^2 + z^2 ) )
+-> (188) qyDesired = asin(x/sqrt(x^2+y^2+z^2))
+
+   (189) dzDesired = sqrt( x^2 + y^2 + z^2 )
+-> (190) dzDesired = sqrt(x^2+y^2+z^2)
+
+   (191) eqnqx = sin( qxDesired ) - y/sqrt( y^2 + z^2 )
+-> (192) eqnqx = sin(qxDesired) - y/sqrt(y^2+z^2)
+
+   (193) eqnqy = sin( qyDesired ) - x/sqrt( x^2 + y^2 + z^2 )
+-> (194) eqnqy = sin(qyDesired) - x/sqrt(x^2+y^2+z^2)
+
+   (195) eqndz = dzDesired - sqrt( x^2 + y^2 + z^2 )
+-> (196) eqndz = dzDesired - sqrt(x^2+y^2+z^2)
+
+   (197) Solve( Dt( eqnqx ), qxDesired' )
+-> (198) qxDesired' = -z*(y*z'-z*y')/(cos(qxDesired)*(y^2+z^2)^1.5)
+
+   (199) Solve( Dt( eqnqy ), qyDesired' )
+-> (200) qyDesired' = ((y^2+z^2)*x'-x*(y*y'+z*z'))/(cos(qyDesired)*(x^2+y^2+z^2
+         )^1.5)
+
+   (201) Solve( Dt( eqndz ), dzDesired' )
+-> (202) dzDesired' = (x*x'+y*y'+z*z')/sqrt(x^2+y^2+z^2)
+
+   (203) %
+   (204) % PROPORTIONAL-DERIVATIVE (PD) CONTROL LAW
+   (205) % ========================================
+   (206) Constant           kpx         % Proportional control gain for qx
+   (207) Constant           kdx         % Derivative control gain for qx'
+   (208) Constant           kpy         % Proportional control gain for qy
+   (209) Constant           kdy         % Derivative control gain for qy'
+   (210) Constant           kpz         % Proportional control gain for dz
+   (211) Constant           kdz         % Derivative control gain for dz'
+   (212) Tx = kpx*( qxDesired - qx ) + kdx*( qxDesired' - qx' )
+-> (213) Tx = kpx*(qxDesired-qx) + kdx*(qxDesired'-qx')
+
+   (214) Ty = kpy*( qyDesired - qy ) + kdy*( qyDesired' - qy' )
+-> (215) Ty = kpy*(qyDesired-qy) + kdy*(qyDesired'-qy')
+
+   (216) Fz = kpz*( dzDesired - dz ) + kdz*( dzDesired' - dz' )
+-> (217) Fz = kpz*(dzDesired-dz) + kdz*(dzDesired'-dz')
+
+   (218) %
+   (219) % ANIMATION
+   (220) % =========
+   (221) % Animated bodies F and G are parallel to bodies B and C,
+   (222) % respectively. They are not necessary for computing the robot
+   (223) % dynamics, but we include them here so that the simulation
+   (224) % appears more realistic.
+   (225) RigidBody        F         % Link 1p, Cylinder, with Points Fo, Fcm
+   (226) RigidBody        G         % Link 2p, Cylinder, with Points Go, Gcm
+   (227) Constant    lOffset        % Offset between parallel links, B-F and C-G
+   (228) F.RotatePositiveZ( B, 0 )  % F is always parallel to B
+-> (229) F_B = [1, 0, 0; 0, 1, 0; 0, 0, 1]
+-> (230) w_F_B> = 0>
+-> (231) w_F_N> = cos(qy)*qx'*Bx> - qy'*By> - sin(qy)*qx'*Bz>
+-> (232) alf_F_B> = 0>
+-> (233) alf_F_N> = (cos(qy)*qx''-sin(qy)*qx'*qy')*Bx> - qy''*By> + (-cos(qy)*
+         qx'*qy'-sin(qy)*qx'')*Bz>
+
+   (234) G.RotatePositiveZ( C, 0 )  % G is always parallel to C
+-> (235) G_C = [1, 0, 0; 0, 1, 0; 0, 0, 1]
+-> (236) w_G_C> = 0>
+-> (237) w_G_N> = qx'*Cx>
+-> (238) alf_G_C> = 0>
+-> (239) alf_G_N> = qx''*Cx>
+
+   (240) Fcm.Translate(Bcm,lOffset*ax>)
+-> (241) p_Bcm_Fcm> = lOffset*Ax>
+-> (242) v_Fcm_N> = -0.5*lLink*qy'*Bx> - 0.5*lLink*cos(qy)*qx'*By>
+-> (243) a_Fcm_N> = -0.5*lLink*(sin(qy)*cos(qy)*qx'^2+qy'')*Bx> + 0.5*lLink*(2*
+         sin(qy)*qx'*qy'-cos(qy)*qx'')*By> - 0.5*lLink*(qy'^2+cos(qy)^2*qx'^2)*
+         Bz>
+
+   (244) Gcm.Translate(Ccm,-lOffset*bz>)
+-> (245) p_Ccm_Gcm> = -lOffset*Bz>
+-> (246) v_Gcm_N> = -(lLink-lOffset)*qy'*Bx> - (lLink-lOffset)*cos(qy)*qx'*By>
+-> (247) a_Gcm_N> = (lOffset*(sin(qy)*cos(qy)*qx'^2+qy'')-lLink*(sin(qy)*cos(
+         qy)*qx'^2+qy''))*Bx> + (lLink*(2*sin(qy)*qx'*qy'-cos(qy)*qx'')-lOffset
+         *(sin(qy)*qy'*qx'+sin(qy)*qx'*qy'-cos(qy)*qx''))*By> - (lLink-lOffset)
+         *(qy'^2+cos(qy)^2*qx'^2)*Bz>
+
+   (248) % Animation requires all body origins be defined
+   (249) Ao.Translate(No,0>)
+-> (250) p_No_Ao> = 0>
+-> (251) v_Ao_N> = 0>
+-> (252) a_Ao_N> = 0>
+
+   (253) Bo.Translate(Bcm,0>)
+-> (254) p_Bcm_Bo> = 0>
+-> (255) v_Bo_N> = -0.5*lLink*qy'*Bx> - 0.5*lLink*cos(qy)*qx'*By>
+-> (256) a_Bo_N> = -0.5*lLink*(sin(qy)*cos(qy)*qx'^2+qy'')*Bx> + 0.5*lLink*(2*
+         sin(qy)*qx'*qy'-cos(qy)*qx'')*By> - 0.5*lLink*(qy'^2+cos(qy)^2*qx'^2)*
+         Bz>
+
+   (257) Co.Translate(Ccm,0>)
+-> (258) p_Ccm_Co> = 0>
+-> (259) v_Co_N> = -lLink*qy'*Bx> - lLink*cos(qy)*qx'*By>
+-> (260) a_Co_N> = -lLink*(sin(qy)*cos(qy)*qx'^2+qy'')*Bx> + lLink*(2*sin(qy)*
+         qx'*qy'-cos(qy)*qx'')*By> - lLink*(qy'^2+cos(qy)^2*qx'^2)*Bz>
+
+   (261) Do.Translate(Dcm,0>)
+-> (262) p_Dcm_Do> = 0>
+-> (263) v_Do_N> = -0.5*lLink*qy'*Bx> - 0.5*lLink*cos(qy)*qx'*By>
+-> (264) a_Do_N> = -0.5*lLink*(sin(qy)*cos(qy)*qx'^2+qy'')*Bx> + 0.5*lLink*(2*
+         sin(qy)*qx'*qy'-cos(qy)*qx'')*By> - 0.5*lLink*(qy'^2+cos(qy)^2*qx'^2)*
+         Bz>
+
+   (265) Eo.Translate(Ecm,0>)
+-> (266) p_Ecm_Eo> = 0>
+-> (267) v_Eo_N> = -0.5*(lLink-2*dz)*qy'*Bx> - 0.5*cos(qy)*(lLink-2*dz)*qx'*By>
+         - dz'*Bz>
+-> (268) a_Eo_N> = (2*dz'*qy'+dz*sin(qy)*cos(qy)*qx'^2+dz*qy''-0.5*lLink*sin(
+         qy)*cos(qy)*qx'^2-0.5*lLink*qy'')*Bx> + (2*cos(qy)*dz'*qx'+lLink*sin(
+         qy)*qx'*qy'+dz*cos(qy)*qx''-2*dz*sin(qy)*qx'*qy'-0.5*lLink*cos(qy)*qx
+         '')*By> + (dz*qy'^2+dz*cos(qy)^2*qx'^2-0.5*lLink*(qy'^2+cos(qy)^2*qx'^
+         2)-dz'')*Bz>
+
+   (269) Fo.Translate(Fcm,0>)
+-> (270) p_Fcm_Fo> = 0>
+-> (271) v_Fo_N> = -0.5*lLink*qy'*Bx> - 0.5*lLink*cos(qy)*qx'*By>
+-> (272) a_Fo_N> = -0.5*lLink*(sin(qy)*cos(qy)*qx'^2+qy'')*Bx> + 0.5*lLink*(2*
+         sin(qy)*qx'*qy'-cos(qy)*qx'')*By> - 0.5*lLink*(qy'^2+cos(qy)^2*qx'^2)*
+         Bz>
+
+   (273) Go.Translate(Gcm,0>)
+-> (274) p_Gcm_Go> = 0>
+-> (275) v_Go_N> = -(lLink-lOffset)*qy'*Bx> - (lLink-lOffset)*cos(qy)*qx'*By>
+-> (276) a_Go_N> = (lOffset*(sin(qy)*cos(qy)*qx'^2+qy'')-lLink*(sin(qy)*cos(qy)
+         *qx'^2+qy''))*Bx> + (lLink*(2*sin(qy)*qx'*qy'-cos(qy)*qx'')-lOffset*(
+         sin(qy)*qy'*qx'+sin(qy)*qx'*qy'-cos(qy)*qx''))*By> - (lLink-lOffset)*(
+         qy'^2+cos(qy)^2*qx'^2)*Bz>
+
+   (277) Animate(N,No,B,C,D,E,F,G)
+-> (278) P_No_Bo = [-0.5*lLink*sin(qy); -0.5*lLink*sin(qx)*cos(qy); 0.5*lLink*
+         cos(qx)*cos(qy)]
+-> (279) N_B[1,1] = cos(qy)
+-> (280) N_B[1,2] = 0
+-> (281) N_B[1,3] = -sin(qy)
+-> (282) N_B[2,1] = -sin(qx)*sin(qy)
+-> (283) N_B[2,2] = cos(qx)
+-> (284) N_B[2,3] = -sin(qx)*cos(qy)
+-> (285) N_B[3,1] = sin(qy)*cos(qx)
+-> (286) N_B[3,2] = sin(qx)
+-> (287) N_B[3,3] = cos(qx)*cos(qy)
+-> (288) P_No_Co = [0.5*lLink*(1-2*sin(qy)); -lLink*sin(qx)*cos(qy); lLink*cos(
+         qx)*cos(qy)]
+-> (289) N_C = [1, 0, 0; 0, cos(qx), -sin(qx); 0, sin(qx), cos(qx)]
+-> (290) P_No_Do = [-0.5*lLink*(-2+sin(qy)); -0.5*lLink*sin(qx)*cos(qy); 0.5*
+         lLink*cos(qx)*cos(qy)]
+-> (291) N_D[1,1] = cos(qy)
+-> (292) N_D[1,2] = 0
+-> (293) N_D[1,3] = -sin(qy)
+-> (294) N_D[2,1] = -sin(qx)*sin(qy)
+-> (295) N_D[2,2] = cos(qx)
+-> (296) N_D[2,3] = -sin(qx)*cos(qy)
+-> (297) N_D[3,1] = sin(qy)*cos(qx)
+-> (298) N_D[3,2] = sin(qx)
+-> (299) N_D[3,3] = cos(qx)*cos(qy)
+-> (300) P_No_Eo[1] = lLink - 0.5*sin(qy)*(lLink-2*dz)
+-> (301) P_No_Eo[2] = -0.5*sin(qx)*cos(qy)*(lLink-2*dz)
+-> (302) P_No_Eo[3] = 0.5*cos(qx)*cos(qy)*(lLink-2*dz)
+-> (303) N_E[1,1] = cos(qy)
+-> (304) N_E[1,2] = 0
+-> (305) N_E[1,3] = -sin(qy)
+-> (306) N_E[2,1] = -sin(qx)*sin(qy)
+-> (307) N_E[2,2] = cos(qx)
+-> (308) N_E[2,3] = -sin(qx)*cos(qy)
+-> (309) N_E[3,1] = sin(qy)*cos(qx)
+-> (310) N_E[3,2] = sin(qx)
+-> (311) N_E[3,3] = cos(qx)*cos(qy)
+-> (312) P_No_Fo = [lOffset - 0.5*lLink*sin(qy); -0.5*lLink*sin(qx)*cos(qy); 
+         0.5*lLink*cos(qx)*cos(qy)]
+-> (313) N_F[1,1] = cos(qy)
+-> (314) N_F[1,2] = 0
+-> (315) N_F[1,3] = -sin(qy)
+-> (316) N_F[2,1] = -sin(qx)*sin(qy)
+-> (317) N_F[2,2] = cos(qx)
+-> (318) N_F[2,3] = -sin(qx)*cos(qy)
+-> (319) N_F[3,1] = sin(qy)*cos(qx)
+-> (320) N_F[3,2] = sin(qx)
+-> (321) N_F[3,3] = cos(qx)*cos(qy)
+-> (322) P_No_Go[1] = 0.5*lLink - (lLink-lOffset)*sin(qy)
+-> (323) P_No_Go[2] = -(lLink-lOffset)*sin(qx)*cos(qy)
+-> (324) P_No_Go[3] = (lLink-lOffset)*cos(qx)*cos(qy)
+-> (325) N_G = [1, 0, 0; 0, cos(qx), -sin(qx); 0, sin(qx), cos(qx)]
+
+   (326) %
+   (327) % INPUT VALUES
+   (328) % ============
+   (329) SetInput lLink = 0.5 m, rLink = 3 cm, lOffset = 10 cm
+   (330) SetInput density = 2.7 g/(cm^3)
+   (331) SetInput qx = 30 deg, qy = 30 deg, dz = 0.25 m
+   (332) SetInput qx' = 0, qy' = 0, dz' = 0
+   (333) SetInput kT = 10 N*m/rad, bT = 0.01 N*m*s/rad, b = 0.01 N*s/m
+   (334) SetInput circleRadius = 20 cm, circleDepth = 10 cm
+   (335) SetInput thetaStart = 45 deg, traceFrequency = 1 rev/s
+   (336) SetInput kpx = 1000 N*m, kdx = 50 N*m*s
+   (337) SetInput kpy = 1000 N*m, kdy = 50 N*m*s
+   (338) SetInput kpz = 500 N/m, kdz = 70 N*s/m
+   (339) SetInput tfinal = 10 s, integStp = 0.02 s
+   (340) %
+   (341) % PLOTS AND OUTPUT
+   (342) % ================
+   (343) % Ex = Dot(Eff.GetPosition(RCM),nx>)   % Nx> measure, Eff from RCM
+   (344) % Ey = Dot(Eff.GetPosition(RCM),ny>)   % Ny> measure, Eff from RCM
+   (345) % Ez = Dot(Eff.GetPosition(RCM),nz>)   % Nz> measure, Eff from RCM
+   (346) % PlotOutput t s, qxDesired m, qx m
+   (347) %
+   (348) % SIMULATION SAVE
+   (349) % ===============
+   (350) ODE() Link

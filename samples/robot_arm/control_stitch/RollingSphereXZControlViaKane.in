@@ -1,0 +1,51 @@
+File: RollingSphereXZControlViaKane.in
+----------------------------------------------------------+------------------
+Description          Quantity             Units           | Value
+----------------------------------------------------------|------------------
+Constant             a                    m               |  1.8
+Constant             b                    m               |  1.5
+Constant             g                    m/s^2           |  9.8
+Constant             h                    m               |  0.6
+Constant             LB                   m               |  0.8
+Constant             LC                   m               |  1.2
+Constant             m                    kg              |  800
+Constant             mE                   kg              |  50
+Constant             r                    m               |  0.4
+Constant             tF                   sec             |  16
+Constant             Wn                   rad/sec         |  1
+Constant             zeta                 noUnits         |  1
+
+Initial Value        e0                   noUnits         |  1
+Initial Value        e1                   noUnits         |  0
+Initial Value        e2                   noUnits         |  0
+Initial Value        e3                   noUnits         |  0
+Initial Value        qA                   deg             |  0
+Initial Value        qB                   deg             |  20
+Initial Value        qC                   degrees         |  3.517118986585047
+Initial Value        WorkOfSystem         Joules          |  0
+Initial Value        wx                   rad/sec         |  0
+Initial Value        wy                   rad/sec         |  0
+Initial Value        wz                   rad/sec         |  0
+Initial Value        qA'                  rad/sec         |  0
+Initial Value        qB'                  rad/sec         |  0
+Initial Value        qC'                  rad/sec         |  0
+
+Initial Time         tInitial             second          |  0.0
+Final Time           tFinal               sec             |  16
+Integration Step     integStp             sec             |  0.02
+Print-Integer        printIntScreen       0 or +integer   |  1
+Print-Integer        printIntFile         0 or +integer   |  1
+Absolute Error       absError                             |  1.0E-08
+Relative Error       relError                             |  1.0E-08
+----------------------------------------------------------+------------------
+Note: Use spaces not tabs while editing this file.
+
+      printInt * integStp  is the time-interval for writing of output.
+              printInt = 0 suppresses writing output.
+
+      absError should be set equal to 10^(-8)*Xsmall, where Xsmall is the estimated
+               smallest maximum absolute value of the variables being integrated.
+
+      relError should be set equal to 10^(-d), where d is no less than the desired
+               number of significant digits of numerical integration results.
+-----------------------------------------------------------------------------

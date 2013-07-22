@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<scene name="gyro"
+       up="0 0 1"
+       newtonion_frame="N"
+       scene_origin="No"
+       workspace_size="0.5"
+       camera_eye_position="1 1 1"
+       camera_focus_position="0 0 0"
+       >
+
+    <simulation_file name="top/gyro.1:4" />
+    <simulation_settings name="top/gyro.in" />
+
+    <frame name="A" />
+
+    <frame name="B" draw_basis="true">
+        <visual>
+            <geometry>
+                <cylinder length="0.4" radius="0.01" >
+                    <origin rpy="1.5708 0 0" xyz="0 0 0.2"/>
+                    <material name="SHINY_BLACK" />
+                </cylinder>
+            </geometry>
+            
+        </visual>
+    </frame>
+
+    <frame name="C" use_rotation_of_frame="B" draw_basis="true">
+		<visual>
+            
+            <geometry>
+                <cylinder length="0.02" radius="0.2">
+                    <origin rpy="1.5708 0 0" xyz="0 0 0"/>
+                    <material name="SHINY_GREEN" />
+                </cylinder>
+            </geometry>
+            
+        </visual>
+    </frame>
+
+</scene>

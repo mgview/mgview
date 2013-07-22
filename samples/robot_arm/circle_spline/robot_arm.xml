@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<scene  name="robot_arm"
+        up="0 1 0"
+        newtonian_frame="N"
+        workspace_size="1.0"
+        scene_origin="No"
+        camera_eye_position="1 4 5"
+        camera_focus_position="0 0 0"
+        >
+
+    <!-- You can define any number of custom colors, 
+         either in advance or within the material tag of a link. -->
+    <material name="MY_CUSTOM_BLUE">
+        <color rgb="0 0.7 1.0" />
+    </material>
+
+    <simulation_file name="robot_arm.2:6" />
+    <simulation_settings name="robot_arm.in" />
+    
+    <frame name="A" draw_basis="true">
+        <visual>
+            <geometry>
+                <cylinder radius="0.05" length="0.6">
+                    <origin rpy="0 0 0 " xyz="0 -0.3 0 "/>
+                    <material name="SHINY_RED" />
+                </cylinder>
+            </geometry>
+        </visual>
+    </frame>
+
+    <frame name="B" draw_basis="true">
+        <visual>
+            <geometry>
+                <box size="0.8 0.1 0.1" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_GREEN" />
+                </box>
+            </geometry>
+        </visual>
+    </frame>
+
+    <frame name="C" draw_basis="true">
+        <visual>
+            <geometry>
+                <box size="1.2 0.1 0.1" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>    
+                    <material name="MY_CUSTOM_BLUE" />
+                </box>
+            </geometry>
+            
+        </visual>
+    </frame>
+    
+    <frame name="D" draw_basis="true">
+        <visual>
+            <geometry>
+                <box size="0.2 0.1 0.2" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>    
+                    <material name="SHINY_BLACK" />
+                </box>
+            </geometry>
+            
+        </visual>
+    </frame>
+    
+    <frame name="E" draw_basis="true">
+        <visual>
+            <geometry>
+                <sphere radius="0.4" segmengts_width="16" segments_height="16" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>    
+                    <material name="MY_CUSTOM_BLUE" />
+                </sphere>
+            </geometry>
+            
+        </visual>
+    </frame>
+	
+    <!-- You can create any number of decorative "ground" links. -->
+	<frame name="ground" draw_basis="false">
+        <visual>
+            <geometry>
+                <!--<box size="4 0.1 4" >
+                    <origin rpy="0 0 0 " xyz="0 -0.05 0 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+						<color rgb="0.6 0.3 0" />
+					</material>
+                </box>
+                    -->
+                <cylinder radius="2.2" length="0.1" segments_radius="30" >
+                    <origin rpy="0 0 0 " xyz="0 -0.05 0 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+						<color rgb="0.6 0.3 0" />
+					</material>
+                </cylinder>
+            </geometry>
+        </visual>
+    </frame>
+
+</scene>

@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<!-- 
+Ball rolling in a verticle tube. 
+Example courtesy of Ying Zhao and Sami Shad.
+ -->
+<scene  name="ball"
+        up="0 0 1"
+        newtonian_frame="A"
+        workspace_size="0.2"
+        scene_origin="Ao"
+        camera_eye_position=".5 .5 .08"
+        camera_focus_position="0 0 -0.15"
+        speed_factor="1.0"
+        >
+
+    <!-- You can define any number of custom colors, 
+         either in advance or within the material tag of a link. -->
+    <material name="MY_CUSTOM_BLUE">
+        <color rgb="0.5 0.7 1.0" />
+    </material>
+
+    <simulation_file name="ball_in_tube.7" />
+    <simulation_settings name="ball_in_tube.in" />
+    
+    <frame name="B" draw_basis="true">
+        <visual>
+            <geometry>
+                <sphere radius="0.0127" segmengts_width="16" segments_height="16" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>    
+                    <material name="SHINY_RED" />
+                </sphere>
+            </geometry>
+            
+        </visual>
+    </frame>
+	
+    <!-- You can create any number of decorative "ground" links. 
+	-->
+    <frame name="A" draw_basis="false">
+        <visual>
+            <geometry>      
+                <!--            
+                -->
+                <cylinder radius=".127" length="1.0" segments_radius="36" >
+                    <origin rpy="1.5708 0 0 " xyz="0 0 -0.5"/>
+                    <material name="CLEAR_SILVER" >
+                        <color rgb="0.25 0.25 0.25" opacity="0.5"/>
+                    </material>
+                </cylinder>
+                
+            </geometry>
+        </visual>
+    </frame>
+    
+</scene>

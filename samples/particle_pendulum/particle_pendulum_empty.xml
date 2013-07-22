@@ -1,0 +1,13 @@
+<scene name="particle_pendulum"
+       up="0 1 0"
+       newtonion_frame="N"
+       scene_origin="No"
+       workspace_size="0.5"
+       camera_eye_position="0 -0.25 2"
+       camera_focus_position="0 -0.25 0"
+    >
+
+    <simulation_file name="particle_pendulum.1:3" />
+    <simulation_settings name="particle_pendulum.in" />
+
+</scene>

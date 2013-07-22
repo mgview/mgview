@@ -1,0 +1,443 @@
+   (1) % File: RollingSphereXZControlViaKane.al
+   (2) %-------------------------------------------------------
+   (3) %       Physical objects
+   (4) NewtonianFrame  N
+   (5) RigidFrame      A         % Vertical shaft
+   (6) RigidFrame      B         % Thin rod
+   (7) RigidFrame      C         % Thin rod
+   (8) RigidFrame      D         % Thin hemispherical shell
+   (9) RigidBody       E         % Sphere rolling on N
+   (10) Point           AB(A)     % Point of A coincident with B
+   (11) Point           BC(B)     % Point of B coincident with C
+   (12) Particle        CD        % Point of C coincident with D
+   (13) Point           EN(E)     % Point of E in contact with N
+   (14) %-------------------------------------------------------
+   (15) %       Constants and variables
+   (16) Constant   g              % Earth's gravity
+   (17) Constant   r              % Radius of sphere E
+   (18) Constant   h              % Distance between No and AB
+   (19) Constant   LB             % Distance between AB and BC
+   (20) Constant   LC             % Distance between BC and CD
+   (21) Variable   qA''           % Angle from Nx> to Ax> with +sense Ay>
+   (22) Variable   qB''           % Angle from Ax> to Bx> with +sense Az>
+   (23) Variable   qC''           % Angle from Ax> to Cx> with +sense Az>
+   (24) Variable   wx', wy', wz'  % Angular velocity measures numbers
+   (25) % aleeper: Added euler parameters (quaternion) for E so we can animate it.
+   (26) Variable   e0', e1', e2', e3' 
+   (27) Variable   Fx,  Fy,  Fz   % Contact forces on EN from N
+   (28) Specified  TA, TB         % Motor torques 
+   (29) Specified  TD             % Torque that specifies D's orientation in A
+   (30) CD.SetMass( m )           % 1 of 2 massive objects in system
+   (31) E.SetMass( mE )           % 2 of 2 massive objects in system
+   (32) I = 2/5*mE*r^2            % E's moment of inertia about Ecm
+-> (33) I = 0.4*mE*r^2
+
+   (34) E.SetInertia( Ecm, I*1>> )
+   (35) %-------------------------------------------------------
+   (36) %       Rotational kinematics
+   (37) A.RotateY( N,  qA )
+-> (38) A_N = [cos(qA), 0, -sin(qA); 0, 1, 0; sin(qA), 0, cos(qA)]
+-> (39) w_A_N> = qA'*Ay>
+-> (40) alf_A_N> = qA''*Ay>
+
+   (41) B.RotateZ( A,  qB )
+-> (42) B_A = [cos(qB), sin(qB), 0; -sin(qB), cos(qB), 0; 0, 0, 1]
+-> (43) w_B_A> = qB'*Bz>
+-> (44) w_B_N> = qA'*Ay> + qB'*Bz>
+-> (45) alf_B_A> = qB''*Bz>
+-> (46) alf_B_N> = qA'*qB'*Ax> + qA''*Ay> + qB''*Bz>
+
+   (47) C.RotateZ( A, -qC )
+-> (48) C_A = [cos(qC), -sin(qC), 0; sin(qC), cos(qC), 0; 0, 0, 1]
+-> (49) w_C_A> = -qC'*Cz>
+-> (50) w_C_N> = qA'*Ay> - qC'*Cz>
+-> (51) alf_C_A> = -qC''*Cz>
+-> (52) alf_C_N> = -qA'*qC'*Ax> + qA''*Ay> - qC''*Cz>
+
+   (53) % aleeper: Changed to "rotate" so that D's orientation is defined.
+   (54) %D.SetAngularVelocityAcceleration( A, 0> )
+   (55) D.RotateZ( A, 0 )
+-> (56) D_A = [1, 0, 0; 0, 1, 0; 0, 0, 1]
+-> (57) w_D_A> = 0>
+-> (58) w_D_N> = qA'*Ay>
+-> (59) alf_D_A> = 0>
+-> (60) alf_D_N> = qA''*Ay>
+
+   (61) E.SetAngularVelocityAcceleration( A, wx*Ax> + wy*Ay> + wz*Az> )
+-> (62) w_E_A> = wx*Ax> + wy*Ay> + wz*Az>
+-> (63) w_E_N> = wx*Ax> + (wy+qA')*Ay> + wz*Az>
+-> (64) alf_E_A> = wx'*Ax> + wy'*Ay> + wz'*Az>
+-> (65) alf_E_N> = (wx'+wz*qA')*Ax> + (wy'+qA'')*Ay> + (wz'-wx*qA')*Az>
+
+   (66) % aleeper: Added kinematical diff eqs for the parameters 
+   (67) %          that define E's orientation in A.
+   (68) E.SetRotationMatrixODE(A, Euler, e0, e1, e2, e3)
+-> (69) E_A[1,1] = -1 + 2*e0^2 + 2*e1^2
+-> (70) E_A[1,2] = 2*e0*e3 + 2*e1*e2
+-> (71) E_A[1,3] = 2*e1*e3 - 2*e0*e2
+-> (72) E_A[2,1] = 2*e1*e2 - 2*e0*e3
+-> (73) E_A[2,2] = -1 + 2*e0^2 + 2*e2^2
+-> (74) E_A[2,3] = 2*e0*e1 + 2*e2*e3
+-> (75) E_A[3,1] = 2*e0*e2 + 2*e1*e3
+-> (76) E_A[3,2] = 2*e2*e3 - 2*e0*e1
+-> (77) E_A[3,3] = -1 + 2*e0^2 + 2*e3^2
+-> (78) e0' = -0.5*e1*(2*e1*e2*wy+2*e1*e3*wz+wx*(-1+2*e0^2+2*e1^2)) - 0.5*e2*(2
+        *e1*e2*wx+2*e2*e3*wz+wy*(-1+2*e0^2+2*e2^2)) - 0.5*e3*(2*e1*e3*wx+2*e2*
+        e3*wy+wz*(-1+2*e0^2+2*e3^2))
+
+-> (79) e1' = 0.5*e3*(wy+2*e0*e3*wx) + 0.5*e0*wx*(-1+2*e0^2+2*e1^2) - 0.5*e2*(
+        wz-2*e0*e2*wx)
+-> (80) e2' = 0.5*e1*(wz+2*e0*e1*wy) + 0.5*e0*wy*(-1+2*e0^2+2*e2^2) - 0.5*e3*(
+        wx-2*e0*e3*wy)
+-> (81) e3' = 0.5*e2*(wx+2*e0*e2*wz) + 0.5*e0*wz*(-1+2*e0^2+2*e3^2) - 0.5*e1*(
+        wy-2*e0*e1*wz)
+
+   (82) %-------------------------------------------------------
+   (83) %       Translational kinematics
+   (84) AB.Translate( No, h*Ay>  )
+-> (85) p_No_AB> = h*Ay>
+-> (86) v_AB_N> = 0>
+-> (87) a_AB_N> = 0>
+
+   (88) BC.Translate( AB, LB*Bx> )
+-> (89) p_AB_BC> = LB*Bx>
+-> (90) v_BC_N> = LB*qB'*By> - LB*cos(qB)*qA'*Bz>
+-> (91) a_BC_N> = -LB*cos(qB)*qA'^2*Ax> - LB*qB'^2*Bx> + LB*qB''*By> + LB*(2*
+        sin(qB)*qA'*qB'-cos(qB)*qA'')*Bz>
+
+   (92) CD.Translate( BC, LC*Cx> )
+-> (93) p_BC_CD> = LC*Cx>
+-> (94) v_CD_N> = LB*qB'*By> - LB*cos(qB)*qA'*Bz> - LC*qC'*Cy> - LC*cos(qC)*qA'
+        *Cz>
+-> (95) a_CD_N> = -(LB*cos(qB)+LC*cos(qC))*qA'^2*Ax> - LB*qB'^2*Bx> + LB*qB''*
+        By> + LB*(2*sin(qB)*qA'*qB'-cos(qB)*qA'')*Bz> - LC*qC'^2*Cx> - LC*qC''*
+        Cy> + LC*(2*sin(qC)*qA'*qC'-cos(qC)*qA'')*Cz>
+
+   (96) Ecm.Translate( CD, -r*Ay> )
+-> (97) p_CD_Ecm> = -r*Ay>
+-> (98) v_Ecm_N> = LB*qB'*By> - LB*cos(qB)*qA'*Bz> - LC*qC'*Cy> - LC*cos(qC)*
+        qA'*Cz>
+-> (99) a_Ecm_N> = -(LB*cos(qB)+LC*cos(qC))*qA'^2*Ax> - LB*qB'^2*Bx> + LB*qB''*
+        By> + LB*(2*sin(qB)*qA'*qB'-cos(qB)*qA'')*Bz> - LC*qC'^2*Cx> - LC*qC''*
+        Cy> + LC*(2*sin(qC)*qA'*qC'-cos(qC)*qA'')*Cz>
+
+   (100) EN.SetPositionVelocity( Ecm, -r*Ay>, E )
+-> (101) p_Ecm_EN> = -r*Ay>
+-> (102) v_EN_N> = r*wz*Ax> + LB*qB'*By> + (-r*wx-LB*cos(qB)*qA')*Bz> - LC*qC'*
+         Cy> - LC*cos(qC)*qA'*Cz>
+
+   (103) % aleeper: Need to define where the origin points are for
+   (104) %          purposes of animation
+   (105) Ao.setPosition(AB, 0>)          
+-> (106) p_AB_Ao> = 0>
+
+   (107) Bo.setPosition(AB, LB/2*Bx>)    
+-> (108) p_AB_Bo> = 0.5*LB*Bx>
+
+   (109) Co.setPosition(BC, LC/2*Cx>)    
+-> (110) p_BC_Co> = 0.5*LC*Cx>
+
+   (111) Do.setPosition(CD, 0>)          
+-> (112) p_CD_Do> = 0>
+
+   (113) Eo.setPosition(Ecm, 0>)         
+-> (114) p_Ecm_Eo> = 0>
+
+   (115) %-------------------------------------------------------
+   (116) %       Forces and torques
+   (117) EN.AddForce( Fx*Ax> + Fy*Ay> + Fz*Az> )
+-> (118) Force_EN> = Fx*Ax> + Fy*Ay> + Fz*Az>
+
+   (119) System.AddForceGravity( -g*Ny> )
+-> (120) Force_CD> = -g*m*Ny>
+-> (121) Force_Ecm> = -g*mE*Ny>
+
+   (122) A.AddTorque( N, TA*Ay> )
+-> (123) Torque_A_N> = TA*Ay>
+
+   (124) B.AddTorque( A, TB*Bz> )
+-> (125) Torque_B_A> = TB*Bz>
+
+   (126) D.AddTorque( N, TD*Cz> )    % Assumes cylindrical extension to D
+-> (127) Torque_D_N> = TD*Cz>
+
+   (128) %-------------------------------------------------------
+   (129) %       Equations of motion - via Kane's method.
+   (130) SetGeneralizedSpeeds( qA', qB', qC', wx, wy, wz )
+   (131) KaneEqns = System.GetDynamicsKane()
+-> (132) KaneEqns[1] = Fz*(LB*cos(qB)+LC*cos(qC)) + I*wy' + (I+m*(LB^2*cos(qB)^
+         2+LC^2*cos(qC)^2+2*LB*LC*cos(qB)*cos(qC))+mE*(LB^2*cos(qB)^2+LC^2*cos(
+         qC)^2+2*LB*LC*cos(qB)*cos(qC)))*qA'' - TA - 2*(m+mE)*qA'*(LB*LC*sin(
+         qB)*cos(qC)*qB'+LB*LC*sin(qC)*cos(qB)*qC'+LB^2*sin(qB)*cos(qB)*qB'+LC^
+         2*sin(qC)*cos(qC)*qC')
+
+-> (133) KaneEqns[2] = g*LB*m*cos(qB) + g*LB*mE*cos(qB) + LB*(Fx*sin(qB)-Fy*cos
+         (qB)) + LB*(m+mE)*(LC*sin(qB+qC)*qC'^2+sin(qB)*(LB*cos(qB)+LC*cos(qC))
+         *qA'^2) + LB^2*(m+mE)*qB'' - TB - LB*LC*(m+mE)*cos(qB+qC)*qC''
+
+-> (134) KaneEqns[3] = LC*(Fx*sin(qC)+Fy*cos(qC)+(m+mE)*(LB*sin(qB+qC)*qB'^2+
+         sin(qC)*(LB*cos(qB)+LC*cos(qC))*qA'^2)+LC*(m+mE)*qC''-g*m*cos(qC)-g*
+         mE*cos(qC)-LB*(m+mE)*cos(qB+qC)*qB'')
+
+-> (135) KaneEqns[4] = r*Fz + I*wz*qA' + I*wx'
+-> (136) KaneEqns[5] = I*(qA''+wy')
+-> (137) KaneEqns[6] = I*wz' - r*Fx - I*wx*qA'
+
+   (138) %-------------------------------------------------------
+   (139) %       Constraints and their derivatives
+   (140) ContactConstraint =  Dot( EN.GetPosition(No), Ay> )
+-> (141) ContactConstraint = h + LB*sin(qB) - 2*r - LC*sin(qC)
+
+   (142) RollingConstraint[1] = Dot( EN.GetVelocity(N), Ax> )
+-> (143) RollingConstraint[1] = r*wz - LB*sin(qB)*qB' - LC*sin(qC)*qC'
+
+   (144) RollingConstraint[2] = Dot( EN.GetVelocity(N), Az> )
+-> (145) RollingConstraint[2] = -r*wx - LB*cos(qB)*qA' - LC*cos(qC)*qA'
+
+   (146) %-------------------------------------------------------
+   (147) %       Append appropriate time-derivative of constraints.
+   (148) DtConstraint[1] = DtDt( ContactConstraint )
+-> (149) DtConstraint[1] = LC*(sin(qC)*qC'^2-cos(qC)*qC'') - LB*(sin(qB)*qB'^2-
+         cos(qB)*qB'')
+
+   (150) DtConstraint[2] = Dt( RollingConstraint[1] )
+-> (151) DtConstraint[2] = r*wz' - LB*cos(qB)*qB'*qB' - LC*cos(qC)*qC'*qC' - 
+         LB*sin(qB)*qB'' - LC*sin(qC)*qC''
+
+   (152) DtConstraint[3] = Dt( RollingConstraint[2] )
+-> (153) DtConstraint[3] = LB*sin(qB)*qB'*qA' + LC*sin(qC)*qC'*qA' - r*wx' - 
+         LB*cos(qB)*qA'' - LC*cos(qC)*qA''
+
+   (154) Zero = [ KaneEqns; DtConstraint ]
+-> (155) Zero[1] = Fz*(LB*cos(qB)+LC*cos(qC)) + I*wy' + (I+m*(LB^2*cos(qB)^2+
+         LC^2*cos(qC)^2+2*LB*LC*cos(qB)*cos(qC))+mE*(LB^2*cos(qB)^2+LC^2*cos(
+         qC)^2+2*LB*LC*cos(qB)*cos(qC)))*qA'' - TA - 2*(m+mE)*qA'*(LB*LC*sin(
+         qB)*cos(qC)*qB'+LB*LC*sin(qC)*cos(qB)*qC'+LB^2*sin(qB)*cos(qB)*qB'+LC^
+         2*sin(qC)*cos(qC)*qC')
+
+-> (156) Zero[2] = g*LB*m*cos(qB) + g*LB*mE*cos(qB) + LB*(Fx*sin(qB)-Fy*cos(qB)
+         ) + LB*(m+mE)*(LC*sin(qB+qC)*qC'^2+sin(qB)*(LB*cos(qB)+LC*cos(qC))*qA'
+         ^2) + LB^2*(m+mE)*qB'' - TB - LB*LC*(m+mE)*cos(qB+qC)*qC''
+
+-> (157) Zero[3] = LC*(Fx*sin(qC)+Fy*cos(qC)+(m+mE)*(LB*sin(qB+qC)*qB'^2+sin(
+         qC)*(LB*cos(qB)+LC*cos(qC))*qA'^2)+LC*(m+mE)*qC''-g*m*cos(qC)-g*mE*cos
+         (qC)-LB*(m+mE)*cos(qB+qC)*qB'')
+
+-> (158) Zero[4] = r*Fz + I*wz*qA' + I*wx'
+-> (159) Zero[5] = I*(qA''+wy')
+-> (160) Zero[6] = I*wz' - r*Fx - I*wx*qA'
+-> (161) Zero[7] = LC*(sin(qC)*qC'^2-cos(qC)*qC'') - LB*(sin(qB)*qB'^2-cos(qB)*
+         qB'')
+-> (162) Zero[8] = r*wz' - LB*cos(qB)*qB'*qB' - LC*cos(qC)*qC'*qC' - LB*sin(qB)
+         *qB'' - LC*sin(qC)*qC''
+-> (163) Zero[9] = LB*sin(qB)*qB'*qA' + LC*sin(qC)*qC'*qA' - r*wx' - LB*cos(qB)
+         *qA'' - LC*cos(qC)*qA''
+
+   (164) %--------------------------------------------------------------------
+   (165) %       Power, work, and energy with built-in functions
+   (166) KE = System.GetKineticEnergy()
+-> (167) KE = 0.5*I*(wx^2+wz^2+(wy+qA')^2) - 0.5*m*(2*LB*LC*cos(qB+qC)*qB'*qC'-
+         LB^2*qB'^2-LC^2*qC'^2-LB^2*cos(qB)^2*qA'^2-LC^2*cos(qC)^2*qA'^2-2*LB*
+         LC*cos(qB)*cos(qC)*qA'^2) - 0.5*mE*(2*LB*LC*cos(qB+qC)*qB'*qC'-LB^2*
+         qB'^2-LC^2*qC'^2-LB^2*cos(qB)^2*qA'^2-LC^2*cos(qC)^2*qA'^2-2*LB*LC*cos
+         (qB)*cos(qC)*qA'^2)
+
+   (168) PowerOfSystem = System.GetPower()
+-> (169) PowerOfSystem = r*Fx*wz + TA*qA' + TB*qB' + LB*Fy*cos(qB)*qB' - LB*Fx*
+         sin(qB)*qB' - LC*Fx*sin(qC)*qC' - LC*Fy*cos(qC)*qC' - LC*Fz*cos(qC)*
+         qA' - Fz*(r*wx+LB*cos(qB)*qA') - g*m*(LB*cos(qB)*qB'-LC*cos(qC)*qC')
+          - g*mE*(LB*cos(qB)*qB'-LC*cos(qC)*qC')
+
+   (170) Variable WorkOfSystem' = PowerOfSystem
+-> (171) WorkOfSystem' = PowerOfSystem
+
+   (172) TotalEnergyOfSystem = KE - WorkOfSystem
+-> (173) TotalEnergyOfSystem = KE - WorkOfSystem
+
+   (174) %--------------------------------------------------------------------
+   (175) %       Integration parameters, values for constants and initial values
+   (176) Input  tFinal = 16 sec, integStp = 0.02 sec, absError = 1.0E-08
+   (177) Input  g = 9.8 m/s^2,  m = 800 kg,  mE = 50 kg
+   (178) Input  r = 0.4 m,  h = 0.6 m, LB = 0.8 m,  LC = 1.2 m
+   (179) Input  qA = 0 deg,  qB = 20 deg,  qA' = 0 rad/sec,  qB' = 0 rad/sec
+   (180) Input  wx = 0 rad/sec,  wy = 0 rad/sec,  wz = 0 rad/sec
+   (181) % aleeper: Initial orientation arbitrarily set to "identity" quaternion.
+   (182) Input  e0 = 1 noUnits, e1 = 0 noUnits, e2 = 0 noUnits, e3 = 0 noUnits
+   (183) Input  WorkOfSystem = 0 Joules
+   (184) %--------------------------------------------------------------------
+   (185) %       Solve loop equations for initial value of qC
+   (186) SolveSetInput( ContactConstraint, qC = 20 degrees )
+
+->    %  INPUT has been assigned as follows:
+->    %   qC                        3.517118986585047       degrees
+
+   (187) SolveSetInput( Dt(ContactConstraint), qC' = 0 rad/sec )
+
+->    %  INPUT has been assigned as follows:
+->    %   qC'                       0                       rad/sec
+
+   (188) %--------------------------------------------------------------------
+   (189) %       Additional expressions to be output.
+   (190) Specified  x'', z''
+   (191) SetDt(  x = Dot( EN.GetPosition(No), Nx> )  )
+-> (192) x = cos(qA)*(LB*cos(qB)+LC*cos(qC))
+-> (193) x' = -sin(qA)*(LB*cos(qB)+LC*cos(qC))*qA' - cos(qA)*(LB*sin(qB)*qB'+
+         LC*sin(qC)*qC')
+-> (194) x'' = 2*sin(qA)*qA'*(LB*sin(qB)*qB'+LC*sin(qC)*qC') - cos(qA)*(LB*cos(
+         qB)+LC*cos(qC))*qA'^2 - sin(qA)*(LB*cos(qB)+LC*cos(qC))*qA'' - cos(qA)
+         *(LB*cos(qB)*qB'^2+LC*cos(qC)*qC'^2+LB*sin(qB)*qB''+LC*sin(qC)*qC'')
+
+   (195) SetDt(  z = Dot( EN.GetPosition(No), Nz> )  )
+-> (196) z = -sin(qA)*(LB*cos(qB)+LC*cos(qC))
+-> (197) z' = sin(qA)*(LB*sin(qB)*qB'+LC*sin(qC)*qC') - cos(qA)*(LB*cos(qB)+LC*
+         cos(qC))*qA'
+-> (198) z'' = sin(qA)*(LB*cos(qB)+LC*cos(qC))*qA'^2 + 2*cos(qA)*qA'*(LB*sin(
+         qB)*qB'+LC*sin(qC)*qC') + sin(qA)*(LB*cos(qB)*qB'^2+LC*cos(qC)*qC'^2+
+         LB*sin(qB)*qB''+LC*sin(qC)*qC'') - cos(qA)*(LB*cos(qB)+LC*cos(qC))*qA
+         ''
+
+   (199) pause
+   (200) %-------------------------------------------------------
+   (201) %       Alternate expression for v_Ecm_N> and PureRolling
+   (202) pAlternate> = (LB*cos(qB) + LC*cos(qC))*Ax>
+-> (203) pAlternate> = (LB*cos(qB)+LC*cos(qC))*Ax>
+
+   (204) vAlternate> = Dt( pAlternate>, N )
+-> (205) vAlternate> = (-LB*sin(qB)*qB'-LC*sin(qC)*qC')*Ax> - (LB*cos(qB)+LC*
+         cos(qC))*qA'*Az>
+
+   (206) PureRolling = Dot( E.GetAngularVelocity(N),  Ay> )
+-> (207) PureRolling = wy + qA'
+
+   (208) %--------------------------------------------------------------------
+   (209) %       Output quantities when ODE command is issued.
+   (210) OutputPlot  x m, z m
+   (211) OutputPlot  t sec, TotalEnergyOfSystem Joules
+   (212) Output      t sec, TA N*m, TB N*m
+   (213) %--------------------------------------------------------------------
+   (214) %       Computed-torque (feed-forward) control law 
+   (215) Specified  xDesired'', zDesired''
+   (216) xError = x - xDesired
+-> (217) xError = x - xDesired
+
+   (218) zError = z - zDesired
+-> (219) zError = z - zDesired
+
+   (220) Constant   zeta, Wn
+   (221) ComputedTorqueEqn[1] = DtDt(xError) + 2*zeta*Wn*Dt(xError) + Wn^2*xError
+-> (222) ComputedTorqueEqn[1] = Wn^2*xError + 2*Wn*zeta*(x'-xDesired') + x'' -
+         xDesired''
+
+   (223) ComputedTorqueEqn[2] = DtDt(zError) + 2*zeta*Wn*Dt(zError) + Wn^2*zError
+-> (224) ComputedTorqueEqn[2] = Wn^2*zError + 2*Wn*zeta*(z'-zDesired') + z'' -
+         zDesired''
+
+   (225) pause
+   (226) Solve( ComputedTorqueEqn, qA'', qB'' )   % Or just append to Zero matrix
+-> (227) qA'' = ((Wn^2*xError+2*Wn*zeta*(x'-xDesired')-xDesired'')*sin(qA)+(Wn^
+         2*zError+2*Wn*zeta*(z'-zDesired')-zDesired'')*cos(qA)+2*qA'*(LB*sin(
+         qB)*qB'+LC*sin(qC)*qC'))/(LB*cos(qB)+LC*cos(qC))
+
+-> (228) qB'' = ((Wn^2*xError+2*Wn*zeta*(x'-xDesired')-xDesired'')*cos(qA)-(Wn^
+         2*zError+2*Wn*zeta*(z'-zDesired')-zDesired'')*sin(qA)-LB*cos(qB)*qB'^2
+         -LC*cos(qC)*qC'^2-(LB*cos(qB)+LC*cos(qC))*qA'^2-LC*sin(qC)*qC'')/(LB*
+         sin(qB))
+
+   (229) Input  zeta = 1 noUnits,  Wn = 1 rad/sec
+   (230) %--------------------------------------------------------------------
+   (231) %       Desired motion for x and z is an ellipse with semi-diameters a and b
+   (232) Constant  tF, a+, b+
+   (233) %thetaEllipse  = Spline(Line, t, 0, tF, 0, 2*pi )
+   (234) thetaEllipse  = 2*pi*t/tF
+-> (235) thetaEllipse = 6.283185*t/tF
+
+   (236) radiusEllipse = sqrt(a^2*b^2/(a^2*sin(thetaEllipse)^2+b^2*cos(thetaEllipse)^2))
+-> (237) radiusEllipse = a*b/sqrt(a^2*sin(thetaEllipse)^2+b^2*cos(thetaEllipse)
+         ^2)
+
+   (238) stitch = 0.05*sin(40*thetaEllipse)
+-> (239) stitch = 0.05*sin(40*thetaEllipse)
+
+   (240) SetDt( xDesired = (radiusEllipse+stitch)*cos(thetaEllipse) )
+-> (241) xDesired = cos(thetaEllipse)*(radiusEllipse+stitch)
+-> (242) xDesired' = 6.283185*cos(thetaEllipse)*(2*cos(40*thetaEllipse)/tF-a*b*
+         (a^2-b^2)*sin(thetaEllipse)*cos(thetaEllipse)/(tF*(a^2*sin(thetaEllip
+         se)^2+b^2*cos(thetaEllipse)^2)^1.5)) - 6.283185*sin(thetaEllipse)*(ra
+         diusEllipse+stitch)/tF
+
+-> (243) xDesired'' = -39.47842*(cos(thetaEllipse)*(radiusEllipse+stitch)+2*sin
+         (thetaEllipse)*(2*cos(40*thetaEllipse)-a*b*(a^2-b^2)*sin(thetaEllipse)
+         *cos(thetaEllipse)/(a^2*sin(thetaEllipse)^2+b^2*cos(thetaEllipse)^2)^
+         1.5)+cos(thetaEllipse)*(80*sin(40*thetaEllipse)+a*b*(a^2-b^2)/(a^2*sin
+         (thetaEllipse)^2+b^2*cos(thetaEllipse)^2)^1.5-a*b*(a^2-b^2)*sin(theta
+         Ellipse)^2*(3*a^2-b^2-(a^2-b^2)*sin(thetaEllipse)^2)/(a^2*sin(thetaEl
+         lipse)^2+b^2*cos(thetaEllipse)^2)^2.5))/tF^2
+
+   (244) SetDt( zDesired = (radiusEllipse+stitch)*sin(thetaEllipse) )
+-> (245) zDesired = sin(thetaEllipse)*(radiusEllipse+stitch)
+-> (246) zDesired' = 6.283185*cos(thetaEllipse)*(radiusEllipse+stitch)/tF + 6.
+         283185*sin(thetaEllipse)*(2*cos(40*thetaEllipse)/tF-a*b*(a^2-b^2)*sin(
+         thetaEllipse)*cos(thetaEllipse)/(tF*(a^2*sin(thetaEllipse)^2+b^2*cos(
+         thetaEllipse)^2)^1.5))
+
+-> (247) zDesired'' = 39.47842*(2*cos(thetaEllipse)*(2*cos(40*thetaEllipse)-a*b
+         *(a^2-b^2)*sin(thetaEllipse)*cos(thetaEllipse)/(a^2*sin(thetaEllipse)^
+         2+b^2*cos(thetaEllipse)^2)^1.5)-sin(thetaEllipse)*(radiusEllipse+stit
+         ch)-sin(thetaEllipse)*(80*sin(40*thetaEllipse)+a*b*(a^2-b^2)/(a^2*sin(
+         thetaEllipse)^2+b^2*cos(thetaEllipse)^2)^1.5-a*b*(a^2-b^2)*sin(thetaE
+         llipse)^2*(3*a^2-b^2-(a^2-b^2)*sin(thetaEllipse)^2)/(a^2*sin(thetaEll
+         ipse)^2+b^2*cos(thetaEllipse)^2)^2.5))/tF^2
+
+   (248) Input tF = Input(tFinal) sec,  a=1.8 m,  b = 1.5 m
+   (249) %--------------------------------------------------------------------
+   (250) %       aleeper: Tell MG to output all the position vectors and
+   (251) %       rotation matrices for each body so we can animate the output.
+   (252) %       Note that the appended file numbers will be 4 to 8 because
+   (253) %       3 output sets were already defined above. 
+   (254) animate(N, No, A, B, C, D, E) 
+-> (255) P_No_Ao = [0; h; 0]
+-> (256) P_No_Bo = [0.5*LB*cos(qA)*cos(qB); h + 0.5*LB*sin(qB); -0.5*LB*sin(qA)
+         *cos(qB)]
+-> (257) N_B[1,1] = cos(qA)*cos(qB)
+-> (258) N_B[1,2] = -sin(qB)*cos(qA)
+-> (259) N_B[1,3] = sin(qA)
+-> (260) N_B[2,1] = sin(qB)
+-> (261) N_B[2,2] = cos(qB)
+-> (262) N_B[2,3] = 0
+-> (263) N_B[3,1] = -sin(qA)*cos(qB)
+-> (264) N_B[3,2] = sin(qA)*sin(qB)
+-> (265) N_B[3,3] = cos(qA)
+-> (266) P_No_Co[1] = 0.5*cos(qA)*(LC*cos(qC)+2*LB*cos(qB))
+-> (267) P_No_Co[2] = h + LB*sin(qB) - 0.5*LC*sin(qC)
+-> (268) P_No_Co[3] = -0.5*sin(qA)*(LC*cos(qC)+2*LB*cos(qB))
+-> (269) N_C[1,1] = cos(qA)*cos(qC)
+-> (270) N_C[1,2] = sin(qC)*cos(qA)
+-> (271) N_C[1,3] = sin(qA)
+-> (272) N_C[2,1] = -sin(qC)
+-> (273) N_C[2,2] = cos(qC)
+-> (274) N_C[2,3] = 0
+-> (275) N_C[3,1] = -sin(qA)*cos(qC)
+-> (276) N_C[3,2] = -sin(qA)*sin(qC)
+-> (277) N_C[3,3] = cos(qA)
+-> (278) P_No_Do[1] = cos(qA)*(LB*cos(qB)+LC*cos(qC))
+-> (279) P_No_Do[2] = h + LB*sin(qB) - LC*sin(qC)
+-> (280) P_No_Do[3] = -sin(qA)*(LB*cos(qB)+LC*cos(qC))
+-> (281) N_D = [cos(qA), 0, sin(qA); 0, 1, 0; -sin(qA), 0, cos(qA)]
+-> (282) P_No_Eo[1] = cos(qA)*(LB*cos(qB)+LC*cos(qC))
+-> (283) P_No_Eo[2] = h + LB*sin(qB) - r - LC*sin(qC)
+-> (284) P_No_Eo[3] = -sin(qA)*(LB*cos(qB)+LC*cos(qC))
+-> (285) N_E[1,1] = cos(qA)*(-1+2*e0^2+2*e1^2) - 2*sin(qA)*(e0*e2-e1*e3)
+-> (286) N_E[1,2] = 2*sin(qA)*(e0*e1+e2*e3) - 2*cos(qA)*(e0*e3-e1*e2)
+-> (287) N_E[1,3] = 2*cos(qA)*(e0*e2+e1*e3) + sin(qA)*(-1+2*e0^2+2*e3^2)
+-> (288) N_E[2,1] = 2*e0*e3 + 2*e1*e2
+-> (289) N_E[2,2] = -1 + 2*e0^2 + 2*e2^2
+-> (290) N_E[2,3] = 2*e2*e3 - 2*e0*e1
+-> (291) N_E[3,1] = -2*cos(qA)*(e0*e2-e1*e3) - sin(qA)*(-1+2*e0^2+2*e1^2)
+-> (292) N_E[3,2] = 2*cos(qA)*(e0*e1+e2*e3) + 2*sin(qA)*(e0*e3-e1*e2)
+-> (293) N_E[3,3] = cos(qA)*(-1+2*e0^2+2*e3^2) - 2*sin(qA)*(e0*e2+e1*e3)
+
+   (294) %--------------------------------------------------------------------
+   (295) %       Solve ODEs and plot results (or write MATLAB, C, or FORTRAN)
+   (296) ODE( Zero, TA, TB, qC'', wx', wy', wz', Fx, Fy, Fz ) RollingSphereXZControlViaKane
+   (297) %-------------------------------------------------------
+   (298) %       Record input together with program responses

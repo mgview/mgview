@@ -1,0 +1,37 @@
+File: EulerParameters3DOrientation.in
+----------------------------------------------------------+------------------
+Description          Quantity             Units           | Value
+----------------------------------------------------------|------------------
+Constant             b                    UNITS           |  0.5
+Constant             Ixx                  kg*m^2          |  1
+Constant             Iyy                  kg*m^2          |  2
+Constant             Izz                  kg*m^2          |  3
+
+Initial Value        e0                   UNITS           |  1
+Initial Value        e1                   UNITS           |  0
+Initial Value        e2                   UNITS           |  0
+Initial Value        e3                   UNITS           |  0
+Initial Value        WorkSystem           Joules          |  0
+Initial Value        wx                   rad/sec         |  0.2
+Initial Value        wy                   rad/sec         |  7.0
+Initial Value        wz                   rad/sec         |  0.2
+
+Initial Time         tInitial             second          |  0.0
+Final Time           tFinal               sec             |  8
+Integration Step     integStp             sec             |  0.01
+Print-Integer        printIntScreen       0 or +integer   |  1
+Print-Integer        printIntFile         0 or +integer   |  1
+Absolute Error       absError                             |  1.0E-7
+Relative Error       relError                             |  1.0E-7
+----------------------------------------------------------+------------------
+Note: Use spaces not tabs while editing this file.
+
+      printInt * integStp  is the time-interval for writing of output.
+              printInt = 0 suppresses writing output.
+
+      absError should be set equal to 10^(-8)*Xsmall, where Xsmall is the estimated
+               smallest maximum absolute value of the variables being integrated.
+
+      relError should be set equal to 10^(-d), where d is no less than the desired
+               number of significant digits of numerical integration results.
+-----------------------------------------------------------------------------

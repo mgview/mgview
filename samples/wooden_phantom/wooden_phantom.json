@@ -1,0 +1,118 @@
+{
+    "name" : "Wooden Phantom",
+    "newtonianFrame"    : "N",
+    "sceneOrigin"       : "No",
+    "showAxes"          : true,
+    "cameraUp"          : [0, 0, 1],
+    "cameraEye"         : [1, 0.3, 0.3],
+    "cameraFocus"       : [0.2, 0, 0.15],
+    "cameraParentFrame" : "N",
+    "speedFactor"       : 1.0,
+    "workspaceSize"     : 0.3,
+
+    "simulationData" : ["wooden_phantom.2:6"],
+    "simulationSettings" : "wooden_phantom.in",
+
+    "objects" : {
+        "N" :   {
+            "type" : "frame",
+            "showBasis" : false,
+            "showLabel" : false,
+            "visual": {
+                "support" : {
+                    "type"      : "box",
+                    "size"      : { "x": 0.25, "y": 0.25, "z": 0.02},
+                    "origin"    : { "xyz" : [0, 0, -0.01], "rpy" : [0, 0, 0] },
+                    "material"  : "BLACK"
+                }
+            }
+        },
+        "A" :   {
+            "type" : "frame",
+            "showBasis" : false,
+            "showLabel" : false,
+            "visual": {
+                "link" : {
+                    "type"      : "mesh",
+                    "path"      : "LinkA.obj",
+                    "material"  : {
+                        "name" : "brown",
+                        "color" : {"r": 0.6, "g": 0.3, "b": 0.0, "a": 1.0}
+                    }
+                }
+            }
+        },
+        "B" :   {
+            "type" : "frame",
+            "showBasis" : false,
+            "showLabel" : false,
+            "visual": {
+                "link" : {
+                    "type"      : "mesh",
+                    "path"      : "LinkB.obj",
+                    "material"  : {
+                        "name" : "brown",
+                        "color" : {"r": 0.6, "g": 0.3, "b": 0.0, "a": 1.0}
+                    }
+                }
+            }
+        },
+        "C" :   {
+            "type" : "frame",
+            "showBasis" : false,
+            "showLabel" : false,
+            "visual": {
+                "link" : {
+                    "type"      : "mesh",
+                    "path"      : "LinkC.obj",
+                    "material"  : {
+                        "name" : "brown",
+                        "color" : {"r": 0.6, "g": 0.3, "b": 0.0, "a": 1.0}
+                    }
+                }
+            }
+        },
+        "Q" :   {
+            "type" : "point",
+            "rotationFrame" : "C",
+            "showBasis" : false,
+            "showLabel" : true,
+            "visual": {
+                "end-effector" : {
+                    "type"      : "sphere",
+                    "radius"    : 0.01,
+                    "material"  : "RED"
+                }
+            }
+        },
+        "P" :   {
+            "type" : "point",
+            "showBasis" : false,
+            "showLabel" : true,
+            "visual": {
+                "goal_point" : {
+                    "type"      : "sphere",
+                    "radius"    : 0.01,
+                    "material"  : "GREEN"
+                }
+            }
+        }
+    },
+
+
+    "spans" : {
+        "virtual_spring" :   {
+            "type"      : "cable",
+            "point1"    : "Q",
+            "point2"    : "P",
+            "showLabel" : false,
+            "visual": {
+                "virtual_spring": {
+                    "thickness" : 1.0,
+                    "material"  : "RED"
+                }
+            }
+        }
+    }
+
+}

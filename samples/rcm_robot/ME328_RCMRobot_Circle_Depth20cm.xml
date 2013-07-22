@@ -1,0 +1,168 @@
+<?xml version="1.0"?>
+<scene  name="RCMRobot"
+        up="0 0 1"
+        newtonion_frame="N"
+        workspace_size="1"
+        show_axes="false"
+        scene_origin="No"
+        camera_eye_position="0.3 2.5 0.1"
+        camera_focus_position="0.3 0 0.1"
+        >
+
+    <simulation_file name="ME328_RCMRobot_Circle_Depth20cm/Link.1:6" />
+    <simulation_settings name="ME328_RCMRobot_Circle_Depth20cm/Link.in" />
+
+    <frame name="B" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder radius="0.02" length="0.5" >
+                    <origin rpy="1.5708 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_SILVER" />
+                </cylinder>
+				<sphere radius="0.02">
+                    <origin rpy="0 0 0 " xyz="0 0 -0.25"/>
+                    <material name="SHINY_SILVER" />
+                </sphere> 
+            </geometry>
+        </visual>
+    </frame>
+
+    <frame name="C" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder radius="0.02" length="0.5" >
+                    <origin rpy="0 0 1.5708" xyz="0 0 0 "/>
+                    <material name="SHINY_SILVER" />
+                </cylinder>
+				<sphere radius="0.025">
+                    <origin rpy="0 0 0 " xyz="-0.25 0 0"/>
+                    <material name="SHINY_SILVER" />
+                </sphere>               
+            </geometry>
+        </visual>
+    </frame>
+
+    <frame name="D" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder radius="0.02" length="0.65" >
+                    <origin rpy="1.5708 0 0 " xyz="0 0 0.075 "/>
+                    <material name="SHINY_BLACK" />
+                </cylinder>
+				<cylinder radius="0.03" length="0.02" >
+                    <origin rpy="1.5708 0 0 " xyz="0 0 0.4 "/>
+                    <material name="SHINY_BLACK" />
+                </cylinder>
+				<cylinder radius="0.03" length="0.2" >
+                    <origin rpy="1.5708 0 0 " xyz="0 0 0.2"/>
+                    <material name="SHINY_SILVER" />
+                </cylinder> 			
+            </geometry>
+        </visual>
+    </frame>
+	
+    <frame name="E" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder radius="0.01" length="0.5" >
+                    <origin rpy="1.5708 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_SILVER" />
+                </cylinder>                
+            </geometry>
+        </visual>
+    </frame>
+	
+	<frame name="F" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder radius="0.015" length="0.5" >
+                    <origin rpy="1.5708 0 0 " xyz="0 0 0"/>
+                    <material name="SHINY_SILVER" />
+                </cylinder>
+				<sphere radius="0.015">
+                    <origin rpy="0 0 0 " xyz="0 0 0.25"/>
+                    <material name="SHINY_SILVER" />
+                </sphere>     
+				<sphere radius="0.015">
+                    <origin rpy="0 0 0 " xyz="0 0 -0.25"/>
+                    <material name="SHINY_SILVER" />
+                </sphere> 				
+            </geometry>
+        </visual>
+    </frame>
+	
+	<frame name="G" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder radius="0.015" length="0.5" >
+                    <origin rpy="0 0 1.5708" xyz="0 0 0 "/>
+                    <material name="SHINY_SILVER" />
+                </cylinder>
+				<sphere radius="0.015">
+                    <origin rpy="0 0 0 " xyz="0.25 0 0"/>
+                    <material name="SHINY_SILVER" />
+                </sphere> 
+				<sphere radius="0.015">
+                    <origin rpy="0 0 0 " xyz="-0.25 0 0"/>
+                    <material name="SHINY_SILVER" />
+                </sphere>                 
+            </geometry>
+        </visual>
+    </frame>
+	
+    <!-- You can create any number of decorative "ground" links. -->
+	<frame name="bodyWall" draw_basis="false">
+        <visual>
+            <geometry>
+                <box size="0.175 0.3 0.005" >
+                    <origin rpy="0 0 0 " xyz="0.6125 0 0 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+						<color rgb="0.8 0.5 0.3" />
+					</material>
+                </box>
+				<box size="0.175 0.3 0.005" >
+                    <origin rpy="0 0 0 " xyz="0.3875 0 0 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+						<color rgb="0.8 0.5 0.3" />
+					</material>
+                </box>
+				<box size="0.05 0.125 0.005" >
+                    <origin rpy="0 0 0 " xyz="0.5 0.0875 0 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+						<color rgb="0.8 0.5 0.3" />
+					</material>
+                </box>
+				<box size="0.05 0.125 0.005" >
+                    <origin rpy="0 0 0 " xyz="0.5 -0.0875 0 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+						<color rgb="0.8 0.5 0.3" />
+					</material>
+                </box>
+				<box size="0.2 0.15 0.1" >
+                    <origin rpy="0 0 0 " xyz="0.05 0 -0.05 "/>
+                    <material name="SHINY_BLACK" />
+                </box>
+				<cylinder radius="0.04" length="0.2" >
+                    <origin rpy="1.5708 0 0" xyz="0.07 0 -0.2 "/>
+                    <material name="SHINY_SILVER" />
+                </cylinder>
+				<box size="0.8 0.4 0.05" >
+                    <origin rpy="0 0 0 " xyz="0.4 0 -0.25 "/>
+                    <material name="SHINY_BLACK" />
+                </box>
+
+                <!-- The circle -->
+				<cylinder radius="0.21" length="0.01" segments_radius="24" >
+                    <origin rpy="1.5708 0 0" xyz="0.5 0 -0.2"/>
+                    <material name="SHINY_RED" />
+                </cylinder>
+				<cylinder radius="0.19" length="0.015" segments_radius="24">
+                    <origin rpy="1.5708 0 0" xyz="0.5 0 -0.2"/>
+                    <material name="SHINY_BLACK" />
+                </cylinder>
+
+            </geometry>
+        </visual>
+    </frame>
+
+</scene>

@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>MGView</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="bootstrap/css/bootstrap.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+        }
+    </style>
+    <link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="brand" href="#">MGView</a>
+            <div class="">
+                <ul class="nav">
+                    <li><a href="index.html">Home</a></li>
+                    <li class="active"><a href="Examples.html">Examples</a></li>
+                    <li><a href="Documentation.html">Documentation</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <h1> Examples </h1>
+
+    <h3>Basic Examples</h3>
+    <ul>
+        <li><a href="MGView.html?path=samples/particle_pendulum/particle_pendulum.json&load">
+            Classic Particle Pendulum</a>
+            <!--(<a href="MGView.html?path=samples/particle_pendulum/particle_pendulum_empty.json&load">Empty</a>)-->
+        </li>
+        <li>'Babyboot' Pendulum
+            <ul>
+                <li>
+                    <a href="MGView.html?path=samples/babyboot/babyboot_stable.json&load">Stable Initial Conditions</a>
+                    <!--(<a href="MGView.html?path=samples/babyboot/babyboot_stable_empty.json&load">Empty</a>)-->
+                </li>
+                <li>
+                    <a href="MGView.html?path=samples/babyboot/babyboot_chaotic.json&load">Chaotic Initial Conditions</a>
+                    <!--(<a href="MGView.html?path=samples/babyboot/babyboot_chaotic_empty.json&load">Empty</a>)-->
+                </li>
+            </ul>
+        </li>
+        <li>Fourbar Linkage
+            <ul>
+                <li><a href="MGView.html?path=samples/fourbar/fourbar.json&load">Correct initial conditions</a>
+                    <!--(<a href="MGView.html?path=samples/fourbar/fourbar_empty.json&load">Empty</a>)-->
+                </li>
+                <li><a href="MGView.html?path=samples/fourbar/fourbar_constraint_stabilization.json&load">
+                    Bad Initial Conditions Corrected with Constraint Stabilization</a>
+                    <!--(<a href="MGView.html?path=samples/fourbar/fourbar_constraint_stabilization_empty.json&load">Empty</a>)-->
+                </li>
+            </ul>
+        </li>
+
+        <!--<li><a href="MGView.html?path=samples/gyro/gyro_top.json&load"> Gyro - Top </a> </li>-->
+
+        <!--<li><a href="MGView.html?path=samples/double_pendulum_cart/double_pendulum_on_cart.json&load"> Driven Double-Pendulum on a Driven Cart </a> </li>-->
+
+        <li><a href="MGView.html?path=samples/spinning_book/EulerParameters3DOrientation.json&load">
+            "Spinning Book" </a> -
+            3D Orientation of a Rigid Body with Viscous Damping, courtesy of John Alabi.
+        </li>
+
+
+    <li>Robot Arm Positioning a Heavy Ball
+    <ul>
+        <li><a href="MGView.html?path=samples/robot_arm/circle_step/robot_arm.json&load"  >
+            Circular Motion - Step Response</a> </li>
+        <li><a href="MGView.html?path=samples/robot_arm/circle_linear/robot_arm.json&load">
+            Circular Motion - Linear Trajectory</a> </li>
+        <li><a href="MGView.html?path=samples/robot_arm/circle_spline/robot_arm.json&load">
+            Circular Motion - Smooth Trajectory</a> </li>
+        <li><a href="MGView.html?path=samples/robot_arm/flex_step/robot_arm.json&load"    >
+            Elbow Flexing - Step Response</a> </li>
+        <li><a href="MGView.html?path=samples/robot_arm/flex_spline/robot_arm.json&load"  >
+            Elbow Flexing - Smooth Trajectory</a> </li>
+    </ul>
+        </li>
+
+    </ul>
+
+    <h3>Mesh Loading (for models from a CAD program)</h3>
+    <ul>
+        <li><a href="MGView.html?path=samples/wooden_phantom/wooden_phantom.json&load"> Wooden Haptic Device</a>
+            <!--(<a href="MGView.html?path=samples/wooden_phantom/wooden_phantom_empty.json&load">Empty</a>)-->
+            - This example loads .obj files. Wooden haptic device designed by Jonas Forsslund.</li>
+        <li><a href="MGView.html?path=samples/particle_in_slot/slot.json&load">
+            Particle with Spring-Damper in Spinning Disk</a> -
+            This example loads a .STL file, which is the export format from Solidworks.</li>
+    </ul>
+
+
+
+    <h3>Examples provided Courtesy of ME331b MIPSI Project Teams </h3>
+    <ul>
+        <li>
+            <a href="MGView.html?path=samples/ball_in_tube/ball_in_tube.json&load"  >Spiraling Up</a>
+            - A ball rolling inside a spherical tube. Courtesy of Ying Zhao and Sammy Shad.
+        </li>
+        <!--<li>-->
+            <!--<a href="MGView.html?path=samples/skycam/SkyCamFixed.json&load"  >SkyCam</a>-->
+            <!--- A pan/tilt camera following a football. Courtesy of John Alabi et. al.-->
+        <!--</li>-->
+    </ul>
+
+    <!--<h3>Remote Center of Motion Robot (example courtesy of Fidel Hernandez)            </h3>-->
+    <!--<ul>-->
+        <!--<li><a href="MGView.html?path=samples/rcm_robot/ME328_RCMRobot_Homogeneous.json&load"> Homegeneous Response </a> </li>-->
+        <!--<li><a href="MGView.html?path=samples/rcm_robot/ME328_RCMRobot_Circle_Depth10cm.json&load"> Tracing a circle - 10cm depth </a> </li>-->
+        <!--<li><a href="MGView.html?path=samples/rcm_robot/ME328_RCMRobot_Circle_Depth20cm.json&load"> Tracing a circle - 20cm depth </a> </li>-->
+        <!--<li><a href="MGView.html?path=samples/rcm_robot/ME328_RCMRobot_Palpating.json&load"> Palpating </a> </li>-->
+    <!--</ul>-->
+
+</div> <!-- /container -->
+
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<Scene Name="Particle Pendulum"
+       AnimationFrame="N"
+       AnimationOrigin="No"
+       workspace_size="0.5"
+       CameraUpVector="0 1 0"
+       CameraEyePoint="0 -0.25 2"
+       CameraFocusPoint="0 -0.25 0"
+
+       time_step="0.02"
+	>
+
+    <SimulationFile Name="particle_pendulum.1" />
+    <SimulationFile Name="particle_pendulum.2" />
+    <SimulationFile Name="particle_pendulum.3" />
+
+    <!-- RigidBody would also look for a cm point in the simulation files. -->
+    <RigidFrame Name="B" ShowBasis="true">
+        <VisualGeometry>
+            <Cylinder Length="0.5" Radius="0.01" >
+                <Translate  Parent="B"  XYZ="0 -0.25 0" />
+                <Rotate     Parent="B"  RollPitchYaw="0 0 0"/>
+                <Material Name="SHINY_BLUE" />
+            </Cylinder>
+        </VisualGeometry>
+    </RigidFrame>
+
+	<!-- Here we include the 'UseRotationOfFrame' argument so that the sphere
+		 representing the particle will appear fixed on B rather than appearing
+		 to pivot on the end point. -->
+    <Point Name="Q" ShowBasis="false" >
+        <VisualGeometry>
+            <Sphere Radius="0.05" >
+                <Translate  Parent="Q"  XYZ="0 0 0" />
+                <Rotate     Parent="B"  RollPitchYaw="0 0 0"/>
+                <Material Name="SHINY_RED" />
+            </Sphere>
+        </VisualGeometry>
+    </Point>
+    
+    <!-- You can create any number of decorative "ground" links. -->
+	<RigidFrame Name="ground" ShowBasis="false">
+        <VisualGeometry>
+            <Box Size="1 0.02 1" >
+                <Translate  Parent="N"  XYZ="0 -0.65 0" />
+                <Rotate     Parent="N"  RollPitchYaw="0 0 0"/>
+                <Material Name="MY_CUSTOM_BROWN" >
+                    <Color RGB="0.6 0.3 0" />
+                </Material>
+            </Box>
+        </VisualGeometry>
+    </RigidFrame>
+
+</Scene>

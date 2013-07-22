@@ -1,0 +1,101 @@
+% MIPSI - Step 1 - Football Projectile Motion
+% file FixedCamera_FeedForward_Animation.txt
+%--------------------------------------------------------------
+specified xfb'' , yfb'' , zfb'' %Coordinates of the Football (Q)
+variable D'' % Distance from Camera cm to Football
+variable qa'' , qb'' %Pan and Tilt angles of camera
+variable qa_desired'' , qb_desired'' %Desired Pan and Tilt Angles
+variable TA %Torque on Platform A in ny> direction
+variable TB %Torque on Camera B in -ay> direction
+constant g %Local Gravity
+constant mA , IzzA %Mass , Moment of Platform A
+constant mB , lb , hb , wb%Mass and Dimensions of Camera B
+constant IxxB , IyyB , IzzB %Moments of Camera B
+constant vxo , vyo , vzo %Initial Velocities of the Football
+constant vAo %Velocity of platform A in nx>
+constant xA , yA , zA %Position measures of the platform in ny> and nz>
+constant zAB %Distance from Acm to Bcm in -nz>
+zAB = 24*ConvertUnits( inch, m )
+
+constant zeta , wn %For Feed-Forward Control
+setgeneralizedspeed(qa' , qb')
+%--------------------------------------------------------------
+NewtonianFrame N
+RigidBody A %Platform
+RigidBody  B %Camera
+RigidFrame E , F %Frames that will track the ball to give us qa_desired , qb_desired
+Point Q() %Football
+A.setMass( mA )
+A.setInertia(Acm , 0 , 0 , IzzA)
+B.setMass( mB )
+%IxxB = 1/12*mB*(wB^2 + hB^2)
+%IyyB = 1/12*mB*(lB^2 + hB^2)
+%IzzB = 1/12*mB*(lB^2 + wB^2)
+B.setInertia(Bcm , IxxB , IyyB , IzzB)
+%--------------------------------------------------------------
+Q.SetPositionVelocity(No , xfb*Nx> + yfb*Ny> + zfb*Nz>)
+%--------------------------------------------------------------
+% Velocity Profiles for the Football in Flight
+setDt( xfb' = vxo )
+setDt( yfb' = vyo )
+setDt( zfb' = vzo - g*t )
+%--------------------------------------------------------------
+A.RotateZ(N , qa)
+E.RotateZ(N , qa_desired)
+B.RotateNegativeY(A , qb)
+F.RotateNegativeY(E , qb_desired)
+
+Acm.SetPositionVelocity(No , xA*nx> + yA*ny> + zA*nz>)
+Ao.SetPosition(Acm, 0> )
+Eo.SetPositionVelocity(No , xA*nx> + yA*ny> + zA*nz>)
+Bcm.SetPositionVelocity(Acm , -zAB*nz>)
+Bo.SetPosition( Bcm, 0> )
+Fo.SetPositionVelocity(Acm , -zAB*nz>)
+
+System.AddForceGravity(-g*ny>)
+A.AddTorque( TA*az> )
+B.AddTorque( A , -TB*ay> )
+%--------------------------------------------------------------
+Kane = system.GetDynamicsKane()
+%--------------------------------------------------------------
+Loop> = Fo.GetPosition(No) + D*Fx> - Q.GetPosition(No)
+input xfb = 0 m , yfb = 22.8 m , zfb = 2 m 
+input xA = 5 m , yA = 0 m , zA = 5 m
+input vxo = 27.23 m/s , vyo = -7.296 m/s , vzo = 10.26 m/s
+input vAo = 15 m/s , g = 9.8 m/s^2 , t = 0 s
+Loop[1] = Dot(Loop> , nx>)
+Loop[2] = Dot(Loop> , ny>)
+Loop[3] = Dot(Loop> , nz>)
+solveSetInput( Loop , qa_desired = 80 deg , qb_desired = -10 deg , D = 22 m )
+solveSetInput( Dt(Loop) , qa_desired' = 5 deg/sec , qb_desired' = 1 deg/sec , D' = 2 m/s)
+Zero =  DtDt( Loop )
+%----------------------------------------------------------------
+specified qa_error'' , qb_error''
+setDt( qa_error = qa_desired - qa )
+setDt( qb_error = qb_desired - qb )
+TorqueControl[1] = qa_error'' + 2*zeta*wn*qa_error' + wn^2*qa_error
+TorqueControl[2] = qb_error'' + 2*zeta*wn*qb_error' + wn^2*qb_error
+%---------------------------------------------------------------
+AllEqns = [Kane ; Zero ; TorqueControl]
+%--------------------------------------------------------------- 
+KE = System.GetKineticEnergy()
+specified workA' , workB'
+workA' = Dot( TA*az> , A.GetAngularVelocity(N) )
+workB' = Dot( -TB*ay> , B.GetAngularVelocity(N) )
+EnergyConstant = KE - (workA + workB)
+%----------------------------------------------------------------
+input qa = 0 deg , qa' = 0 deg/sec , qb = 0 deg , qb' = 0 deg/sec
+input zeta = .7 noUnits , wn = 10 rad/sec
+input mA = 10 kg , IzzA = .5 kg*m^2 , workA = 0 J , workB = 0 J
+input mB = 4 kg , IxxB = .05 kg*m^2 , IyyB = .1 kg*m^2 , IzzB = .15 kg*m^2
+input tFinal = 2.1 sec , integStp = .005 , absError = 1e-7
+output t s, xfb m, yfb m , zfb m , qa deg , qb deg , TA N*m , TB N*m , qa_desired deg , qb_desired deg , EnergyConstant J
+%-------------------------------------------------------------------------------
+%       Tell MG to output all the position vectors and
+%       rotation matrices for each body so one can animate the output.
+Animate( N, No, A, B, E, F, Q )
+%--------------------------------------------------------------
+ODE(AllEqns , qa'', qb'' , qa_desired'' , qb_desired'' , D'' , TA , TB) FixedCamera_FeedForward_Animation.c
+ODE(AllEqns , qa'', qb'' , qa_desired'' , qb_desired'' , D'' , TA , TB) FixedCamera_FeedForward_Animation.m
+save FixedCamera_FeedForward_Animation.all
+quit

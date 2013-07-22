@@ -1,0 +1,272 @@
+{
+    "name": "fourbar",
+    "newtonianFrame": "N",
+    "sceneOrigin": "Na",
+    "showAxes": true,
+    "cameraUp": [
+        -1,
+        0,
+        0
+    ],
+    "cameraEye": [
+        1,
+        1,
+        7
+    ],
+    "cameraFocus": [
+        1,
+        1,
+        0
+    ],
+    "cameraParentFrame": "N",
+    "speedFactor": 1,
+    "workspaceSize": 2,
+    "simulationData": [
+        "normal/fourbar.1:3"
+    ],
+    "simulationSettings": "normal/fourbar.in",
+    "objects": {
+        "N": {
+            "type": "frame",
+            "showBasis": false,
+            "showLabel": false,
+            "visual": {
+                "ground_box": {
+                    "type": "box",
+                    "size": {
+                        "x": 0.02,
+                        "y": 2,
+                        "z": 2
+                    },
+                    "position": {
+                        "x": 2.5,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name" : "brown",
+                        "color" : {"r": 0.6, "g": 0.3, "b": 0.0, "a": 1.0}
+                    }
+                },
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "N",
+                    "scale": 0.25,
+                    "position": {
+                        "x": -0.1,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 1.5708
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.5,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                }
+            }
+        },
+        "A": {
+            "type": "frame",
+            "showBasis": false,
+            "showLabel": false,
+            "visual": {
+                "bar": {
+                    "type": "box",
+                    "size": {
+                        "x": 1,
+                        "y": 0.1,
+                        "z": 0.1
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "RED"
+                },
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "A",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0.16666666666666666,
+                        "y": 0.0625,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": false,
+                    "type": "basis",
+                    "scale": 0.5,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                }
+            }
+        },
+        "B": {
+            "type": "frame",
+            "showBasis": false,
+            "showLabel": false,
+            "visual": {
+                "bar": {
+                    "type": "box",
+                    "size": {
+                        "x": 2,
+                        "y": 0.1,
+                        "z": 0.1
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "GREEN"
+                },
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "B",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0.16666666666666666,
+                        "y": 0.0625,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": false,
+                    "type": "basis",
+                    "scale": 0.5,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                }
+            }
+        },
+        "C": {
+            "type": "frame",
+            "showBasis": false,
+            "showLabel": false,
+            "visual": {
+                "bar": {
+                    "type": "box",
+                    "size": {
+                        "x": 2,
+                        "y": 0.1,
+                        "z": 0.1
+                    },
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name" : "blue",
+                        "color" : {"r": 0, "g": 0.7, "b": 1.0, "a": 1.0}
+                    }
+                },
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "C",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0.16666666666666666,
+                        "y": 0.0625,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": false,
+                    "type": "basis",
+                    "scale": 0.5,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                }
+            }
+        }
+    }
+}

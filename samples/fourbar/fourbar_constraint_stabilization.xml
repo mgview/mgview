@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<scene  name="mechanism1"
+        up="-1 0 0"
+        newtonion_frame="N"
+        workspace_size="2.0"
+        scene_origin="Na"
+        camera_eye_position="1 1 7"
+        camera_focus_position="1 1 0"
+        camera_fixed_frame="N"
+        >
+
+    <!-- You can define any number of custom colors, 
+         either in advance or within the material tag of a link. -->    
+    <material name="MY_CUSTOM_BLUE">
+        <color rgb="0 0.7 1.0" />
+    </material>
+
+    <simulation_file name="constraint_stabilization/fourbar.1:5" />
+    <simulation_settings name="constraint_stabilization/fourbar.in" />
+
+    <frame name="A" draw_basis="false">
+        <visual>
+            <geometry>
+                <box size="1 0.1 0.1" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_RED" />
+                </box>
+
+            </geometry>
+        </visual>
+    </frame>
+
+    <frame name="B" draw_basis="false">
+        <visual>
+            <geometry>
+                <box size="2 0.1 0.1" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_GREEN" />
+                </box>
+            </geometry>
+
+        </visual>
+    </frame>
+
+    <frame name="C" draw_basis="false">
+        <visual>
+            <geometry>
+                <box size="2 0.1 0.1" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>
+                    <material name="MY_CUSTOM_BLUE" />
+                </box>
+            </geometry>
+
+        </visual>
+    </frame>
+
+    <span name="test" type="cable" point1="Bc" point2="Cb">
+        <material name="SHINY_RED" />
+    </span>
+
+    <!-- You can create any number of decorative "ground" links. -->
+    <frame name="N" draw_basis="false">
+        <visual>
+            <geometry>
+                <box size="0.02 2 2" >
+                    <origin rpy="0 0 0 " xyz="2.5 0 0 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+                        <color rgb="0.6 0.3 0" />
+                    </material>
+                </box>
+            </geometry>
+        </visual>
+    </frame>
+
+</scene>

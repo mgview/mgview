@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<scene  name="RCMRobot"
+        up="0 0 1"
+        newtonion_frame="N"
+        workspace_size="1.0"
+        scene_origin="No"
+        camera_eye_position="0.3 3 0.3"
+        camera_focus_position="0.3 0 0.3"
+        >
+
+    <!-- You can define any number of custom colors, 
+         either in advance or within the material tag of a link. -->
+    <material name="MY_CUSTOM_BLUE">
+        <color rgb="0 0.7 1.0" />
+    </material>
+
+    <simulation_file name="ME328Homework3.1:4" />
+    <simulation_settings name="ME328Homework3.in" />
+
+    <frame name="B" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder radius="0.03" length="0.5" >
+                    <origin rpy="1.5708 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_BLACK" />
+                </cylinder>
+				<sphere radius="0.03">
+                    <origin rpy="0 0 0 " xyz="0 0 -0.25"/>
+                    <material name="SHINY_BLACK" />
+                </sphere>                
+            </geometry>
+        </visual>
+    </frame>
+
+    <frame name="C" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder radius="0.03" length="0.5" >
+                    <origin rpy="0 0 1.5708" xyz="0 0 0 "/>
+                    <material name="SHINY_BLACK" />
+                </cylinder>
+				<sphere radius="0.035">
+                    <origin rpy="0 0 0 " xyz="0.25 0 0"/>
+                    <material name="SHINY_BLACK" />
+                </sphere> 
+				<sphere radius="0.035">
+                    <origin rpy="0 0 0 " xyz="-0.25 0 0"/>
+                    <material name="SHINY_BLACK" />
+                </sphere>                 
+            </geometry>
+        </visual>
+    </frame>
+
+    <frame name="D" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder radius="0.03" length="0.5" >
+                    <origin rpy="1.5708 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_BLACK" />
+                </cylinder>
+                
+            </geometry>
+        </visual>
+    </frame>
+	
+    <frame name="E" draw_basis="false">
+        <visual>
+            <geometry>
+                <cylinder radius="0.03" length="0.5" >
+                    <origin rpy="1.5708 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_BLACK" />
+                </cylinder>                
+            </geometry>
+        </visual>
+    </frame>
+	
+    <!-- You can create any number of decorative "ground" links. -->
+	<frame name="ground" draw_basis="false">
+        <visual>
+            <geometry>
+                <box size="1 1 0.02" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+						<color rgb="0.6 0.3 0" />
+					</material>
+                </box>
+            </geometry>
+        </visual>
+    </frame>
+
+</scene>

@@ -1,0 +1,199 @@
+% SIMULATION DETAILS
+% ==================
+% NAME: ME 328, Remote Center of Motion Robot, Circle at 20 cm
+% AUTHOR: Fidel Hernandez
+% DATE: April 30, 2012
+%SetWorkingDirectory ME328Homework3/ME328_RCMRobot_Circle_Depth20cm
+%
+
+% SIMULATION DESCRIPTION
+% ======================
+% In this simulation, we control a remote center of motion robot so that
+% its end effector traces a circle of radius 20 cm at a distance of
+% 20 cm directly below the remote center of motion point at a set 
+% frequency of 1 revolution around the circle per second.
+%
+
+% FRAMES, BODIES, AND POINTS
+% ==========================
+NewtonianFrame N   % Newtonian/Global/Ground Frame, with Point No
+RigidFrame     A   % Intermediate Frame, with Point Ao
+RigidBody      B   % Link 1, Cylinder, with Points Bo, Bcm
+RigidBody      C   % Link 2, Cylinder, with Points Co, Ccm
+RigidBody      D   % Link 3, Cylinder, with Points Do, Dcm
+RigidBody      E   % Link 4, Cylinder, with Points Eo, Ecm
+Point       BC(B)  % Revolute joint point between B/C (fixed on B) 
+Point       CD(C)  % Revolute joint point between C/D (fixed on C)
+Point      Eff(E)  % End-effector (fixed on E)
+Point      RCM(N)  % Remote center of motion (fixed on N)
+%
+
+% DYNAMICS VARIABLES AND CONSTANTS
+% ================================
+Variable     qx''  % Angle from Nz> to Az> about +Nx>
+Variable     qy''  % Angle from Az> to Bz> about -Ay>
+Variable     dz''  % -Bz> measure of Eff from Rcm
+Constant    rLink  % Radius of links B, C, D, and E
+Constant    lLink  % Length of links B, C, D, and E
+Specified      Tx  % +Nx> measure of torque on A from N, motor
+Specified      Ty  % -Ay> measure of torque on B from A, motor
+Specified      Fz  % -Bz> measure of force on Ecm from Dcm, motor
+%
+
+% MASS AND INERTIA
+% ================
+Constant density
+m = density*pi*rLink^2*lLink
+B.SetMass( m )
+C.SetMass( m )
+D.SetMass( m )
+E.SetMass( m )
+I = 1/2*m*rLink^2                  % Moment of inertia, long axis
+J = 1/12*m*( 3*rLink^2+lLink^2 )   % Moment of inertia, transverse axis
+B.SetInertia( Bcm, J, J, I )       % Inertia (about Bcm, bx>, by>, bz>)
+C.SetInertia( Ccm, I, J, J )       % Inertia (about Ccm, ax>, ay>, az>)
+D.SetInertia( Dcm, J, J, I )       % Inertia (about Dcm, bx>, by>, bz>)
+E.SetInertia( Ecm, J, J, I )       % Inertia (about Ecm, bx>, by>, bz>)
+%
+
+% ROTATIONAL KINEMATICS
+% =====================
+A.RotatePositiveX( N, qx )
+B.RotateNegativeY( A, qy )      
+C.RotatePositiveZ( A, 0 )          % C is always parallel to A
+D.RotatePositiveZ( B, 0 )          % D is always parallel to B
+E.RotatePositiveZ( D, 0 )          % Prismatic joint between D and E
+%
+
+% TRANSLATIONAL KINEMATICS
+% ========================
+Bcm.Translate( No, lLink/2*bz> )   % Bcm, measured from origin, No
+BC.Translate( No, lLink*bz> )	   % BC, measured from origin, No
+Ccm.Translate( BC, lLink/2*ax> )   % Ccm, measured from BC
+CD.Translate( BC, lLink*ax> )      % CD, measured from BC
+RCM.Translate( No, lLink*nx> )     % RCM, measured from origin, No
+Dcm.Translate( RCM, lLink/2*bz> )  % Dcm, measured from RCM
+Eff.Translate( RCM, -dz*bz> )      % End effector, measured from RCM
+Ecm.Translate( Eff, lLink/2*bz> )  % Ecm, measured from end effector
+%
+
+% FORCES AND TORQUES
+% ==================
+A.AddTorque( N, Tx*ax> )        % Controlled revolute motor torque
+B.AddTorque( A, -Ty*ay> )       % Controlled revolute motor torque
+Ecm.AddForce( Dcm, -Fz*bz> )    % Controlled prismatic motor torque
+%
+
+% LAGRANGE EQUATION
+% =================
+Constant      kT                % Body wall, soft torsional stiffness
+Constant      bT                % Dissipation, total torsional damping
+Constant       b                % Dissipation, total linear damping
+V = 1/2*kT*qx^2 + 1/2*kT*qy^2   % System potential energy
+K = System.GetKineticEnergy()   % System kinetic energy
+Lagrangian = K - V
+MechanicalEnergy = K + V
+SetGeneralizedSpeed( qx', qy', dz')
+Qr = System.GetGeneralizedForce()
+Dissipation = 1/2*bT*( qx' )^2 + 1/2*bT*( qy' )^2 + 1/2*b*( dz' )^2 
+Eqn[1] = Dt( D( K, qx' ) ) - D( Lagrangian, qx ) - Qr[1] + D( Dissipation, qx' )
+Eqn[2] = Dt( D( K, qy' ) ) - D( Lagrangian, qy ) - Qr[2] + D( Dissipation, qy' ) 
+Eqn[3] = Dt( D( K, dz' ) ) - D( Lagrangian, dz ) - Qr[3] + D( Dissipation, dz' )
+Solve( Eqn, qx'', qy'', dz'' )
+%
+
+% END EFFECTOR DESIRED PATH, DEFINITION
+% =====================================
+Specified                 x'       % Nx> measure, desired Eff position
+Specified                 y'       % Ny> measure, desired Eff position
+Specified                 z'       % Nz> measure, desired Eff position
+Constant      traceFrequency       % End effector tracing frequency
+Constant          thetaStart       % Tracing circle starting theta
+Constant        circleRadius       % Tracing circle radius
+Constant         circleDepth       % Tracing circle distance below RCM
+SetDt( x = circleRadius*cos( thetaStart + traceFrequency*t ) )
+SetDt( y = circleRadius*sin( thetaStart + traceFrequency*t ) )
+SetDt( z = -circleDepth )
+%
+
+% END EFFECTOR DESIRED PATH, INVERSE KINEMATICS
+% =============================================
+Specified   qxDesired'         % Value of qx' that traces desired path
+Specified   qyDesired'         % Value of qy' that traces desired path
+Specified   dzDesired'         % Value of dz' that traces desired path
+qxDesired = asin( y/sqrt( y^2 + z^2 ) )
+qyDesired = asin( x/sqrt( x^2 + y^2 + z^2 ) )
+dzDesired = sqrt( x^2 + y^2 + z^2 )
+eqnqx = sin( qxDesired ) - y/sqrt( y^2 + z^2 )
+eqnqy = sin( qyDesired ) - x/sqrt( x^2 + y^2 + z^2 )
+eqndz = dzDesired - sqrt( x^2 + y^2 + z^2 )
+Solve( Dt( eqnqx ), qxDesired' )
+Solve( Dt( eqnqy ), qyDesired' )
+Solve( Dt( eqndz ), dzDesired' )
+%
+
+% PROPORTIONAL-DERIVATIVE (PD) CONTROL LAW
+% ========================================
+Constant           kpx         % Proportional control gain for qx
+Constant           kdx         % Derivative control gain for qx'
+Constant           kpy         % Proportional control gain for qy
+Constant           kdy         % Derivative control gain for qy'
+Constant           kpz         % Proportional control gain for dz
+Constant           kdz         % Derivative control gain for dz'
+Tx = kpx*( qxDesired - qx ) + kdx*( qxDesired' - qx' )
+Ty = kpy*( qyDesired - qy ) + kdy*( qyDesired' - qy' )
+Fz = kpz*( dzDesired - dz ) + kdz*( dzDesired' - dz' )
+%
+
+% ANIMATION
+% =========
+% Animated bodies F and G are parallel to bodies B and C,
+% respectively. They are not necessary for computing the robot
+% dynamics, but we include them here so that the simulation
+% appears more realistic.
+RigidBody        F         % Link 1p, Cylinder, with Points Fo, Fcm
+RigidBody        G         % Link 2p, Cylinder, with Points Go, Gcm
+Constant    lOffset        % Offset between parallel links, B-F and C-G
+F.RotatePositiveZ( B, 0 )  % F is always parallel to B
+G.RotatePositiveZ( C, 0 )  % G is always parallel to C
+Fcm.Translate(Bcm,lOffset*ax>)
+Gcm.Translate(Ccm,-lOffset*bz>)
+
+% Animation requires all body origins be defined
+Ao.Translate(No,0>)
+Bo.Translate(Bcm,0>)
+Co.Translate(Ccm,0>)
+Do.Translate(Dcm,0>)
+Eo.Translate(Ecm,0>)
+Fo.Translate(Fcm,0>)
+Go.Translate(Gcm,0>)
+Animate(N,No,B,C,D,E,F,G)
+%
+
+% INPUT VALUES
+% ============
+SetInput lLink = 0.5 m, rLink = 3 cm, lOffset = 10 cm
+SetInput density = 2.7 g/(cm^3)
+SetInput qx = 30 deg, qy = 30 deg, dz = 0.25 m
+SetInput qx' = 0, qy' = 0, dz' = 0
+SetInput kT = 10 N*m/rad, bT = 0.01 N*m*s/rad, b = 0.01 N*s/m
+SetInput circleRadius = 20 cm, circleDepth = 20 cm
+SetInput thetaStart = 45 deg, traceFrequency = 1 rev/s
+SetInput kpx = 1000 N*m, kdx = 50 N*m*s
+SetInput kpy = 1000 N*m, kdy = 50 N*m*s
+SetInput kpz = 500 N/m, kdz = 70 N*s/m
+SetInput tfinal = 10 s, integStp = 0.02 s
+%
+
+% PLOTS AND OUTPUT
+% ================
+Ex = Dot(Eff.GetPosition(RCM),nx>)   % Nx> measure, Eff from RCM
+Ey = Dot(Eff.GetPosition(RCM),ny>)   % Ny> measure, Eff from RCM
+Ez = Dot(Eff.GetPosition(RCM),nz>)   % Nz> measure, Eff from RCM
+% PlotOutput t s, qxDesired m, qx m
+%
+
+% SIMULATION SAVE
+% ===============
+ODE() Link
+Save ME328_RCMRobot_Circle_Depth20cm.all

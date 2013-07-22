@@ -1,0 +1,34 @@
+File: slot.in
+----------------------------------------------------------+------------------
+Description          Quantity             Units           | Value
+----------------------------------------------------------|------------------
+Constant             k                    N/m             |  100
+Constant             Ln                   UNITS           |  0.25
+Constant             mB                   kg              |  10
+Constant             mQ                   kg              |  1
+Constant             R                    UNITS           |  0.5
+
+Initial Value        theta                deg             |  0
+Initial Value        x                    UNITS           |  0.4
+Initial Value        theta'               deg/sec         |  90
+Initial Value        x'                   meter/sec       |  0
+
+Initial Time         tInitial             sec             |  0.0
+Final Time           tFinal               sec             |  10
+Integration Step     integStp             sec             |  0.01
+Print-Integer        printIntScreen       0 or +integer   |  1
+Print-Integer        printIntFile         0 or +integer   |  1
+Absolute Error       absError                             |  1.0E-08
+Relative Error       relError                             |  1.0E-08
+----------------------------------------------------------+------------------
+Note: Use spaces not tabs while editing this file.
+
+      printInt * integStp  is the time-interval for writing of output.
+              printInt = 0 suppresses writing output.
+
+      absError should be set equal to 10^(-8)*Xsmall, where Xsmall is the estimated
+               smallest maximum absolute value of the variables being integrated.
+
+      relError should be set equal to 10^(-d), where d is no less than the desired
+               number of significant digits of numerical integration results.
+-----------------------------------------------------------------------------

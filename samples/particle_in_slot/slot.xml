@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<scene  name="particle_in_slot"
+        newtonion_frame="N"
+        scene_origin="No"
+        show_axes="false"
+        workspace_size="1.0"
+        up="0 0 1"
+        camera_eye_position="2 2 2"
+        camera_focus_position="0 0 0"
+        camera_fixed_frame="N"
+        >
+
+    <!-- You can define any number of custom colors, 
+         either in advance or within the material tag of a link. -->    
+    <material name="MY_CUSTOM_BLUE">
+        <color rgb="0 0.7 1.0" />
+    </material>
+
+    <simulation_file name="slot.1:3" />
+    <simulation_settings name="slot.in" />
+
+    <frame name="B" draw_basis="false">
+        <visual>
+            <geometry>
+                <mesh path="DiskBase.STL">
+                    <material name="SHINY_RED" />
+                </mesh>
+            </geometry>
+        </visual>
+    </frame>
+
+
+    <point name="Q" draw_basis="false" use_rotation_of_frame="B">
+        <visual>
+            <geometry>
+                <box size="0.06 0.12 0.08" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>    
+                    <material name="MY_CUSTOM_BLUE" />
+                </box>
+            </geometry>
+        </visual>
+    </point>
+
+    <span name="spring" type="cable" point1="Bo" point2="Q">
+        <material name="SHINY_RED" />
+    </span>
+    
+	<!-- You can create any number of decorative "ground" links. -->
+	<frame name="N" draw_basis="false">
+        <visual>
+            <geometry>
+                <box size="1 1 0.02 " >
+                    <origin rpy="0 0 0 " xyz="0 0 -0.1 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+						<color rgb="0.6 0.3 0" />
+					</material>
+                </box>
+            </geometry>
+        </visual>
+    </frame>
+
+</scene>

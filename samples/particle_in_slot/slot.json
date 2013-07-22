@@ -1,0 +1,219 @@
+{
+    "name": "particle_in_slot",
+    "newtonianFrame": "N",
+    "sceneOrigin": "No",
+    "cameraFrame": "N",
+    "showAxes": false,
+    "workspaceSize": 1,
+    "cameraUp": [
+        0,
+        0,
+        1
+    ],
+    "cameraEye": [
+        0,
+        -2,
+        4
+    ],
+    "cameraFocus": [
+        0,
+        0,
+        0
+    ],
+    "speedFactor": 1,
+    "simulationData": [
+        "slot.1:3"
+    ],
+    "simulationSettings": "slot.in",
+    "objects": {
+        "N": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "N",
+                    "scale": 0.1,
+                    "position": {
+                        "x": -0.475,
+                        "y": -0.45,
+                        "z": -0.075
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "BLACK"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.25,
+                    "position": {
+                        "x": -0.5,
+                        "y": -0.5,
+                        "z": -0.075
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "support": {
+                    "type": "box",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": -0.15
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "GREEN",
+                    "text": "",
+                    "size": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 0.1
+                    }
+                }
+            }
+        },
+        "B": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "B",
+                    "scale": 0.125,
+                    "position": {
+                        "x": -0.046,
+                        "y": 0.3,
+                        "z": 0.04
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "BLACK"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0.05
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "disk": {
+                    "type": "mesh",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "RED",
+                    "text": "",
+                    "scale": 1,
+                    "path": "DiskBaseBinary.stl"
+                }
+            }
+        },
+        "Q": {
+            "type": "point",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "Q",
+                    "scale": 0.069,
+                    "position": {
+                        "x": -0.04,
+                        "y": -0.025,
+                        "z": 0.05
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "BLACK"
+                },
+                "basis": {
+                    "visible": false,
+                    "type": "basis",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "particle": {
+                    "type": "cylinder",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 1.5708,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "WHITE",
+                    "text": "",
+                    "radius": 0.061,
+                    "length": 0.1,
+                    "radius_top": 1,
+                    "radius_bottom": 1,
+                    "segments_radius": 12,
+                    "segments_height": 1
+                }
+            }
+        }
+    },
+    "spans": {
+        "test": {
+            "type": "cable",
+            "point1": "No",
+            "point2": "Q",
+            "showLabel": false,
+            "visual": {
+                "wire1": {
+                    "thickness": 1,
+                    "material": "WHITE"
+                }
+            }
+        }
+    }
+}

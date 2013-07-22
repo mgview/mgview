@@ -1,0 +1,552 @@
+{
+    "name": "robot_arm",
+    "simulationSettings": "robot_arm.in",
+    "simulationData": [
+        "robot_arm.2:6"
+    ],
+    "newtonianFrame": "N",
+    "sceneOrigin": "No",
+    "showAxes": true,
+    "workspaceSize": 1,
+    "cameraParentFrame": "N",
+    "cameraUp": [
+        0,
+        1,
+        0
+    ],
+    "cameraEye": [
+        1,
+        4,
+        5
+    ],
+    "cameraFocus": [
+        0,
+        0,
+        0
+    ],
+    "speedFactor": 1,
+    "objects": {
+        "N": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "N",
+                    "scale": 0.125,
+                    "position": {
+                        "x": 0.08333333333333333,
+                        "y": 0.03125,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "ground": {
+                    "type": "cylinder",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": -0.05,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(175, 126, 58)",
+                        "color": {
+                            "r": 0.6,
+                            "g": 0.3,
+                            "b": 0,
+                            "a": 1
+                        }
+                    },
+                    "radius": 2.2,
+                    "length": 0.1,
+                    "capped": true,
+                    "radius1": 1,
+                    "radius2": 1,
+                    "segments_radius": 30,
+                    "segments_height": 1
+                }
+            }
+        },
+        "A": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "A",
+                    "scale": 0.125,
+                    "position": {
+                        "x": 0.08333333333333333,
+                        "y": -0.175,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "shaft": {
+                    "type": "cylinder",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": -0.3,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "RED",
+                    "radius": 0.08,
+                    "length": 0.6,
+                    "capped": true,
+                    "radius1": 1,
+                    "radius2": 1,
+                    "segments_radius": 12,
+                    "segments_height": 1
+                }
+            }
+        },
+        "B": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "B",
+                    "scale": 0.125,
+                    "position": {
+                        "x": 0.08333333333333333,
+                        "y": 0.055,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "link": {
+                    "type": "box",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "GREEN",
+                    "size": {
+                        "x": 0.8,
+                        "y": 0.1,
+                        "z": 0.1
+                    }
+                },
+                "joint": {
+                    "type": "cylinder",
+                    "visible": true,
+                    "position": {
+                        "x": -0.4,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 1.5708,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "WHITE",
+                    "radius": 0.08,
+                    "length": 0.16,
+                    "capped": true,
+                    "radius1": 1,
+                    "radius2": 1,
+                    "segments_radius": 12,
+                    "segments_height": 1
+                }
+            }
+        },
+        "C": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "C",
+                    "scale": 0.125,
+                    "position": {
+                        "x": 0.08333333333333333,
+                        "y": 0.064,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "link": {
+                    "type": "box",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(94, 168, 255)",
+                        "color": {
+                            "r": 0.3671875,
+                            "g": 0.65625,
+                            "b": 0.99609375,
+                            "a": 1
+                        }
+                    },
+                    "size": {
+                        "x": 1.2,
+                        "y": 0.1,
+                        "z": 0.1
+                    }
+                },
+                "joint": {
+                    "type": "cylinder",
+                    "visible": true,
+                    "position": {
+                        "x": -0.6,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 1.5708,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "WHITE",
+                    "radius": 0.08,
+                    "length": 0.16,
+                    "capped": true,
+                    "radius1": 1,
+                    "radius2": 1,
+                    "segments_radius": 12,
+                    "segments_height": 1
+                }
+            }
+        },
+        "D": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "D",
+                    "scale": 0.125,
+                    "position": {
+                        "x": 0.057,
+                        "y": 0.069,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "joint": {
+                    "type": "cylinder",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 1.5708,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "WHITE",
+                    "radius": 0.08,
+                    "length": 0.16,
+                    "capped": true,
+                    "radius1": 1,
+                    "radius2": 1,
+                    "segments_radius": 12,
+                    "segments_height": 1
+                },
+                "cone": {
+                    "type": "cone",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": -0.015,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_BLACK",
+                    "radius1": 0.071,
+                    "radius2": 0.3,
+                    "length": 0.1,
+                    "capped": true,
+                    "radius": 1,
+                    "segments_radius": 12,
+                    "segments_height": 1
+                },
+                "cone2": {
+                    "type": "cone",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": -0.115,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SHINY_BLACK",
+                    "radius1": 0.3,
+                    "radius2": 0.376,
+                    "length": 0.1,
+                    "capped": true,
+                    "radius": 1,
+                    "segments_radius": 12,
+                    "segments_height": 1
+                }
+            }
+        },
+        "E": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "E",
+                    "scale": 0.125,
+                    "position": {
+                        "x": 0.08333333333333333,
+                        "y": 0.03125,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.25,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "ball": {
+                    "type": "sphere",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "WHITE",
+                    "radius": 0.4,
+                    "segments_width": 32,
+                    "segments_height": 32
+                },
+                "circle1": {
+                    "type": "cylinder",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "GREEN",
+                    "radius": 0.4,
+                    "length": 0.05,
+                    "capped": true,
+                    "radius1": 1,
+                    "radius2": 1,
+                    "segments_radius": 32,
+                    "segments_height": 1
+                },
+                "circle2": {
+                    "type": "cylinder",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 1.5708,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "BLUE",
+                    "radius": 0.402,
+                    "length": 0.05,
+                    "capped": true,
+                    "radius1": 1,
+                    "radius2": 1,
+                    "segments_radius": 32,
+                    "segments_height": 1
+                },
+                "circle3": {
+                    "type": "cylinder",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 1.5708
+                    },
+                    "material": "RED",
+                    "radius": 0.402,
+                    "length": 0.05,
+                    "capped": true,
+                    "radius1": 1,
+                    "radius2": 1,
+                    "segments_radius": 32,
+                    "segments_height": 1
+                }
+            }
+        }
+    }
+}

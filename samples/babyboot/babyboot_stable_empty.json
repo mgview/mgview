@@ -1,0 +1,15 @@
+{
+    "name" : "babyboot_stable",
+    "newtonianFrame"    : "N",
+    "sceneOrigin"       : "No",
+    "showAxes"          : false,
+    "cameraUp"          : [0, 0, 1],
+    "cameraEye"         : [1, 0, -0.1],
+    "cameraFocus"       : [0, 0, -0.1],
+    "cameraParentFrame" : "N",
+    "speedFactor"       : 1.0,
+    "workspaceSize"     : 0.2,
+
+    "simulationData" : ["stable/babyboot.1:2"],
+    "simulationSettings" : "stable/babyboot.in"
+}

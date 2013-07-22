@@ -1,0 +1,14 @@
+{
+    "name" : "EulerParameters3DOrientation",
+    "newtonianFrame"    : "N",
+    "sceneOrigin"       : "No",
+    "showAxes"          : false,
+    "workspaceSize"     : 0.2,
+    "cameraParentFrame" : "N",
+    "cameraUp"          : [0, 0, 1],
+    "cameraEye"         : [1, 0.3, 1],
+    "cameraFocus"       : [0, 0, -0.1],
+    "speedFactor"       : 1.0,
+    "simulationData" : ["EulerParameters3DOrientation.1:2"],
+    "simulationSettings" : "EulerParameters3DOrientation.in"
+}

@@ -1,0 +1,162 @@
+{
+    "name": "EulerParameters3DOrientation",
+    "newtonianFrame": "N",
+    "sceneOrigin": "No",
+    "showAxes": false,
+    "workspaceSize": 0.2,
+    "cameraParentFrame": "N",
+    "cameraUp": [
+        0,
+        0,
+        1
+    ],
+    "cameraEye": [
+        1,
+        0.3,
+        1
+    ],
+    "cameraFocus": [
+        0,
+        0,
+        -0.1
+    ],
+    "speedFactor": 1,
+    "simulationData": [
+        "EulerParameters3DOrientation.1:2"
+    ],
+    "simulationSettings": "EulerParameters3DOrientation.in",
+    "objects": {
+        "N": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "N",
+                    "scale": 0.025,
+                    "position": {
+                        "x": 0.041,
+                        "y": 0.015,
+                        "z": -0.14
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 1.57
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.06,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": -0.14
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "ground": {
+                    "type": "box",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": -0.15
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(12, 96, 19)",
+                        "color": {
+                            "r": 0.046875,
+                            "g": 0.375,
+                            "b": 0.07421875,
+                            "a": 1
+                        }
+                    },
+                    "size": {
+                        "x": 0.3,
+                        "y": 0.3,
+                        "z": 0.01
+                    }
+                }
+            }
+        },
+        "B": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "B",
+                    "scale": 0.025,
+                    "position": {
+                        "x": 0.035,
+                        "y": 0.00625,
+                        "z": 0.01
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 1.57
+                    },
+                    "material": "SILVER"
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 0.06,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0.012
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": "SILVER"
+                },
+                "book": {
+                    "type": "box",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(60, 84, 200)",
+                        "color": {
+                            "r": 0.234375,
+                            "g": 0.328125,
+                            "b": 0.78125,
+                            "a": 1
+                        }
+                    },
+                    "size": {
+                        "x": 0.15,
+                        "y": 0.08,
+                        "z": 0.02
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<scene name="mechanism1"
+       up="0 1 0"
+       newtonion_frame="N"
+       scene_origin="No"
+       workspace_size="3.0"
+       camera_eye_position="4 3 18"
+       camera_focus_position="5 0 0"
+       camera_fixed_frame="A"
+	>
+
+    <simulation_file name="double_pendulum_on_cart.1:3" />
+    <simulation_settings name="double_pendulum_on_cart.in" />
+
+    <point name="A" >
+        <visual>
+            <geometry>
+                <box size="0.5 0.25 0.25" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_RED" />
+                </box>
+                <!-- <sphere radius="0.5" /> -->
+            </geometry>
+            <origin rpy="0 0 0 " xyz="0 0 0 "/>
+            <material name="SHINY_RED" />
+        </visual>
+    </point>
+
+    <frame name="B">
+        <visual>
+            <geometry>
+                <box size="0.1 1 0.1" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_GREEN" />
+                </box>
+            </geometry>
+        </visual>
+    </frame>
+
+    <frame name="C">
+        <visual>
+            <geometry>
+                <box size="0.1 1 0.1" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_BLUE" />
+                </box>
+                <sphere radius="0.15" >
+                    <origin rpy="0 0 0 " xyz="0 -0.5 0 "/>
+                    <material name="SHINY_RED" />
+                </sphere>
+            </geometry>
+            
+        </visual>
+    </frame>
+
+    <!-- You can create any number of decorative "ground" links. -->
+    <frame name="N" draw_basis="false">
+        <visual>
+            <geometry>
+                <box size="8 0.02 1" >
+                    <origin rpy="0 0 0 " xyz="4 -2.5 0 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+                        <color rgb="0.6 0.3 0" />
+                    </material>
+                </box>
+            </geometry>
+        </visual>
+    </frame>
+
+</scene>

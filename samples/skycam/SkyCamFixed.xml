@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<scene name="SkyCamFixed"
+       up="0 0 1"
+       newtonion_frame="N"
+       scene_origin="No"
+       workspace_size="3.0"
+       camera_eye_position="-10 -5 10"
+       camera_focus_position="7 10 5"
+	>
+
+    <simulation_file name="FixedCamera_FeedForward_Animation.2:6" />
+    <simulation_settings name="FixedCamera_FeedForward_Animation.in" />
+
+    <frame name="A"  >
+        <visual>
+            <geometry>
+                <cylinder radius="0.05" length="0.305" >
+                    <origin rpy="-1.5708 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_RED" />
+                </cylinder>
+                <cylinder radius="0.05" length="0.5335" >
+                    <origin rpy="0 0 0 " xyz="0 0 -0.1525 "/>
+                    <material name="SHINY_RED" />
+                </cylinder>
+                <cylinder radius="0.05" length="0.762" >
+                    <origin rpy="-1.5708 0 0 " xyz="0 -0.26675 -.525 "/>
+                    <material name="SHINY_RED" />
+                </cylinder>	
+                <cylinder radius="0.05" length="0.762" >
+                    <origin rpy="-1.5708 0 0 " xyz="0 0.26675 -.525 "/>
+                    <material name="SHINY_RED" />
+                </cylinder>	
+                <cylinder radius="0.05" length="0.5335" >
+                    <origin rpy="0 0 0 " xyz="0 0 -0.8825 "/>
+                    <material name="SHINY_RED" />
+                </cylinder>
+				
+                <!-- <sphere radius="0.5" /> -->
+            </geometry>
+            <origin rpy="0 0 0 " xyz="0 0 0 "/>
+            <material name="SHINY_RED" />	
+        </visual>
+    </frame>
+
+    <frame name="B" >
+        <visual>
+            
+            <geometry>
+                <cylinder length="0.7112" radius="0.1524">
+                    <origin rpy="0 0 -1.5708" xyz="0 0 0"/>
+                    <material name="SHINY_BLACK" />
+                </cylinder>
+                <box size="0.3556 .3048 0.4064" >
+                    <origin rpy="0 0 0 " xyz="-.1778 0 0 "/>
+                    <material name="SHINY_SILVER" />
+                </box>				
+            </geometry>
+            
+        </visual>
+    </frame>
+	
+    <point name="Q" draw_basis="false" >
+        <visual>
+            <geometry>
+                <sphere radius="0.25" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>
+                    <material name="MY_CUSTOM_BROWN" >
+                        <color rgb="0.6 0.3 0" />
+                    </material>
+                </sphere>
+            </geometry>
+        </visual>
+    </point>
+
+    <span name="test" type="cable" point1="Bo" point2="Q">
+        <material name="SHINY_RED" />
+    </span>
+	
+    <!-- You can create any number of decorative "ground" links. -->
+    <frame name="ground" draw_basis="false">
+        <visual>
+            <geometry>
+                <box size="109.728 48.768 0.25" >
+                    <origin rpy="0 0 0 " xyz="0 0 0 "/>
+                    <material name="SHINY_GREEN" />
+                </box>
+            </geometry>
+        </visual>
+    </frame>
+
+</scene>

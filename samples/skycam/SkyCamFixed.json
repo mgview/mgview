@@ -1,0 +1,14 @@
+{
+    "name" : "SkyCamFixed",
+    "newtonianFrame"    : "N",
+    "sceneOrigin"       : "No",
+    "showAxes"          : true,
+    "workspaceSize"     : 3,
+    "cameraParentFrame" : "N",
+    "cameraUp"          : [0, 0, 1],
+    "cameraEye"         : [-10, -5, 10],
+    "cameraFocus"       : [7, 10, 5],
+    "speedFactor"       : 1.0,
+    "simulationData" : ["FixedCamera_FeedForward_Animation.2:6"],
+    "simulationSettings" : "FixedCamera_FeedForward_Animation.in"
+}
