@@ -45,7 +45,7 @@
                 closeOnEscape: true,
                 width: 500,
                 minWidth: 500,
-                maxWidth: 500,
+//                maxWidth: 500,
                 minHeight: 260
 //                show: { effect: "blind", duration: 60 },
 //                hide: { effect: "blind", duration: 60 }
@@ -89,31 +89,31 @@
                 '<label>Visible:<input type="checkbox" id="check_visible" ></label>' +
                     '<label> Color:<input type="text" id="color_picker" name="color" value="#3355cc" /> </label>' +
                     '<br/>'
-                    +   '<div class="Horizontal" >'
-                    +   '<div class="Label Right Block" style="width:120px;">Position (m)</div>'
-                    +   '<label class="spinnerLabel">x <input class="positionSpinner" id="spin_pos_x" name="position_x" value="0.00" /></label><br/>'
-                    +   '<label class="spinnerLabel">y <input class="positionSpinner" id="spin_pos_y" name="position_y" value="0.00" /></label><br/>'
-                    +   '<label class="spinnerLabel">z <input class="positionSpinner" id="spin_pos_z" name="position_z" value="0.00" /></label><br/>'
-                    +   '</div>'
+                    +   '<span class="row-fluid" >'
+                    +       '<div class="Label Right Block" style="width:120px;">Position (m)</div>'
+                    +       '<label class="spinnerLabel">x <input class="positionSpinner" id="spin_pos_x" name="position_x" value="0.00" /></label><br/>'
+                    +       '<label class="spinnerLabel">y <input class="positionSpinner" id="spin_pos_y" name="position_y" value="0.00" /></label><br/>'
+                    +       '<label class="spinnerLabel">z <input class="positionSpinner" id="spin_pos_z" name="position_z" value="0.00" /></label><br/>'
+                    +   '</span>'
 
                     +   '<div class="verticalDivider" style="height:120px;" />'
 
-                    +   '<div class="Horizontal">'
-                    +   '<div class="Label Right Block" style="width:120px;">Rotation (rad)</div>'
-                    +   '<label class="spinnerLabel" >x <input class="rotationSpinner" id="spin_rot_x" name="rotation_x" value="0.00" /></label><br/>'
-                    +   '<label class="spinnerLabel" >y <input class="rotationSpinner" id="spin_rot_y" name="rotation_y" value="0.00" /></label><br/>'
-                    +   '<label class="spinnerLabel" >z <input class="rotationSpinner" id="spin_rot_z" name="rotation_z" value="0.00" /></label><br/>'
-                    +   '</div>'
+                    +   '<span class="row-fluid">'
+                    +       '<div class="Label Right Block" style="width:120px;">Rotation (rad)</div>'
+                    +       '<label class="spinnerLabel" >x <input class="rotationSpinner" id="spin_rot_x" name="rotation_x" value="0.00" /></label><br/>'
+                    +       '<label class="spinnerLabel" >y <input class="rotationSpinner" id="spin_rot_y" name="rotation_y" value="0.00" /></label><br/>'
+                    +       '<label class="spinnerLabel" >z <input class="rotationSpinner" id="spin_rot_z" name="rotation_z" value="0.00" /></label><br/>'
+                    +   '</span>'
 
                     +   '<div class="verticalDivider" style="height:120px;" />'
 
-                    +   '<div class="Horizontal"  >'
-                    +   '<div class="Block" style="height:30px;">'
-                    +   '<div class="Horizontal Label" style="width:90px;">Geometry</div>'
+                    +   '<div class="row span"  >'
+                    +       '<div class="Block" style="height:30px;">'
+                    +       '<div class="Horizontal Label" style="width:90px;">Geometry</div>'
                     +       '<select class="Horizontal" id="geometrySelect">'
                     +       '</select>'
-                    +   '</div>'
-                    +   '<div class="geometryProperties"></div>'
+                    +       '</div>'
+                    +       '<div class="geometryProperties"></div>'
                     +   '</div>'
             );
 

@@ -350,7 +350,7 @@
             var index = Math.floor(time/timeStep);
             if(index >= this._timeArray.length)
             {
-                console.log(vsprintf("Index %d exceeds array length %d.", [index, this._timeArray.length]));
+//                console.log(vsprintf("Index %d exceeds array length %d.", [index, this._timeArray.length]));
                 return false;
             }
             else
@@ -364,11 +364,11 @@
         getDataAtTime: function(time) {
             var timeHash = this._timeToHash(time);
             if( timeHash === false ) {
-                console.log("Returning false!");
-                return false;
+//                console.log("Returning false!");
+                return undefined;
             }
 
-            return this._timeData[timeHash];
+            return {t: +(timeHash), data: this._timeData[timeHash]};
         },
 
         addEmptyDefaults:   function() {

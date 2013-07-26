@@ -23,6 +23,7 @@
             this._frameCount         = 0;
             this._lastFrame          = now;
             this._lastSelectionFrame = now;
+            this._oldTime = 0;
 
             this._animate = false;
 
@@ -126,8 +127,6 @@
             this.renderer.setClearColorHex( hex, alpha );
         },
 
-        // TODO camera tweens?
-
         _tick: function(self) {
             //var delta = this.clock.getDelta();
             var elapsed = this.clock.getElapsedTime();
@@ -137,13 +136,13 @@
             for (var i in views){
                 views[i].updateCameraAndControls();
                 //console.log("elapsed "+elapsed);
-                if( views[i].setAnimationTime(elapsed) === false) {
+                if( views[i].setAnimationTime(elapsed) > elapsed) {
                     this.stopAnimation();
                     this.clock.elapsedTime = this._oldTime;
-                    return;
+//                    return;
                 } else {
                     // TODO this will break with more than one view...
-                    this._oldTime = elapsed;
+//                    this._oldTime = elapsed;
                 }
 
                 views[i].render(this.renderer);

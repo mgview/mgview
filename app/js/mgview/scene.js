@@ -6,6 +6,14 @@
 
         init: function(world) {
             this._world = world;
+            this._tSpeedFactor = 1;
+            this._upVec = new THREE.Vector3(0, 1, 0); // default
+
+            this.resetScene();
+
+        },
+
+        resetScene: function() {
             this._scene = new THREE.Scene();
             this._lights = [];
             this._svFrames = {};
@@ -13,17 +21,19 @@
             this._svFrameRotationProxies = {};
             this._spans = {};
 
-            this._tSpeedFactor = 1;
-            this._upVec = new THREE.Vector3(0, 1, 0); // default
-
+            // Reset stuff
             this.addDefaultCamera();
             this.addDefaultLights();
             this.addDefaultControls();
-
+            this.addWaterMark();
         },
 
         destroy: function() {
             debugLog("Scene is being destroyed!");
+        },
+
+        addWaterMark: function() {
+            var scene = this._scene;
         },
 
         addDefaultLights: function () {
@@ -62,20 +72,6 @@
             this._controls.allowPan = true;
             //controls.addEventListener( 'change', render );
             //this.disableControls();
-        },
-
-        resetScene: function() {
-            this._scene = new THREE.Scene();
-            this._lights = [];
-            this._svFrames = {};
-            this._svFrameTypes = {};
-            this._svFrameRotationProxies = {};
-            this._spans = {};
-
-            // Reset stuff
-            this.addDefaultCamera();
-            this.addDefaultLights();
-            this.addDefaultControls();
         },
 
         getSpeedFactor: function(){
@@ -361,7 +357,7 @@
                 var size = dim.scale;
                 // TODO refactor this and the above function.
                 //with({key: elementName, geometry_type: geometry_type}){
-                    THREEal.loadAndAddFromFile(parent, "meshes/basis.dae", size, position, rotation, mesh_color,
+                    THREEal.loadAndAddFromFile(parent, "app/meshes/basis.dae", size, position, rotation, mesh_color,
                         function(obj){
                             obj.name = elementName;
                             obj.type = geometry_type;
@@ -517,7 +513,7 @@
 
         setAnimationTime: function(time) {
             if(this._model == undefined)
-                return;
+                return 0;
 
             var newtonianFrame = this._model.get("newtonianFrame");
             var svOrigin = this._model.get("sceneOrigin");
@@ -526,13 +522,18 @@
 
 
             $( "#time_scrub" ).slider("value", time);
-            $( "#time_text").val(vsprintf("%.3f",[time]));
+            $( "#time_button").find("strong").get(0).innerHTML = vsprintf("%.3f",[time]);
 
-            var data = this._model.getDataAtTime(time);
-            if(data === false) {
-                console.log("Returning false!");
-                return false;
+            var data_dict = this._model.getDataAtTime(time);
+            if(data_dict === undefined) {
+//                console.log("Returning false!");
+                $("#time_button").removeClass("btn-danger").addClass("btn-success");
+
+//                console.log("Setting animation time to " + this._model._tFinal);
+                return this.setAnimationTime(this._model._tFinal);
             }
+            var data = data_dict.data;
+            var actual_time = data_dict.t;
 
 
             for(var frameName in this._svFrames){
@@ -580,7 +581,7 @@
                 span.line.geometry.verticesNeedUpdate = true;
             }
 
-            return true;
+            return actual_time;
         },
 
         updateObjectVisual: function(objectName, elementName, propertyContainer, propertyName, value )

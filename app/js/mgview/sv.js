@@ -36,14 +36,17 @@ var SV = {};
             this.$('SV', $('#SV').eq(0));
             //this.$('SV').on( 'contextmenu', function ( event ) { event.preventDefault(); } );
 
-            this.$('Topbar',        this.$('SV').children('div.Topbar').eq(0));
-            this.$('MainContent',   this.$('SV').children('div.MainContent').eq(0));
-            this.$('Sidebar',       this.$('MainContent').children('div.Sidebar').eq(0));
-            this.$('RenderWindow',  this.$('MainContent').children('div.RenderWindow').eq(0));
+            this.$('Topbar',        this.$('SV').find('#Topbar').eq(0));
+            this.$('MainContent',   this.$('SV').find('#MainContent').eq(0));
+            this.$('Sidebar',       this.$('MainContent').find('#Sidebar').eq(0));
+            this.$('RenderWindow',  this.$('MainContent').find('#RenderWindow').eq(0));
 
-            this.$('Start',  this.$('Topbar').find('div>input.Start').eq(0));
-            this.$('Stop',   this.$('Topbar').find('div>input.Stop').eq(0));
-            this.$('Load',   this.$('Topbar').find('div>input#model_load_button').eq(0));
+
+            this.$('TimeButton', this.$('Topbar').find('#time_button').eq(0));
+
+            this.$('Start',  this.$('Topbar').find('#animation_start_button').eq(0));
+            this.$('Stop',   this.$('Topbar').find('#animation_stop_button').eq(0));
+            this.$('Load',   this.$('Topbar').find('#model_load_button').eq(0));
 
             this.$('TimeWidget',  this.$('Topbar').find('div>div.scrubWidget').eq(0));
             this.$('SpeedWidget', this.$('Topbar').find('div>div.scrubWidget').eq(1));
@@ -56,7 +59,6 @@ var SV = {};
                 step: 0.001,
                 slide: function(event, ui) {
                     SV.World.setAnimationTime(ui.value);
-                    $( "#time_text").val(ui.value);
                 }
             });
             $( "#speed_scrub" ).slider({
@@ -99,21 +101,35 @@ var SV = {};
 //            });
 
 
-            this.$('Start').on({
+            this.$('TimeButton')
+//                .button({
+//                icons: {
+//                    primary: "ui-icon-plus"
+//                },
+//                text: false
+//                })
+                .on({
                 click: function(event) {
                     //console.log("Clicked start!");
-                    SV.World.startAnimation();
+                    if( $(this).hasClass("btn-success")) {
+                        SV.World.startAnimation();
+                    }
+                    else {
+                        SV.World.stopAnimation();
+                    }
+                    $(this).toggleClass("btn-success btn-danger");
+
                     return false;
                 }
             });
 
-            this.$('Stop').bind({
-                click: function(event) {
-                    //console.log("Clicked stop!");
-                    SV.World.stopAnimation();
-                    return false;
-                }
-            });
+//            this.$('Stop').bind({
+//                click: function(event) {
+//                    //console.log("Clicked stop!");
+//                    SV.World.stopAnimation();
+//                    return false;
+//                }
+//            });
 
             self = this;
             this.$('Load').bind({
