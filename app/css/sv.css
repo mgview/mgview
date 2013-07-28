@@ -102,11 +102,11 @@ body {
     display: inline-block;
 }
 
-/*.Label{*/
-    /*color: #FFFFFF;*/
-    /*font-weight: bold;*/
-    /*width: 50px;*/
-/*}*/
+.Label{
+    color: #FFFFFF;
+    font-weight: bold;
+    width: 50px;
+}
 
 .Sliders {
     width: 200px;
@@ -170,20 +170,6 @@ body {
     margin-left: auto;
     float:left;
 }
-
-/*.Button {*/
-    /*background: -webkit-linear-gradient(#EEEEEE , #777777);*/
-    /*background: -moz-linear-gradient(top,  #eee,  #777);*/
-    /*margin-top: 2%;*/
-    /*margin-bottom: 2%;*/
-    /*box-shadow: rgba(0,0,0,0.5) 0px 1px 3px 1px;*/
-    /*height: 40%;*/
-    /*width: 100%;*/
-    /*z-index: 1000;*/
-    /*cursor: pointer;*/
-    /*text-align: center;*/
-    /*font-weight: bold;*/
-/*}*/
 
 .HalfWide {
     float: left;

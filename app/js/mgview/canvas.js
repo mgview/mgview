@@ -28,9 +28,6 @@
 //            this._lastSelectionFrame = now;
 //            this._oldTime = 0;
 
-            // TODO
-            return;
-
             // Make sure resolution is correct
             var renderer = new THREE.WebGLRenderer( { clearColor: 0xffffff, clearAlpha: 1, antialias: true } );
             renderer.setClearColorHex( 0xe0f0ff, 1 );

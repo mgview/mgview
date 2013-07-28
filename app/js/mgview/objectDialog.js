@@ -18,14 +18,14 @@
                 +       '<div id="objectToolbar" class="ui-widget-header ui-corner-all">'
                 +           '<select class="Horizontal" id="elementSelect">'
                 +           '</select>'
-                +           '<button class="Horizontal" id="delete_element"> </button>'
+                +           '<button class="Horizontal" id="deleteElement"> </button>'
 
 
                         +           '<div class="verticalDivider"> </div>'
 
                 +           '<div class="Horizontal Label" style="width:50px;"></div>'
                 +           '<input type="text" class="Horizontal" id="new_element_text" placeholder="create new" />'
-                +           '<button class="Horizontal" id="add_new_element"> </button>'
+                +           '<button class="Horizontal" id="addNewElement"> </button>'
 
                 +       '</div>'
                 +       '<div id="elementProperties"> </div>'
@@ -51,7 +51,7 @@
 //                hide: { effect: "blind", duration: 60 }
             });
 
-            this.dialog.find('#add_new_element').button({
+            this.dialog.find('#addNewElement').button({
                 icons: {
                     primary: "ui-icon-plus"
                 },
@@ -72,7 +72,7 @@
                             [self._objectName, elementName]));
             });
 
-            this.dialog.find('#delete_element').button({
+            this.dialog.find('#deleteElement').button({
                 icons: {
                     primary: "ui-icon-trash"
                 },
@@ -89,8 +89,8 @@
                 '<label>Visible:<input type="checkbox" id="check_visible" ></label>' +
                     '<label> Color:<input type="text" id="color_picker" name="color" value="#3355cc" /> </label>' +
                     '<br/>'
-                    +   '<span class="row-fluid" >'
-                    +       '<div class="Label Right Block" style="width:120px;">Position (m)</div>'
+                    +   '<span class="Horizontal" >'
+                    +       '<div class="" >Position (m)</div>'
                     +       '<label class="spinnerLabel">x <input class="positionSpinner" id="spin_pos_x" name="position_x" value="0.00" /></label><br/>'
                     +       '<label class="spinnerLabel">y <input class="positionSpinner" id="spin_pos_y" name="position_y" value="0.00" /></label><br/>'
                     +       '<label class="spinnerLabel">z <input class="positionSpinner" id="spin_pos_z" name="position_z" value="0.00" /></label><br/>'
@@ -98,8 +98,8 @@
 
                     +   '<div class="verticalDivider" style="height:120px;" />'
 
-                    +   '<span class="row-fluid">'
-                    +       '<div class="Label Right Block" style="width:120px;">Rotation (rad)</div>'
+                    +   '<span class="Horizontal">'
+                    +       '<div class="" >Rotation (deg)</div>'
                     +       '<label class="spinnerLabel" >x <input class="rotationSpinner" id="spin_rot_x" name="rotation_x" value="0.00" /></label><br/>'
                     +       '<label class="spinnerLabel" >y <input class="rotationSpinner" id="spin_rot_y" name="rotation_y" value="0.00" /></label><br/>'
                     +       '<label class="spinnerLabel" >z <input class="rotationSpinner" id="spin_rot_z" name="rotation_z" value="0.00" /></label><br/>'
@@ -107,7 +107,7 @@
 
                     +   '<div class="verticalDivider" style="height:120px;" />'
 
-                    +   '<div class="row span"  >'
+                    +   '<div class="Horizontal"  >'
                     +       '<div class="Block" style="height:30px;">'
                     +       '<div class="Horizontal Label" style="width:90px;">Geometry</div>'
                     +       '<select class="Horizontal" id="geometrySelect">'
@@ -132,7 +132,7 @@
                 numberFormat: "n"
             });
             properties.find( ".rotationSpinner" ).spinner({
-                step: 0.01,
+                step: 0.5,
                 numberFormat: "n"
             });
 
@@ -284,18 +284,25 @@
                     var propertyContainer = null;
                     var propertyName = info[0];
                 }
-                var value = self._model.getObjectVisualProperty(self._objectName, elementName,
+
+                var value_scale = 1.0;
+                if( propertyContainer == "rotation")
+                    value_scale = Math.PI / 180.0;
+
+                var starting_value = 1.0 / value_scale * self._model.getObjectVisualProperty(self._objectName, elementName,
                                                                 propertyContainer, propertyName);
+
+
                 // Remove old callbacks, set values, connect new callbacks
                 $(this).spinner("option", {change: null, stop: null, spin: null});
-                $(this).spinner("value", value);
+                $(this).spinner("value", starting_value);
                 $(this).spinner("option", {
-                    change: function(event, ui){
-                        debugLog("Spinner change "+$(this).val());
-                        // Validate only!
-                    },
+//                    change: function(event, ui){
+//                        debugLog("Spinner change "+$(this).val());
+//                        // Validate only!
+//                    },
                     stop: function(event, ui){ // text events, and after each change
-                        var value = parseFloat($(this).val());
+                        var value = parseFloat($(this).val()) * value_scale;
                         var min = $(this).spinner("option", "min");
                         if(min!== null && value < min) {
                             $(this).spinner("value", min);
@@ -307,7 +314,7 @@
                             self.processSpinnerUpdate(elementName, propertyContainer, propertyName, value );
                     },
                     spin: function(event, ui){
-                        var value = parseFloat(ui.value);
+                        var value = parseFloat(ui.value) * value_scale;
                         debugLog(vsprintf("Spinner spin before: %f after: %f",
                             [parseFloat($(this).val()), value]));
                         if(!isNaN(value))
