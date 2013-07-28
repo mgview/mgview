@@ -503,13 +503,16 @@
         // TODO Functions below here should emit "changed" events...
 
         setObjectVisualColor: function (objectName, elementName, name, color) {
+
             var element = this._model.objects[objectName].visual[elementName];
             element.material = name;
             color.r *= 0.00390625;
             color.g *= 0.00390625;
             color.b *= 0.00390625;
-            this._model.objects[objectName].visual[elementName].material = { name: name, color: color };
-            this._view.createMaterial(name, {color: color});
+            //this._model.objects[objectName].visual[elementName].material = { name: name, color: color };
+            this._model.objects[objectName].visual[elementName].material = { name: name };
+
+            //this._view.createMaterial(name, {color: color});
             this._view.changeObjectVisualType(objectName, elementName, element.type, element);
             this.callModelChangedCallbacks();
         },

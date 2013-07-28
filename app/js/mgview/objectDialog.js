@@ -286,7 +286,7 @@
 
             //this._model.getObjectVisualColor(self._objectName, elementName );
             var currentMaterial = self._model.getObjectVisualProperty(self._objectName, elementName, null, "material" );
-            var initialColor = currentMaterial.color ? currentMaterial.color : currentMaterial;
+            var initialColor = currentMaterial.name ? currentMaterial.name : currentMaterial;
             this.$('elementProperties').find("#color_picker").spectrum({
                 color: initialColor,
                 showInitial: true,
@@ -296,7 +296,7 @@
                     console.log(vsprintf("Setting color for element %s:%s to %s",
                         [self._objectName, elementName, color.toRgbString()]));
                     var colorName = color.toRgbString();
-                    self._model.setObjectVisualColor(self._objectName, elementName, colorName, new_rgba);
+                    self._model.setObjectVisualColor(self._objectName, elementName, colorName, null);
                 }
             });
 
