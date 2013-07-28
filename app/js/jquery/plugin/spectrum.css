@@ -60,7 +60,7 @@ License: MIT
 
 .sp-alpha-enabled .sp-top
 {
-    margin-bottom: 18px;
+    margin-bottom: 24px;
 }
 .sp-alpha-enabled .sp-alpha
 {
@@ -84,10 +84,10 @@ License: MIT
 {
     display: none;
     position: absolute;
-    bottom: -14px;
+    bottom: -18px;
     right: 0;
     left: 0;
-    height: 8px;
+    height: 12px;
 }
 .sp-alpha-inner{
     border: solid 1px #333;
