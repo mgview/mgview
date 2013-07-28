@@ -247,7 +247,8 @@ body {
 }
 
 .positionSpinner, .rotationSpinner, .propertySpinner {
-    width: 75px;
+    /*width: 75px;*/
+    /*height: 30px;*/
     text-align: right;
     /*display: inline-block;*/
     /*float: right;*/

@@ -88,33 +88,81 @@
             properties.append(
                 '<label>Visible:<input type="checkbox" id="check_visible" ></label>' +
                     '<label> Color:<input type="text" id="color_picker" name="color" value="#3355cc" /> </label>' +
-                    '<br/>'
-                    +   '<span class="Horizontal" >'
-                    +       '<div class="" >Position (m)</div>'
-                    +       '<label class="spinnerLabel">x <input class="positionSpinner" id="spin_pos_x" name="position_x" value="0.00" /></label><br/>'
-                    +       '<label class="spinnerLabel">y <input class="positionSpinner" id="spin_pos_y" name="position_y" value="0.00" /></label><br/>'
-                    +       '<label class="spinnerLabel">z <input class="positionSpinner" id="spin_pos_z" name="position_z" value="0.00" /></label><br/>'
-                    +   '</span>'
+                    '<br/>' +
 
-                    +   '<div class="verticalDivider" style="height:120px;" />'
+                    '<div class="row-fluid">' +
 
-                    +   '<span class="Horizontal">'
-                    +       '<div class="" >Rotation (deg)</div>'
-                    +       '<label class="spinnerLabel" >x <input class="rotationSpinner" id="spin_rot_x" name="rotation_x" value="0.00" /></label><br/>'
-                    +       '<label class="spinnerLabel" >y <input class="rotationSpinner" id="spin_rot_y" name="rotation_y" value="0.00" /></label><br/>'
-                    +       '<label class="spinnerLabel" >z <input class="rotationSpinner" id="spin_rot_z" name="rotation_z" value="0.00" /></label><br/>'
-                    +   '</span>'
+                        '<div class="span3">' +
+                            '<div class="row-fluid">' +
+                                '<div class="span12">' +
+                                    '<strong class="pull-left">Position (m)</strong>' +
+                                '</div>' +
 
-                    +   '<div class="verticalDivider" style="height:120px;" />'
+                                '<strong class="span1">x</strong>' +
+                                '<input class="span10 positionSpinner" id="spin_pos_x" name="position_x" value="0.00" />' +
 
-                    +   '<div class="Horizontal"  >'
-                    +       '<div class="Block" style="height:30px;">'
-                    +       '<div class="Horizontal Label" style="width:90px;">Geometry</div>'
-                    +       '<select class="Horizontal" id="geometrySelect">'
-                    +       '</select>'
-                    +       '</div>'
-                    +       '<div class="geometryProperties"></div>'
-                    +   '</div>'
+                                '<strong class="span1">y</strong>' +
+                                '<input class="span10 positionSpinner" id="spin_pos_y" name="position_y" value="0.00" />' +
+
+                                '<strong class="span1">z</strong>' +
+                                '<input class="span10 positionSpinner" id="spin_pos_z" name="position_z" value="0.00" />' +
+                            '</div>' +
+                        '</div>' +
+
+                        '<div class="span3">' +
+                            '<div class="row-fluid">' +
+                                '<div class="span12">' +
+                                    '<strong class="pull-left">Rotation (deg)</strong>' +
+                                '</div>' +
+
+                                '<strong class="span1">x</strong>' +
+                                '<input class="span10 rotationSpinner" id="spin_rot_x" name="rotation_x" value="0.00" />' +
+
+                                '<strong class="span1">y</strong>' +
+                                '<input class="span10 rotationSpinner" id="spin_rot_y" name="rotation_y" value="0.00" />' +
+
+                                '<strong class="span1">z</strong>' +
+                                '<input class="span10 rotationSpinner" id="spin_rot_z" name="rotation_z" value="0.00" />' +
+                            '</div>' +
+                        '</div>' +
+
+                        '<div class="span6">' +
+                            '<div class="Block" style="height:30px;">' +
+                                '<div class="Horizontal Label" style="width:90px;">Geometry</div>' +
+                                '<select class="Horizontal" id="geometrySelect"> </select>' +
+                            '</div>' +
+                            '<div class="geometryProperties"></div>' +
+                        '</div>' +
+
+                    '</div>'
+
+//
+//                    +   '<span class="Horizontal" >'
+//                    +       '<div class="" >Position (m)</div>'
+//                    +       '<label class="spinnerLabel">x <input class="positionSpinner" id="spin_pos_x" name="position_x" value="0.00" /></label><br/>'
+//                    +       '<label class="spinnerLabel">y <input class="positionSpinner" id="spin_pos_y" name="position_y" value="0.00" /></label><br/>'
+//                    +       '<label class="spinnerLabel">z <input class="positionSpinner" id="spin_pos_z" name="position_z" value="0.00" /></label><br/>'
+//                    +   '</span>'
+//
+//                    +   '<div class="verticalDivider" style="height:120px;" />'
+//
+//                    +   '<span class="Horizontal">'
+//                    +       '<div class="" >Rotation (deg)</div>'
+//                    +       '<label class="spinnerLabel" >x <input class="rotationSpinner" id="spin_rot_x" name="rotation_x" value="0.00" /></label><br/>'
+//                    +       '<label class="spinnerLabel" >y <input class="rotationSpinner" id="spin_rot_y" name="rotation_y" value="0.00" /></label><br/>'
+//                    +       '<label class="spinnerLabel" >z <input class="rotationSpinner" id="spin_rot_z" name="rotation_z" value="0.00" /></label><br/>'
+//                    +   '</span>'
+//
+//                    +   '<div class="verticalDivider" style="height:120px;" />'
+//
+//                    +   '<div class="Horizontal"  >'
+//                    +       '<div class="Block" style="height:30px;">'
+//                    +       '<div class="Horizontal Label" style="width:90px;">Geometry</div>'
+//                    +       '<select class="Horizontal" id="geometrySelect">'
+//                    +       '</select>'
+//                    +       '</div>'
+//                    +       '<div class="geometryProperties"></div>'
+//                    +   '</div>'
             );
 
             this.$('geometryProperties', this.$("dialog").find( ".geometryProperties" )); // should this be an id?
@@ -146,7 +194,7 @@
             });
 
             properties.find("#color_picker").spectrum({
-                color: "#f00",
+                color: "#f00"
             });
 
             // Initialize stuff
