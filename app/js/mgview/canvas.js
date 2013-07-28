@@ -4,6 +4,7 @@
 
     SV.Canvas = SV.Class.extend({
         init: function(world) {
+
             this._world = world;
             console.log("Adding canvas");
             var html = $('<div/>').uid().addClass('WebGLCanvasContainer');
@@ -18,20 +19,19 @@
                 SV.$('Topbar').get(0).appendChild( this.stats.domElement );
             }
 
-
-            var now = new Date().getTime();
-            this._frameCount         = 0;
-            this._lastFrame          = now;
-            this._lastSelectionFrame = now;
-            this._oldTime = 0;
-
             this._animate = false;
+            this.clock = new THREE.Clock(false);
+//            var now = new Date().getTime();
+//            this._meshIndices = {};
+//            this._frameCount         = 0;
+//            this._lastFrame          = now;
+//            this._lastSelectionFrame = now;
+//            this._oldTime = 0;
 
-            this._meshIndices = {};
-
+            // TODO
+            return;
 
             // Make sure resolution is correct
-
             var renderer = new THREE.WebGLRenderer( { clearColor: 0xffffff, clearAlpha: 1, antialias: true } );
             renderer.setClearColorHex( 0xe0f0ff, 1 );
             //renderer.setClearColorHex( 0xeeeeee, 1 );
@@ -45,7 +45,6 @@
 
             this.enableSelection();
 
-            this.clock = new THREE.Clock(false);
             var self = this;
             this.updateSize();
             setTimeout(function() { self.updateSize(); },  200);
@@ -136,10 +135,12 @@
             for (var i in views){
                 views[i].updateCameraAndControls();
                 //console.log("elapsed "+elapsed);
-                if( views[i].setAnimationTime(elapsed) > elapsed) {
+                var result = views[i].setAnimationTime(elapsed);
+
+                if( result.tFinalExceeded ) {
                     this.stopAnimation();
-                    this.clock.elapsedTime = this._oldTime;
-//                    return;
+                    this.clock.elapsedTime = result.actualTime;
+                    //return;
                 } else {
                     // TODO this will break with more than one view...
 //                    this._oldTime = elapsed;

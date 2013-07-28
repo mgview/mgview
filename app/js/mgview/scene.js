@@ -530,7 +530,9 @@
                 $("#time_button").removeClass("btn-danger").addClass("btn-success");
 
 //                console.log("Setting animation time to " + this._model._tFinal);
-                return this.setAnimationTime(this._model._tFinal);
+                var result = this.setAnimationTime(this._model._tFinal);
+                result.tFinalExceeded = true;
+                return result;
             }
             var data = data_dict.data;
             var actual_time = data_dict.t;
@@ -581,7 +583,7 @@
                 span.line.geometry.verticesNeedUpdate = true;
             }
 
-            return actual_time;
+            return {actualTime: actual_time, tFinalExceeded: false };
         },
 
         updateObjectVisual: function(objectName, elementName, propertyContainer, propertyName, value )
