@@ -229,9 +229,40 @@
             }
         },
 
-        createMaterial: function(name, material) {
+        // TODO this should probably live in sceneModel,
+        //      but we need to figure out when ot call it.
+        stripOutRedundantColorInfo: function(material) {
+            var tinycolor = window.tinycolor(material.name);
+            rgba = tinycolor.toRgb();
+            if( rgba !== false && material.color )
+            {
+                delete material.color;
+            }
+        },
+
+        createMaterial: function(material) {
+            var name = material.name;
+
+            var rgba;
+            if(material.color)
+            {
+                rgba = material.color;
+            } else {
+                var tinycolor = window.tinycolor(material.name);
+
+                rgba = tinycolor.toRgb();
+                if( rgba !== false )
+                {
+                    material.color = undefined;
+                    rgba.r /= 255.0;
+                    rgba.g /= 255.0;
+                    rgba.b /= 255.0;
+                } else {
+                    alert("Unknown color, or color string did not parse: " + material.name);
+                }
+            }
             var params = {};
-            var rgba = material.color;
+
             params.ambient  =   dec2hexColor(0.2*rgba.r, 0.2*rgba.g, 0.2*rgba.b);
             params.color    =   dec2hexColor(rgba.r, rgba.g, rgba.b);
             params.specular =   dec2hexColor(0.5*rgba.r, 0.5*rgba.g, 0.5*rgba.b);
@@ -308,12 +339,18 @@
                 rotation.set(params.rotation.x, params.rotation.y, params.rotation.z);
 
             var materialName = 'SHINY_RED';
+            // update to new color format
             if(typeof(params.material) === 'string' && SV_COLORS.hasOwnProperty(params.material)) {
-                materialName = params.material;
-                debugLog(vsprintf("Object %s:%s has material %s.", [parent.name, elementName, materialName]));
-            } else if (typeof(params.material) === 'object') {
+                params.material = { name: params.material };
+            }
+            if(SV_COLORS.hasOwnProperty(params.material.name)) {
                 materialName = params.material.name;
-                this.createMaterial( materialName, params.material);
+                debugLog(vsprintf("Object %s:%s has material %s.", [parent.name, elementName, materialName]));
+
+            } else {
+                materialName = params.material.name;
+                this.stripOutRedundantColorInfo(params.material);
+                this.createMaterial(params.material);
             }
             var mesh_color = SV_COLORS[materialName];
 

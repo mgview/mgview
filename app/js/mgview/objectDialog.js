@@ -291,12 +291,14 @@
                 color: initialColor,
                 showInitial: true,
                 showAlpha: true,
+                preferredFormat: "rgb",
+                showInput: true,
                 change: function (color, something) {
                     var new_rgba = color.toRgb();
                     console.log(vsprintf("Setting color for element %s:%s to %s",
                         [self._objectName, elementName, color.toRgbString()]));
                     var colorName = color.toRgbString();
-                    self._model.setObjectVisualColor(self._objectName, elementName, colorName, null);
+                    self._model.setObjectVisualColor(self._objectName, elementName, colorName, new_rgba);
                 }
             });
 

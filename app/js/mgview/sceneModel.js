@@ -418,7 +418,7 @@
                         scale     : size/2,
                         position  : { x: size/3, y: size/8, z: 0 },
                         rotation  : { x: 0, y: 0, z: 0 },
-                        material  : "SILVER"
+                        material  : { name: "SILVER" }
                     }
                 }
                 // Add basis
@@ -429,7 +429,7 @@
                         scale     : size,
                         position  : { x: 0, y: 0, z: 0 },
                         rotation  : { x: 0, y: 0, z: 0 },
-                        material  : "SILVER"
+                        material  : { name: "SILVER" }
                     }
                 }
             }
@@ -485,7 +485,7 @@
                 visible : true,
                 position: {x: 0, y: 0, z: 0},
                 rotation: {x: 0, y: 0, z: 0},
-                material: "WHITE"
+                material: { name: "SILVER" }
             }
         },
 
@@ -512,7 +512,9 @@
             //this._model.objects[objectName].visual[elementName].material = { name: name, color: color };
             this._model.objects[objectName].visual[elementName].material = { name: name };
 
+
             //this._view.createMaterial(name, {color: color});
+            this._view.createMaterial({name: name});
             this._view.changeObjectVisualType(objectName, elementName, element.type, element);
             this.callModelChangedCallbacks();
         },
