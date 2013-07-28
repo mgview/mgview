@@ -52,7 +52,16 @@
             return this._basePath;
         },
 
-        processSimulationSettings: function(model, base_path){
+        inferTimeFromData: function() {
+
+            this._tInitial = 0;
+            this._tFinal = this._timeArray[this._timeArray.length - 1];
+            this._tStep = this._timeArray[1] - this._timeArray[0];
+            $( "#time_scrub" ).slider("option", {min: this._tInitial, max: this._tFinal});
+
+        },
+
+        processSimulationSettings: function(model, base_path) {
             var self = this;
             self._simulationSettingsFile = base_path + removeWhitespace(model.simulationSettings);
             $.ajax({
@@ -150,7 +159,7 @@
             self._model = model;
 
             self.addEmptyDefaults();
-            self.processSimulationSettings(model, self._basePath);
+            //self.processSimulationSettings(model, self._basePath);
             self.processSimulationFiles(model, self._basePath);
             self.loadSimulationTrajectories();
         },
@@ -217,6 +226,7 @@
                     setTimeout(waitForFilesToLoad, 100);
                     return;
                 } else {
+                    self.inferTimeFromData();
                     self.inferFramesFromData();
                 }
             })();
