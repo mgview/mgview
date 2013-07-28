@@ -24,7 +24,6 @@
     "simulationData": [
         "stable/babyboot.1:2"
     ],
-    "simulationSettings": "stable/babyboot.in",
     "objects": {
         "N": {
             "type": "frame",

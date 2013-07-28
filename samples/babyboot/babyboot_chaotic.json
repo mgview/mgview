@@ -24,7 +24,6 @@
     "simulationData": [
         "chaotic/babyboot.1:2"
     ],
-    "simulationSettings": "chaotic/babyboot.in",
     "objects": {
         "N": {
             "type": "frame",

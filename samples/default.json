@@ -1,6 +1,5 @@
 {
     "name"                  : "myFileName",
-    "simulationSettings"    : "myFileName.in",
     "simulationData"        : ["myFileName.1:5"],
     "newtonianFrame"        : "N",
     "sceneOrigin"           : "No",

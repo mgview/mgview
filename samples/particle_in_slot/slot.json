@@ -24,7 +24,6 @@
     "simulationData": [
         "slot.1:3"
     ],
-    "simulationSettings": "slot.in",
     "objects": {
         "N": {
             "type": "frame",

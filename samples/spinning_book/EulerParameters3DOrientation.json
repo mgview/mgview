@@ -24,7 +24,6 @@
     "simulationData": [
         "EulerParameters3DOrientation.1:2"
     ],
-    "simulationSettings": "EulerParameters3DOrientation.in",
     "objects": {
         "N": {
             "type": "frame",

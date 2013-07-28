@@ -1,6 +1,5 @@
 {
     "name": "robot_arm",
-    "simulationSettings": "robot_arm.in",
     "simulationData": [
         "robot_arm.2:6"
     ],

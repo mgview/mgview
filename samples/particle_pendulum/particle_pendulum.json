@@ -9,10 +9,7 @@
     "cameraParentFrame" : "N",
     "speedFactor"       : 1.0,
     "workspaceSize"     : 0.5,
-
     "simulationData" : ["particle_pendulum.1:3"],
-    "simulationSettings" : "particle_pendulum.in",
-
     "customMaterials": {},
 
     "objects" : {
