@@ -2,7 +2,7 @@
     "name" : "Wooden Phantom",
     "newtonianFrame"    : "N",
     "sceneOrigin"       : "No",
-    "showAxes"          : true,
+    "showAxes"          : false,
     "cameraUp"          : [0, 0, 1],
     "cameraEye"         : [1, 0.3, 0.3],
     "cameraFocus"       : [0.2, 0, 0.15],

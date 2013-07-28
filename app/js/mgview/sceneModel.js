@@ -372,6 +372,8 @@
         },
 
         addEmptyDefaults:   function() {
+            if(this._model.showAxes === undefined)
+                this._model.showAxes = false;
             if(this._model.workspaceSize === undefined)
                 this._model.workspaceSize = 1.0;
             if(this._model.newtonianFrame === undefined)

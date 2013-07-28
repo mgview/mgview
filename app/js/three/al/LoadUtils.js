@@ -60,12 +60,6 @@ THREEal.loadAndAddOBJ = function( frame, path, scale, xyz, rpy, material, callba
     var loader = new THREE.OBJLoader();
     loader.load( path, function ( object ) {
 
-//        for ( var i = 0, l = object.children.length; i < l; i ++ ) {
-//
-//            object.children[ i ].material.map = texture;
-//
-//        }
-
         if(material instanceof THREE.Material){
             for ( var i = 0; i < object.children.length; i ++ ) {
                 object.children[ i ].material = material;

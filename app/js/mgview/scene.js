@@ -233,9 +233,9 @@
         //      but we need to figure out when ot call it.
         stripOutRedundantColorInfo: function(material) {
             var tinycolor = window.tinycolor(material.name);
-            rgba = tinycolor.toRgb();
-            if( rgba !== false && material.color )
+            if( tinycolor.ok && material.color )
             {
+                //console.log("removing redundant color info");
                 delete material.color;
             }
         },
@@ -399,6 +399,9 @@
                             obj.name = elementName;
                             obj.type = geometry_type;
                             obj.parameters = dim;
+                            obj.children[0].material = obj.children[0].material = SV_COLORS["BLUE"];
+                            obj.children[3].material = obj.children[3].material = SV_COLORS["RED"];
+                            obj.children[4].material = obj.children[4].material = SV_COLORS["GREEN"];
                             THREEal.setVisible(obj, dim.visible);
                         });
                 //}

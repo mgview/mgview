@@ -2,7 +2,7 @@
     "name" : "particle_pendulum",
     "newtonianFrame"    : "N",
     "sceneOrigin"       : "No",
-    "showAxes"          : true,
+    "showAxes"          : false,
     "cameraUp"          : [0, 1, 0],
     "cameraEye"         : [0, -0.25, 2],
     "cameraFocus"       : [0, -0.25, 0],

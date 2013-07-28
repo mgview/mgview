@@ -43,10 +43,10 @@
                 //dialogClass: 'dialogNoTitle',
                 autoOpen: false,
                 closeOnEscape: true,
-                width: 500,
-                minWidth: 500,
+                width: 550,
+                minWidth: 550,
 //                maxWidth: 500,
-                minHeight: 260
+                minHeight: 280
 //                show: { effect: "blind", duration: 60 },
 //                hide: { effect: "blind", duration: 60 }
             });
@@ -86,9 +86,21 @@
 
             var properties = this.$("elementProperties");
             properties.append(
-                '<label>Visible:<input type="checkbox" id="check_visible" ></label>' +
-                    '<label> Color:<input type="text" id="color_picker" name="color" value="#3355cc" /> </label>' +
-                    '<br/>' +
+
+                    '<div class="row-fluid">' +
+                    '<div class="span12">' +
+                        '<strong>Visible: </strong>' +
+                        '<input type="checkbox" id="check_visible" >' +
+//                    '</div>' +
+//                    '<label class="span4">Visible:<input type="checkbox" id="check_visible" ></label>' +
+//                    '<div class="span4">' +
+                        '<br/>' +
+                        '<strong>Color: </strong>' +
+                        '<input type="text" id="color_picker" name="color" value="#3355cc" />' +
+                    '</div>' +
+//                    '<label class="span4"> Color:<input type="text" id="color_picker" name="color" value="#3355cc" /> </label>' +
+
+                    '</div>' +
 
                     '<div class="row-fluid">' +
 
@@ -290,6 +302,7 @@
             this.$('elementProperties').find("#color_picker").spectrum({
                 color: initialColor,
                 showInitial: true,
+                //flat: true,
                 showAlpha: true,
                 preferredFormat: "rgb",
                 showInput: true,
@@ -391,9 +404,10 @@
             }
             if(type === 'box') {
                 properties.append(
-                    '<label>size x: <input class="propertySpinner" id="spin_x" name="size_x" value="1.00" /></label><br/>'
-                        +'<label>size y: <input class="propertySpinner" id="spin_y" name="size_y" value="1.00" /></label><br/>'
-                        +'<label>size z: <input class="propertySpinner" id="spin_z" name="size_z" value="1.00" /></label><br/>'
+                        '<br/>' +
+                        '<label>size_x: <input class="propertySpinner" id="spin_x" name="size_x" value="1.00" /></label><br/>' +
+                        '<label>size_y: <input class="propertySpinner" id="spin_y" name="size_y" value="1.00" /></label><br/>' +
+                        '<label>size_z: <input class="propertySpinner" id="spin_z" name="size_z" value="1.00" /></label><br/>'
                 );
             }
             if(type === 'cylinder') {

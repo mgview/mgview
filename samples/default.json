@@ -4,7 +4,7 @@
     "simulationData"        : ["myFileName.1:5"],
     "newtonianFrame"        : "N",
     "sceneOrigin"           : "No",
-    "showAxes"              : true,
+    "showAxes"              : false,
     "workspaceSize"         : 1,
     "cameraParentFrame"     : "N",
     "cameraUp"              : [0, 0, 1],
