@@ -51,62 +51,57 @@
     <h3>Installation <font size=-1>(only needs to be done once)</font></h3>
     <ol>
         <li>
-            Currently, MGView requires WebGL in Google Chrome.
+            Currently, MGView requires WebGL in Google Chrome. Firefox may work, but it is not officially supported.
             <br/>
-            To install Google Chrome, visit <a href="http://www.google.com/chrome" target="_blank">http://www.google.com/chrome</a>.
+            To install Google Chrome, visit
+            <a href="http://www.google.com/chrome" target="_blank">http://www.google.com/chrome</a>.
         </li>
         <li>
             To check that your Chrome installation supports WebGL:
             <br/> Launch Chrome and visit the <a href="http://adamleeper.com/simulation/Examples.html">examples page</a>.
             <br/>
             <nobr>Click on the first example, "Classic Particle Pendulum."</nobr>
-            <br/>Ensure that the pendulum model appears, and runs when you click the "START" button.
+            <br/>Ensure that the pendulum model appears, and runs when you click the green timer button on the top bar.
             <br/>
-            <font size="-1"><b>Note:</b> If you see a red background in the visualizer and you are <b>sure</b>
+            <font size="-1"><b>Note:</b> If you see a red background in the visualizer and you are <strong>sure</strong>
                 that you are using Chrome (not Safari, Firefox, or Internet Explorer), then your hardware may not support WebGL.</font>
         </li>
         <li>
-            To install the visualizer, download <a href="MGView.zip">this zip file</a> from www.adamleeper.com.
-            <br/>
-            Copy/move the zip file to your MotionGenesis folder.
-            <br/>Unzip the zip file to the MotionGenesis folder.
-            <br/>A folder named MGView should appear in your MotionGenesis folder.
+            To install the visualizer:
+            <ul>
+                <li>
+                    Download <a href="MGView-latest.zip">this zip file</a> from www.adamleeper.com.
+                </li>
+                <li>
+                    Copy/move the zip file into your MotionGenesis folder (e.g. on Windows, it is <code>C:\MotionGenesis</code>).
+                </li>
+                <li>
+                    Use the <strong>"Extract to here..."</strong> option in your zip client
+                    (<strong>not</strong> "Extract to MGView-latest")
+                    <br/>to unzip the contents of the zip file directly to the MotionGenesis folder.
+                </li>
+                <li>
+                    A folder named MGView should appear in your MotionGenesis folder.
+                </li>
+            </ul>
         </li>
     </ol>
 
     <h3>Running <font size=-1></font></h3>
 
-    <!-- TODO:Make this a .cshrc file or .bat file to make things automatic. -->
     <ul>
         <li>
             <h4>On Mac/Linux:</h4>
             <ol>
-                <!--
-                <li>Use a terminal to navigate to your MotionGenesis folder.</li>
-                <li>In the terminal window, type: &nbsp; <b><font face="courier" >python -m SimpleHTTPServer 8000 </font></b>
-                <br/><b>If you kill this python process (e.g. by closing the terminal
-                window or restarting your computer), this step needs to be done again.</b>
-                <br/>
-                    <font size="-1">The number 8000 above is called a "port" number.</font>
-                </li>
-                <li>In the Chrome address bar, type:
-                &nbsp <b><font face="courier" >localhost:8000 </font></b>,
-                <br/>
-                where the 4-digit number 8000 corresponds to the port number used in the previous step.</li>
-                <li>The contents of your MotionGenesis folder will appear in the Chrome browser.
-                <br/>
-                Click on the MGView folder, then click on Examples.html.
-                </li>
-                -->
-                <li>Run Chrome as you would normally. The following steps will fail if Chrome isn't already running.</li>
                 <li>Use a terminal to navigate to your MGView folder.</li>
                 <li>In the terminal window, enter the command: &nbsp;
-                <pre><b><font face="courier" >./MGViewStartHere</font></b></pre>
+                <pre><b><font face="courier" >./RunMGViewMac</font></b></pre>
                 </li>
                 <li>
-                If step 2 fails by complaining that MGViewStartHere is not a valid executable, enter the following command and repeat step 2.
-                <pre><b>chmod a+x MGViewStartHere</b></pre>
+                    If step 2 fails by complaining that RunMGViewMac is not a valid executable, enter the following command and repeat step 2.
+                    <pre><b>chmod a+x RunMGViewMac</b></pre>
                 </li>
+                <li>If running on Linux, replace "RunMGViewMac" above with "RunMGViewLinux".</li>
             </ol>
         </li>
 
@@ -114,35 +109,21 @@
             <h4>On Windows:</h4>
             <ol>
                 <li>Run Chrome as you would normally. The following steps will fail if Chrome isn't already running.</li>
-                <li> Open your MGView folder, and double-click on <b>MGViewStartHere</b>.
+                <li> Open your MGView folder, and double-click on <b>RunMGViewWindows</b>.
                 <br/>
                 <font size=-1><b>Note:</b> This starts MGView in a new Chrome tab, and runs a local HTTP server to support the application. </font>
                 </li>
                 <li>
-                The application (specifically, the webserver running in
+                    The application (specifically, the webserver running in
                     <a href="http://nodejs.org/" target="_blank">node.exe</a>)
                     will request permission to communicate on your local network;
-                you should click "Yes".
+                    you should click "Yes".
                 </li>
             </ol>
 
         </li>
 
     </ul>
-
-    <!--
-    <h3>Running <font size=-1></font></h3>
-    <ol>
-        <li>In the Chrome address bar, type:
-            &nbsp <b><font face="courier" >localhost:8000 </font></b>,
-            <br/>
-            where the 4-digit number 8000 corresponds to the port number used in the Setup section above.</li>
-        <li>The contents of your MotionGenesis folder will appear in the Chrome browser.
-            <br/>
-            Click on the MGView folder, then click on Examples.html.
-        </li>
-    </ol>
-    -->
 
     <h3>Creating Numerical Pose Data Using MotionGenesis (MG)</h3>
     Your MG simulations must output animation data (position/orientation vs. time)
@@ -179,176 +160,168 @@
             </ul>
         </li>
 
-        <li>After running the simulation, you will have a "myFileName.in" file with input parameters,
-            <br/>
-            and a series of data files
-            <!--for each "output" command and each point or frame,-->
+        <li>After running the simulation, you will have a series of data files
             called "myFileName.1", "myFileName.2", etc.
         </li>
         <li>
-            See the <a href="samples/" target="_blank">samples folder</a> in
-            MotionGenesis/MGView/samples/ if you have trouble.
+            See the <a href="samples/" target="_blank">samples</a> in
+            in your <code>MotionGenesis/MGView/samples</code> folder if you have trouble.
         </li>
     </ol>
 
-    <!--<h3>Creating the JSON file for MGView</h3>-->
-    <!--<ol>-->
-        <!--<li>Copy the file <a href="samples/default.json" target="_blank">default.json</a> into-->
-            <!--the same folder as myFileName.in.-->
-            <!--</li>-->
-        <!--<li>Rename "default.json" to "myFileName.json"</li>-->
-        <!--<li>Edit "myFileName.json" for your data, as described in the section "JSON File Contents" below.</li>-->
-    <!--</ol>-->
+    <h3>Creating the JSON file for MGView</h3>
+    Visualizer files use the <a href="http://en.wikipedia.org/wiki/JSON" target="_blank">JSON</a> format.
+    <ol>
+        <li>Copy the file <a href="samples/default.json" target="_blank">default.json</a> into
+            the folder that contains your motion data files.
+            </li>
+        <li>Rename "default.json" to "myFileName.json"</li>
+        <li>Edit "myFileName.json" for your data, as described in the section "JSON File Contents" below.</li>
+    </ol>
 
 
-    <!--<h3>Loading Simulations</h3>-->
-    <!--<p>Visualizer files use the <a href="http://en.wikipedia.org/wiki/JSON" target="_blank">JSON</a> format,-->
-        <!--so they will look like myFileName.json.</p>-->
+    <h3>Loading Simulations</h3>
 
-    <!--<ol>-->
-        <!--<li>Follow the "Running" instructions above to open an MGView window.-->
-        <!--<br/>-->
-        <!--<font size="-1"><b>Note:</b>-->
-            <!--If the HTTP Server is already running and you want to just open a new MGView tab in Chrome,-->
-            <!--<br/>you can type: &nbsp;-->
-            <!--<b><font face="courier" >localhost:8000/MGView/MGView.html</font></b>-->
-            <!--in the Chrome address bar.-->
-            <!--</font>-->
-        <!--</li>-->
-        <!--<li>In the text field in the upper-left corner, type the <b>relative</b> path to-->
-            <!--the json file from the MGView.html file.</li>-->
-        <!--<ul>-->
-            <!--<li>-->
-                <!--For example, if you have the file: &nbsp;-->
-                <!--<font face="courier">MotionGenesis/myFileName.json</font>-->
-                <!--<br/>the relative path from MGView.html to myFileName.json is: &nbsp;-->
-                <!--<font face="courier">../myFileName.json</font>-->
-                <!--<br/>-->
-                <!--<font size=-1><b>Note:</b> Each "../" means "go up one level". So "../../" takes you up two levels.</font>-->
-                <!--<br/>-->
-                <!--<font size=-1><b>Note:</b>-->
-                    <!--It is helpful to organize your work into subfolders, in which case your path may be:-->
-                    <!--<font face="courier">../myFolderName/myFileName.json</font></font>-->
-            <!--</li>-->
+    <ol>
+        <li>Follow the "Running" instructions above to open an MGView window.
+        <br/>
+        <font size="-1"><b>Note:</b>
+            If the HTTP Server is already running and you want to just open a new MGView tab in Chrome,
+            <br/>you can type: &nbsp;
+            <b><font face="courier" >localhost:8000/MGView/MGView.html</font></b>
+            in the Chrome address bar.
+            </font>
+        </li>
+        <li>In the text field in the upper-left corner, type the <b>relative</b> path to
+            the json file from the MGView.html file.</li>
+        <ul>
+            <li>
+                For example, if you have the file:
+                <code>MotionGenesis/myFileName.json</code>
+                <br/>the relative path from MGView.html to myFileName.json is: &nbsp;
+                <code>../myFileName.json</code>
+                <br/>
+                <font size=-1><b>Note:</b> Each "../" means "go up one level". So "../../" takes you up two levels.</font>
+                <br/>
+                <font size=-1><b>Note:</b>
+                    It is helpful to organize your work into subfolders, in which case your path may be:
+                    <code>../myFolderName/myFileName.json</code></font>
+            </li>
 
-        <!--</ul>-->
-        <!--<li>Click the yellow "load" button.</li>-->
-        <!--<ul>-->
-            <!--<li>-->
-                <!--If you re-run your simulation (generating new data files)-->
-                <!--you can reload the results by clicking the "Load" button again.-->
-            <!--</li>-->
-        <!--</ul>-->
-    <!--</ol>-->
-    <!--&lt;!&ndash;<p>&ndash;&gt;-->
-    <!--&lt;!&ndash;<b>Hint:</b>   Get comfortable pressing F5. It's how you reload the page in&ndash;&gt;-->
-    <!--&lt;!&ndash;Chrome, and you'll be doing it every time you make any changes to&ndash;&gt;-->
-    <!--&lt;!&ndash;any files, and any time things seem to break :)&ndash;&gt;-->
-    <!--&lt;!&ndash;</p>&ndash;&gt;-->
-    <!--<p>-->
-        <!--<b>Hint:</b>   If things don't seem to be working, hit Ctrl+Shift+j to open the-->
-        <!--javascript developer tools window.-->
-        <!--<br/>-->
-        <!--Select the "console" tab, which displays status messages.-->
-        <!--Errors (such as file not found) are displayed in <font color="red">RED</font>.-->
-    <!--</p>-->
+        </ul>
+        <li>Click the "Load" button.</li>
+        <ul>
+            <li>
+                If you re-run your simulation (generating new data files)
+                you can reload the results by clicking the "Load" button again.
+            </li>
+        </ul>
+    </ol>
+
+    <p>
+        <b>Hint:</b>   If things don't seem to be working, hit Ctrl+Shift+j to open the
+        javascript developer tools window.
+        <br/>
+        Select the "console" tab, which displays status messages.
+        Errors (such as file not found) are displayed in <font color="red">RED</font>.
+    </p>
 
 
-    <!--<h3>Adding Visual Geometry Using the MGView GUI</h3>-->
-    <!--The MGView GUI provides point-and-click functionality to add visual geometry to the points and-->
-    <!--frames in your simulation.-->
-    <!--<br/>For the purpose of visualization, we will call these "objects."-->
-    <!--<br/><br/>-->
-    <!--After loading your .json file in the MGView tab in Chrome, you can add various kinds of geometry.-->
-    <!--For all types, the basic procedure is:-->
-            <!--<ol>-->
-                <!--<li>Click on the name of the object in the "Objects" list on the left side. </li>-->
-                <!--<li>In the "create new" text box, type a name for the geometry (e.g. "myGeometry") and click the "+" button.</li>-->
-                <!--<li>In the "Geometry" pull-down box, select the desired type (sphere, cylinder, mesh, etc).</li>-->
-                <!--<li>Specific dimensions for each geometry type can be controlled using the spinner boxes that appear.</li>-->
-            <!--</ol>-->
+    <h3>Adding Visual Geometry Using the MGView GUI</h3>
+    The MGView GUI provides point-and-click functionality to add visual geometry to the points and
+    frames in your simulation.
+    <br/>For the purpose of visualization, we will call these "objects."
+    <br/><br/>
+    After loading your .json file in the MGView tab in Chrome, you can add various kinds of geometry.
+    For all types, the basic procedure is:
+            <ol>
+                <li>Click on the name of the object in the "Objects" list on the left side. </li>
+                <li>In the "create new" text box, type a name for the geometry (e.g. "myGeometry") and click the "+" button.</li>
+                <li>In the "Geometry" pull-down box, select the desired type (sphere, cylinder, mesh, etc).</li>
+                <li>Specific dimensions for each geometry type can be controlled using the spinner boxes that appear.</li>
+            </ol>
 
-    <!--<h5>Geometry Types</h5>-->
-    <!--<ul>-->
-        <!--<li>Basis-->
-            <!--<ol>-->
-            <!--</ol>-->
-        <!--</li>-->
-        <!--<li>Box-->
-            <!--<ol>-->
-            <!--</ol>-->
-        <!--</li>-->
-        <!--<li>Cone-->
-            <!--<ol>-->
-            <!--</ol>-->
-        <!--</li>-->
-        <!--<li>Cylinder-->
-            <!--<ol>-->
-            <!--</ol>-->
-        <!--</li>-->
-        <!--<li>Mesh / CAD (.stl, .obj, or .dae)-->
-            <!--<ol>-->
-                <!--<li>In the "enter path" text box, type the relative path to the CAD file and click the arrow button at right.</li>-->
-                <!--<li>You may change or reload the mesh file at any time by repeating step 1.</li>-->
-            <!--</ol>-->
-        <!--</li>-->
-        <!--<li>Sphere-->
-            <!--<ol>-->
-            <!--</ol>-->
-        <!--</li>-->
-        <!--<li>Text-->
-            <!--<ol>-->
-                <!--<li>Type the desired text in the input box and click the arrow button at right.</li>-->
-                <!--<li>You may change the text at any time by repeating step 1.</li>-->
-            <!--</ol>-->
-        <!--</li>-->
-        <!--<li>Torus-->
-            <!--<ol>-->
-            <!--</ol>-->
-        <!--</li>-->
-    <!--</ul>-->
+    <h5>Geometry Types</h5>
+    <ul>
+        <li>Basis
+            <ol>
+            </ol>
+        </li>
+        <li>Box
+            <ol>
+            </ol>
+        </li>
+        <li>Cone
+            <ol>
+            </ol>
+        </li>
+        <li>Cylinder
+            <ol>
+            </ol>
+        </li>
+        <li>Mesh / CAD (.stl, .obj, or .dae)
+            <ol>
+                <li>In the "enter path" text box, type the relative path to the CAD file and click the arrow button at right.</li>
+                <li>You may change or reload the mesh file at any time by repeating step 1.</li>
+            </ol>
+        </li>
+        <li>Sphere
+            <ol>
+            </ol>
+        </li>
+        <li>Text
+            <ol>
+                <li>Type the desired text in the input box and click the arrow button at right.</li>
+                <li>You may change the text at any time by repeating step 1.</li>
+            </ol>
+        </li>
+        <li>Torus
+            <ol>
+            </ol>
+        </li>
+    </ul>
 
 
-    <!--<h3>JSON File Contents <font size=-1>Note: JSON file content is case-sensitive.</font></h3>-->
-    <!--Certain fields in the JSON file must be edited by hand.-->
-    <!--<br/>-->
-    <!--<b>Required fields to edit:</b>-->
-    <!--<ul>-->
-        <!--<li><b>simulationData</b> - string[i] - An array of strings containing the paths to your simulation data files, <b>relative to the JSON file</b>.-->
-            <!--<br/>A colon can be used to indicate a range, e.g. ["my_simulation.1:2"] is the same as ["my_simulation.1", "my_simulation.2"]. </li>-->
+    <h3>JSON File Contents <font size=-1>Note: JSON file content is case-sensitive.</font></h3>
+    Certain fields in the JSON file must be edited by hand.
+    <br/>
+    <b>Required fields to edit:</b>
+    <ul>
+        <li><b>simulationData</b> - string[i] - An array of strings containing the paths to your simulation data files, <b>relative to the JSON file</b>.
+            <br/>A colon can be used to indicate a range, e.g. ["my_simulation.1:2"] is the same as ["my_simulation.1", "my_simulation.2"]. </li>
         <!--<li><b>simulationSettings</b> - string - A string containing the path to the .in file produced by MotionGenesies, <b>relative to the JSON file</b>.</li>-->
-        <!--&lt;!&ndash;<hr/>&ndash;&gt;-->
-    <!--</ul>-->
-    <!--Additional fields:-->
-    <!--<ul>-->
-        <!--<li><b>newtonianFrame</b> - string - Must match the name of the NewtonianFrame used for animation output.</li>-->
-        <!--<li><b>sceneOrigin</b> - string - Must match the name of the point (fixed in your NewtonianFrame) used for animation output.</li>-->
-        <!--<li><b>showAxes</b> - bool - true or false (with no quotes). If true, will draw large red, green, and blue axes denoting the basis of your NewtonianFrame.</li>-->
-        <!--<li><b>workspaceSize</b> - number - Used to automate the placement of some things, should correspond roughly to the diameter of the workspace in your simulation.</li>-->
-        <!--<li><b>cameraUp</b> - number[3] - The [x,y,z] values, measured in the cameraParentFrame, representing the vector that points "upward". </li>-->
-        <!--<li><b>cameraEye</b> - number[3] - The [x,y,z] position of the camera, measured in the cameraParentFrame. </li>-->
-        <!--<li><b>cameraFocus</b> - number[3] - The [x,y,z] position of where the camera is looking, measured in the cameraParentFrame,  </li>-->
-        <!--<li><b>cameraParentFrame</b> - string - The name of the frame that the camera should be attached to.</li>-->
-        <!--<li><b>speedFactor</b> - number - The initial/default speed of playback for the animation. </li>-->
-    <!--</ul>-->
+        <!--<hr/>-->
+    </ul>
+    Additional fields:
+    <ul>
+        <li><b>newtonianFrame</b> - string - Must match the name of the NewtonianFrame used for animation output.</li>
+        <li><b>sceneOrigin</b> - string - Must match the name of the point (fixed in your NewtonianFrame) used for animation output.</li>
+        <li><b>showAxes</b> - bool - true or false (with no quotes). If true, will draw large red, green, and blue axes denoting the basis of your NewtonianFrame.</li>
+        <li><b>workspaceSize</b> - number - Used to automate the placement of some things, should correspond roughly to the diameter of the workspace in your simulation.</li>
+        <li><b>cameraUp</b> - number[3] - The [x,y,z] values, measured in the cameraParentFrame, representing the vector that points "upward". </li>
+        <li><b>cameraEye</b> - number[3] - The [x,y,z] position of the camera, measured in the cameraParentFrame. </li>
+        <li><b>cameraFocus</b> - number[3] - The [x,y,z] position of where the camera is looking, measured in the cameraParentFrame,  </li>
+        <li><b>cameraParentFrame</b> - string - The name of the frame that the camera should be attached to.</li>
+        <li><b>speedFactor</b> - number - The initial/default speed of playback for the animation. </li>
+    </ul>
 
-    <!--Advanced usage:-->
-    <!--<ul>-->
-        <!--<li>-->
-            <!--An object of type "point" can be told to use the rotation matrix of another frame for the purposes of drawing any attached geometry.-->
-            <!--Simply add a "rotationFrame" property to the object, as shown in the-->
-            <!--<a href="samples/particle_pendulum/particle_pendulum.json" target="_blank">particle pendulum example</a>-->
-            <!--on object Q (near the bottom).-->
-        <!--</li>-->
-        <!--<li>-->
-            <!--A line between two points can be drawn by adding one or more "span" properties.-->
-            <!--See the example at the bottom of the-->
-            <!--<a href="samples/fourbar/fourbar_constraint_stabilization.json" target="_blank">fourbar example</a>.-->
-        <!--</li>-->
-        <!--<li>-->
-            <!--There are some pre-defined material colors available. They are BLACK, WHITE, SILVER, GRAY, RED, WHITE, BLUE.-->
-        <!--</li>-->
-    <!--</ul>-->
+    Advanced usage:
+    <ul>
+        <li>
+            An object of type "point" can be told to use the rotation matrix of another frame for the purposes of drawing any attached geometry.
+            Simply add a "rotationFrame" property to the object, as shown in the
+            <a href="samples/particle_pendulum/particle_pendulum.json" target="_blank">particle pendulum example</a>
+            on object Q (near the bottom).
+        </li>
+        <li>
+            A line between two points can be drawn by adding one or more "span" properties.
+            See the example at the bottom of the
+            <a href="samples/fourbar/fourbar_constraint_stabilization.json" target="_blank">fourbar example</a>.
+        </li>
+        <li>
+            There are some pre-defined material colors available. They are BLACK, WHITE, SILVER, GRAY, RED, WHITE, BLUE.
+        </li>
+    </ul>
 
 </div> <!-- /container -->
 

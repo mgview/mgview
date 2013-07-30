@@ -16,7 +16,7 @@
 
             if(getQuerystring("stats") ) {
                 this.stats = new Stats();
-                SV.$('Topbar').get(0).appendChild( this.stats.domElement );
+                SV.$('Sidebar').get(0).appendChild( this.stats.domElement );
             }
 
             this._animate = false;
@@ -29,15 +29,18 @@
 //            this._oldTime = 0;
 
             // Make sure resolution is correct
-            var renderer = new THREE.WebGLRenderer( { clearColor: 0xffffff, clearAlpha: 1, antialias: true } );
-            renderer.setClearColorHex( 0xe0f0ff, 1 );
-            //renderer.setClearColorHex( 0xeeeeee, 1 );
+            var renderer = new THREE.WebGLRenderer( { antialias: true } );
+            renderer.setClearColor(new THREE.Color(0xe0f0ff), 1);
             renderer.sortObjects = false;
             renderer.autoClear = false;
+
             this._container.appendChild( renderer.domElement );
             $('canvas').addClass('WebGLCanvas');
+
             this._context = renderer.domElement;
+
             this.renderer = renderer;
+
             this.updateSize();
 
             this.enableSelection();
@@ -72,7 +75,7 @@
 
         updateSize: function() {
             if (this._id) {
-                //console.log("Updating the size!");
+                console.log("Updating the size!");
                 this.setSize({ width: this.$('self').width(), height: this.$('self').height() });
             }
         },
@@ -95,8 +98,6 @@
                 var views = this._world.getViews();
                 for (var i in views){
                     views[i].setCameraAspect(size.width / size.height);
-                    //scenes[i]._camera.aspect = size.width / size.height;
-                    //this.camera.updateProjectionMatrix();
                 }
             }
         },
@@ -120,7 +121,7 @@
         // renderer
         setBackgroundColor: function(hex, alpha){
             if( alpha == null ) alpha = 1;
-            this.renderer.setClearColorHex( hex, alpha );
+            this.renderer.setClearColor( hex, alpha );
         },
 
         _tick: function(self) {
@@ -130,6 +131,7 @@
             this.renderer.clear();
             var views = this._world.getViews();
             for (var i in views){
+//                console.log("Rendering view " + i);
                 views[i].updateCameraAndControls();
                 //console.log("elapsed "+elapsed);
                 var result = views[i].setAnimationTime(elapsed);
@@ -138,9 +140,6 @@
                     this.stopAnimation();
                     this.clock.elapsedTime = result.actualTime;
                     //return;
-                } else {
-                    // TODO this will break with more than one view...
-//                    this._oldTime = elapsed;
                 }
 
                 views[i].render(this.renderer);

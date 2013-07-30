@@ -213,7 +213,7 @@ var SV = {};
                     if (i != 0) { missing_str += ', '; }
                     missing_str += missing[i];
                 }
-                var message =       'This application is designed to run on Google Chrome.'
+                var message =       'This application is designed to run on Chrome (or Firefox).'
                               +   '\nIt requires HTML 5 capabilities such as WebGL.'
                               + '\n\nYour browser is missing: \n' + missing_str + '.';
                 alert(message);

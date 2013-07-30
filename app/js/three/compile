@@ -1,6 +1,7 @@
-three/Three.r56dev.min.js
+three/three.r59.js
 three/loaders/ColladaLoader.js
 three/loaders/OBJLoader.js
 three/loaders/STLLoader.js
 three/controls/OrbitControls.js
+three/controls/EditorControls.js
 three/al/LoadUtils.js

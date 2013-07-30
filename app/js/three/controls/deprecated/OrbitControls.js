@@ -2,19 +2,20 @@
  * @author qiao / https://github.com/qiao
  * @author mrdoob / http://mrdoob.com
  * @author alteredq / http://alteredqualia.com/
- * @author WestLangley / http://github.com/WestLangley
+ * @author WestLangley / https://github.com/WestLangley
+ * @author aleeper / https://github.com/aleeper
  */
 
 THREE.OrbitControls = function ( object, domElement ) {
 
-    this.object = object;
+	THREE.EventDispatcher.call( this );
+
+	this.object = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 
 	// API
 
-	this.enabled = true;
-
-	this.center = new THREE.Vector3();
+	this.target = new THREE.Vector3();
 
 	this.userZoom = true;
 	this.userZoomSpeed = 1.0;
@@ -22,8 +23,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 	this.userRotate = true;
 	this.userRotateSpeed = 1.0;
 
-	this.userPan = true;
-	this.userPanSpeed = 2.0;
+	this.allowPan = false;
 
 	this.autoRotate = false;
 	this.autoRotateSpeed = 2.0; // 30 seconds per round when fps is 60
@@ -33,8 +33,6 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	this.minDistance = 0;
 	this.maxDistance = Infinity;
-
-	this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
 
 	// internals
 
@@ -51,6 +49,10 @@ THREE.OrbitControls = function ( object, domElement ) {
 	var zoomEnd = new THREE.Vector2();
 	var zoomDelta = new THREE.Vector2();
 
+	var panStart =  new THREE.Vector2();
+	var panEnd =    new THREE.Vector2();
+	var panDelta =  new THREE.Vector2();
+
 	var phiDelta = 0;
 	var thetaDelta = 0;
 	var scale = 1;
@@ -60,12 +62,30 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	var lastPosition = new THREE.Vector3();
 
-	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2 };
+	var STATE = { NONE : -1, ROTATE : 0, ZOOM : 1, PAN : 2 };
 	var state = STATE.NONE;
 
 	// events
 
 	var changeEvent = { type: 'change' };
+
+	this.move = function ( delta ) {
+		var objectMatrix = this.object.matrix;
+		var rM = new THREE.Matrix4();
+		rM.extractRotation(objectMatrix);
+        var el = rM.elements;
+		var x_axis = new THREE.Vector3(el[0], el[1], el[2]);
+        var y_axis = new THREE.Vector3(el[4], el[5], el[6]);
+        var z_axis = new THREE.Vector3(el[8], el[9], el[10]);
+
+		var offset = new THREE.Vector3();
+		offset.add(		x_axis.clone().multiplyScalar(delta.x))
+			.add(	y_axis.clone().multiplyScalar(delta.y))
+			.add(	z_axis.clone().multiplyScalar(delta.z));
+		scope.target.add(offset);
+		scope.object.position.add(offset);
+
+	};
 
 
 	this.rotateLeft = function ( angle ) {
@@ -140,23 +160,10 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	};
 
-	this.pan = function ( distance ) {
-
-		distance.transformDirection( this.object.matrix );
-		distance.multiplyScalar( scope.userPanSpeed );
-
-		this.object.position.add( distance );
-		this.center.add( distance );
-
-	};
-
-
-
-
 	this.update = function () {
 
 		var position = this.object.position;
-		var offset = position.clone().sub( this.center );
+		var offset = position.clone().sub( this.target );
 
 		// If the camera "up" vector is not [0,1,0], rotate local
 		// frame for the purposes of the subsequent polar calculations.
@@ -214,11 +221,12 @@ THREE.OrbitControls = function ( object, domElement ) {
 		if ( didRotate ) {
 
 			offset.applyQuaternion(quat.inverse());
+
 		}
 
-		position.copy( this.center ).add( offset );
+		position.copy( this.target ).add( offset );
 
-		this.object.lookAt( this.center );
+		this.object.lookAt( this.target );
 
 		thetaDelta = 0;
 		phiDelta = 0;
@@ -249,8 +257,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	function onMouseDown( event ) {
 
-		if ( scope.enabled === false ) return;
-		if ( scope.userRotate === false ) return;
+		if ( !scope.userRotate ) return;
 
 		event.preventDefault();
 
@@ -266,11 +273,14 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 			zoomStart.set( event.clientX, event.clientY );
 
-		} else if ( event.button === 2 ) {
+		} else if ( event.button === 2 && scope.allowPan ) {
 
 			state = STATE.PAN;
 
+			panStart.set( event.clientX, event.clientY );
+
 		}
+
 
 		document.addEventListener( 'mousemove', onMouseMove, false );
 		document.addEventListener( 'mouseup', onMouseUp, false );
@@ -278,8 +288,6 @@ THREE.OrbitControls = function ( object, domElement ) {
 	}
 
 	function onMouseMove( event ) {
-
-		if ( scope.enabled === false ) return;
 
 		event.preventDefault();
 
@@ -312,10 +320,30 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		} else if ( state === STATE.PAN ) {
 
-			var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
-			var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+			panEnd.set( event.clientX, event.clientY );
+			panDelta.subVectors( panEnd, panStart );
+			//panDelta.x *= -1;
+			var moveVec = new THREE.Vector3(-1.0*panDelta.x, panDelta.y, panDelta.z);
+			var position = scope.object.position;
+			var offset = position.clone().sub( scope.target );
 
-			scope.pan( new THREE.Vector3( - movementX, movementY, 0 ) );
+			moveVec.multiplyScalar(0.0006 * offset.length());
+
+			// TODO this is the code lifted from Rviz (www.ros.org/wiki/rviz)
+			// which has the effect of making the cursor move at the same speed as the background
+			// If we don't maintain a pointer to the render window though, we can't do much...
+			/*
+			var fovY = scope.camera.fov;
+			var fovX = fovY*scope.camera.aspect;
+			var width = camera_->getViewport()->getActualWidth();
+			var height = camera_->getViewport()->getActualHeight();
+			move( -((float)diff_x / (float)width) * distance * tan( fovX / 2.0f ) * 2.0f,
+				((float)diff_y / (float)height) * distance * tan( fovY / 2.0f ) * 2.0f,
+				0.0f );*/
+
+			scope.move(moveVec);
+
+			panStart.copy( panEnd );
 
 		}
 
@@ -323,8 +351,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	function onMouseUp( event ) {
 
-		if ( scope.enabled === false ) return;
-		if ( scope.userRotate === false ) return;
+		if ( ! scope.userRotate ) return;
 
 		document.removeEventListener( 'mousemove', onMouseMove, false );
 		document.removeEventListener( 'mouseup', onMouseUp, false );
@@ -335,8 +362,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	function onMouseWheel( event ) {
 
-		if ( scope.enabled === false ) return;
-		if ( scope.userZoom === false ) return;
+		if ( ! scope.userZoom ) return;
 
 		var delta = 0;
 
@@ -362,35 +388,9 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	}
 
-	function onKeyDown( event ) {
-
-		if ( scope.enabled === false ) return;
-		if ( scope.userPan === false ) return;
-
-		switch ( event.keyCode ) {
-
-			case scope.keys.UP:
-				scope.pan( new THREE.Vector3( 0, 1, 0 ) );
-				break;
-			case scope.keys.BOTTOM:
-				scope.pan( new THREE.Vector3( 0, - 1, 0 ) );
-				break;
-			case scope.keys.LEFT:
-				scope.pan( new THREE.Vector3( - 1, 0, 0 ) );
-				break;
-			case scope.keys.RIGHT:
-				scope.pan( new THREE.Vector3( 1, 0, 0 ) );
-				break;
-		}
-
-	}
-
 	this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
 	this.domElement.addEventListener( 'mousedown', onMouseDown, false );
 	this.domElement.addEventListener( 'mousewheel', onMouseWheel, false );
 	this.domElement.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); // firefox
-	this.domElement.addEventListener( 'keydown', onKeyDown, false );
 
 };
-
-THREE.OrbitControls.prototype = Object.create( THREE.EventDispatcher.prototype );

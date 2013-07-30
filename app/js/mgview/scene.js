@@ -45,31 +45,20 @@
         },
 
         addDefaultCamera: function() {
-            var scene = this._scene;
-            var camera = new THREE.PerspectiveCamera( 30, 800.0 / 600.0, 0.3, 300 ); //default, gets changed
-            camera.position.set( 1, 1, 1 );  // default
-            camera.up.copy(this._upVec);        // default
-            this._camera = camera;
-            // add camera to the root scene by default, though this might change based on config info later.
-            //this._cameraParent = new THREE.Object3D();
-            //this._cameraParent.add(camera);
-            this._scene.add(this._camera);
+            this._camera = new THREE.PerspectiveCamera( 75, 800.0 / 600.0, 0.1, 1000 ); //default, gets changed
+            this._camera.position.set( 10, 10, 10 );  // default
+            this._camera.up.copy(this._upVec);        // default
+
+//            this._scene.add(this._camera);
         },
 
         addDefaultControls: function() {
-//            this._controls = new THREE.TrackballControls( this._camera, SV.$('RenderWindow').get(0) );
-//            this._controls.target.set(0, 0, 0 );
-//            this._camera.lookAt( this._controls.target );
-//            this._controls.rotateSpeed = 1.0;
-//            this._controls.zoomSpeed = 1.2;
-//            this._controls.noPan = false;
-//            this._controls.minDistance = 0.5;
-//            this._controls.maxDistance = 300;
-//            this._controls.staticMoving = true;
-//            //this._controls.dynamicDampingFactor = 0.15;
-//            this._controls.keys = [ 65, 83, 68 ];
+
             this._controls = new THREE.OrbitControls( this._camera, SV.$('RenderWindow').get(0) );
-            this._controls.allowPan = true;
+            this._controls.userZoomSpeed = 1.0;
+            this._controls.userRotateSpeed = 1.0;
+            this._controls.userPanSpeed = 0.05;
+
             //controls.addEventListener( 'change', render );
             //this.disableControls();
         },
@@ -97,7 +86,7 @@
         updateCameraAndControls:    function(){
             this._controls.update();
             this._camera.up.copy(this._upVec);
-            this._camera.lookAt( this._controls.target);
+            this._camera.lookAt( this._controls.center);
         },
 
         setCamera: function(camera) { this._camera = camera; },
@@ -107,8 +96,8 @@
             this._camera.position.copy(eye);
         },
         setCameraFocus: function(focus) {
-            //this._controls.center.copy(focus);
-            this._controls.target.copy(focus);
+
+            this._controls.center.copy(focus);
         },
         setCameraUp: function(up) {
             this._upVec = up;
@@ -595,7 +584,7 @@
                     for(var i=1; i<=3; i++) for(var j=1; j<=3; j++){
                         rot.push(data[rotation_name+vsprintf("[%d,%d]", [i,j])]);
                     }
-                    frame.rotation.setEulerFromRotationMatrix(
+                    frame.setRotationFromMatrix(
                         new THREE.Matrix4(  rot[0],rot[1],rot[2], 0,
                                             rot[3],rot[4],rot[5], 0,
                                             rot[6],rot[7],rot[8], 0,
