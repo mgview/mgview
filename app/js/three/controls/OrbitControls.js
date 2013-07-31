@@ -3,6 +3,7 @@
  * @author mrdoob / http://mrdoob.com
  * @author alteredq / http://alteredqualia.com/
  * @author WestLangley / http://github.com/WestLangley
+ * @author aleeper / https://github.com/aleeper
  */
 
 THREE.OrbitControls = function ( object, domElement ) {
@@ -23,7 +24,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 	this.userRotateSpeed = 1.0;
 
 	this.userPan = true;
-	this.userPanSpeed = 2.0;
+	this.userPanSpeed = 1.0;
 
 	this.autoRotate = false;
 	this.autoRotateSpeed = 2.0; // 30 seconds per round when fps is 60
@@ -51,6 +52,10 @@ THREE.OrbitControls = function ( object, domElement ) {
 	var zoomEnd = new THREE.Vector2();
 	var zoomDelta = new THREE.Vector2();
 
+	var panStart =  new THREE.Vector2();
+	var panEnd =    new THREE.Vector2();
+	var panDelta =  new THREE.Vector2();
+
 	var phiDelta = 0;
 	var thetaDelta = 0;
 	var scale = 1;
@@ -66,6 +71,24 @@ THREE.OrbitControls = function ( object, domElement ) {
 	// events
 
 	var changeEvent = { type: 'change' };
+
+	this.move = function ( delta ) {
+		var objectMatrix = this.object.matrix;
+		var rM = new THREE.Matrix4();
+		rM.extractRotation(objectMatrix);
+        var el = rM.elements;
+		var x_axis = new THREE.Vector3(el[0], el[1], el[2]);
+        var y_axis = new THREE.Vector3(el[4], el[5], el[6]);
+        var z_axis = new THREE.Vector3(el[8], el[9], el[10]);
+
+		var offset = new THREE.Vector3();
+		offset.add(		x_axis.clone().multiplyScalar(delta.x))
+			.add(	y_axis.clone().multiplyScalar(delta.y))
+			.add(	z_axis.clone().multiplyScalar(delta.z));
+		scope.center.add(offset);
+		scope.object.position.add(offset);
+
+	};
 
 
 	this.rotateLeft = function ( angle ) {
@@ -214,6 +237,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 		if ( didRotate ) {
 
 			offset.applyQuaternion(quat.inverse());
+
 		}
 
 		position.copy( this.center ).add( offset );
@@ -266,9 +290,11 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 			zoomStart.set( event.clientX, event.clientY );
 
-		} else if ( event.button === 2 ) {
+		} else if ( event.button === 2 && scope.userPan ) {
 
 			state = STATE.PAN;
+
+			panStart.set( event.clientX, event.clientY );
 
 		}
 
@@ -312,10 +338,39 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		} else if ( state === STATE.PAN ) {
 
-			var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
-			var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+			panEnd.set( event.clientX, event.clientY );
+			panDelta.subVectors( panEnd, panStart );
+			var position = scope.object.position;
+			var offset = position.clone().sub( scope.center );
+            if(scope.object instanceof THREE.PerspectiveCamera)
+            {
+                // https://github.com/ros-visualization/rviz/blob/hydro-devel/src/rviz/
+                //         default_plugin/view_controllers/orbit_view_controller.cpp
+                var fovY = scope.object.fov * Math.PI / 180.0;
+                var fovX = fovY*scope.object.aspect;
+                var distance = offset.length();
 
-			scope.pan( new THREE.Vector3( - movementX, movementY, 0 ) );
+                var width = scope.domElement.clientWidth;
+                var height = scope.domElement.clientHeight;
+//                console.log(vsprintf("viewPort size: [%d , %d ], camera fov %.1f aspect %.3f",
+//                    [width, height, scope.object.fov, scope.object.aspect]));
+                var diff_x = panDelta.x;
+                var diff_y = panDelta.y;
+                var moveVec = new THREE.Vector3( -(diff_x / width) * distance * Math.tan( fovX / 2.0 ) * 2.0,
+                    (diff_y / height) * distance * Math.tan( fovY / 2.0 ) * 2.0,
+                    0.0 );
+            } else {
+                var moveVec = new THREE.Vector3(-1.0*panDelta.x, panDelta.y, panDelta.z);
+                moveVec.multiplyScalar(scope.userPanSpeed * offset.length());
+            }
+
+			scope.move(moveVec);
+
+			panStart.copy( panEnd );
+
+//			var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+//			var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+//			scope.pan( new THREE.Vector3( - movementX, movementY, 0 ) );
 
 		}
 

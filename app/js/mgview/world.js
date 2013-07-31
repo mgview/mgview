@@ -58,14 +58,14 @@
 
             this.stopAnimation();
 
-            var old_view = this._views['default'];
-            if(old_view != null) old_view.destroy();
+            //var old_view = this._views['default'];
+            //if(old_view != null) old_view.destroy();
             var old_model = this._models['default'];
             if(old_model != null) old_model.destroy();
 
             var canvas = this.getDefaultCanvas();
 
-            var view = new SV.Scene(this);
+            var view = this._views['default'] || new SV.Scene(this);
             var model = new SV.SceneModel(path, view);
 
             if(SV.editor_xml) {

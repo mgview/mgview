@@ -45,7 +45,7 @@
         },
 
         addDefaultCamera: function() {
-            this._camera = new THREE.PerspectiveCamera( 45, 800.0 / 600.0, 0.1, 1000 ); //default, gets changed
+            this._camera = this._camera || new THREE.PerspectiveCamera( 45, 800.0 / 600.0, 0.1, 1000 ); //default, gets changed
             this._camera.position.set( 10, 10, 10 );  // default
             this._camera.up.copy(this._upVec);        // default
 
@@ -54,10 +54,10 @@
 
         addDefaultControls: function() {
 
-            this._controls = new THREE.OrbitControls( this._camera, SV.$('RenderWindow').get(0) );
+            this._controls = this._controls || new THREE.OrbitControls( this._camera, SV.$('RenderWindow').get(0) );
             this._controls.userZoomSpeed = 1.0;
             this._controls.userRotateSpeed = 1.0;
-            this._controls.userPanSpeed = 0.01;
+            this._controls.userPanSpeed = 0.002;
 
             //controls.addEventListener( 'change', render );
             //this.disableControls();
@@ -85,8 +85,8 @@
 
         updateCameraAndControls:    function(){
             this._controls.update();
-            this._camera.up.copy(this._upVec);
-            this._camera.lookAt( this._controls.center);
+//            this._camera.up.copy(this._upVec);
+//            this._camera.lookAt( this._controls.center);
         },
 
         setCamera: function(camera) { this._camera = camera; },
@@ -620,18 +620,18 @@
         updateObjectVisual: function(objectName, elementName, propertyContainer, propertyName, value )
         {
             if(propertyContainer === 'position' || propertyContainer === 'rotation') {
-                this._svFrames[objectName].getChildByName(elementName, true)[propertyContainer][propertyName] = value;
+                this._svFrames[objectName].getObjectByName(elementName, true)[propertyContainer][propertyName] = value;
             }
             else if ( propertyName === 'visible'){
-                THREEal.setVisible(this._svFrames[objectName].getChildByName(elementName, true), value);
+                THREEal.setVisible(this._svFrames[objectName].getObjectByName(elementName, true), value);
             }
             else if ( propertyName === 'scale'){
-                var element = this._svFrames[objectName].getChildByName(elementName, true);
+                var element = this._svFrames[objectName].getObjectByName(elementName, true);
                 element.scale.set(value, value, value);
             }
             else if ( propertyName === 'radius' || propertyName === 'length' || propertyContainer === 'size' ){
                 // TODO looks like each object actually has a direct pointer to the parameters in the model!
-                var element = this._svFrames[objectName].getChildByName(elementName, true);
+                var element = this._svFrames[objectName].getObjectByName(elementName, true);
                 var scale = this._geometryScaleFromType(element.type, element.parameters);
                 if(scale !== false)
                     element.scale = scale;
@@ -641,7 +641,7 @@
             else if ( propertyName === 'thickness' || propertyName === 'capped'
                 || propertyName === 'radius1' || propertyName === 'radius2') {
                 // Propertis which aren't a pure scaling
-                var element = this._svFrames[objectName].getChildByName(elementName, true);
+                var element = this._svFrames[objectName].getObjectByName(elementName, true);
                 this.changeObjectVisualType(objectName, elementName, element.parameters.type, element.parameters )
             }
             else if ( propertyName === 'path' ){
@@ -668,7 +668,7 @@
         destroyObjectVisual: function(objectName, elementName )
         {
             var object = this._svFrames[objectName];
-            var element = object.getChildByName(elementName, true);
+            var element = object.getObjectByName(elementName, true);
             if(element === undefined) {
                 warnLog(vsprintf("Didn't actually find element [%s:%s].", [objectName, elementName]));
                 return false;
