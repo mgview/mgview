@@ -26,7 +26,7 @@ THREEal.getFileExtension = function(str){
 }
 
 
-THREEal.loadAndAddCollada = function( frame, path, scale, xyz, rpy, material, callback ){
+THREEal.loadAndAddCollada = function( frame, path, scale, xyz, quaternion, material, callback ){
     //return;
     var loader = new THREE.ColladaLoader();
     loader.options.convertUpAxis = false;
@@ -34,10 +34,8 @@ THREEal.loadAndAddCollada = function( frame, path, scale, xyz, rpy, material, ca
     {
         var dae = collada.scene.clone();
         dae.scale.set(scale,scale,scale);
-        //if(typeof(xyz) !== "undefined") dae.position.copy(xyz);
-        //if(typeof(rpy) !== "undefined") dae.rotation.copy(rpy);
         if(xyz instanceof THREE.Vector3) dae.position.copy(xyz);
-        if(rpy instanceof THREE.Vector3) dae.rotation.copy(rpy);
+        if(quaternion instanceof THREE.Quaternion) dae.setRotationFromQuaternion(quaternion);
 
         if(material instanceof THREE.Material){
             for ( var i = 0; i < dae.children.length; i ++ ) {
@@ -53,7 +51,7 @@ THREEal.loadAndAddCollada = function( frame, path, scale, xyz, rpy, material, ca
     } );
 }
 
-THREEal.loadAndAddOBJ = function( frame, path, scale, xyz, rpy, material, callback ){
+THREEal.loadAndAddOBJ = function( frame, path, scale, xyz, quaternion, material, callback ){
     //return;
     // TODO textures?
     // var texture = THREE.ImageUtils.loadTexture( 'textures/ash_uvgrid01.jpg' );
@@ -67,7 +65,7 @@ THREEal.loadAndAddOBJ = function( frame, path, scale, xyz, rpy, material, callba
         }
 
         if(xyz instanceof THREE.Vector3) object.position.copy(xyz);
-        if(rpy instanceof THREE.Vector3) object.rotation.copy(rpy);
+        if(quaternion instanceof THREE.Quaternion) object.setRotationFromQuaternion(quaternion);
         object.updateMatrix();// Not sure if this is needed.
         frame.add(object);
         if(callback) callback(object);
@@ -75,7 +73,7 @@ THREEal.loadAndAddOBJ = function( frame, path, scale, xyz, rpy, material, callba
     } );
 }
 
-THREEal.loadAndAddSTL = function( frame, path, scale, xyz, rpy, material, callback ){
+THREEal.loadAndAddSTL = function( frame, path, scale, xyz, quaternion, material, callback ){
 
     var loader = new THREE.STLLoader();
     loader.addEventListener( 'load', function ( event ) {
@@ -86,7 +84,7 @@ THREEal.loadAndAddSTL = function( frame, path, scale, xyz, rpy, material, callba
         var mesh = new THREE.Mesh( geometry, material );
 
         if(xyz instanceof THREE.Vector3) mesh.position.copy(xyz);
-        if(rpy instanceof THREE.Vector3) mesh.rotation.copy(rpy);
+        if(quaternion instanceof THREE.Quaternion) mesh.setRotationFromQuaternion(quaternion);
 
         if(scale === undefined)
             scale = 1.0;
@@ -103,7 +101,7 @@ THREEal.loadAndAddSTL = function( frame, path, scale, xyz, rpy, material, callba
     loader.load( path );
 }
 
-THREEal.loadAndAddFromFile = function( frame, path, scale, xyz, rpy, material, callback ){
+THREEal.loadAndAddFromFile = function( frame, path, scale, xyz, quaternion, material, callback ){
     var extension = THREEal.getFileExtension(path);
     var loaderFn = undefined;
     if(extension === "stl" ) loaderFn = THREEal.loadAndAddSTL;
@@ -111,24 +109,22 @@ THREEal.loadAndAddFromFile = function( frame, path, scale, xyz, rpy, material, c
     if(extension === "dae" ) loaderFn = THREEal.loadAndAddCollada;
 
     if(loaderFn)
-        loaderFn( frame, path, scale, xyz, rpy, material, callback);
+        loaderFn( frame, path, scale, xyz, quaternion, material, callback);
 }
 
 
 THREEal.addTextHelper = function (parent, text, size, material, callback) {
 
     console.log("Adding text for frame "+ text);
-    var height = 0.1*size,
+    var height = 0.1*size;
+    curveSegments = 2;
 
-    curveSegments = 2,
+    bevelEnabled = true;
+    bevelThickness = 0.02*size;
+    bevelSize = 0.05*size;
 
-    bevelThickness = 0.02*size,
-    bevelSize = 0.05*size,
-    bevelSegments = 3,
-    bevelEnabled = true,
-
-    font = "optimer", // helvetiker, optimer, gentilis, droid sans, droid serif
-    weight = "normal", // normal bold
+    font = "optimer"; // helvetiker, optimer, gentilis, droid sans, droid serif
+    weight = "normal"; // normal bold
     style = "normal"; // normal italic
 
     var textGeo = new THREE.TextGeometry( text, {
@@ -141,12 +137,14 @@ THREEal.addTextHelper = function (parent, text, size, material, callback) {
         weight: weight,
         style: style,
 
+
+        bevelEnabled: bevelEnabled,
         bevelThickness: bevelThickness,
         bevelSize: bevelSize,
-        bevelEnabled: bevelEnabled,
 
-        material: 0,
-        extrudeMaterial: 1
+
+//        material: 0,
+//        extrudeMaterial: 1
 
     });
 

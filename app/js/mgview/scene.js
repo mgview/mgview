@@ -45,7 +45,7 @@
         },
 
         addDefaultCamera: function() {
-            this._camera = new THREE.PerspectiveCamera( 75, 800.0 / 600.0, 0.1, 1000 ); //default, gets changed
+            this._camera = new THREE.PerspectiveCamera( 45, 800.0 / 600.0, 0.1, 1000 ); //default, gets changed
             this._camera.position.set( 10, 10, 10 );  // default
             this._camera.up.copy(this._upVec);        // default
 
@@ -57,7 +57,7 @@
             this._controls = new THREE.OrbitControls( this._camera, SV.$('RenderWindow').get(0) );
             this._controls.userZoomSpeed = 1.0;
             this._controls.userRotateSpeed = 1.0;
-            this._controls.userPanSpeed = 0.05;
+            this._controls.userPanSpeed = 0.01;
 
             //controls.addEventListener( 'change', render );
             //this.disableControls();
@@ -320,12 +320,14 @@
 
             var basePath = this._model.getBasePath();
             var position = new THREE.Vector3(0,0,0);
-            var rotation = new THREE.Vector3(0,0,0);
+            var eulerRotation = new THREE.Euler(0,0,0);
             if(params.position !== undefined)
                 position.set(params.position.x, params.position.y, params.position.z);
-
             if(params.rotation !== undefined)
-                rotation.set(params.rotation.x, params.rotation.y, params.rotation.z);
+                eulerRotation.set(params.rotation.x, params.rotation.y, params.rotation.z);
+
+            var quaternion = new THREE.Quaternion();
+            quaternion.setFromEuler(eulerRotation);
 
             var materialName = 'SHINY_RED';
             // update to new color format
@@ -370,7 +372,7 @@
                 // TODO refactor this and the below function.
                 //with({key: elementName, geometry_type: geometry_type}){
 
-                THREEal.loadAndAddFromFile(parent, basePath+dim.path, dim.scale, position, rotation, mesh_color,
+                THREEal.loadAndAddFromFile(parent, basePath+dim.path, dim.scale, position, quaternion, mesh_color,
                     function(obj){
                         obj.name = elementName;
                         obj.type = geometry_type;
@@ -383,7 +385,7 @@
                 var size = dim.scale;
                 // TODO refactor this and the above function.
                 //with({key: elementName, geometry_type: geometry_type}){
-                    THREEal.loadAndAddFromFile(parent, "app/meshes/basis.dae", size, position, rotation, mesh_color,
+                    THREEal.loadAndAddFromFile(parent, "app/meshes/basis.dae", size, position, quaternion, mesh_color,
                         function(obj){
                             obj.name = elementName;
                             obj.type = geometry_type;
@@ -409,7 +411,7 @@
                         obj.type = geometry_type;
                         obj.parameters = dim;
                         obj.position.copy(position);
-                        obj.rotation.copy(rotation);
+                        obj.setRotationFromQuaternion(quaternion);
                         obj.scale.set(dim.scale, dim.scale, dim.scale);
                         THREEal.setVisible(obj, dim.visible);
                     });
@@ -423,7 +425,7 @@
                     geometry_frame.scale = scale;
                 debugLog(vsprintf("Link %s contains a %s with properties ", [parent.name, geometry_type])+objectToArray(dim));
                 geometry_frame.position.copy(position);
-                geometry_frame.rotation.copy(rotation);
+                geometry_frame.setRotationFromQuaternion(quaternion);
                 geometry_frame.name = elementName;
                 geometry_frame.type = geometry_type;
                 geometry_frame.parameters = dim;
@@ -569,7 +571,7 @@
 
             for(var frameName in this._svFrames){
                 var frame = this._svFrames[frameName];
-                //console.log("Doing frame " + frameName);
+                //debugLog("Setting pose for frame " + frameName);
 
                 var reference_point = (this._svFrameTypes[frameName] === 'point') ? (frameName) : (frameName+'o');
 
@@ -590,8 +592,8 @@
                                             rot[6],rot[7],rot[8], 0,
                                                  0,     0,     0, 1));
                 }
-                // TODO allow for point other than Ao, Bo, etc, like Acm
 
+                // TODO allow for point other than Ao, Bo, etc, like Acm
                 var position_name = vsprintf("P_%s_%s", [svOrigin, reference_point]);
                 if(data[position_name+"[1]"] != null)
                 {

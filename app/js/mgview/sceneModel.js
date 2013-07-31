@@ -412,17 +412,21 @@
         },
 
         addDefaultBasesAndLabels: function() {
+            debugLog("Checking for basis and label visuals for all objects...");
             for(var objectName in this._model.objects)
             {
                 var object = this._model.objects[objectName];
 
                 // Default
-                if(object.visual === undefined)
+                if(object.visual === undefined) {
+                    //debugLog(vsprintf("Adding empty visual group for object %s", [objectName]));
                     object.visual = {};
+                }
 
                 var size = this._model.workspaceSize/4;
                 // Add label
                 if( object.visual["label"] === undefined ){
+                    debugLog(vsprintf("Adding label for object %s", [objectName]));
                     object.visual.label = {
                         visible   : true,
                         type      : "text",
@@ -435,6 +439,7 @@
                 }
                 // Add basis
                 if( object.visual["basis"] === undefined ){
+                    debugLog(vsprintf("Adding basis for object %s", [objectName]));
                     object.visual.basis = {
                         visible   : true,
                         type      : "basis",
@@ -448,15 +453,20 @@
         },
 
         addDefaultPositionAndRotation: function() {
+            debugLog("Checking for position and rotation fields for all visuals...");
             for(var objectName in this._model.objects)
             {
                 var object = this._model.objects[objectName];
                 for(var visualName in object.visual) {
                     var visual = object.visual[visualName];
-                    if(visual.position === undefined)
+                    if(visual.position === undefined) {
+                        debugLog(vsprintf("Adding default position for [%s:%s]", [objectName, visualName]));
                         visual.position = {x: 0, y: 0, z: 0};
-                    if(visual.rotation === undefined)
+                    }
+                    if(visual.rotation === undefined) {
+                        debugLog(vsprintf("Adding default rotation for [%s:%s]", [objectName, visualName]));
                         visual.rotation = {x: 0, y: 0, z: 0};
+                    }
                 }
             }
         },

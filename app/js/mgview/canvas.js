@@ -75,7 +75,7 @@
 
         updateSize: function() {
             if (this._id) {
-                console.log("Updating the size!");
+//                console.log("Updating the size!");
                 this.setSize({ width: this.$('self').width(), height: this.$('self').height() });
             }
         },
