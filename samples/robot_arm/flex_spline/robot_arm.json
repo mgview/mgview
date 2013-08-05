@@ -75,13 +75,7 @@
                         "z": 0
                     },
                     "material": {
-                        "name": "rgb(175, 126, 58)",
-                        "color": {
-                            "r": 0.6,
-                            "g": 0.3,
-                            "b": 0,
-                            "a": 1
-                        }
+                        "name": "rgb(175, 126, 58)"
                     },
                     "radius": 2.2,
                     "length": 0.1,
@@ -474,14 +468,16 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "WHITE",
+                    "material": {
+                        "name": "EARTH"
+                    },
                     "radius": 0.4,
                     "segments_width": 32,
                     "segments_height": 32
                 },
                 "circle1": {
                     "type": "cylinder",
-                    "visible": true,
+                    "visible": false,
                     "position": {
                         "x": 0,
                         "y": 0,
@@ -503,7 +499,7 @@
                 },
                 "circle2": {
                     "type": "cylinder",
-                    "visible": true,
+                    "visible": false,
                     "position": {
                         "x": 0,
                         "y": 0,
@@ -525,7 +521,7 @@
                 },
                 "circle3": {
                     "type": "cylinder",
-                    "visible": true,
+                    "visible": false,
                     "position": {
                         "x": 0,
                         "y": 0,

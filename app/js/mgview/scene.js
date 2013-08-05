@@ -261,7 +261,7 @@
             for( var i in params )
                 param_list.push(' ' + i + ': ' + params[i]);
             debugLog(vsprintf("Over-writing color [%s] with %s", [name, param_list]));
-            SV_COLORS[name] = new THREE.MeshPhongMaterial(params);
+            SV_MATERIALS[name] = new THREE.MeshPhongMaterial(params);
         },
 
         processSpan: function( name, data ){
@@ -272,11 +272,11 @@
             debugLog(vsprintf("Found span %s:%s from %s to %s.", [name, type, point1, point2]));
 
             var materialName = 'SHINY_RED';
-            if(data.visual && data.visual.material && SV_COLORS.hasOwnProperty(data.visual.material)) {
+            if(data.visual && data.visual.material && SV_MATERIALS.hasOwnProperty(data.visual.material)) {
                 materialName = data.visual.material;
                 debugLog(vsprintf("Object %s has material %s.", [name, materialName]));
             }
-            var mesh_color = SV_COLORS[materialName];
+            var mesh_color = SV_MATERIALS[materialName];
 
             var lineGeometry = new THREE.Geometry();
             lineGeometry.vertices.push( new THREE.Vector3() );
@@ -331,10 +331,10 @@
 
             var materialName = 'SHINY_RED';
             // update to new color format
-            if(typeof(params.material) === 'string' && SV_COLORS.hasOwnProperty(params.material)) {
+            if(typeof(params.material) === 'string' && SV_MATERIALS.hasOwnProperty(params.material)) {
                 params.material = { name: params.material };
             }
-            if(SV_COLORS.hasOwnProperty(params.material.name)) {
+            if(SV_MATERIALS.hasOwnProperty(params.material.name)) {
                 materialName = params.material.name;
                 debugLog(vsprintf("Object %s:%s has material %s.", [parent.name, elementName, materialName]));
 
@@ -343,7 +343,7 @@
                 this.stripOutRedundantColorInfo(params.material);
                 this.createMaterial(params.material);
             }
-            var mesh_color = SV_COLORS[materialName];
+            var mesh_color = SV_MATERIALS[materialName];
 
             var geometry_type = type;
             var dim = params;
@@ -390,9 +390,9 @@
                             obj.name = elementName;
                             obj.type = geometry_type;
                             obj.parameters = dim;
-                            obj.children[0].material = obj.children[0].material = SV_COLORS["BLUE"];
-                            obj.children[3].material = obj.children[3].material = SV_COLORS["RED"];
-                            obj.children[4].material = obj.children[4].material = SV_COLORS["GREEN"];
+                            obj.children[0].material = obj.children[0].material = SV_MATERIALS["BLUE"];
+                            obj.children[3].material = obj.children[3].material = SV_MATERIALS["RED"];
+                            obj.children[4].material = obj.children[4].material = SV_MATERIALS["GREEN"];
                             THREEal.setVisible(obj, dim.visible);
                         });
                 //}
@@ -431,6 +431,7 @@
                 geometry_frame.parameters = dim;
 				geometry_frame.castShadow = true;
 				geometry_frame.receiveShadow = true;
+                THREEal.setVisible( geometry_frame, dim.visible);
                 parent.add(geometry_frame);
             }
         },

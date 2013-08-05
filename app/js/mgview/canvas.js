@@ -21,12 +21,6 @@
 
             this._animate = false;
             this.clock = new THREE.Clock(false);
-//            var now = new Date().getTime();
-//            this._meshIndices = {};
-//            this._frameCount         = 0;
-//            this._lastFrame          = now;
-//            this._lastSelectionFrame = now;
-//            this._oldTime = 0;
 
             // Make sure resolution is correct
             var renderer = new THREE.WebGLRenderer( { antialias: true } );

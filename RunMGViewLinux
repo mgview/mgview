@@ -12,7 +12,8 @@ function cleanup {
 #####################
 
 # Go up a level
-pushd ..
+#pushd ..
+pushd 
 
 echo -e "\e[1;33mStarting MGView $(cat MGView/VERSION)\e[00m"
 echo -e "\e[1;31mPress Ctrl+C to quit.\e[00m"
@@ -20,7 +21,7 @@ echo -e "\e[1;31mPress Ctrl+C to quit.\e[00m"
 python -m SimpleHTTPServer 8000 &
 sleep 0.5
 
-google-chrome localhost:8000/MGView/Examples.html
+google-chrome localhost:8000
 
 if [ $? -ne 0 ]; then
   echo -e "\e[1;31mChrome failed to start. Try manually starting Chrome, then run this script again.\e[00m"
