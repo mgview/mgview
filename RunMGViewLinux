@@ -12,8 +12,8 @@ function cleanup {
 #####################
 
 # Go up a level
-#pushd ..
-pushd 
+pushd ..
+#pushd
 
 echo -e "\e[1;33mStarting MGView $(cat MGView/VERSION)\e[00m"
 echo -e "\e[1;31mPress Ctrl+C to quit.\e[00m"
