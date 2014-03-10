@@ -11,13 +11,13 @@ function cleanup {
 # Entry point
 pushd ..
 
-echo -e "\e[1;33mStarting MGView $(cat MGView/VERSION)\e[00m"
+echo -e "\e[1;33mStarting MGView $(cat MGView/bin/VERSION)\e[00m"
 echo -e "\e[1;31mPress Ctrl+C to quit.\e[00m"
 
 python -m SimpleHTTPServer 8000 &
 sleep 0.5
 
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome localhost:8000/MGView/Examples.html"
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome localhost:8000/MGView/Examples.html
 
 if [ $? -ne 0 ]; then
   echo -e "\e[1;31mChrome failed to start. Try manually starting Chrome, then run this script again.\e[00m"
