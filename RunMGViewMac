@@ -1,37 +1,12 @@
 #!/bin/bash
 
-function cleanup {
-  kill -9 %1
-  popd
-  echo -e "\n\e[1;31mKilling MGView server.\e[00m"
-  echo -e "\e[1;33mExisting MGView tabs open in Chrome are now inactive.\e[00m"
-}
-
-
 # Entry point
 pushd ..
 
 echo -e "\e[1;33mStarting MGView $(cat MGView/bin/VERSION)\e[00m"
+echo -e "\e[1;31mServer is running. Open chrome and go to localhost:8000 in the address bar.\e[00m"
 echo -e "\e[1;31mPress Ctrl+C to quit.\e[00m"
 
-python -m SimpleHTTPServer 8000 &
-sleep 0.5
+python -m SimpleHTTPServer 8000
 
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome localhost:8000/MGView/Examples.html
-
-if [ $? -ne 0 ]; then
-  echo -e "\e[1;31mChrome failed to start. Try manually starting Chrome, then run this script again.\e[00m"
-  kill -9 %1
-  popd
-  exit -1
-fi
-
-trap cleanup EXIT
-while read -n 1 -s line
-do
-#  if [ `echo $line | tr [:upper:] [:lower:]` =  "q" ]; then
-#    break
-#  fi
-  echo -e "\e[1;31mPress Ctrl+C to quit.\e[00m"
-done
-
+popd
