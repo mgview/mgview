@@ -248,7 +248,7 @@
                 var result;
                 while ( ( result = patternPos.exec( key ) ) != null ) {
                     //console.log("Found position vector " + result[0]);
-                    var pieces = result[0].split(new RegExp(this.get("sceneOrigin")+'|_|o|\\[[0-9]\\]', 'g'));  // split(/[o_\[]/g);
+                    var pieces = result[0].split(new RegExp(this.get("sceneOrigin")+'|_|o|cm|\\[[0-9]\\]', 'g'));  // split(/[o_\[]/g);
                     var frameName = pieces[3];
                     if(this._model.objects[frameName] === undefined)
                     {

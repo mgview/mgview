@@ -574,7 +574,14 @@
                 var frame = this._svFrames[frameName];
                 //debugLog("Setting pose for frame " + frameName);
 
-                var reference_point = (this._svFrameTypes[frameName] === 'point') ? (frameName) : (frameName+'o');
+                var points_to_try = [frameName, frameName + 'o', frameName + 'cm'];
+                var position_name;
+                for (var p = 0; p < points_to_try.length; ++p) {
+                    position_name = vsprintf("P_%s_%s", [svOrigin, points_to_try[p]]);
+                    if (data[position_name+'[1]'] != null) {
+                        break;
+                    }
+                }
 
                 var rot_proxy = this._svFrameRotationProxies[frameName]; // != null)
                 var rotation_name = newtonianFrame + "_" + ((rot_proxy == null)?(frameName):(rot_proxy));
@@ -595,7 +602,6 @@
                 }
 
                 // TODO allow for point other than Ao, Bo, etc, like Acm
-                var position_name = vsprintf("P_%s_%s", [svOrigin, reference_point]);
                 if(data[position_name+"[1]"] != null)
                 {
                     //debugLog(vsprintf("Found position data for %s", [position_name] ));
