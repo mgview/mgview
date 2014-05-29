@@ -95,12 +95,11 @@
 
         callModelChangedCallbacks: function(){
             this.updateEditorWithModel();
-            //this._view.updateCustomColors();
         },
 
         updateEditorWithModel: function() {
-
-            SV.editor_xml.setModel(this._model);
+            var model_string = jsl.format.formatJson(JSON.stringify(this._model));
+            SV.editor_xml.setText(this._model.name, model_string);
         },
 
         processSimulationFiles: function(config, basePath){

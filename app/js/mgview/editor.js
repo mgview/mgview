@@ -11,7 +11,7 @@
 
             this.isOpen = false;
             this._sceneModel = sceneModel;
-            this._model = {};
+            this._name = 'default';
 
             SV.$('SV').append(
                         '<div id="model_editor" title="Model Editor">'
@@ -75,7 +75,6 @@
 
             dialog.dialog("close");
 
-
             dialog.find('#editor_undo').button({
                 icons: {
                     secondary: "ui-icon-arrowreturnthick-1-w"
@@ -124,14 +123,12 @@
         },
 
         applyModelUpdate: function() {
-            var success = true;
             var input_string = this.editor.getValue();
             var output_string = jsl.format.formatJson(input_string);
             try {
-                var model = jsl.parser.parse(output_string);
-                this._sceneModel.loadFromModel(model);
-            }
-            catch(err) {
+                var model_string = jsl.parser.parse(output_string);
+                this._sceneModel.loadFromModel(model_string);
+            } catch(err) {
                 alert(err);
             }
         },
@@ -142,21 +139,16 @@
             container.find('#download_model_link').remove();
             container.append(
                 '<a id="download_model_link" class="ui-button" href="'
-                    + download_string + '" download="' + this._model.name + '.json">Save</a>'
+                    + download_string + '" download="' + this._name + '.json">Save</a>'
             );
         },
 
-        setModel: function(model) {
-            if(!this.isOpen)
-                return;
-            this._model = model;
-            var model_string = jsl.format.formatJson(JSON.stringify(this._model));
-            this.editor.setValue(model_string);
+        setText: function(title, text) {
+            //if(!this.isOpen)
+            //      return;
+            this._name = title;
+            this.editor.setValue(text);
             this.updateDownloadLink();
-        },
-
-        setText: function(str) {
-            alert("Deprecated!");
         },
 
         randomFunc: function() {
