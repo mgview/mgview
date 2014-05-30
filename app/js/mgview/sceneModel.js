@@ -1,6 +1,9 @@
-//Copyright 2012-2013 Adam Leeper. All Rights Reserved.
+/**
+ * @license MIT, http://opensource.org/licenses/MIT
+ * @author Adam Leeper, https://github.com/aleeper
+ */
 
-(function($) {
+    (function($) {
 
     SV.SceneModel = SV.Class.extend({
 
@@ -95,12 +98,11 @@
 
         callModelChangedCallbacks: function(){
             this.updateEditorWithModel();
-            //this._view.updateCustomColors();
         },
 
         updateEditorWithModel: function() {
-
-            SV.editor_xml.setModel(this._model);
+            var model_string = jsl.format.formatJson(JSON.stringify(this._model));
+            SV.editor_xml.setText(this._model.name, model_string);
         },
 
         processSimulationFiles: function(config, basePath){
