@@ -1,6 +1,9 @@
-//Copyright 2012-2013 Adam Leeper. All Rights Reserved.
+/**
+ * @license MIT, http://opensource.org/licenses/MIT
+ * @author Adam Leeper, https://github.com/aleeper
+ */
 
-(function($) {
+    (function($) {
 
     SV.SceneModel = SV.Class.extend({
 

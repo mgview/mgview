@@ -1,3 +1,8 @@
+/**
+ * @license MIT, http://opensource.org/licenses/MIT
+ * @author Adam Leeper, https://github.com/aleeper
+ */
+
 var removeWhitespace, splitString, stringToVector3, arrayToVector3, addAxes;
 
 (function($) {
