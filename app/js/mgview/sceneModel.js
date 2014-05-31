@@ -142,7 +142,15 @@
                     //var output_string = jsl.format.formatJson(model_string);
                     try {
                         var model = jsl.parser.parse(model_string);
-                        self.loadFromModel(model);
+                        if( model["source"] == "pydy" ) {
+                            console.log("Loading PyDy Scene!");
+                            self.loadFromPyDyModel(model);
+                        }
+                        else {
+                            console.log("Loading MG Scene!");
+                            self.loadFromModel(model);
+                        }
+
                     }
                     catch(err) {
                         alert(err);
@@ -154,6 +162,23 @@
         },
 
         loadFromModel: function(model) {
+            var self = this;
+
+            self.clear();
+
+            self._model = model;
+
+            self.addEmptyDefaults();
+            //self.processSimulationSettings(model, self._basePath);
+            self.processSimulationFiles(model, self._basePath);
+            self.loadSimulationTrajectories();
+        },
+
+
+        loadFromPyDyModel: function(model) {
+            /** I have just copied the loadfromModel function
+              * Need to discuss with Adam over some issues!
+            **/
             var self = this;
 
             self.clear();
