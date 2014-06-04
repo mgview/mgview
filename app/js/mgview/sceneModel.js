@@ -142,7 +142,7 @@
                     //var output_string = jsl.format.formatJson(model_string);
                     try {
                         var model = jsl.parser.parse(model_string);
-                        if( model["source"] == "pydy" ) {
+                        if( model["source"] == "PyDy" ) {
                             console.log("Loading PyDy Scene!");
                             self.loadFromPyDyModel(model);
                         }
@@ -184,14 +184,17 @@
             self.clear();
 
             self._model = model;
-
-            self.addEmptyDefaults();
+            //self.addEmptyDefaults();
             //self.processSimulationSettings(model, self._basePath);
-            self.processSimulationFiles(model, self._basePath);
-            self.loadSimulationTrajectories();
+            //self.processSimulationFiles(model, self._basePath);
+            self.loadPyDySimulationTrajectories(self._model, self._basePath);
         },
 
         loadSimulationTrajectories: function() {
+            /** This function maps simulation data information
+              * to a timestep, and saves it in self._timeData
+              *
+             **/ 
             var self = this;
             self._timeData = {};
             self._timeArray = [];
@@ -234,11 +237,12 @@
                                         if(entities[j-1] !== "" && values[j] !== "")      
                                           self._timeData[time][entities[j-1]] = +(values[j]);
                                     }
-
                                 }
                                 //debugLog(entities);
                                 self.filesLoaded[filePath] = true;
+                                
                             }
+
                     });
                 })(filePath, fileNum);
             }
@@ -259,6 +263,65 @@
             })();
         },
 
+        loadPyDySimulationTrajectories: function(model, basePath){
+            /**
+              * This method takes the simulation data from the ajax
+              * call to the json file, and parses it to self._timeData.
+             **/
+
+            
+            
+            var entities = new Array();
+            self._model = model;
+            for(var key in model["objects"]){
+                entities.push(model["objects"][key]["simulation_id"]);
+            }
+            self._entities = entities;
+            self._timeArray = new Array();
+            //generate time array:
+            for(var i=model["t_initial"]; i<=model["t_final"]; i+=model["timeStep"]){
+                self._timeArray.push(i.toString());
+            }
+
+            filePath = basePath + model["simulationData"];
+
+            (function(filePath) {
+                    $.ajax({
+                        type: "GET",
+                        url: filePath,
+                        error:      function(){  console.log("simulation file failed to load!")},
+                        success:
+                            function(data){
+                                self._data = data;
+                                self._timeData = {};
+                                for(var i in self._timeArray){
+                                    self._timeData[self._timeArray[i]] = {};
+                                    console.log(self._timeArray[i]);
+                                    for(var j in self._entities){
+                                        self._timeData[self._timeArray[i]][self._entities[j]] = 
+                                                                  self._data[j][self._entities[j]][i];   
+                                    }
+                                }
+                                //console.log(_data);
+                                self.simulationFileLoaded = true;
+                                console.log("SimulationFile successfully loaded!");
+                            }
+                    });
+                })(filePath);
+
+                (function waitForFilesToLoad() {
+                var done = self.simulationFileLoaded;
+                if (!done) {
+                    setTimeout(waitForFilesToLoad, 100);
+                    return;
+                } else {
+                    self.inferTimeFromData();
+                    self.inferFramesFromData();
+                }
+                })();
+
+
+        },
         inferFramesFromData: function(){
 
             for(var i in this._timeData) {
