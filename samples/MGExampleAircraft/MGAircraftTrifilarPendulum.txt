@@ -1,0 +1,169 @@
+% File: MGAircraftTrifilarPendulum.txt       www.MotionGenesis.com
+% Copyright (c) 1988-2015 Motion Genesis LLC.  For use only with MotionGenesis.
+%--------------------------------------------------------------------
+SetAutoZ( OFF )
+NewtonianFrame  N                    % Earth / aircraft hanger.
+RigidBody       C                    % Aircraft.
+Point           N1(N), N2(N), N3(N)  % End-points of cable on N.
+Point           C1(C), C2(C), C3(C)  % End-points of cable on C.
+%--------------------------------------------------------------------
+Constant  L1 = 30 m                  % Length of cable between N1 and C1.
+Constant  L2 = 30 m                  % Length of cable between N2 and C2.
+Constant  L3 = 30 m                  % Length of cable between N3 and C3.
+Constant  dN = 30 m                  % Distance between No and N1.
+Constant  dC = 30 m                  % Distance between Co and C1 
+Constant  wN = 20 m                  % Distance between No and N2.
+Constant  wC = 20 m                  % Distance between Co and C2.
+Constant dcm =  8 m                  % Distance between Co and Ccm 
+Constant  g = 9.8 m/s^2              % Earth's gravitational acceleration
+Variable  x'', y'', z''              % Locates Ccm from No.
+Variable  q1', q2', q3'              % BodyZYX Euler angles.
+Variable  wx', wy', wz'              % Cxyz> measures of C's angular velocity in N.
+Variable  T1, T2, T3                 % Tension in cables.
+Constant  bT = 8.0E3 noUnits         % Torque damping constant.
+Constant  bF = 6.0E3 noUnits         % Force  damping constant.
+Constant  epsilonV   = 1.0E-5 m/s    % Small number to avoid divide by zero errors.
+Constant  epsilonW   = 1.0E-5 rad/s  % Small number to avoid divide by zero errors.
+Constant  expDamping = 0.25 noUnits  % Exponent used with damping force/torques.
+%--------------------------------------------------------------------
+C.SetMassInertia( m = 9000 kg, Ixx = 4.0E5 kg*m^2,  Iyy = 3.0E5 kg*m^2,  Izz = Ixx + Iyy )
+%--------------------------------------------------------------------
+%   Rotational kinematics
+C.SetAngularVelocityAcceleration( N, wx*Cx> + wy*Cy> + wz*Cz> )
+C.SetRotationMatrixODE( N, BodyZYX, q1, q2, q3 )
+%--------------------------------------------------------------------
+%   Translational kinematics
+CCm.Translate( No, x*Nx> + y*Ny> + z*Nz> )
+Co.Translate( CCm, -dcm*Cx> )  
+C1.SetPositionVelocity( Co,  dC*Cx> ) 
+C2.SetPositionVelocity( Co, -wC*Cy> ) 
+C3.SetPositionVelocity( Co,  wC*Cy> ) 
+N1.SetPosition( No,  dN*Nx> ) 
+N2.SetPosition( No, -wN*Ny> ) 
+N3.SetPosition( No,  wN*Ny> ) 
+%--------------------------------------------------------------------
+%   Configuration constraints: Length of cables.
+CableConstraint[1] = C1.GetDistanceSquared( N1 ) - L1^2
+CableConstraint[2] = C2.GetDistanceSquared( N2 ) - L2^2
+CableConstraint[3] = C3.GetDistanceSquared( N3 ) - L3^2
+%--------------------------------------------------------------------
+%   Add forces from gravity and tension.
+Ccm.AddForce( m*g*Nz> )
+unitVectorToN1FromC1> = N1.GetPosition(C1) / L1
+unitVectorToN2FromC2> = N2.GetPosition(C2) / L2
+unitVectorToN3FromC3> = N3.GetPosition(C3) / L3
+C1.AddForce( N1,  T1 * unitVectorToN1FromC1>  ) 
+C2.AddForce( N2,  T2 * unitVectorToN2FromC2>  ) 
+C3.AddForce( N3,  T3 * unitVectorToN3FromC3>  )
+%--------------------------------------------------------------------
+%   Add force to damp translational motion.
+vMag = Ccm.GetSpeed( N )
+unitVectorVelocity> = CCm.GetVelocity( N ) / ( vMag + epsilonV )
+dampingForce> = -bF *  vMag^expDamping * unitVectorVelocity>
+CCm.AddForce( dampingForce> )
+%--------------------------------------------------------------------
+%   Add torque to damp rotational motion.
+wMag = C.GetAngularSpeed( N )
+unitVectorAngularVelocity> = C.GetAngularVelocity( N ) / ( wMag + epsilonW )
+dampingTorque> =  -bT *  wMag^expDamping * unitVectorAngularVelocity>
+C.AddTorque( dampingTorque> )
+%--------------------------------------------------------------------
+%   Calculate resultant force on C and moment of all forces on C about Ccm.
+ResultantForce> = C.GetResultantForce()
+Fx = Dot( ResultantForce>, Nx> )
+Fy = Dot( ResultantForce>, Ny> )
+Fz = Dot( ResultantForce>, Nz> )
+ResultantForce> := Fx*Nx> + Fy*Ny> + Fz*Nz>
+%--------------------------------------------------------------------
+%   Calculate moment of all forces on C about Ccm.
+ResultantMoment> = C.GetMomentOfForces( Ccm )
+Mx = Dot( ResultantMoment>, Cx> )
+My = Dot( ResultantMoment>, Cy> )
+Mz = Dot( ResultantMoment>, Cz> )
+ResultantMoment> := Mx*Cx> + My*Cy> + Mz*Cz>
+%--------------------------------------------------------------------
+%   F = m*a   (Translational equations of motion). 
+ma> = m * Ccm.GetAcceleration( N )
+Dynamics[1] = Dot(  ma>,  Nx>  )  -  Fx
+Dynamics[2] = Dot(  ma>,  Ny>  )  -  Fy
+Dynamics[3] = Dot(  ma>,  Nz>  )  -  Fz
+%--------------------------------------------------------------------
+%   M = DH/Dt (Rotational equations of motion).
+dHDt> = Dt( C.GetAngularMomentum(Ccm), N )
+Dynamics[4] = Dot(  dHDt>,  Cx>  )  -  Mx
+Dynamics[5] = Dot(  dHDt>,  Cy>  )  -  My 
+Dynamics[6] = Dot(  dHDt>,  Cz>  )  -  Mz 
+%--------------------------------------------------------------------
+%   Append time-derivatives of constraints with constraint stabilization.
+%   For each yi = CableConstraint[i], use critical damping zetaStabilize=1 and natural frequency wStabilize=1 for:
+%   yi''  +  2 * zeta * wn * yi'  +  wn^2 * yi  =  0.
+Constant  zetaConstraintStabilize = 1 noUnits,   wnConstraintStabilize = 1 rad/sec 
+kd =  2 * zetaConstraintStabilize * wn;    kp = wnConstraintStabilize^2;  
+Dynamics[7] = DtDt( CableConstraint[1] )  +  kd * Dt( CableConstraint[1] )  +  kp * CableConstraint[1]
+Dynamics[8] = DtDt( CableConstraint[2] )  +  kd * Dt( CableConstraint[2] )  +  kp * CableConstraint[2] 
+Dynamics[9] = DtDt( CableConstraint[3] )  +  kd * Dt( CableConstraint[3] )  +  kp * CableConstraint[3] 
+%--------------------------------------------------------------------
+%   Energy calculations. 
+PowerDamping = Dot( dampingTorque>, C.GetAngularVelocity(N) ) + Dot( dampingForce>, CCm.GetVelocity(N) )
+PowerTension = Dot( C1.GetResultantForce(N1), C1.GetVelocity(N) )   &
+             + Dot( C2.GetResultantForce(N2), C2.GetVelocity(N) )   &
+             + Dot( C3.GetResultantForce(N3), C3.GetVelocity(N) )   
+Variable  WorkDamping' = PowerDamping + PowerTension
+KineticEnergy = System.GetKineticEnergy()
+GravityPotentialEnergy = System.GetForceGravityPotentialEnergy( g*Nz>, No )
+KePe = KineticEnergy + GravityPotentialEnergy
+MechanicalEnergy =  KePe - WorkDamping
+Input  WorkDamping = 0 Joules
+%--------------------------------------------------------------------
+%   Integration parameters and initial values for variables.
+Input  tFinal = 120 sec,  tStep = 0.05 sec,  absError = 1.0E-09,  relError = 1.0E-09
+Input  x' = 0 m/s,  y' = 0 m/s,  z' = 0 m/s
+Input  wx = 0 rad/sec,  wy = 0 rad/sec,  wz = 0 rad/sec
+%--------------------------------------------------------------------
+%   Calculate yaw, pitch and roll angles in terms of q1, q2, q3.
+Yaw   = GetAngleBetweenUnitVectors( Nx>, Cy> )  -  pi/2 
+Pitch = GetAngleBetweenUnitVectors( Nz>, Cx> )  -  pi/2
+Roll  = pi/2  -  GetAngleBetweenUnitVectors( Nz>, Cy> ) 
+%--------------------------------------------------------------------
+%   Use configuration constraints and initial yaw, pitch, roll angles to solve for initial values.
+Constant  Yaw0 = 60 deg,  Pitch0 = 0 deg,  Roll0 = 0 deg
+SolveSetInput( [ CableConstraint;  Yaw - Yaw0;  Pitch - Pitch0;  Roll - Roll0 ],  &
+               x = Input(dN)/2 m, y=0 m, z = 0.8*Input(L1) m,  q1=60 deg, q2=0 deg, q3=0 deg )
+%--------------------------------------------------------------------
+%   List output quantities and solve ODEs.
+Distance = Co.GetDistance( No )
+OutputPlot  t sec,  Distance m,  Yaw deg,  Pitch deg,  Roll deg,  T1 kN,  T2 kN,  T3 kN,  &
+            vMag m/s,  wMag rad/sec, MechanicalEnergy Joules,                          &
+            CableConstraint[1] m, CableConstraint[2] m, CableConstraint[3] m
+Output   t sec,  x m,  y m,  z m,  x' m/s,  y' m/s,  z' m/s,               &
+         q1 deg,  q2 deg,  q3 deg,  wx rad/sec,  wy rad/sec,  wz rad/sec,  &
+         KineticEnergy Joules, GravityPotentialEnergy Joules, KePe Joules, MechanicalEnergy Joules, WorkDamping Joules
+ODE( Dynamics, x'', y'', z'', wx', wy', wz', T1, T2, T3 )  MGAircraftTrifilarPendulum.m
+
+%--------------------------------------------------------------------
+%   Interesting Initial Values: Situation when yaw and roll do not correspond directly to q1 and q3.
+Input  Yaw0 := 0 deg,  Pitch0 := 5 deg,  Roll0 := 5 deg
+AircraftAboveCeiling = Solve( [ CableConstraint;  Yaw - Yaw0;  Pitch - Pitch0;  Roll - Roll0 ],  &
+                                x = Input(dN)/2 m, y=0 m, z = 0.2*Input(L1) m,  q1=0 deg, q2=5 deg, q3=5 deg )
+
+%--------------------------------------------------------------------
+%   Static analysis.  Since equations are nonlinear, solution requires a guess.
+StaticsWithConstraints = [ Fx;  Fy;  Fz;  Mx;  My;  Mz;  CableConstraint ]
+%--------------------------------------------------------------------
+%   Statics 1:  Equal-length cables  L1 = L2 = L3 = 30 m.
+ans1 = Solve( StaticsWithConstraints,  q1 = 0 deg,  q2 = 0 deg,  q3 = 0 deg,    & 
+                  x = Input(dN)/2 m,    y = 0 m,              z = Input(L1) m,  & 
+                 T1 = Input(m*g)/2 N,  T2 = Input(m*g)/4 N,  T3 = Input(m*g)/4 N )
+%--------------------------------------------------------------------
+%   Statics 2:  Unequal-length cables  L1 = L2 = 22 m,   L3 = 30 m.  
+Input  L1 := 22 m,  L2 := 22 m,  L3 := 30 m 
+SolveSetInput( StaticsWithConstraints,  q1 = 0 deg,  q2 = 0 deg,  q3 = 0 deg,  & 
+                 x = Input(dN)/2 m,    y = 0 m,              z = Input(L1) m,  & 
+                T1 = Input(m*g)/2 N,  T2 = Input(m*g)/4 N,  T3 = Input(m*g)/4 N )
+DistanceStatic     = EvaluateAtInput( Distance )
+YawStaticDegrees   = EvaluateAtInput( Yaw )   *  180/pi
+PitchStaticDegrees = EvaluateAtInput( Pitch ) *  180/pi
+RollStaticDegrees  = EvaluateAtInput( Roll )  *  180/pi
+%--------------------------------------------------------------------
+Save  MGAircraftTrifilarPendulum.all
+Quit
