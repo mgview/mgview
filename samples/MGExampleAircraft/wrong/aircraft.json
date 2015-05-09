@@ -1,0 +1,587 @@
+{
+    "name": "Aircraft Pendulum",
+    "simulationData": [
+        "Data.4:10"
+    ],
+    "newtonianFrame": "N",
+    "sceneOrigin": "No",
+    "showAxes": false,
+    "workspaceSize": 10,
+    "cameraParentFrame": "N",
+    "cameraUp": [
+        0,
+        0,
+        -1
+    ],
+    "cameraEye": [
+        40,
+        100,
+        -20
+    ],
+    "cameraFocus": [
+        20,
+        0,
+        20
+    ],
+    "speedFactor": 1,
+    "objects": {
+        "N": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "N",
+                    "scale": 3.75,
+                    "position": {
+                        "x": -2,
+                        "y": 0,
+                        "z": -1.5
+                    },
+                    "rotation": {
+                        "x": -1.5707963267948966,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 10,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "ceiling": {
+                    "type": "box",
+                    "visible": true,
+                    "position": {
+                        "x": 15,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgba(0, 0, 0, 0.42)"
+                    },
+                    "size": {
+                        "x": 50,
+                        "y": 50,
+                        "z": 0.1
+                    }
+                }
+            }
+        },
+        "C": {
+            "type": "frame",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "C",
+                    "scale": 3.75,
+                    "position": {
+                        "x": 2.5,
+                        "y": 0,
+                        "z": -1.5
+                    },
+                    "rotation": {
+                        "x": -1.5707963267948966,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "basis": {
+                    "visible": true,
+                    "type": "basis",
+                    "scale": 10,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": -0.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "body": {
+                    "type": "mesh",
+                    "path": "../cad/Stealth_Aircraft/untitled.stl",
+                    "scale": 0.055,
+                    "material": {
+                        "name": "rgb(60, 60, 60)"
+                    },
+                    "visible": true,
+                    "position": {
+                        "x": 27,
+                        "y": 8,
+                        "z": 15
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 3.193952531149623,
+                        "z": 1.5707963267948966
+                    }
+                },
+                "origin": {
+                    "type": "sphere",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": -0.5
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(0, 0, 0)"
+                    },
+                    "radius": 0.75,
+                    "segments_width": 8,
+                    "segments_height": 8
+                }
+            }
+        },
+        "C1": {
+            "type": "point",
+            "rotationFrame": "C",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "C1",
+                    "position": {
+                        "x": 2.5,
+                        "y": 0,
+                        "z": -1
+                    },
+                    "rotation": {
+                        "x": -1.5707963267948966,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    },
+                    "scale": 3.75
+                },
+                "basis": {
+                    "visible": false,
+                    "type": "basis",
+                    "scale": 7.5,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "point": {
+                    "type": "sphere",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(183, 60, 60)"
+                    },
+                    "radius": 1,
+                    "segments_width": 8,
+                    "segments_height": 8
+                }
+            }
+        },
+        "C2": {
+            "type": "point",
+            "rotationFrame": "C",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "C2",
+                    "scale": 3.75,
+                    "position": {
+                        "x": 2.5,
+                        "y": 0,
+                        "z": -1
+                    },
+                    "rotation": {
+                        "x": -1.5707963267948966,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "basis": {
+                    "visible": false,
+                    "type": "basis",
+                    "scale": 7.5,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "point": {
+                    "type": "sphere",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(183, 60, 60)"
+                    },
+                    "radius": 1,
+                    "segments_width": 8,
+                    "segments_height": 8
+                }
+            }
+        },
+        "C3": {
+            "type": "point",
+            "rotationFrame": "C",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "C3",
+                    "scale": 3.75,
+                    "position": {
+                        "x": 2.5,
+                        "y": 0,
+                        "z": -1
+                    },
+                    "rotation": {
+                        "x": -1.5707963267948966,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "basis": {
+                    "visible": false,
+                    "type": "basis",
+                    "scale": 7.5,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "point": {
+                    "type": "sphere",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(183, 60, 60)"
+                    },
+                    "radius": 1,
+                    "segments_width": 8,
+                    "segments_height": 8
+                }
+            }
+        },
+        "N1": {
+            "type": "point",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "N1",
+                    "scale": 3.75,
+                    "position": {
+                        "x": -2,
+                        "y": 0,
+                        "z": -1.5
+                    },
+                    "rotation": {
+                        "x": -1.5707963267948966,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "basis": {
+                    "visible": false,
+                    "type": "basis",
+                    "scale": 7.5,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "point": {
+                    "type": "sphere",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(0, 0, 0)"
+                    },
+                    "radius": 1,
+                    "segments_width": 8,
+                    "segments_height": 8
+                }
+            }
+        },
+        "N2": {
+            "type": "point",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "N2",
+                    "scale": 3.75,
+                    "position": {
+                        "x": -2,
+                        "y": 0,
+                        "z": -1.5
+                    },
+                    "rotation": {
+                        "x": -1.5707963267948966,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "basis": {
+                    "visible": false,
+                    "type": "basis",
+                    "scale": 7.5,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "point": {
+                    "type": "sphere",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(0, 0, 0)"
+                    },
+                    "radius": 1,
+                    "segments_width": 8,
+                    "segments_height": 8
+                }
+            }
+        },
+        "N3": {
+            "type": "point",
+            "visual": {
+                "label": {
+                    "visible": true,
+                    "type": "text",
+                    "text": "N3",
+                    "scale": 3.75,
+                    "position": {
+                        "x": -2,
+                        "y": 0,
+                        "z": -1.5
+                    },
+                    "rotation": {
+                        "x": -1.5707963267948966,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "basis": {
+                    "visible": false,
+                    "type": "basis",
+                    "scale": 7.5,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "SILVER"
+                    }
+                },
+                "point": {
+                    "type": "sphere",
+                    "visible": true,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "material": {
+                        "name": "rgb(0, 0, 0)"
+                    },
+                    "radius": 1,
+                    "segments_width": 8,
+                    "segments_height": 8
+                }
+            }
+        }
+    },
+    "spans": {
+        "cable1": {
+            "type": "cable",
+            "point1": "N1",
+            "point2": "C1",
+            "showLabel": false,
+            "visual": {
+                "wire1": {
+                    "thickness": 1,
+                    "material": "BLACK"
+                }
+            }
+        },
+        "cable2": {
+            "type": "cable",
+            "point1": "N2",
+            "point2": "C2",
+            "showLabel": false,
+            "visual": {
+                "wire1": {
+                    "thickness": 1,
+                    "material": "BLACK"
+                }
+            }
+        },
+        "cable3": {
+            "type": "cable",
+            "point1": "N3",
+            "point2": "C3",
+            "showLabel": false,
+            "visual": {
+                "wire1": {
+                    "thickness": 1,
+                    "material": "BLACK"
+                }
+            }
+        }
+    }
+}
