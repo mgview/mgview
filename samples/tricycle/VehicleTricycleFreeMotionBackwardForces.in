@@ -1,0 +1,45 @@
+File: VehicleTricycleFreeMotionBackwardForces.in
+----------------------------------------------------------+------------------
+Description          Quantity             Units           | Value
+----------------------------------------------------------|------------------
+Constant             a                    m               |  1.64
+Constant             b                    m               |  0.75
+Constant             e                    m               |  2.0
+Constant             g                    m/s^2           |  9.8
+Constant             h                    m               |  0.20
+Constant             IAzz                 kg*m^2          |  166.6
+Constant             J                    kg*m^2          |  2.0
+Constant             K                    kg*m^2          |  1.0
+Constant             m                    kg              |  30
+Constant             mA                   kg              |  640
+Constant             R                    m               |  0.35
+Constant             theta                deg             |  15
+
+Initial Value        qA                   deg             |  180
+Initial Value        qE                   deg             |  0.1
+Initial Value        thetaB               UNITS           |  0
+Initial Value        thetaC               UNITS           |  0
+Initial Value        thetaF               UNITS           |  0
+Initial Value        v                    m/s             |  0
+Initial Value        x                    m               |  0
+Initial Value        y                    m               |  0
+Initial Value        qE'                  rad/sec         |  0
+
+Initial Time         tInitial             second          |  0.0
+Final Time           tFinal               sec             |  7
+Integration Step     integStp             sec             |  0.002
+Print-Integer        printIntScreen       0 or +integer   |  1
+Print-Integer        printIntFile         0 or +integer   |  1
+Absolute Error       absError                             |  1.0E-07
+Relative Error       relError                             |  1.0E-08
+----------------------------------------------------------+------------------
+Note: UnitSystem: kilogram, meter, second
+
+Note: Use spaces not tabs while editing this file.
+
+      absError should be set equal to 10^(-8)*Xsmall, where Xsmall is the estimated
+               smallest maximum absolute value of the variables being integrated.
+
+      relError should be set equal to 10^(-d), where d is no less than the desired
+               number of significant digits of numerical integration results.
+-----------------------------------------------------------------------------
