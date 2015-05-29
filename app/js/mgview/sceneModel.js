@@ -134,7 +134,15 @@
                 url: filePath,
                 dataType: "text",
                 error: function(){
-                    alert("Failed to load scene file because it is malformed. Please check file for syntax errors.");
+                    alert("Failed to load scene file:\n" + filePath + "\n\n" +
+                          "Please check that the file exists and that you " +
+                          "have access permissions.\n\n" +
+                          'Note: This may happen if you are on Windows and have known ' +
+                          'file extensions hidden. As an example, this would cause ' +
+                          'you to think your file is named myFile.json when in reality ' +
+                          'it is named myFile.json.txt.\n\n' +
+                          'See http://windows.microsoft.com/en-us/windows/' +
+                          'show-hide-file-name-extensions for more info.');
                 },
                 success: function(model_string) {
                     console.log("Loaded scene file, parsing...");
@@ -206,7 +214,7 @@
                                     var values = lines[i].split(/\s+/g).slice(1);
                                     var time = values[0];
                                     for(var j=1; j< values.length; j++){
-                                        if(entities[j-1] !== "" && values[j] !== "")      
+                                        if(entities[j-1] !== "" && values[j] !== "")
                                           self._timeData[time][entities[j-1]] = +(values[j]);
                                     }
 
