@@ -1,22 +1,28 @@
 #!/bin/bash
+CWHITE="\x1B[0m"
+CRED="\x1B[31m"
+CGREEN="\x1B[32m"
+CYELLOW="\x1B[33m"
 
 function cleanup {
   kill -9 %1
-  popd
-  echo -e "\n\e[1;31mKilling MGView server.\e[00m"
-  echo -e "\e[1;33mExisting MGView tabs open in Chrome are now inactive.\e[00m"
+  popd &> /dev/null
+  echo -e "\n${CRED}Killing MGView server.${CWHITE}"
+  echo -e "${CYELLOW}Existing MGView tabs open in Chrome are now inactive.${CWHITE}"
 }
 
 #####################
 #### Entry point ####
 #####################
 
-# Go up a level
-pushd ..
-#pushd
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-echo -e "\e[1;33mStarting MGView $(cat MGView/VERSION)\e[00m"
-echo -e "\e[1;31mPress Ctrl+C to quit.\e[00m"
+# Go up a level
+pushd $DIR/.. &> /dev/null
+
+echo -e "${CYELLOW}Starting MGView $(cat ${DIR}/bin/VERSION)${CWHITE}"
+echo -e "${CRED}Server is running. Open your browser and type localhost:8000 in the address bar.${CWHITE}"
+echo -e "${CRED}Press Ctrl+C to quit.${CWHITE}"
 
 python -m SimpleHTTPServer 8000 &
 sleep 0.5
@@ -24,18 +30,15 @@ sleep 0.5
 google-chrome localhost:8000
 
 if [ $? -ne 0 ]; then
-  echo -e "\e[1;31mChrome failed to start. Try manually starting Chrome, then run this script again.\e[00m"
+  echo -e "${CRED}Chrome failed to start. Try manually starting Chrome, then run this script again.${CWHITE}"
   kill -9 %1
-  popd
+  popd &> /dev/null
   exit -1
 fi
 
 trap cleanup EXIT
 while read -n 1 -s line
 do
-#  if [ `echo $line | tr [:upper:] [:lower:]` =  "q" ]; then
-#    break
-#  fi
-  echo -e "\e[1;31mPress Ctrl+C to quit.\e[00m"
+  echo -e "${CRED}Press Ctrl+C to quit.${CWHITE}"
 done
 

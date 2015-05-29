@@ -4,13 +4,19 @@ CRED="\x1B[31m"
 CGREEN="\x1B[32m"
 CYELLOW="\x1B[33m"
 
-# Entry point
-pushd ..
+#####################
+#### Entry point ####
+#####################
 
-echo -e "${CYELLOW}Starting MGView $(cat MGView/bin/VERSION)${CWHITE}"
-echo -e "${CRED}Server is running. Open chrome and go to localhost:8000 in the address bar.${CWHITE}"
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+# Go up a level
+pushd $DIR/.. &> /dev/null
+
+echo -e "${CYELLOW}Starting MGView $(cat ${DIR}/bin/VERSION)${CWHITE}"
+echo -e "${CRED}Server is running. Open your browser and type localhost:8000 in the address bar.${CWHITE}"
 echo -e "${CRED}Press Ctrl+C to quit.${CWHITE}"
 
 python -m SimpleHTTPServer 8000
 
-popd
+popd &> /dev/null
