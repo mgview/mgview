@@ -153,19 +153,19 @@ var SV = {};
             //        	var button = $('#button1'), interval;
             /*
                         new AjaxUpload(this.$('Load'),{
-                            //action: 'upload.htm', 
+                            //action: 'upload.htm',
                             name: 'myfile',
                             onSubmit : function(file, ext){
                                 console.log(vsprintf("using file path: [%s]",[file]) + "   " + ext);
-                                
+
                                 //SV.World = new SV.World();
                                 //SV.World.createWebGLCanvas();
-                                //SV.World.loadSimulation(path);                    
-                               
+                                //SV.World.loadSimulation(path);
+
                             },
                             onComplete: function(file, response){
                                 console.log("onComplete()");
-                                ////button.text('Upload');            
+                                ////button.text('Upload');
                                 //window.clearInterval(interval);
                                 //// enable upload button
                                 //this.enable();
@@ -173,7 +173,7 @@ var SV = {};
                                 //$('<li></li>').appendTo('#example1 .files').text(file);
                             }
                         });
-                        
+
                         */
             //        return false;
             //    }
@@ -188,8 +188,18 @@ var SV = {};
                 alert("Please type the (relative) path to your .json file in the text field.");
                 return;
             }
-            if(THREEal.getFileExtension(path) !== 'json') {
-                alert('Expected a file extension of type "json".');
+            var fileExtension = THREEal.getFileExtension(path);
+            if(fileExtension !== 'json') {
+                if(fileExtension === 'txt') {
+                    alert('Your file extenion is "txt", but it should be "json".\n\n' +
+                          'This often happens if you are on Windows and have known ' +
+                          'file extensions hidden.\n\n' +
+                          'See http://windows.microsoft.com/en-us/windows/' +
+                          'show-hide-file-name-extensions for more info.');
+                } else {
+                    alert('Expected a file extension of type "json". The provided file\'s ' +
+                          'extension is "' + fileExtension + '".');
+                }
                 return;
             }
 
