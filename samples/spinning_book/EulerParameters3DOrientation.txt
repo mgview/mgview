@@ -1,4 +1,4 @@
-% File: EulerParameters3DOrientation.al
+% File: EulerParameters3DOrientation.txt
 %-------------------------------------------------------------------------------
 % Physical objects
 NewtonianFrame	N
@@ -27,8 +27,11 @@ Bo.Translate( Bcm, 0> )
 Fdrag> = B.AddTorqueDamper( N, b )
 %-------------------------------------------------------------------------------
 % Solve equations of motion.
-ZeroKane = System.GetDynamicsKane()
-Solve( ZeroKane, wx', wy', wz' )
+Zero> = System.GetDynamics(Bcm)
+ZeroScalar[1] = Dot(bx>, Zero>)
+ZeroScalar[2] = Dot(by>, Zero>)
+ZeroScalar[3] = Dot(bz>, Zero>)
+Solve( ZeroScalar, wx', wy', wz' )
 %-------------------------------------------------------------------------------
 % Kinetic energy, potential energy, and work done on system.
 KE = System.GetKineticEnergy()
@@ -38,12 +41,13 @@ Variable WorkSystem' = Dot( Fdrag>, B.GetAngularVelocity( N ) )
 EnergySum = KE - WorkSystem
 %-------------------------------------------------------------------------------
 %       Input values for constants.  Initial values for variables
-Input	Ixx = 1 kg*m^2, Iyy = 2 kg*m^2, Izz = 3 kg*m^2, b = 0.5
-Input 	wx = 0.2 rad/sec, wy = 7.0 rad/sec, wz = 0.2 rad/sec
-Input 	e0 = 1, e1 = 0, e2 = 0, e3 = 0, WorkSystem = 0 Joules
+Input	Ixx = 1 kg*m^2, Iyy = 2 kg*m^2, Izz = 3 kg*m^2
+Input b = 0.5
+Input wx = 0.2 rad/sec, wy = 7.0 rad/sec, wz = 0.2 rad/sec
+Input e0 = 1, e1 = 0, e2 = 0, e3 = 0, WorkSystem = 0 Joules
 %-------------------------------------------------------------------------------
 %       Numerical integration parameters
-Input tFinal = 8 sec, integStp = 0.01 sec, absError=1.0E-7, relError=1.0E-7
+Input tFinal = 12 sec, integStp = 0.015 sec, absError=1.0E-7, relError=1.0E-7
 %-------------------------------------------------------------------------------
 %       List Quantities to be output by ODE command.
 Variable phi
@@ -55,10 +59,16 @@ Output t sec, wx rad/sec, wy rad/sec, wz rad/sec, phi deg, EnergySum Joules
 Animate( N, No, B )
 %-------------------------------------------------------------------------------
 %       C/Matlab/Fortran code or Immediate Numerical Solutions to ODEs
-ODE()	EulerParameters3DOrientation.c
-ODE()	EulerParameters3DOrientation.m
-ODE()	body_quaternion
+% ODE()	EulerParameters3DOrientation.c
+% ODE()	EulerParameters3DOrientation.m
 %-------------------------------------------------------------------------------
-% Record input together with responses
-Save EulerParameters3DOrientation.all
-%Quit
+%   Simulation in air with default damping given above.
+ODE()	air/Data
+%-------------------------------------------------------------------------------
+%   Simulation in vacuum.
+Input b := 0
+ODE()	vacuum/Data
+%-------------------------------------------------------------------------------
+%   Record input together with responses
+% Save EulerParameters3DOrientation.all
+Quit
