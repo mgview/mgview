@@ -1,5 +1,5 @@
 {
-    "name": "babyboot_chaotic",
+    "name": "babyboot",
     "newtonianFrame": "N",
     "sceneOrigin": "No",
     "showAxes": false,
@@ -22,7 +22,7 @@
     "speedFactor": 1,
     "workspaceSize": 0.2,
     "simulationData": [
-        "chaotic/babyboot.1:2"
+        "Data.2:3"
     ],
     "objects": {
         "N": {
@@ -373,3 +373,4 @@
         }
     }
 }
+
