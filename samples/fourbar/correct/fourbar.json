@@ -1,5 +1,5 @@
 {
-    "name": "fourbar_constraint_stabilization",
+    "name": "fourbar",
     "newtonianFrame": "N",
     "sceneOrigin": "Na",
     "showAxes": true,
@@ -22,9 +22,8 @@
     "speedFactor": 1,
     "workspaceSize": 2,
     "simulationData": [
-        "constraint_stabilization/fourbar.1:5"
+        "Data.1:6"
     ],
-    "simulationSettings": "constraint_stabilization/fourbar.in",
     "objects": {
         "N": {
             "type": "frame",
@@ -49,9 +48,9 @@
                         "z": 0
                     },
                     "material": {
-                        "name" : "brown",
-                        "color" : {"r": 0.6, "g": 0.3, "b": 0.0, "a": 1.0}
-                    }
+                        "name": "brown"
+                    },
+                    "visible": true
                 },
                 "label": {
                     "visible": true,
@@ -68,7 +67,9 @@
                         "y": 0,
                         "z": 1.5708
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 },
                 "basis": {
                     "visible": true,
@@ -84,7 +85,9 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 }
             }
         },
@@ -110,7 +113,10 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "RED"
+                    "material": {
+                        "name": "RED"
+                    },
+                    "visible": true
                 },
                 "label": {
                     "visible": true,
@@ -127,7 +133,9 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 },
                 "basis": {
                     "visible": false,
@@ -143,7 +151,9 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 }
             }
         },
@@ -169,7 +179,10 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "GREEN"
+                    "material": {
+                        "name": "GREEN"
+                    },
+                    "visible": true
                 },
                 "label": {
                     "visible": true,
@@ -186,7 +199,9 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 },
                 "basis": {
                     "visible": false,
@@ -202,7 +217,9 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 }
             }
         },
@@ -229,9 +246,9 @@
                         "z": 0
                     },
                     "material": {
-                        "name" : "blue",
-                        "color" : {"r": 0, "g": 0.7, "b": 1.0, "a": 1.0}
-                    }
+                        "name": "blue"
+                    },
+                    "visible": true
                 },
                 "label": {
                     "visible": true,
@@ -248,7 +265,9 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 },
                 "basis": {
                     "visible": false,
@@ -264,7 +283,9 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 }
             }
         },
@@ -286,9 +307,12 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "RED",
+                    "material": {
+                        "name": "RED"
+                    },
                     "segments_width": 8,
-                    "segments_height": 8
+                    "segments_height": 8,
+                    "visible": true
                 },
                 "label": {
                     "visible": true,
@@ -296,8 +320,8 @@
                     "text": "Bc",
                     "scale": 0.25,
                     "position": {
-                        "x": 0.16666666666666666,
-                        "y": 0.0625,
+                        "x": 0.35,
+                        "y": -0.1,
                         "z": 0
                     },
                     "rotation": {
@@ -305,7 +329,9 @@
                         "y": 0,
                         "z": 1.5708
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 },
                 "basis": {
                     "visible": false,
@@ -321,7 +347,9 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 }
             }
         },
@@ -343,9 +371,12 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "RED",
+                    "material": {
+                        "name": "RED"
+                    },
                     "segments_width": 8,
-                    "segments_height": 8
+                    "segments_height": 8,
+                    "visible": true
                 },
                 "label": {
                     "visible": true,
@@ -353,8 +384,8 @@
                     "text": "Cb",
                     "scale": 0.25,
                     "position": {
-                        "x": 0.16666666666666666,
-                        "y": 0.0625,
+                        "x": 0,
+                        "y": 0.1,
                         "z": 0
                     },
                     "rotation": {
@@ -362,7 +393,9 @@
                         "y": 0,
                         "z": 1.5708
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 },
                 "basis": {
                     "visible": false,
@@ -378,7 +411,9 @@
                         "y": 0,
                         "z": 0
                     },
-                    "material": "SILVER"
+                    "material": {
+                        "name": "SILVER"
+                    }
                 }
             }
         }

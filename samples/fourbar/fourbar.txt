@@ -1,0 +1,107 @@
+%% Fourbar with Constraint Stabilization
+
+NewtonianFrame N
+RigidBody A,B,C
+Point Na(N), Ab(A), Bc(B), Cn(N), Cb(C)
+
+variable qA'', qB'', qC'', Rx, Ry
+constant La, Lb, Lc, Ln, g, H
+constant kp, kv
+
+A.rotateZ(N, qA)
+B.rotateZ(N, qB)
+C.rotateZ(N, qC)
+
+Acm.translate(Na, 1/2*La*ax> )
+Ab.translate(Na, La*ax> )
+
+Bcm.translate(Ab, 1/2*Lb*bx> )
+Bc.translate(Ab, Lb*bx> )
+
+Cn.translate(Na, Ln*ny> )
+Ccm.translate(Cn, 1/2*Lc*cx> )
+Cb.translate(Cn, Lc*cx> )
+
+Ao.translate(Acm, 0>) 	%% Needed for the animation
+Bo.translate(Bcm, 0>) 	%% Needed for the animation
+Co.translate(Ccm, 0>) 	%% Needed for the animation
+
+%--------------------------------------------------------------------
+%   Configuration constraint.
+loop> = La*ax> + Lb*bx> - Lc*cx> - Ln*ny>
+loop = [dot(loop>, nx>); dot(loop>, ny>)]
+loopdt = dt(loop)
+loopdtdt = dtdt(loop)
+
+%--------------------------------------------------------------------
+%   Set mass and inertia.
+A.setMass(mA)
+B.setMass(mB)
+C.setMass(mC)
+
+Ia = mA*La^2/12
+Ib = mB*Lb^2/12
+Ic = mC*Lc^2/12
+
+A.setInertia( Acm, 0, Ia, Ia)
+B.setInertia( Bcm, 0, Ib, Ib)
+C.setInertia( Ccm, 0, Ic, Ic)
+
+%--------------------------------------------------------------------
+%   Add forces.
+A.addForceGravity( g*nx> )
+B.addForceGravity( g*nx> )
+C.addForceGravity( g*nx> )
+
+Bc.addForce( Rx*nx> + Ry*ny> )
+Cb.addForce( -Rx*nx> - Ry*ny> )
+Bc.addForce( H*ny> )
+
+%--------------------------------------------------------------------
+%   Newton/Euler Equations of Motion
+system[1] = dot( nz>, A.getDynamics(Na) + B.getDynamics(Na) )
+system[2] = dot( nz>, B.getDynamics(Ab) )
+system[3] = dot( nz>, C.getDynamics(Cn) )
+%--------------------------------------------------------------------
+%   Append time-derivatives of constraints, with constraint stabilization.
+Constant  zetaConstraintStabilize = 1 noUnits,   wnConstraintStabilize = 5 rad/sec
+kd =  2 * zetaConstraintStabilize * wnConstraintStabilize;    kp = wnConstraintStabilize^2;
+system[4] = loopdtdt[1] + kd*loopdt[1] + kp*loop[1]
+system[5] = loopdtdt[2] + kd*loopdt[2] + kp*loop[2]
+
+input La = 1 m, Lb = 2 m, Lc = 2 m, Ln = 1 m
+input mA = 10 kg, mB = 20 kg, mC = 20 kg
+input qA' = 0, qB' = 0, qC' = 0
+input qA = 30 deg
+input g = 9.81, H = 0 N
+input tFinal = 10 sec, integStp = 0.02 sec, absError = 1e-5
+
+solve(system, qA'', qB'', qC'', Rx, Ry)
+
+%--------------------------------------------------------------------
+%   Declare desired output quantities.
+output t, qA deg, qB deg, qC deg
+
+% The animate command is a wrapper for "output" commands for the position
+% and rotation matrix of each rigid-body (or particle).
+animate(N, Na, A, B, C, Bc, Cb)
+
+%--------------------------------------------------------------------
+%   Correct initial conditions.
+SolveSetInput(loop, qB = 30 deg, qC = 35 deg)
+ODE()  correct/Data
+
+%--------------------------------------------------------------------
+%   Wrong initial conditions.
+Input qB := 90 deg, qC := 20 deg
+Input wnConstraintStabilize := 0
+ODE()  wrong/Data
+
+%--------------------------------------------------------------------
+%   Wrong initial conditions corrected with constraint stabilization:
+%   Pick "reasonable" guesses and let constraint stabilization do the rest.
+Input wnConstraintStabilize := 2
+ODE()  stabilize/Data
+
+quit
+
