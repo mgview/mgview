@@ -17,6 +17,12 @@
         body {
             padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
         }
+        .terminal {
+          padding-left: 1px;
+          padding-right: 1px;
+          font-family: courier;
+          font-weight: bold;
+        }
     </style>
     <link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
 
@@ -48,45 +54,70 @@
 
     <h1>Getting Started</h1>
 
-    <h3>Installation <font size=-1>(only needs to be done once)</font></h3>
+    <h3>Prerequisites</h3>
     <ol>
-        <li>
-            Currently, MGView requires WebGL in Google Chrome. Firefox may work, but it is not officially supported.
-            <br/>
-            To install Google Chrome, visit
-            <a href="http://www.google.com/chrome" target="_blank">http://www.google.com/chrome</a>.
-        </li>
-        <li>
-            To check that your Chrome installation supports WebGL:
-            <br/> Launch Chrome and visit the <a href="Examples.html">examples page</a>.
-            <br/>
-            <nobr>Click on the first example, "Classic Particle Pendulum."</nobr>
-            <br/>Ensure that the pendulum model appears, and runs when you click the green timer button on the top bar.
-            <br/>
-            <font size="-1"><b>Note:</b> If you see a red background in the visualizer and you are <strong>sure</strong>
-                that you are using Chrome (not Safari, Firefox, or Internet Explorer), then your hardware may not support WebGL.</font>
-        </li>
-        <li>
-            To install the visualizer:
-            <ul>
-                <li>
-                    Download <a href="https://github.com/mgview/mgview/archive/master.zip">this zip file</a>
-                    from https://github.com/mgview.
-                </li>
-                <li>
-                    Copy/move the zip file into your MotionGenesis folder (e.g. on Windows, it is <code>C:\MotionGenesis</code>).
-                </li>
-                <li>
-                    Use the <strong>"Extract to here..."</strong> option in your zip client
-                    (<strong>not</strong> "Extract to MGView-latest")
-                    <br/>to unzip the contents of the zip file directly to the MotionGenesis folder.
-                </li>
-                <li>
-                    A folder named MGView should appear in your MotionGenesis folder.
-                </li>
-            </ul>
-        </li>
+      <li>
+          Currently, MGView requires WebGL in Google Chrome. Firefox may work, but it is not officially supported.
+          <br/>
+          To install Google Chrome, visit
+          <a href="http://www.google.com/chrome" target="_blank">http://www.google.com/chrome</a>.
+      </li>
+      <li>
+          To check that your Chrome installation supports WebGL:
+          <br/> Launch Chrome and visit the <a href="Examples.html">examples page</a>.
+          <br/>
+          <nobr>Click on the first example, "Classic Particle Pendulum."</nobr>
+          <br/>Ensure that the pendulum model appears, and runs when you click the green timer button on the top bar.
+          <br/>
+          <font size="-1"><b>Note:</b> If you see a red background in the visualizer and you are <strong>sure</strong>
+              that you are using Chrome (not Safari, Firefox, or Internet Explorer), then your physical hardware may not support WebGL.</font>
+      </li>
     </ol>
+
+    <h3>Installation <font size=-1>(only needs to be done once)</font></h3>
+    <ul>
+        <li>
+          Download <a href="https://github.com/mgview/mgview/archive/master.zip">this zip file</a>
+          from https://github.com/mgview.
+        </li>
+
+        <li>
+          <h5>On Mac: <font size=-2>(and to some extent, Linux)</font></h5>
+          <ul>
+            <li>
+              Double-click on <span class="terminal">mgview-master.zip</span>.
+              This will create the folder <span class="terminal">mgview-master</span> in your Downloads folder.
+            </li>
+            <li>
+              Move the <span class="terminal">mgview-master</span> folder into your
+              MotionGenesis folder and rename it to <span class="terminal">MGView</span>.
+              <br/>
+              You can do this in the terminal by running the following command:
+              <pre><b><font face="courier" >mv ~/Downloads/mgview-master /Applications/MotionGenesis/MGView</font></b></pre>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <h5>On Windows: (last tested on Windows 7...)</h5>
+          <ul>
+            <li>
+              Use the <strong>"Extract to here..."</strong> option in your zip client to unzip the file.
+              <br/>This will create a folder called <span class="terminal">mgview-master</span>.
+              <br/>
+              (Note if you use the wrong zip option you will just end up with everything nested inside
+              two levels of folders called mgview-master; in this case, use the inner folder for the next two steps.)
+            </li>
+            <li>
+              Rename the folder <span class="terminal">mgview-master</span> to
+              <span class="terminal">MGView</span> (case-sensitive).
+            </li>
+            <li>
+              Move the <span class="terminal">MGView</span> folder to your MotionGenesis folder.
+              (The default location is <span class="terminal">C:\MotionGenesis\</span>.)
+            </li>
+          </ul>
+        </li>
+    </ul>
 
     <h3>Running <font size=-1></font></h3>
 
@@ -94,36 +125,51 @@
         <li>
             <h4>On Mac/Linux:</h4>
             <ol>
-                <li>Use a terminal to navigate to your MGView folder.</li>
-                <li>In the terminal window, enter the command: &nbsp;
+              <li>
+                Use a terminal to navigate to your MGView folder.
+                <pre><b><font face="courier" >cd /Applications/MotionGenesis/MGView/</font></b></pre>
+              </li>
+              <li>
+                Run the http server which allows MGView to work (on Linux, replace "RunMGViewMac" with "RunMGViewLinux").
                 <pre><b><font face="courier" >./RunMGViewMac</font></b></pre>
-                </li>
-                <li>
-                    If step 2 fails by complaining that RunMGViewMac is not a valid executable, enter the following command and repeat step 2.
-                    <pre><b>chmod a+x RunMGViewMac</b></pre>
-                </li>
-                <li>If running on Linux, replace "RunMGViewMac" above with "RunMGViewLinux".</li>
+              </li>
+              <li>
+                If the previous step fails by complaining that RunMGViewMac is not a valid
+                executable, enter the following command and repeat the previous step.
+                <pre><b>chmod a+x RunMGViewMac</b></pre>
+              </li>
+              <li>
+                If a tab fails to automatically open in Chrome, manually
+                create a new tab and put <code>localhost:8000</code> in the address bar.
+              </li>
             </ol>
         </li>
 
         <li>
-            <h4>On Windows:</h4>
-            <ol>
-                <li>Run Chrome as you would normally. The following steps will fail if Chrome isn't already running.</li>
-                <li> Open your MGView folder, and double-click on <b>RunMGViewWindows</b>.
-                <br/>
-                <font size=-1><b>Note:</b> This starts MGView in a new Chrome tab, and runs a local HTTP server to support the application. </font>
-                </li>
-                <li>
-                    The application (specifically, the webserver running in
-                    <a href="http://nodejs.org/" target="_blank">node.exe</a>)
-                    will request permission to communicate on your local network;
-                    you should click "Yes".
-                </li>
-            </ol>
-
-        </li>
-
+          <h4>On Windows:</h4>
+          <ol>
+            <!--
+            -->
+            <li>
+              Run Chrome as you would normally. The following steps will fail if Chrome isn't already running.
+            </li>
+            <li>
+              Open your MGView folder, and double-click on <b>RunMGViewWindows</b>.
+              <br/>
+              <font size=-1><b>Note:</b> This starts MGView in a new Chrome tab, and runs a local HTTP server to support the application. </font>
+            </li>
+            <li>
+              The application (specifically, the webserver running in
+              <a href="http://nodejs.org/" target="_blank">node.exe</a>)
+              will request permission to communicate on your local network;
+              you should click "Yes".
+            </li>
+            <li>
+              If a tab fails to automatically open in Chrome, you can manually
+              create a new tab and put <code>localhost:8000</code> in the address bar.
+            </li>
+          </ol>
+      </li>
     </ul>
 
     <h3>Creating Numerical Pose Data Using MotionGenesis (MG)</h3>
