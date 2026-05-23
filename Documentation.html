@@ -141,6 +141,7 @@
           <li>
             Run the http server which allows MGView to work (on Linux, replace "RunMGViewMac" with "RunMGViewLinux").
             <pre><b><font face="courier" >./RunMGViewMac</font></b></pre>
+            <font size="-1"><b>Note:</b> This script now uses your system Python installation and should work with modern Python 3.</font>
           </li>
           <li>
             If the previous step fails by complaining that RunMGViewMac is not a valid
@@ -148,8 +149,8 @@
             <pre><b>chmod a+x RunMGViewMac</b></pre>
           </li>
           <li>
-            If a tab fails to automatically open in Chrome, manually
-            create a new tab and put <code>localhost:8000/MGView</code> in the address bar.
+            If a browser tab does not open automatically, manually open
+            <code>http://localhost:8000/MGView/Examples.html</code>.
           </li>
         </ol>
       </li>
@@ -158,12 +159,9 @@
         <h4>On Windows:</h4>
         <ol>
           <li>
-            Run Chrome as you would normally. The following steps will fail if Chrome isn't already running.
-          </li>
-          <li>
             Open your MGView folder, and double-click on <b>RunMGViewWindows</b>.
             <br/>
-            <font size=-1><b>Note:</b> This starts MGView in a new Chrome tab, and runs a local HTTP server to support the application. </font>
+            <font size=-1><b>Note:</b> This opens MGView in your default browser and runs a local HTTP server to support the application. </font>
           </li>
           <li>
             The application (specifically, the webserver running in
@@ -172,8 +170,8 @@
             you should click "Yes".
           </li>
           <li>
-            If a tab fails to automatically open in Chrome, manually
-            create a new tab and put <code>localhost:8000/MGView</code> in the address bar.
+            If a browser tab does not open automatically, manually open
+            <code>http://localhost:8000/MGView/Examples.html</code>.
           </li>
         </ol>
       </li>
