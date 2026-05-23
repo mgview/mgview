@@ -24,6 +24,7 @@
 
             this._animate = false;
             this.clock = new THREE.Clock(false);
+            this._simulationTime = 0;
 
             // Make sure resolution is correct
             var renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -122,20 +123,26 @@
         },
 
         _tick: function(self) {
-            //var delta = this.clock.getDelta();
-            var elapsed = this.clock.getElapsedTime();
+            var delta = this.clock.getDelta();
 
             this.renderer.clear();
             var views = this._world.getViews();
+            var defaultView = this._world.view('default');
+            var speedFactor = defaultView ? defaultView.getSpeedFactor() : 1;
+
+            if (this.clock.running) {
+                this._simulationTime += delta * speedFactor;
+            }
+
             for (var i in views){
 //                console.log("Rendering view " + i);
                 views[i].updateCameraAndControls();
-                //console.log("elapsed "+elapsed);
-                var result = views[i].setAnimationTime(elapsed);
+                var result = views[i].setAnimationTime(this._simulationTime);
 
                 if( result.tFinalExceeded ) {
                     this.stopAnimation();
-                    this.clock.elapsedTime = result.actualTime;
+                    this._simulationTime = result.actualTime;
+                    $("#time_button").removeClass("btn-danger").addClass("btn-success");
                     //return;
                 }
 

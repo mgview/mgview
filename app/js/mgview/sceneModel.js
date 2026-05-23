@@ -363,32 +363,26 @@
         },
 
         // TODO haven't tested timeStart != 0
-        _timeToHash: function(time){
-            var timeStep = this._tStep;
-            var timeStart = this._tInitial;
-            //if(time > this._tFinal) time = this._tFinal;
-            var index = Math.floor(time/timeStep);
-            if(index >= this._timeArray.length)
-            {
-//                console.log(vsprintf("Index %d exceeds array length %d.", [index, this._timeArray.length]));
-                return false;
-            }
-            else
-            {
-                //console.log(vsprintf("Returning hash %s for index %d of %d.",
-                //    [this.timeArray[index], index, this.timeArray.length]));
-                return this._timeArray[index];
-            }
-        },
-
         getDataAtTime: function(time) {
-            var timeHash = this._timeToHash(time);
-            if( timeHash === false ) {
-//                console.log("Returning false!");
+            if(this._timeArray.length === 0) {
                 return undefined;
             }
 
-            return {t: +(timeHash), data: this._timeData[timeHash]};
+            var timeStep = this._tStep;
+            var timeStart = this._tInitial;
+            var index = Math.floor((time - timeStart) / timeStep);
+            var tFinalExceeded = false;
+
+            if(index < 0) {
+                index = 0;
+            }
+            if(index >= this._timeArray.length) {
+                index = this._timeArray.length - 1;
+                tFinalExceeded = true;
+            }
+
+            var timeHash = this._timeArray[index];
+            return {t: +(timeHash), data: this._timeData[timeHash], tFinalExceeded: tFinalExceeded};
         },
 
         addEmptyDefaults:   function() {

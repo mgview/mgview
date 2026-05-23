@@ -51,9 +51,6 @@ var SV = {};
             this.$('Stop',   this.$('Topbar').find('#animation_stop_button').eq(0));
             this.$('Load',   this.$('Topbar').find('#model_load_button').eq(0));
 
-            this.$('TimeWidget',  this.$('Topbar').find('div>div.scrubWidget').eq(0));
-            this.$('SpeedWidget', this.$('Topbar').find('div>div.scrubWidget').eq(1));
-
             // Initialize GUI jQuery tools elements:
             $( "#time_scrub" ).slider({
                 min: 0,
@@ -66,7 +63,7 @@ var SV = {};
             });
             $( "#speed_scrub" ).slider({
                 min: 0.1,
-                max: 5,
+                max: 10,
                 value: 1,
                 step: 0.1,
                 slide: function(event, ui) {

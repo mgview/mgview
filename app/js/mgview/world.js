@@ -87,23 +87,20 @@
 
         setAnimationSpeed: function(speed){
             var view = this._views['default'];
-            var canvas = this.getDefaultCanvas();
-
-            var last_speed = view.getSpeedFactor();
-            canvas.clock.elapsedTime = canvas.clock.elapsedTime / speed * last_speed;
-
             view.setSpeedFactor(speed);
         },
 
 		setAnimationTime: function(time){
-            var view = this._views['default'];
             var canvas = this.getDefaultCanvas();
-            // TODO this breaks incapsulation
-            canvas.clock.elapsedTime = time /  view.getSpeedFactor();
+            canvas._simulationTime = time;
         },
 		
         startAnimation: function(){
             var canvas = this.getDefaultCanvas();
+            var model = this._models['default'];
+            if(model && model._tFinal !== undefined && canvas._simulationTime >= model._tFinal) {
+                this.setAnimationTime(0);
+            }
             canvas.startAnimation();
         },
 		

@@ -552,25 +552,16 @@
 
             var newtonianFrame = this._model.get("newtonianFrame");
             var svOrigin = this._model.get("sceneOrigin");
-            
-            time = time*this._tSpeedFactor;
-
-
-            $( "#time_scrub" ).slider("value", time);
-            $( "#time_button").find("strong").get(0).innerHTML = vsprintf("%.3f",[time]);
 
             var data_dict = this._model.getDataAtTime(time);
             if(data_dict === undefined) {
-//                console.log("Returning false!");
-                $("#time_button").removeClass("btn-danger").addClass("btn-success");
-
-//                console.log("Setting animation time to " + this._model._tFinal);
-                var result = this.setAnimationTime(this._model._tFinal);
-                result.tFinalExceeded = true;
-                return result;
+                return {actualTime: time, tFinalExceeded: false };
             }
             var data = data_dict.data;
             var actual_time = data_dict.t;
+
+            $( "#time_scrub" ).slider("value", actual_time);
+            $( "#time_button").find("strong").get(0).innerHTML = vsprintf("%.3f",[actual_time]);
 
 
             for(var frameName in this._svFrames){
@@ -624,7 +615,7 @@
                 span.line.geometry.verticesNeedUpdate = true;
             }
 
-            return {actualTime: actual_time, tFinalExceeded: false };
+            return {actualTime: actual_time, tFinalExceeded: data_dict.tFinalExceeded };
         },
 
         updateObjectVisual: function(objectName, elementName, propertyContainer, propertyName, value )
