@@ -3,10 +3,13 @@
 var util = require('util'),
     http = require('http'),
     fs = require('fs'),
+    path = require('path'),
     url = require('url'),
     events = require('events');
 
 var DEFAULT_PORT = 8000;
+var PROJECT_ROOT = path.resolve(__dirname, '../..');
+var MODERN_DIST_DIR = path.resolve(__dirname, '../frontend/dist');
 
 function main(argv) {
   new HttpServer({
@@ -93,18 +96,34 @@ StaticServlet.MimeMap = {
 
 StaticServlet.prototype.handleRequest = function(req, res) {
   var self = this;
-  var path = ('./' + req.url.pathname).replace('//','/').replace(/%(..)/g, function(match, hex){
-    return String.fromCharCode(parseInt(hex, 16));
-  });
-  var parts = path.split('/');
+  var pathname = decodeURIComponent(req.url.pathname);
+
+  if (pathname === '/MGView/modern' || pathname === '/MGView/modern/' || pathname === '/MGView/modern/simple') {
+    return self.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
+  }
+
+  if (pathname.indexOf('/MGView/modern/assets/') === 0) {
+    return self.sendFile_(req, res, path.join(MODERN_DIST_DIR, pathname.substring('/MGView/modern/'.length)));
+  }
+
+  if (pathname.indexOf('/MGView/assets/') === 0) {
+    return self.sendFile_(req, res, path.join(MODERN_DIST_DIR, pathname.substring('/MGView/'.length)));
+  }
+
+  var filePath = path.resolve(PROJECT_ROOT, '.' + pathname);
+  if (filePath.indexOf(PROJECT_ROOT) !== 0)
+    return self.sendForbidden_(req, res, filePath);
+
+  var parts = filePath.split(path.sep);
   if (parts[parts.length-1].charAt(0) === '.')
-    return self.sendForbidden_(req, res, path);
-  fs.stat(path, function(err, stat) {
+    return self.sendForbidden_(req, res, filePath);
+
+  fs.stat(filePath, function(err, stat) {
     if (err)
-      return self.sendMissing_(req, res, path);
+      return self.sendMissing_(req, res, filePath);
     if (stat.isDirectory())
-      return self.sendDirectory_(req, res, path);
-    return self.sendFile_(req, res, path);
+      return self.sendDirectory_(req, res, filePath);
+    return self.sendFile_(req, res, filePath);
   });
 }
 
@@ -122,7 +141,7 @@ StaticServlet.prototype.sendError_ = function(req, res, error) {
 };
 
 StaticServlet.prototype.sendMissing_ = function(req, res, path) {
-  path = path.substring(1);
+  path = this.relativePath_(path);
   res.writeHead(404, {
       'Content-Type': 'text/html'
   });
@@ -139,7 +158,7 @@ StaticServlet.prototype.sendMissing_ = function(req, res, path) {
 };
 
 StaticServlet.prototype.sendForbidden_ = function(req, res, path) {
-  path = path.substring(1);
+  path = this.relativePath_(path);
   res.writeHead(403, {
       'Content-Type': 'text/html'
   });
@@ -221,7 +240,7 @@ StaticServlet.prototype.sendDirectory_ = function(req, res, path) {
 };
 
 StaticServlet.prototype.writeDirectoryIndex_ = function(req, res, path, files) {
-  path = path.substring(1);
+  path = this.relativePath_(path);
   res.writeHead(200, {
     'Content-Type': 'text/html'
   });
@@ -245,6 +264,10 @@ StaticServlet.prototype.writeDirectoryIndex_ = function(req, res, path, files) {
   });
   res.write('</ol>');
   res.end();
+};
+
+StaticServlet.prototype.relativePath_ = function(pathname) {
+  return path.relative(PROJECT_ROOT, pathname).replace(/\\/g, '/');
 };
 
 // Must be last,

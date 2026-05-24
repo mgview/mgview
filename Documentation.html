@@ -57,6 +57,23 @@
     <h3>Prerequisites</h3>
     <ol>
       <li>
+        Install the official Node.js LTS release.
+        <ul>
+          <li>
+            Download Node.js from
+            <a href="https://nodejs.org/en/download" target="_blank">https://nodejs.org/en/download</a>.
+          </li>
+          <li>
+            On macOS and Windows, prefer the official installer from nodejs.org.
+          </li>
+          <li>
+            After installation, open a terminal or command prompt and run
+            <span class="terminal">node --version</span>
+            to confirm Node.js is available.
+          </li>
+        </ul>
+      </li>
+      <li>
         Currently, MGView requires WebGL in Google Chrome. Firefox may work, but it is not officially supported.
         <ul>
           <li>
@@ -139,9 +156,12 @@
             <pre><b><font face="courier" >cd /Applications/MotionGenesis/MGView/</font></b></pre>
           </li>
           <li>
-            Run the http server which allows MGView to work (on Linux, replace "RunMGViewMac" with "RunMGViewLinux").
+            Run the Node.js-based local server which allows MGView to work
+            (on Linux, replace "RunMGViewMac" with "RunMGViewLinux").
             <pre><b><font face="courier" >./RunMGViewMac</font></b></pre>
-            <font size="-1"><b>Note:</b> This script now uses your system Python installation and should work with modern Python 3.</font>
+            <font size="-1"><b>Note:</b> If this fails with a message about Node.js not being found, install Node.js from
+            <a href="https://nodejs.org/en/download" target="_blank">nodejs.org</a>
+            and then run the script again.</font>
           </li>
           <li>
             If the previous step fails by complaining that RunMGViewMac is not a valid
@@ -161,13 +181,16 @@
           <li>
             Open your MGView folder, and double-click on <b>RunMGViewWindows</b>.
             <br/>
-            <font size=-1><b>Note:</b> This opens MGView in your default browser and runs a local HTTP server to support the application. </font>
+            <font size=-1><b>Note:</b> This opens MGView in your default browser and runs a local Node.js HTTP server to support the application. </font>
           </li>
           <li>
-            The application (specifically, the webserver running in
-            <a href="http://nodejs.org/" target="_blank">node.exe</a>)
-            will request permission to communicate on your local network;
-            you should click "Yes".
+            If Windows reports that Node.js is not installed, download and install the official Node.js LTS release from
+            <a href="https://nodejs.org/en/download" target="_blank">https://nodejs.org/en/download</a>,
+            then run <b>RunMGViewWindows</b> again.
+          </li>
+          <li>
+            The local MGView server may request permission to communicate on your local network;
+            you should click "Yes" if prompted.
           </li>
           <li>
             If a browser tab does not open automatically, manually open

@@ -18,12 +18,22 @@ echo    -------------------------------------------------------------------
 
 timeout /t 1 /nobreak >nul
 
+where node >nul 2>nul
+if errorlevel 1 (
+  echo.
+  echo    ERROR: Node.js was not found on this computer.
+  echo.
+  echo    Install the official Node.js LTS release from:
+  echo    https://nodejs.org/en/download
+  echo.
+  echo    After installing Node.js, close this window and run MGView again.
+  echo.
+  pause
+  exit /b 1
+)
+
 start "" "http://localhost:8000/MGView/Examples.html"
 
-if exist "%MGVIEWBINPATH%\node.exe" (
-  "%MGVIEWBINPATH%\node.exe" "%MGVIEWBINPATH%\server.js"
-) else (
-  node "%MGVIEWBINPATH%\server.js"
-)
+node "%MGVIEWBINPATH%\server.js"
 
 endlocal

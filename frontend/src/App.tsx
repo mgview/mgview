@@ -78,6 +78,21 @@ function getScenePathFromUrl(): string {
   return params.get('scene') ?? DEFAULT_SCENE_PATH;
 }
 
+function getServerRootPrefix(): string {
+  return window.location.pathname.startsWith('/MGView/') ? '/MGView/' : '/';
+}
+
+function getAppBasePath(): string {
+  const pathname = window.location.pathname.replace(/\/$/, '');
+  if (pathname === '') {
+    return '';
+  }
+  if (pathname.endsWith('/simple')) {
+    return pathname.slice(0, -'/simple'.length);
+  }
+  return pathname;
+}
+
 function cloneScene(scene: NormalizedSceneConfig): NormalizedSceneConfig {
   return structuredClone(scene);
 }
@@ -109,7 +124,7 @@ function sampleGroups() {
 }
 
 async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
-  const sceneResponse = await fetch(`/${scenePath}`);
+  const sceneResponse = await fetch(`${getServerRootPrefix()}${scenePath}`);
   if (!sceneResponse.ok) {
     throw new Error(`Could not load scene file: ${scenePath}`);
   }
@@ -120,7 +135,7 @@ async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
 
   const tables = await Promise.all(
     simulationFiles.map(async (filePath) => {
-      const response = await fetch(`/${filePath}`);
+      const response = await fetch(`${getServerRootPrefix()}${filePath}`);
       if (!response.ok) {
         throw new Error(`Could not load simulation file: ${filePath}`);
       }
@@ -314,7 +329,7 @@ export default function App() {
         </form>
 
         <div className="hero-links">
-          <a href="/simple">Open Simple App</a>
+          <a href={`${getAppBasePath()}/simple` || '/simple'}>Open Simple App</a>
         </div>
 
         {hasLocalEdits ? (

@@ -34,8 +34,12 @@ function getScenePathFromUrl(): string {
   return params.get('scene') ?? DEFAULT_SCENE_PATH;
 }
 
+function getServerRootPrefix(): string {
+  return window.location.pathname.startsWith('/MGView/') ? '/MGView/' : '/';
+}
+
 async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
-  const sceneResponse = await fetch(`/${scenePath}`);
+  const sceneResponse = await fetch(`${getServerRootPrefix()}${scenePath}`);
   if (!sceneResponse.ok) {
     throw new Error(`Could not load scene file: ${scenePath}`);
   }
@@ -46,7 +50,7 @@ async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
 
   const tables = await Promise.all(
     simulationFiles.map(async (filePath) => {
-      const response = await fetch(`/${filePath}`);
+      const response = await fetch(`${getServerRootPrefix()}${filePath}`);
       if (!response.ok) {
         throw new Error(`Could not load simulation file: ${filePath}`);
       }

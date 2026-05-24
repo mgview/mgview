@@ -70,6 +70,7 @@ function legacySamplesPlugin(): Plugin {
 }
 
 export default defineConfig({
+  base: './',
   plugins: [react(), legacySamplesPlugin()],
   server: {
     fs: {

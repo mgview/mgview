@@ -5,18 +5,15 @@ source "$BIN_DIR/colors.sh"
 PORT=8000
 MGVIEW_PARENT_DIR=$( cd "$BIN_DIR/../.." && pwd )
 MGVIEW_URL="http://localhost:${PORT}/MGView/Examples.html"
-
 SERVER_CMD=()
-if command -v python3 >/dev/null 2>&1; then
-  SERVER_CMD=(python3 -m http.server "$PORT")
-elif command -v python >/dev/null 2>&1; then
-  if python -c "import http.server" >/dev/null 2>&1; then
-    SERVER_CMD=(python -m http.server "$PORT")
-  else
-    SERVER_CMD=(python -m SimpleHTTPServer "$PORT")
-  fi
+
+if command -v node >/dev/null 2>&1; then
+  SERVER_CMD=(node "$BIN_DIR/server.js" "$PORT")
 else
-  echo -e "${C_RED_BOLD}Unable to find Python 3 or Python 2 on your PATH.${C_DEFAULT}"
+  echo -e "${C_RED_BOLD}Unable to find Node.js on your PATH.${C_DEFAULT}"
+  echo -e "${C_YELLOW}Install the official Node.js LTS release from:${C_DEFAULT}"
+  echo -e "${C_GREEN_BOLD}https://nodejs.org/en/download${C_DEFAULT}"
+  echo -e "${C_YELLOW}Then run this script again.${C_DEFAULT}"
   exit 1
 fi
 
