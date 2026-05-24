@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { listLocalFiles, loadSceneJson, loadTextFile, saveSceneJson, type FileBrowserListing } from './api/localFiles.ts';
 import { expandSimulationFiles } from './core/expandSimulationFiles.ts';
 import { getBasePath } from './core/pathUtils.ts';
 import { parseSimulationText } from './core/parseSimulationText.ts';
@@ -78,10 +79,6 @@ function getScenePathFromUrl(): string {
   return params.get('scene') ?? DEFAULT_SCENE_PATH;
 }
 
-function getServerRootPrefix(): string {
-  return window.location.pathname.startsWith('/MGView/') ? '/MGView/' : '/';
-}
-
 function getAppBasePath(): string {
   const pathname = window.location.pathname.replace(/\/$/, '');
   if (pathname === '') {
@@ -95,6 +92,101 @@ function getAppBasePath(): string {
 
 function cloneScene(scene: NormalizedSceneConfig): NormalizedSceneConfig {
   return structuredClone(scene);
+}
+
+function getDirectoryPath(filePath: string): string {
+  const basePath = getBasePath(filePath).replace(/\/$/, '');
+  return basePath || '.';
+}
+
+function isJsonPath(filePath: string): boolean {
+  return filePath.toLowerCase().endsWith('.json');
+}
+
+function NumericInput({
+  value,
+  onValueChange,
+}: {
+  value: number;
+  onValueChange: (value: number) => void;
+}) {
+  const [text, setText] = useState(String(value));
+
+  useEffect(() => {
+    setText(String(value));
+  }, [value]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={text}
+      onChange={(event) => {
+        const nextText = event.target.value;
+        setText(nextText);
+
+        if (nextText.trim() === '') {
+          return;
+        }
+
+        const nextValue = Number(nextText);
+        if (Number.isFinite(nextValue)) {
+          onValueChange(nextValue);
+        }
+      }}
+      onBlur={() => {
+        const nextValue = Number(text);
+        if (text.trim() === '' || !Number.isFinite(nextValue)) {
+          setText(String(value));
+          return;
+        }
+
+        setText(String(nextValue));
+        onValueChange(nextValue);
+      }}
+    />
+  );
+}
+
+function createSavableScene(rawScene: SceneConfig, draftScene: NormalizedSceneConfig): SceneConfig {
+  const nextScene = structuredClone(rawScene);
+
+  // This currently saves the editor's explicit normalized scene state back to disk.
+  // A future "save minimal" mode could try to preserve omitted/defaulted authoring shape,
+  // but that needs careful round-trip rules so we do not drop intentional edits.
+  nextScene.name = draftScene.name;
+  nextScene.simulationData = [...draftScene.simulationData];
+  nextScene.newtonianFrame = draftScene.newtonianFrame;
+  nextScene.sceneOrigin = draftScene.sceneOrigin;
+  nextScene.showAxes = draftScene.showAxes;
+  nextScene.workspaceSize = draftScene.workspaceSize;
+  nextScene.cameraParentFrame = draftScene.cameraParentFrame;
+  nextScene.cameraUp = draftScene.cameraUp ? [...draftScene.cameraUp] as [number, number, number] : undefined;
+  nextScene.cameraEye = draftScene.cameraEye ? [...draftScene.cameraEye] as [number, number, number] : undefined;
+  nextScene.cameraFocus = draftScene.cameraFocus ? [...draftScene.cameraFocus] as [number, number, number] : undefined;
+  nextScene.speedFactor = draftScene.speedFactor;
+
+  if (!rawScene.objects) {
+    return nextScene;
+  }
+
+  nextScene.objects = {};
+  for (const [objectName, rawObject] of Object.entries(rawScene.objects)) {
+    const draftObject = draftScene.objects[objectName];
+    if (!draftObject) {
+      nextScene.objects[objectName] = structuredClone(rawObject);
+      continue;
+    }
+
+    nextScene.objects[objectName] = {
+      ...structuredClone(rawObject),
+      type: draftObject.type,
+      rotationFrame: draftObject.rotationFrame,
+      visual: draftObject.visual ? structuredClone(draftObject.visual) : undefined,
+    };
+  }
+
+  return nextScene;
 }
 
 function getEditableScalarKeys(visual: SceneVisual): EditableScalarKey[] {
@@ -124,22 +216,13 @@ function sampleGroups() {
 }
 
 async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
-  const sceneResponse = await fetch(`${getServerRootPrefix()}${scenePath}`);
-  if (!sceneResponse.ok) {
-    throw new Error(`Could not load scene file: ${scenePath}`);
-  }
-
-  const rawScene = (await sceneResponse.json()) as SceneConfig;
+  const rawScene = await loadSceneJson(scenePath);
   const basePath = getBasePath(scenePath);
   const simulationFiles = expandSimulationFiles(rawScene.simulationData ?? [], basePath);
 
   const tables = await Promise.all(
     simulationFiles.map(async (filePath) => {
-      const response = await fetch(`${getServerRootPrefix()}${filePath}`);
-      if (!response.ok) {
-        throw new Error(`Could not load simulation file: ${filePath}`);
-      }
-      return parseSimulationText(await response.text(), filePath);
+      return parseSimulationText(await loadTextFile(filePath), filePath);
     })
   );
 
@@ -167,13 +250,32 @@ export default function App() {
   const [draftScene, setDraftScene] = useState<NormalizedSceneConfig | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [browserListing, setBrowserListing] = useState<FileBrowserListing | null>(null);
+  const [browserLoading, setBrowserLoading] = useState(false);
+  const [browserError, setBrowserError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [selectedObjectName, setSelectedObjectName] = useState<string | null>(null);
   const [selectedVisualName, setSelectedVisualName] = useState<string | null>(null);
 
+  async function handleBrowse(nextPath: string) {
+    setBrowserLoading(true);
+    setBrowserError(null);
+
+    try {
+      setBrowserListing(await listLocalFiles(nextPath));
+    } catch (browseError) {
+      setBrowserError(browseError instanceof Error ? browseError.message : 'Unknown browse error');
+    } finally {
+      setBrowserLoading(false);
+    }
+  }
+
   async function handleLoad(scenePath: string) {
     setLoading(true);
     setError(null);
+    setSaveMessage(null);
 
     try {
       const nextLoaded = await loadSceneData(scenePath);
@@ -185,6 +287,7 @@ export default function App() {
       const url = new URL(window.location.href);
       url.searchParams.set('scene', scenePath);
       window.history.replaceState({}, '', url);
+      void handleBrowse(getDirectoryPath(scenePath));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unknown load error');
     } finally {
@@ -192,8 +295,37 @@ export default function App() {
     }
   }
 
+  async function handleSaveScene() {
+    if (!loaded || !draftScene) {
+      return;
+    }
+
+    setSaving(true);
+    setSaveMessage(null);
+
+    try {
+      await saveSceneJson(loaded.scenePath, createSavableScene(loaded.rawScene, draftScene));
+      const nextLoaded = await loadSceneData(loaded.scenePath);
+      setLoaded(nextLoaded);
+      setDraftScene(cloneScene(nextLoaded.scene));
+      setCurrentTime(nextLoaded.timeline.tInitial);
+      setSelectedObjectName(nextLoaded.objectInspections[0]?.name ?? null);
+      setSelectedVisualName(nextLoaded.objectInspections[0]?.visuals[0]?.name ?? null);
+      setSaveMessage(`Saved ${loaded.scenePath}`);
+      void handleBrowse(getDirectoryPath(loaded.scenePath));
+    } catch (saveError) {
+      setSaveMessage(saveError instanceof Error ? saveError.message : 'Unknown save error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   useEffect(() => {
     void handleLoad(sceneInput);
+  }, []);
+
+  useEffect(() => {
+    void handleBrowse(getDirectoryPath(sceneInput));
   }, []);
 
   const activeScene = draftScene ?? loaded?.scene ?? null;
@@ -253,6 +385,14 @@ export default function App() {
     return Object.entries(currentFrame?.frame.data ?? {}).slice(0, PREVIEW_CHANNEL_COUNT);
   }, [currentFrame]);
 
+  const savePreview = useMemo(() => {
+    if (!loaded || !draftScene) {
+      return '';
+    }
+
+    return JSON.stringify(createSavableScene(loaded.rawScene, draftScene), null, 2);
+  }, [draftScene, loaded]);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void handleLoad(sceneInput);
@@ -300,6 +440,20 @@ export default function App() {
 
   const groupedSamples = useMemo(() => sampleGroups(), []);
 
+  const updateSceneVector = (
+    key: 'cameraUp' | 'cameraEye' | 'cameraFocus',
+    index: 0 | 1 | 2,
+    nextValue: number,
+    fallback: [number, number, number]
+  ) => {
+    updateDraftScene((scene) => {
+      const current = scene[key] ?? fallback;
+      const nextTuple: [number, number, number] = [...current] as [number, number, number];
+      nextTuple[index] = nextValue;
+      scene[key] = nextTuple;
+    });
+  };
+
   const liveSelectedVisual =
     selectedObject && selectedVisual && activeScene
       ? activeScene.objects[selectedObject.name]?.visual?.[selectedVisual.name]
@@ -313,7 +467,7 @@ export default function App() {
         <p>
           This route is now the richer inspector-oriented app. It still uses the same extracted
           core and local scene files, but it now has local editable scene state on top of the
-          normalized model, without touching file persistence or the renderer yet.
+          normalized model, and it can browse and save scene JSON back through the local server.
         </p>
 
         <form className="loader-form" onSubmit={handleSubmit}>
@@ -328,6 +482,33 @@ export default function App() {
           </button>
         </form>
 
+        <div className="hero-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void handleBrowse(getDirectoryPath(sceneInput))}
+            disabled={browserLoading}
+          >
+            Browse Scene Folder
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void handleBrowse('.')}
+            disabled={browserLoading}
+          >
+            Browse MGView Root
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void handleLoad(sceneInput)}
+            disabled={loading || !isJsonPath(sceneInput)}
+          >
+            Open Selected Path
+          </button>
+        </div>
+
         <div className="hero-links">
           <a href={`${getAppBasePath()}/simple` || '/simple'}>Open Simple App</a>
         </div>
@@ -335,6 +516,7 @@ export default function App() {
         {hasLocalEdits ? (
           <div className="status">Local inspector edits are active and not yet saved back to files.</div>
         ) : null}
+        {saveMessage ? <div className={`status ${saveMessage.startsWith('Saved ') ? 'success' : 'error'}`}>{saveMessage}</div> : null}
         {error ? <div className="status error">{error}</div> : null}
         {!error && loading ? <div className="status">Loading scene, simulation files, and diagnostics…</div> : null}
       </section>
@@ -389,6 +571,19 @@ export default function App() {
                 <code>{loaded.scenePath}</code>
               </div>
               <div className="meta-row">
+                <label>Scene Folder</label>
+                <div className="inline-tags">
+                  <code>{getDirectoryPath(loaded.scenePath)}</code>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => void handleBrowse(getDirectoryPath(loaded.scenePath))}
+                  >
+                    Browse Here
+                  </button>
+                </div>
+              </div>
+              <div className="meta-row">
                 <label>Newtonian Frame</label>
                 <code>{activeScene?.newtonianFrame ?? loaded.scene.newtonianFrame}</code>
               </div>
@@ -406,6 +601,14 @@ export default function App() {
                   <span className={`tag ${hasLocalEdits ? 'tag-accent' : ''}`}>
                     {hasLocalEdits ? 'edited locally' : 'matches loaded scene'}
                   </span>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => void handleSaveScene()}
+                    disabled={!hasLocalEdits || saving}
+                  >
+                    {saving ? 'Saving…' : 'Save Scene JSON'}
+                  </button>
                   <button type="button" className="secondary-button" onClick={resetDraftScene}>
                     Reset Draft
                   </button>
@@ -432,12 +635,11 @@ export default function App() {
                 </label>
                 <label className="editor-field">
                   <span>Workspace Size</span>
-                  <input
-                    type="number"
+                  <NumericInput
                     value={activeScene.workspaceSize}
-                    onChange={(event) => {
+                    onValueChange={(nextValue) => {
                       updateDraftScene((scene) => {
-                        scene.workspaceSize = Number(event.target.value);
+                        scene.workspaceSize = nextValue;
                       });
                     }}
                   />
@@ -468,62 +670,95 @@ export default function App() {
                 </label>
                 <label className="editor-field">
                   <span>Camera Up X</span>
-                  <input
-                    type="number"
+                  <NumericInput
                     value={activeScene.cameraUp?.[0] ?? 0}
-                    onChange={(event) => {
-                      updateDraftScene((scene) => {
-                        const current = scene.cameraUp ?? [0, 0, 1];
-                        scene.cameraUp = [Number(event.target.value), current[1], current[2]];
-                      });
+                    onValueChange={(nextValue) => {
+                      updateSceneVector('cameraUp', 0, nextValue, [0, 0, 1]);
                     }}
                   />
                 </label>
                 <label className="editor-field">
                   <span>Camera Up Y</span>
-                  <input
-                    type="number"
+                  <NumericInput
                     value={activeScene.cameraUp?.[1] ?? 0}
-                    onChange={(event) => {
-                      updateDraftScene((scene) => {
-                        const current = scene.cameraUp ?? [0, 0, 1];
-                        scene.cameraUp = [current[0], Number(event.target.value), current[2]];
-                      });
+                    onValueChange={(nextValue) => {
+                      updateSceneVector('cameraUp', 1, nextValue, [0, 0, 1]);
                     }}
                   />
                 </label>
                 <label className="editor-field">
                   <span>Camera Up Z</span>
-                  <input
-                    type="number"
+                  <NumericInput
                     value={activeScene.cameraUp?.[2] ?? 1}
-                    onChange={(event) => {
-                      updateDraftScene((scene) => {
-                        const current = scene.cameraUp ?? [0, 0, 1];
-                        scene.cameraUp = [current[0], current[1], Number(event.target.value)];
-                      });
+                    onValueChange={(nextValue) => {
+                      updateSceneVector('cameraUp', 2, nextValue, [0, 0, 1]);
                     }}
                   />
                 </label>
                 <label className="editor-field">
                   <span>Speed Factor</span>
-                  <input
-                    type="number"
+                  <NumericInput
                     value={activeScene.speedFactor ?? 1}
-                    onChange={(event) => {
+                    onValueChange={(nextValue) => {
                       updateDraftScene((scene) => {
-                        scene.speedFactor = Number(event.target.value);
+                        scene.speedFactor = nextValue;
                       });
                     }}
                   />
                 </label>
                 <label className="editor-field">
-                  <span>Camera Eye</span>
-                  <input type="text" value={(activeScene.cameraEye ?? []).join(', ')} readOnly />
+                  <span>Camera Eye X</span>
+                  <NumericInput
+                    value={activeScene.cameraEye?.[0] ?? 0}
+                    onValueChange={(nextValue) => {
+                      updateSceneVector('cameraEye', 0, nextValue, [0, 0, 10]);
+                    }}
+                  />
                 </label>
                 <label className="editor-field">
-                  <span>Camera Focus</span>
-                  <input type="text" value={(activeScene.cameraFocus ?? []).join(', ')} readOnly />
+                  <span>Camera Eye Y</span>
+                  <NumericInput
+                    value={activeScene.cameraEye?.[1] ?? 0}
+                    onValueChange={(nextValue) => {
+                      updateSceneVector('cameraEye', 1, nextValue, [0, 0, 10]);
+                    }}
+                  />
+                </label>
+                <label className="editor-field">
+                  <span>Camera Eye Z</span>
+                  <NumericInput
+                    value={activeScene.cameraEye?.[2] ?? 10}
+                    onValueChange={(nextValue) => {
+                      updateSceneVector('cameraEye', 2, nextValue, [0, 0, 10]);
+                    }}
+                  />
+                </label>
+                <label className="editor-field">
+                  <span>Camera Focus X</span>
+                  <NumericInput
+                    value={activeScene.cameraFocus?.[0] ?? 0}
+                    onValueChange={(nextValue) => {
+                      updateSceneVector('cameraFocus', 0, nextValue, [0, 0, 0]);
+                    }}
+                  />
+                </label>
+                <label className="editor-field">
+                  <span>Camera Focus Y</span>
+                  <NumericInput
+                    value={activeScene.cameraFocus?.[1] ?? 0}
+                    onValueChange={(nextValue) => {
+                      updateSceneVector('cameraFocus', 1, nextValue, [0, 0, 0]);
+                    }}
+                  />
+                </label>
+                <label className="editor-field">
+                  <span>Camera Focus Z</span>
+                  <NumericInput
+                    value={activeScene.cameraFocus?.[2] ?? 0}
+                    onValueChange={(nextValue) => {
+                      updateSceneVector('cameraFocus', 2, nextValue, [0, 0, 0]);
+                    }}
+                  />
                 </label>
               </div>
             ) : (
@@ -649,72 +884,66 @@ export default function App() {
                     </label>
                     <label className="editor-field">
                       <span>Position X</span>
-                      <input
-                        type="number"
+                      <NumericInput
                         value={selectedVisual.position?.x ?? 0}
-                        onChange={(event) => {
+                        onValueChange={(nextValue) => {
                           updateSelectedVisual((visual) => {
-                            visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), x: Number(event.target.value) };
+                            visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), x: nextValue };
                           });
                         }}
                       />
                     </label>
                     <label className="editor-field">
                       <span>Position Y</span>
-                      <input
-                        type="number"
+                      <NumericInput
                         value={selectedVisual.position?.y ?? 0}
-                        onChange={(event) => {
+                        onValueChange={(nextValue) => {
                           updateSelectedVisual((visual) => {
-                            visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), y: Number(event.target.value) };
+                            visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), y: nextValue };
                           });
                         }}
                       />
                     </label>
                     <label className="editor-field">
                       <span>Position Z</span>
-                      <input
-                        type="number"
+                      <NumericInput
                         value={selectedVisual.position?.z ?? 0}
-                        onChange={(event) => {
+                        onValueChange={(nextValue) => {
                           updateSelectedVisual((visual) => {
-                            visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), z: Number(event.target.value) };
+                            visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), z: nextValue };
                           });
                         }}
                       />
                     </label>
                     <label className="editor-field">
                       <span>Rotation X</span>
-                      <input
-                        type="number"
+                      <NumericInput
                         value={selectedVisual.rotation?.x ?? 0}
-                        onChange={(event) => {
+                        onValueChange={(nextValue) => {
                           updateSelectedVisual((visual) => {
-                            visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), x: Number(event.target.value) };
+                            visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), x: nextValue };
                           });
                         }}
                       />
                     </label>
                     <label className="editor-field">
                       <span>Rotation Y</span>
-                      <input
-                        type="number"
+                      <NumericInput
                         value={selectedVisual.rotation?.y ?? 0}
-                        onChange={(event) => {
+                        onValueChange={(nextValue) => {
                           updateSelectedVisual((visual) => {
-                            visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), y: Number(event.target.value) };
+                            visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), y: nextValue };
                           });
                         }}
                       />
                     </label>
                     <label className="editor-field">
                       <span>Rotation Z</span>
-                      <input
-                        type="number"
+                      <NumericInput
                         value={selectedVisual.rotation?.z ?? 0}
-                        onChange={(event) => {
+                        onValueChange={(nextValue) => {
                           updateSelectedVisual((visual) => {
-                            visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), z: Number(event.target.value) };
+                            visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), z: nextValue };
                           });
                         }}
                       />
@@ -744,12 +973,11 @@ export default function App() {
                         return (
                           <label key={key} className="editor-field">
                             <span>{key}</span>
-                            <input
-                              type="number"
+                            <NumericInput
                               value={value}
-                              onChange={(event) => {
+                              onValueChange={(nextValue) => {
                                 updateSelectedVisual((visual) => {
-                                  visual[key] = Number(event.target.value);
+                                  visual[key] = nextValue;
                                 });
                               }}
                             />
@@ -843,6 +1071,68 @@ export default function App() {
           </section>
 
           <section className="panel span-8">
+            <h2>Local File Browser</h2>
+            <div className="stacked-meta">
+              <div className="meta-row">
+                <label>Current Folder</label>
+                <div className="inline-tags">
+                  <code>{browserListing?.path ?? getDirectoryPath(sceneInput)}</code>
+                  {browserListing?.parentPath ? (
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => void handleBrowse(browserListing.parentPath!)}
+                    >
+                      Up One Level
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => void handleBrowse('.')}
+                  >
+                    Root
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {browserError ? <div className="status error">{browserError}</div> : null}
+            {!browserError && browserLoading ? <div className="status">Browsing local files…</div> : null}
+
+            {browserListing ? (
+              <div className="sample-list file-browser-list">
+                {browserListing.entries.map((entry) => {
+                  const isSceneFile = entry.type === 'file' && entry.path.toLowerCase().endsWith('.json');
+                  return (
+                    <button
+                      key={`${entry.type}:${entry.path}`}
+                      type="button"
+                      className={`sample-button ${sceneInput === entry.path ? 'sample-button-active' : ''}`}
+                      onClick={() => {
+                        if (entry.type === 'directory') {
+                          void handleBrowse(entry.path);
+                          return;
+                        }
+
+                        setSceneInput(entry.path);
+                        if (isSceneFile) {
+                          void handleLoad(entry.path);
+                        }
+                      }}
+                    >
+                      <span>{entry.name}</span>
+                      <code>{entry.type === 'directory' ? `${entry.path}/` : entry.path}</code>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-state">Browse a scene folder to load JSON files through the local API.</div>
+            )}
+          </section>
+
+          <section className="panel span-8">
             <h2>Sample Browser</h2>
             <div className="sample-groups">
               {groupedSamples.map(([groupName, samples]) => (
@@ -867,6 +1157,21 @@ export default function App() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="panel span-6">
+            <h2>Save Preview</h2>
+            <div className="stacked-meta">
+              <div className="meta-row">
+                <label>Save Target</label>
+                <code>{loaded.scenePath}</code>
+              </div>
+              <div className="meta-row">
+                <label>Write Mode</label>
+                <span>{hasLocalEdits ? 'Ready to save local edits in place.' : 'No unsaved changes.'}</span>
+              </div>
+            </div>
+            <pre className="json-preview">{savePreview}</pre>
           </section>
 
           <section className="panel span-6">

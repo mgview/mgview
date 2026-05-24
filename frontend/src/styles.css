@@ -43,7 +43,7 @@ button {
 }
 
 button:disabled {
-  cursor: progress;
+  cursor: default;
   opacity: 0.7;
 }
 
@@ -68,6 +68,15 @@ input[type="range"] {
 }
 
 input[type="number"] {
+  width: 100%;
+  border: 1px solid rgba(162, 185, 214, 0.25);
+  border-radius: 12px;
+  background: rgba(10, 18, 32, 0.7);
+  color: inherit;
+  padding: 0.7rem 0.85rem;
+}
+
+input[inputmode="decimal"] {
   width: 100%;
   border: 1px solid rgba(162, 185, 214, 0.25);
   border-radius: 12px;
@@ -113,6 +122,13 @@ input[type="number"] {
 
 .hero-links {
   margin-top: 12px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .loader-form {
@@ -269,6 +285,10 @@ input[type="number"] {
 
 .error {
   color: #ff9d9d;
+}
+
+.success {
+  color: #98e0a8;
 }
 
 .diagnostic-list {
@@ -473,6 +493,10 @@ input[type="number"] {
   gap: 10px;
 }
 
+.file-browser-list {
+  margin-top: 12px;
+}
+
 .sample-button {
   display: grid;
   gap: 4px;
@@ -517,6 +541,22 @@ input[type="number"] {
 
 .empty-state {
   color: #9fb3ce;
+}
+
+.json-preview {
+  margin: 14px 0 0;
+  padding: 14px;
+  max-height: 420px;
+  overflow: auto;
+  border-radius: 16px;
+  background: rgba(10, 18, 32, 0.75);
+  border: 1px solid rgba(159, 182, 212, 0.14);
+  color: #d4e3f8;
+  font-family: "SF Mono", "Monaco", monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 @media (max-width: 900px) {

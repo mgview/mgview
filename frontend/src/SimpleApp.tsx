@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { loadSceneJson, loadTextFile } from './api/localFiles.ts';
 import { expandSimulationFiles } from './core/expandSimulationFiles.ts';
 import { getBasePath } from './core/pathUtils.ts';
 import { parseSimulationText } from './core/parseSimulationText.ts';
@@ -34,27 +35,14 @@ function getScenePathFromUrl(): string {
   return params.get('scene') ?? DEFAULT_SCENE_PATH;
 }
 
-function getServerRootPrefix(): string {
-  return window.location.pathname.startsWith('/MGView/') ? '/MGView/' : '/';
-}
-
 async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
-  const sceneResponse = await fetch(`${getServerRootPrefix()}${scenePath}`);
-  if (!sceneResponse.ok) {
-    throw new Error(`Could not load scene file: ${scenePath}`);
-  }
-
-  const rawScene = (await sceneResponse.json()) as SceneConfig;
+  const rawScene = (await loadSceneJson(scenePath)) as SceneConfig;
   const basePath = getBasePath(scenePath);
   const simulationFiles = expandSimulationFiles(rawScene.simulationData ?? [], basePath);
 
   const tables = await Promise.all(
     simulationFiles.map(async (filePath) => {
-      const response = await fetch(`${getServerRootPrefix()}${filePath}`);
-      if (!response.ok) {
-        throw new Error(`Could not load simulation file: ${filePath}`);
-      }
-      return parseSimulationText(await response.text(), filePath);
+      return parseSimulationText(await loadTextFile(filePath), filePath);
     })
   );
 
