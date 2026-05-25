@@ -160,6 +160,21 @@ input[inputmode="decimal"] {
   color: #8db2e3;
 }
 
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.panel-subtitle {
+  margin: 0;
+  max-width: 650px;
+  color: #9fb3ce;
+  font-size: 0.92rem;
+}
+
 .span-4 {
   grid-column: span 4;
 }
@@ -568,6 +583,10 @@ input[inputmode="decimal"] {
   .editor-grid,
   .sample-list {
     grid-template-columns: 1fr;
+  }
+
+  .panel-header {
+    display: grid;
   }
 
   .span-4,

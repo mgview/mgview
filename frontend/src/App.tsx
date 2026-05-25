@@ -261,6 +261,21 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(0);
   const [selectedObjectName, setSelectedObjectName] = useState<string | null>(null);
   const [selectedVisualName, setSelectedVisualName] = useState<string | null>(null);
+  const [sampleBrowserExpanded, setSampleBrowserExpanded] = useState(false);
+
+  const confirmDiscardLocalEdits = (nextScenePath: string, actionLabel: string): boolean => {
+    if (!loaded || !draftScene) {
+      return true;
+    }
+
+    if (JSON.stringify(draftScene) === JSON.stringify(loaded.scene)) {
+      return true;
+    }
+
+    return window.confirm(
+      `${actionLabel} will discard unsaved local edits for ${loaded.scenePath}.\n\nContinue to ${nextScenePath}?`
+    );
+  };
 
   async function handleBrowse(nextPath: string) {
     setBrowserLoading(true);
@@ -275,7 +290,19 @@ export default function App() {
     }
   }
 
-  async function handleLoad(scenePath: string) {
+  async function handleLoad(
+    scenePath: string,
+    options?: {
+      force?: boolean;
+      statusMessage?: string;
+      actionLabel?: string;
+    }
+  ) {
+    const settings = options ?? {};
+    if (!settings.force && !confirmDiscardLocalEdits(scenePath, settings.actionLabel ?? 'Loading another scene')) {
+      return false;
+    }
+
     setLoading(true);
     setError(null);
     setSaveMessage(null);
@@ -290,12 +317,28 @@ export default function App() {
       const url = new URL(window.location.href);
       url.searchParams.set('scene', scenePath);
       window.history.replaceState({}, '', url);
+      setSaveMessage(settings.statusMessage ?? `Loaded ${scenePath}`);
       void handleBrowse(getDirectoryPath(scenePath));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unknown load error');
+      return false;
     } finally {
       setLoading(false);
     }
+
+    return true;
+  }
+
+  async function handleReloadFromDisk() {
+    if (!loaded) {
+      return;
+    }
+
+    void handleLoad(loaded.scenePath, {
+      force: true,
+      statusMessage: `Reloaded ${loaded.scenePath} from disk`,
+      actionLabel: 'Reloading from disk',
+    });
   }
 
   async function handleSaveScene() {
@@ -314,7 +357,7 @@ export default function App() {
       setCurrentTime(nextLoaded.timeline.tInitial);
       setSelectedObjectName(nextLoaded.objectInspections[0]?.name ?? null);
       setSelectedVisualName(nextLoaded.objectInspections[0]?.visuals[0]?.name ?? null);
-      setSaveMessage(`Saved ${loaded.scenePath}`);
+      setSaveMessage(`Saved changes to ${loaded.scenePath}`);
       void handleBrowse(getDirectoryPath(loaded.scenePath));
     } catch (saveError) {
       setSaveMessage(saveError instanceof Error ? saveError.message : 'Unknown save error');
@@ -398,7 +441,9 @@ export default function App() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    void handleLoad(sceneInput);
+    void handleLoad(sceneInput, {
+      actionLabel: 'Loading a scene by path',
+    });
   };
 
   const updateDraftScene = (updater: (scene: NormalizedSceneConfig) => void) => {
@@ -497,15 +542,19 @@ export default function App() {
           <button
             type="button"
             className="secondary-button"
-            onClick={() => void handleBrowse('.')}
+            onClick={() => void handleBrowse('..')}
             disabled={browserLoading}
           >
-            Browse MGView Root
+            Browse Workspace Root
           </button>
           <button
             type="button"
             className="secondary-button"
-            onClick={() => void handleLoad(sceneInput)}
+            onClick={() =>
+              void handleLoad(sceneInput, {
+                actionLabel: 'Opening a scene from the selected path',
+              })
+            }
             disabled={loading || !isJsonPath(sceneInput)}
           >
             Open Selected Path
@@ -515,6 +564,12 @@ export default function App() {
         <div className="hero-links">
           <a href={`${getAppBasePath()}/simple` || '/simple'}>Open Simple App</a>
         </div>
+
+        {loaded ? (
+          <div className="status">
+            Current scene target: <code>{loaded.scenePath}</code>
+          </div>
+        ) : null}
 
         {hasLocalEdits ? (
           <div className="status">Local inspector edits are active and not yet saved back to files.</div>
@@ -611,6 +666,14 @@ export default function App() {
                     disabled={!hasLocalEdits || saving}
                   >
                     {saving ? 'Saving…' : 'Save Scene JSON'}
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => void handleReloadFromDisk()}
+                    disabled={loading || saving || !loaded}
+                  >
+                    Reload From Disk
                   </button>
                   <button type="button" className="secondary-button" onClick={resetDraftScene}>
                     Reset Draft
@@ -1067,37 +1130,62 @@ export default function App() {
             onSelectFile={(path, isSceneFile) => {
               setSceneInput(path);
               if (isSceneFile) {
-                void handleLoad(path);
+                void handleLoad(path, {
+                  actionLabel: 'Opening a scene from the local file browser',
+                });
               }
             }}
             getDirectoryPath={getDirectoryPath}
           />
 
           <section className="panel span-8">
-            <h2>Sample Browser</h2>
-            <div className="sample-groups">
-              {groupedSamples.map(([groupName, samples]) => (
-                <div key={groupName} className="sample-group">
-                  <div className="sample-group-title">{groupName}</div>
-                  <div className="sample-list">
-                    {samples.map((sample) => (
-                      <button
-                        key={sample.path}
-                        type="button"
-                        className={`sample-button ${sceneInput === sample.path ? 'sample-button-active' : ''}`}
-                        onClick={() => {
-                          setSceneInput(sample.path);
-                          void handleLoad(sample.path);
-                        }}
-                      >
-                        <span>{sample.label}</span>
-                        <code>{sample.path}</code>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="panel-header">
+              <div>
+                <h2>Built-in Sample Shortcuts</h2>
+                <p className="panel-subtitle">
+                  Quick-open shortcuts for a few bundled examples. The full filesystem view is above.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setSampleBrowserExpanded((current) => !current)}
+              >
+                {sampleBrowserExpanded ? 'Hide Shortcuts' : 'Show Shortcuts'}
+              </button>
             </div>
+
+            {sampleBrowserExpanded ? (
+              <div className="sample-groups">
+                {groupedSamples.map(([groupName, samples]) => (
+                  <div key={groupName} className="sample-group">
+                    <div className="sample-group-title">{groupName}</div>
+                    <div className="sample-list">
+                      {samples.map((sample) => (
+                        <button
+                          key={sample.path}
+                          type="button"
+                          className={`sample-button ${sceneInput === sample.path ? 'sample-button-active' : ''}`}
+                          onClick={() => {
+                            setSceneInput(sample.path);
+                            void handleLoad(sample.path, {
+                              actionLabel: 'Opening a built-in sample shortcut',
+                            });
+                          }}
+                        >
+                          <span>{sample.label}</span>
+                          <code>{sample.path}</code>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                Built-in sample shortcuts are hidden. Use the button above if you want quick access to bundled examples.
+              </div>
+            )}
           </section>
 
           <SavePreviewPanel

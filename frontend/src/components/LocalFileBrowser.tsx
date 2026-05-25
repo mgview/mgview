@@ -19,6 +19,8 @@ export default function LocalFileBrowser({
   onSelectFile,
   getDirectoryPath,
 }: LocalFileBrowserProps) {
+  const currentFolderLabel = browserListing?.path || '(workspace root)';
+
   return (
     <section className="panel span-8">
       <h2>Local File Browser</h2>
@@ -26,7 +28,7 @@ export default function LocalFileBrowser({
         <div className="meta-row">
           <label>Current Folder</label>
           <div className="inline-tags">
-            <code>{browserListing?.path ?? getDirectoryPath(sceneInput)}</code>
+            <code>{browserListing ? currentFolderLabel : getDirectoryPath(sceneInput)}</code>
             {browserListing?.parentPath ? (
               <button
                 type="button"
@@ -36,8 +38,8 @@ export default function LocalFileBrowser({
                 Up One Level
               </button>
             ) : null}
-            <button type="button" className="secondary-button" onClick={() => onBrowse('.')}>
-              Root
+            <button type="button" className="secondary-button" onClick={() => onBrowse('..')}>
+              Workspace Root
             </button>
           </div>
         </div>

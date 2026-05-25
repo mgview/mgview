@@ -300,7 +300,17 @@ StaticServlet.prototype.resolveApiPath_ = function(requestedPath, options) {
     ? requestedPath
     : String(requestedPath || '').replace(/\\/g, '/');
   const relativePath = normalizedInput.replace(/^\/+/, '');
-  const basePath = settings.fromUrlPath ? PROJECT_ROOT : MGVIEW_ROOT;
+  let basePath = settings.fromUrlPath ? PROJECT_ROOT : MGVIEW_ROOT;
+
+  if (!settings.fromUrlPath && relativePath !== '' && !relativePath.startsWith('.')) {
+    const mgviewCandidate = path.resolve(MGVIEW_ROOT, relativePath);
+    const workspaceCandidate = path.resolve(PROJECT_ROOT, relativePath);
+
+    if (!fs.existsSync(mgviewCandidate) && fs.existsSync(workspaceCandidate)) {
+      basePath = PROJECT_ROOT;
+    }
+  }
+
   const resolvedPath = path.resolve(basePath, relativePath || '.');
 
   if (!isWithinRoot(resolvedPath)) {
