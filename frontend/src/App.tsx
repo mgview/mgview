@@ -1,5 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { listLocalFiles, loadSceneJson, loadTextFile, saveSceneJson, type FileBrowserListing } from './api/localFiles.ts';
+import LocalFileBrowser from './components/LocalFileBrowser.tsx';
+import ObjectList from './components/ObjectList.tsx';
+import SavePreviewPanel from './components/SavePreviewPanel.tsx';
 import { expandSimulationFiles } from './core/expandSimulationFiles.ts';
 import { getBasePath } from './core/pathUtils.ts';
 import { parseSimulationText } from './core/parseSimulationText.ts';
@@ -766,31 +769,14 @@ export default function App() {
             )}
           </section>
 
-          <section className="panel span-4">
-            <h2>Objects</h2>
-            <div className="inspector-list">
-              {activeObjectInspections.map((entry) => (
-                <button
-                  key={entry.name}
-                  type="button"
-                  className={`inspector-item ${selectedObject?.name === entry.name ? 'inspector-item-active' : ''}`}
-                  onClick={() => {
-                    setSelectedObjectName(entry.name);
-                    setSelectedVisualName(entry.visuals[0]?.name ?? null);
-                  }}
-                >
-                  <span className="inspector-item-top">
-                    <code>{entry.name}</code>
-                    <strong>{entry.type}</strong>
-                  </span>
-                  <span className="inspector-item-bottom">
-                    <span>{entry.visualCount} visual{entry.visualCount === 1 ? '' : 's'}</span>
-                    {entry.inferred ? <span className="tag tag-accent">inferred</span> : null}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
+          <ObjectList
+            entries={activeObjectInspections}
+            selectedObjectName={selectedObject?.name ?? null}
+            onSelectObject={(objectName, firstVisualName) => {
+              setSelectedObjectName(objectName);
+              setSelectedVisualName(firstVisualName);
+            }}
+          />
 
           <section className="panel span-4">
             <h2>Selected Object</h2>
@@ -1070,67 +1056,22 @@ export default function App() {
             </div>
           </section>
 
-          <section className="panel span-8">
-            <h2>Local File Browser</h2>
-            <div className="stacked-meta">
-              <div className="meta-row">
-                <label>Current Folder</label>
-                <div className="inline-tags">
-                  <code>{browserListing?.path ?? getDirectoryPath(sceneInput)}</code>
-                  {browserListing?.parentPath ? (
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => void handleBrowse(browserListing.parentPath!)}
-                    >
-                      Up One Level
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => void handleBrowse('.')}
-                  >
-                    Root
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {browserError ? <div className="status error">{browserError}</div> : null}
-            {!browserError && browserLoading ? <div className="status">Browsing local files…</div> : null}
-
-            {browserListing ? (
-              <div className="sample-list file-browser-list">
-                {browserListing.entries.map((entry) => {
-                  const isSceneFile = entry.type === 'file' && entry.path.toLowerCase().endsWith('.json');
-                  return (
-                    <button
-                      key={`${entry.type}:${entry.path}`}
-                      type="button"
-                      className={`sample-button ${sceneInput === entry.path ? 'sample-button-active' : ''}`}
-                      onClick={() => {
-                        if (entry.type === 'directory') {
-                          void handleBrowse(entry.path);
-                          return;
-                        }
-
-                        setSceneInput(entry.path);
-                        if (isSceneFile) {
-                          void handleLoad(entry.path);
-                        }
-                      }}
-                    >
-                      <span>{entry.name}</span>
-                      <code>{entry.type === 'directory' ? `${entry.path}/` : entry.path}</code>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="empty-state">Browse a scene folder to load JSON files through the local API.</div>
-            )}
-          </section>
+          <LocalFileBrowser
+            browserListing={browserListing}
+            browserError={browserError}
+            browserLoading={browserLoading}
+            sceneInput={sceneInput}
+            onBrowse={(path) => {
+              void handleBrowse(path);
+            }}
+            onSelectFile={(path, isSceneFile) => {
+              setSceneInput(path);
+              if (isSceneFile) {
+                void handleLoad(path);
+              }
+            }}
+            getDirectoryPath={getDirectoryPath}
+          />
 
           <section className="panel span-8">
             <h2>Sample Browser</h2>
@@ -1159,20 +1100,11 @@ export default function App() {
             </div>
           </section>
 
-          <section className="panel span-6">
-            <h2>Save Preview</h2>
-            <div className="stacked-meta">
-              <div className="meta-row">
-                <label>Save Target</label>
-                <code>{loaded.scenePath}</code>
-              </div>
-              <div className="meta-row">
-                <label>Write Mode</label>
-                <span>{hasLocalEdits ? 'Ready to save local edits in place.' : 'No unsaved changes.'}</span>
-              </div>
-            </div>
-            <pre className="json-preview">{savePreview}</pre>
-          </section>
+          <SavePreviewPanel
+            scenePath={loaded.scenePath}
+            hasLocalEdits={hasLocalEdits}
+            savePreview={savePreview}
+          />
 
           <section className="panel span-6">
             <h2>Timeline</h2>
