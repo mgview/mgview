@@ -2,6 +2,7 @@ import type {
   NormalizedSceneConfig,
   SceneConfig,
   SceneDiagnostic,
+  SceneMaterial,
   SceneObjectInspection,
   SceneObjectVisualInspection,
   SceneVisual,
@@ -57,6 +58,14 @@ function formatNumber(value: number): string {
 
 function formatVector3(value: Vector3Like): string {
   return `${formatNumber(value.x)}, ${formatNumber(value.y)}, ${formatNumber(value.z)}`;
+}
+
+function getMaterialName(material: SceneMaterial | undefined): string | null {
+  if (typeof material === 'string') {
+    return material;
+  }
+
+  return material?.name ?? null;
 }
 
 function summarizeVisualProperties(visual: SceneVisual): Array<{ key: string; value: string }> {
@@ -131,7 +140,7 @@ export function buildObjectInspections(
             name: visualName,
             type: visual.type,
             visible: visual.visible ?? true,
-            materialName: visual.material?.name ?? null,
+            materialName: getMaterialName(visual.material),
             position: visual.position ?? null,
             rotation: visual.rotation ?? null,
             propertySummary: summarizeVisualProperties(visual),

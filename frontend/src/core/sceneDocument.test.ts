@@ -46,6 +46,7 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
 
   assert.equal(document.newtonianFrame, 'N');
   assert.equal(document.sceneOrigin, 'No');
+  assert.equal(document.backgroundColor, '#e0f0ff');
   assert.equal(document.cameraParentFrame, 'N');
   assert.ok(document.objects.N);
   assert.equal(document.objects.N.type, 'frame');

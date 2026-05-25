@@ -28,12 +28,14 @@ export interface MaterialDefinition {
   color?: RgbaColor;
 }
 
+export type SceneMaterial = MaterialDefinition | string;
+
 export interface SceneVisual {
   visible?: boolean;
   type: VisualType | null;
   position?: Vector3Like;
   rotation?: Vector3Like;
-  material?: MaterialDefinition;
+  material?: SceneMaterial;
   text?: string;
   path?: string;
   scale?: number;
@@ -52,6 +54,20 @@ export interface SceneVisual {
   [key: string]: unknown;
 }
 
+export interface SceneSpanVisual {
+  visible?: boolean;
+  material?: SceneMaterial;
+  thickness?: number;
+}
+
+export interface SceneSpan {
+  type: string;
+  point1: string;
+  point2: string;
+  showLabel?: boolean;
+  visual?: Record<string, SceneSpanVisual>;
+}
+
 export interface SceneObject {
   type: ObjectType;
   rotationFrame?: string;
@@ -63,6 +79,7 @@ export interface SceneConfig {
   simulationData?: string[];
   newtonianFrame?: string;
   sceneOrigin?: string;
+  backgroundColor?: string;
   showAxes?: boolean;
   workspaceSize?: number;
   cameraParentFrame?: string;
@@ -72,16 +89,19 @@ export interface SceneConfig {
   speedFactor?: number;
   customMaterials?: Record<string, unknown>;
   objects?: Record<string, SceneObject>;
+  spans?: Record<string, SceneSpan>;
 }
 
 export interface NormalizedSceneConfig extends SceneConfig {
   simulationData: string[];
   newtonianFrame: string;
   sceneOrigin: string;
+  backgroundColor: string;
   showAxes: boolean;
   workspaceSize: number;
   cameraParentFrame: string;
   objects: Record<string, SceneObject>;
+  spans: Record<string, SceneSpan>;
 }
 
 export interface SimulationTableRow {
@@ -140,3 +160,103 @@ export interface SceneObjectInspection {
   visuals: SceneObjectVisualInspection[];
   tags: string[];
 }
+
+export interface ConcreteVector3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface RenderMaterial {
+  name: string;
+  color?: RgbaColor;
+}
+
+export interface RenderVisualBase {
+  name: string;
+  type: VisualType;
+  visible: boolean;
+  position: ConcreteVector3;
+  rotation: ConcreteVector3;
+  material: RenderMaterial;
+}
+
+export interface RenderSphereVisual extends RenderVisualBase {
+  type: 'sphere';
+  radius: number;
+  segmentsWidth: number;
+  segmentsHeight: number;
+}
+
+export interface RenderBoxVisual extends RenderVisualBase {
+  type: 'box';
+  size: ConcreteVector3;
+  segmentsWidth: number;
+  segmentsHeight: number;
+  segmentsDepth: number;
+}
+
+export interface RenderCylinderVisual extends RenderVisualBase {
+  type: 'cylinder';
+  radius: number;
+  length: number;
+  segmentsRadius: number;
+  segmentsHeight: number;
+  capped: boolean;
+}
+
+export interface RenderConeVisual extends RenderVisualBase {
+  type: 'cone';
+  radiusTop: number;
+  radiusBottom: number;
+  length: number;
+  segmentsRadius: number;
+  segmentsHeight: number;
+  capped: boolean;
+}
+
+export interface RenderTorusVisual extends RenderVisualBase {
+  type: 'torus';
+  radius: number;
+  thickness: number;
+  segmentsRadius: number;
+  segmentsThickness: number;
+  arc?: number;
+}
+
+export interface RenderMeshVisual extends RenderVisualBase {
+  type: 'mesh';
+  path: string;
+  scale: number;
+}
+
+export interface RenderTextVisual extends RenderVisualBase {
+  type: 'text';
+  text: string;
+  scale: number;
+}
+
+export interface RenderBasisVisual extends RenderVisualBase {
+  type: 'basis';
+  scale: number;
+}
+
+export interface RenderCableSpan {
+  name: string;
+  type: 'cable';
+  visible: boolean;
+  material: RenderMaterial;
+  thickness: number;
+  start: ConcreteVector3;
+  end: ConcreteVector3;
+}
+
+export type RenderVisual =
+  | RenderSphereVisual
+  | RenderBoxVisual
+  | RenderCylinderVisual
+  | RenderConeVisual
+  | RenderTorusVisual
+  | RenderMeshVisual
+  | RenderTextVisual
+  | RenderBasisVisual;

@@ -72,6 +72,35 @@ function legacySamplesPlugin(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [react(), legacySamplesPlugin()],
+  build: {
+    chunkSizeWarningLimit: 550,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('/node_modules/three/examples/jsm/') || id.includes('/node_modules/three/addons/')) {
+            return 'three-addons';
+          }
+
+          if (
+            id.includes('/node_modules/three/src/math/') ||
+            id.includes('/node_modules/three/src/core/') ||
+            id.includes('/node_modules/three/src/constants.js') ||
+            id.includes('/node_modules/three/src/utils.js')
+          ) {
+            return 'three-foundation';
+          }
+
+          if (id.includes('/node_modules/three/')) {
+            return 'three-vendor';
+          }
+
+          if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/')) {
+            return 'react-vendor';
+          }
+        },
+      },
+    },
+  },
   server: {
     fs: {
       allow: ['..'],

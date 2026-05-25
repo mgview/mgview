@@ -90,6 +90,8 @@ StaticServlet.MimeMap = {
   gif: 'image/gif',
   png: 'image/png',
   svg: 'image/svg+xml',
+  obj: 'text/plain; charset=utf-8',
+  stl: 'model/stl',
 };
 
 StaticServlet.prototype.handleRequest = function(req, res) {

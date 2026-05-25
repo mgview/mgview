@@ -1,7 +1,8 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { listLocalFiles, loadSceneJson, loadTextFile, saveSceneJson, type FileBrowserListing } from './api/localFiles.ts';
 import LocalFileBrowser from './components/LocalFileBrowser.tsx';
 import ObjectList from './components/ObjectList.tsx';
+import RendererPanel from './components/RendererPanel.tsx';
 import SavePreviewPanel from './components/SavePreviewPanel.tsx';
 import { expandSimulationFiles } from './core/expandSimulationFiles.ts';
 import { getBasePath } from './core/pathUtils.ts';
@@ -161,6 +162,7 @@ function createSavableScene(rawScene: SceneConfig, draftScene: NormalizedSceneCo
   nextScene.simulationData = [...draftScene.simulationData];
   nextScene.newtonianFrame = draftScene.newtonianFrame;
   nextScene.sceneOrigin = draftScene.sceneOrigin;
+  nextScene.backgroundColor = draftScene.backgroundColor;
   nextScene.showAxes = draftScene.showAxes;
   nextScene.workspaceSize = draftScene.workspaceSize;
   nextScene.cameraParentFrame = draftScene.cameraParentFrame;
@@ -259,9 +261,11 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [selectedObjectName, setSelectedObjectName] = useState<string | null>(null);
   const [selectedVisualName, setSelectedVisualName] = useState<string | null>(null);
   const [sampleBrowserExpanded, setSampleBrowserExpanded] = useState(false);
+  const currentTimeRef = useRef(0);
 
   const confirmDiscardLocalEdits = (nextScenePath: string, actionLabel: string): boolean => {
     if (!loaded || !draftScene) {
@@ -374,6 +378,14 @@ export default function App() {
     void handleBrowse(getDirectoryPath(sceneInput));
   }, []);
 
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
+
+  useEffect(() => {
+    setIsPlaying(false);
+  }, [loaded?.scenePath]);
+
   const activeScene = draftScene ?? loaded?.scene ?? null;
   const activeObjectInspections = useMemo(() => {
     if (!loaded || !activeScene) {
@@ -430,6 +442,27 @@ export default function App() {
   const previewEntries = useMemo(() => {
     return Object.entries(currentFrame?.frame.data ?? {}).slice(0, PREVIEW_CHANNEL_COUNT);
   }, [currentFrame]);
+
+  const playbackSpeed = activeScene?.speedFactor ?? loaded?.scene.speedFactor ?? 1;
+  const cameraSeedKey = useMemo(() => {
+    if (!activeScene || !loaded) {
+      return 'no-scene';
+    }
+
+    return JSON.stringify({
+      scenePath: loaded.scenePath,
+      cameraParentFrame: activeScene.cameraParentFrame,
+      cameraUp: activeScene.cameraUp ?? null,
+      cameraEye: activeScene.cameraEye ?? null,
+      cameraFocus: activeScene.cameraFocus ?? null,
+    });
+  }, [
+    activeScene?.cameraEye,
+    activeScene?.cameraFocus,
+    activeScene?.cameraParentFrame,
+    activeScene?.cameraUp,
+    loaded,
+  ]);
 
   const savePreview = useMemo(() => {
     if (!loaded || !draftScene) {
@@ -507,6 +540,46 @@ export default function App() {
       ? activeScene.objects[selectedObject.name]?.visual?.[selectedVisual.name]
       : undefined;
 
+  useEffect(() => {
+    if (!isPlaying || !loaded) {
+      return;
+    }
+
+    const timeline = loaded.timeline;
+    const effectiveSpeed = Math.max(playbackSpeed, 0);
+    let animationFrameId = 0;
+    let lastTimestamp: number | null = null;
+
+    const advance = (timestamp: number) => {
+      if (lastTimestamp === null) {
+        lastTimestamp = timestamp;
+        animationFrameId = requestAnimationFrame(advance);
+        return;
+      }
+
+      const elapsedSeconds = (timestamp - lastTimestamp) / 1000;
+      lastTimestamp = timestamp;
+      const nextTime = currentTimeRef.current + elapsedSeconds * effectiveSpeed;
+
+      if (nextTime >= timeline.tFinal) {
+        currentTimeRef.current = timeline.tFinal;
+        setCurrentTime(timeline.tFinal);
+        setIsPlaying(false);
+        return;
+      }
+
+      currentTimeRef.current = nextTime;
+      setCurrentTime(nextTime);
+      animationFrameId = requestAnimationFrame(advance);
+    };
+
+    animationFrameId = requestAnimationFrame(advance);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isPlaying, loaded, playbackSpeed]);
+
   return (
     <div className="app-shell">
       <section className="hero">
@@ -581,6 +654,129 @@ export default function App() {
 
       {loaded ? (
         <div className="panel-grid inspector-grid">
+          {activeScene ? (
+            <>
+              <RendererPanel
+                cameraSeedKey={cameraSeedKey}
+                scenePath={loaded.scenePath}
+                scene={activeScene}
+                frame={currentFrame?.frame}
+                selectedObjectName={selectedObject?.name ?? null}
+              />
+
+              <section className="panel span-6">
+                <div className="panel-header">
+                  <div>
+                    <h2>Timeline</h2>
+                    <p className="panel-subtitle">
+                      Playback uses the scene speed factor and stops at the final frame.
+                    </p>
+                  </div>
+                  <div className="inline-tags">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => {
+                        if (currentTimeRef.current >= loaded.timeline.tFinal) {
+                          currentTimeRef.current = loaded.timeline.tInitial;
+                          setCurrentTime(loaded.timeline.tInitial);
+                        }
+                        setIsPlaying((current) => !current);
+                      }}
+                    >
+                      {isPlaying ? 'Pause' : 'Play'}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => {
+                        setIsPlaying(false);
+                        currentTimeRef.current = loaded.timeline.tInitial;
+                        setCurrentTime(loaded.timeline.tInitial);
+                      }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+                <div className="meta-list">
+                  <div>
+                    <label>Start</label>
+                    <code>{formatNumber(loaded.timeline.tInitial)}</code>
+                  </div>
+                  <div>
+                    <label>End</label>
+                    <code>{formatNumber(loaded.timeline.tFinal)}</code>
+                  </div>
+                  <div>
+                    <label>Step</label>
+                    <code>{formatNumber(loaded.timeline.tStep)}</code>
+                  </div>
+                  <div>
+                    <label>Current Time</label>
+                    <code>{formatNumber(currentFrame?.frame.time ?? loaded.timeline.tInitial)}</code>
+                  </div>
+                  <div>
+                    <label>Speed Factor</label>
+                    <input
+                      type="number"
+                      min={0.1}
+                      max={10}
+                      step={0.1}
+                      value={playbackSpeed}
+                      onChange={(event) => {
+                        const nextValue = Number(event.target.value);
+                        if (!Number.isFinite(nextValue)) {
+                          return;
+                        }
+
+                        updateDraftScene((scene) => {
+                          scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="scrubber-meta">
+                  <span>{isPlaying ? 'Playing' : 'Current frame preview'}</span>
+                  <span>{currentFrame?.tFinalExceeded ? 'clamped to final frame' : 'in range'}</span>
+                </div>
+                <input
+                  type="range"
+                  min={loaded.timeline.tInitial}
+                  max={loaded.timeline.tFinal}
+                  step={loaded.timeline.tStep || 0.001}
+                  value={currentTime}
+                  onChange={(event) => {
+                    setIsPlaying(false);
+                    const nextTime = Number(event.target.value);
+                    currentTimeRef.current = nextTime;
+                    setCurrentTime(nextTime);
+                  }}
+                />
+              </section>
+
+              <section className="panel span-6">
+                <h2>Channel Preview</h2>
+                <table className="preview-table">
+                  <tbody>
+                    {previewEntries.map(([channelName, value]) => (
+                      <tr key={channelName}>
+                        <td>
+                          <code>{channelName}</code>
+                        </td>
+                        <td>
+                          <code>{formatNumber(value)}</code>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          ) : null}
+
           <section className="panel span-12">
             <h2>Diagnostics</h2>
             <div className="diagnostic-list">
@@ -1194,58 +1390,6 @@ export default function App() {
             savePreview={savePreview}
           />
 
-          <section className="panel span-6">
-            <h2>Timeline</h2>
-            <div className="meta-list">
-              <div>
-                <label>Start</label>
-                <code>{formatNumber(loaded.timeline.tInitial)}</code>
-              </div>
-              <div>
-                <label>End</label>
-                <code>{formatNumber(loaded.timeline.tFinal)}</code>
-              </div>
-              <div>
-                <label>Step</label>
-                <code>{formatNumber(loaded.timeline.tStep)}</code>
-              </div>
-              <div>
-                <label>Current Time</label>
-                <code>{formatNumber(currentFrame?.frame.time ?? loaded.timeline.tInitial)}</code>
-              </div>
-            </div>
-
-            <div className="scrubber-meta">
-              <span>Current frame preview</span>
-              <span>{currentFrame?.tFinalExceeded ? 'clamped to final frame' : 'in range'}</span>
-            </div>
-            <input
-              type="range"
-              min={loaded.timeline.tInitial}
-              max={loaded.timeline.tFinal}
-              step={loaded.timeline.tStep || 0.001}
-              value={currentTime}
-              onChange={(event) => setCurrentTime(Number(event.target.value))}
-            />
-          </section>
-
-          <section className="panel span-6">
-            <h2>Channel Preview</h2>
-            <table className="preview-table">
-              <tbody>
-                {previewEntries.map(([channelName, value]) => (
-                  <tr key={channelName}>
-                    <td>
-                      <code>{channelName}</code>
-                    </td>
-                    <td>
-                      <code>{formatNumber(value)}</code>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
         </div>
       ) : null}
     </div>

@@ -7,11 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types --test src/core/*.test.ts"
+    "test": "node --experimental-strip-types --test src/core/*.test.ts src/rendering/*.test.ts"
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",

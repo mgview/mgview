@@ -3,7 +3,10 @@ import type {
   NormalizedSceneConfig,
   SceneConfig,
   SceneObject,
+  SceneSpan,
+  SceneSpanVisual,
   SceneVisual,
+  SceneMaterial,
   Vector3Like,
 } from './types.ts';
 
@@ -17,7 +20,34 @@ function cloneVisual(visual: SceneVisual): SceneVisual {
     position: visual.position ? { ...visual.position } : undefined,
     rotation: visual.rotation ? { ...visual.rotation } : undefined,
     size: visual.size ? { ...visual.size } : undefined,
-    material: visual.material ? { ...visual.material } : undefined,
+    material: cloneMaterial(visual.material),
+  };
+}
+
+function cloneMaterial(material: SceneMaterial | undefined): SceneMaterial | undefined {
+  if (typeof material === 'string' || material === undefined) {
+    return material;
+  }
+
+  return { ...material };
+}
+
+function cloneSpanVisual(visual: SceneSpanVisual): SceneSpanVisual {
+  return {
+    ...visual,
+    material: cloneMaterial(visual.material),
+  };
+}
+
+function cloneSpan(span: SceneSpan): SceneSpan {
+  const visualEntries = Object.entries(span.visual ?? {}).map(([name, visual]) => [
+    name,
+    cloneSpanVisual(visual),
+  ]);
+
+  return {
+    ...span,
+    visual: Object.fromEntries(visualEntries),
   };
 }
 
@@ -38,6 +68,9 @@ function addEmptyDefaults(scene: SceneConfig): NormalizedSceneConfig {
   const objects = Object.fromEntries(
     Object.entries(scene.objects ?? {}).map(([name, sceneObject]) => [name, cloneObject(sceneObject)])
   );
+  const spans = Object.fromEntries(
+    Object.entries(scene.spans ?? {}).map(([name, span]) => [name, cloneSpan(span)])
+  );
 
   if (!objects[newtonianFrame]) {
     objects[newtonianFrame] = { type: 'frame', visual: {} };
@@ -55,10 +88,12 @@ function addEmptyDefaults(scene: SceneConfig): NormalizedSceneConfig {
     simulationData: [...(scene.simulationData ?? [])],
     newtonianFrame,
     sceneOrigin: scene.sceneOrigin ?? `${newtonianFrame}o`,
+    backgroundColor: scene.backgroundColor ?? '#e0f0ff',
     showAxes: scene.showAxes ?? false,
     workspaceSize: scene.workspaceSize ?? 1.0,
     cameraParentFrame: scene.cameraParentFrame ?? newtonianFrame,
     objects,
+    spans,
   };
 }
 

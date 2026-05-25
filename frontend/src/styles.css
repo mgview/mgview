@@ -160,6 +160,22 @@ input[inputmode="decimal"] {
   color: #8db2e3;
 }
 
+.renderer-surface {
+  min-height: 420px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(141, 178, 227, 0.12);
+  background:
+    radial-gradient(circle at top, rgba(82, 128, 194, 0.16), transparent 28%),
+    linear-gradient(180deg, rgba(9, 16, 28, 0.94), rgba(6, 11, 19, 0.98));
+}
+
+.renderer-surface canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .panel-header {
   display: flex;
   justify-content: space-between;

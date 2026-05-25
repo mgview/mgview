@@ -12,7 +12,7 @@ export interface FileBrowserListing {
   entries: FileBrowserEntry[];
 }
 
-function getServerRootPrefix(): string {
+export function getServerRootPrefix(): string {
   return window.location.pathname.startsWith('/MGView/') ? '/MGView/' : '/';
 }
 
