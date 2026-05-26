@@ -10,8 +10,7 @@ export default function SavePreviewPanel({
   savePreview,
 }: SavePreviewPanelProps) {
   return (
-    <section className="panel span-6">
-      <h2>Save Preview</h2>
+    <section className="save-preview-panel">
       <div className="stacked-meta">
         <div className="meta-row">
           <label>Save Target</label>

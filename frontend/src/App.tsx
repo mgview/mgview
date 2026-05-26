@@ -2,8 +2,11 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { listLocalFiles, loadSceneJson, loadTextFile, saveSceneJson, type FileBrowserListing } from './api/localFiles.ts';
 import LocalFileBrowser from './components/LocalFileBrowser.tsx';
 import ObjectList from './components/ObjectList.tsx';
+import OverlayPanel from './components/OverlayPanel.tsx';
+import PlaybackStrip from './components/PlaybackStrip.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SavePreviewPanel from './components/SavePreviewPanel.tsx';
+import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import { expandSimulationFiles } from './core/expandSimulationFiles.ts';
 import { getBasePath } from './core/pathUtils.ts';
 import { parseSimulationText } from './core/parseSimulationText.ts';
@@ -155,9 +158,6 @@ function NumericInput({
 function createSavableScene(rawScene: SceneConfig, draftScene: NormalizedSceneConfig): SceneConfig {
   const nextScene = structuredClone(rawScene);
 
-  // This currently saves the editor's explicit normalized scene state back to disk.
-  // A future "save minimal" mode could try to preserve omitted/defaulted authoring shape,
-  // but that needs careful round-trip rules so we do not drop intentional edits.
   nextScene.name = draftScene.name;
   nextScene.simulationData = [...draftScene.simulationData];
   nextScene.newtonianFrame = draftScene.newtonianFrame;
@@ -226,9 +226,7 @@ async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
   const simulationFiles = expandSimulationFiles(rawScene.simulationData ?? [], basePath);
 
   const tables = await Promise.all(
-    simulationFiles.map(async (filePath) => {
-      return parseSimulationText(await loadTextFile(filePath), filePath);
-    })
+    simulationFiles.map(async (filePath) => parseSimulationText(await loadTextFile(filePath), filePath))
   );
 
   const channelNames = [...new Set(tables.flatMap((table) => table.channelNames))];
@@ -249,17 +247,141 @@ async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
   };
 }
 
+function SceneSettingsEditor({
+  activeScene,
+  updateDraftScene,
+  updateSceneVector,
+}: {
+  activeScene: NormalizedSceneConfig | null;
+  updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
+  updateSceneVector: (
+    key: 'cameraUp' | 'cameraEye' | 'cameraFocus',
+    index: 0 | 1 | 2,
+    nextValue: number,
+    fallback: [number, number, number]
+  ) => void;
+}) {
+  if (!activeScene) {
+    return <div className="empty-state">Load a scene to edit scene-level settings.</div>;
+  }
+
+  return (
+    <div className="editor-grid">
+      <label className="editor-field">
+        <span>Scene Name</span>
+        <input
+          type="text"
+          value={activeScene.name ?? ''}
+          onChange={(event) => {
+            updateDraftScene((scene) => {
+              scene.name = event.target.value;
+            });
+          }}
+        />
+      </label>
+      <label className="editor-field">
+        <span>Workspace Size</span>
+        <NumericInput
+          value={activeScene.workspaceSize}
+          onValueChange={(nextValue) => {
+            updateDraftScene((scene) => {
+              scene.workspaceSize = nextValue;
+            });
+          }}
+        />
+      </label>
+      <label className="editor-field editor-field-checkbox">
+        <span>Show Axes</span>
+        <input
+          type="checkbox"
+          checked={activeScene.showAxes}
+          onChange={(event) => {
+            updateDraftScene((scene) => {
+              scene.showAxes = event.target.checked;
+            });
+          }}
+        />
+      </label>
+      <label className="editor-field">
+        <span>Camera Parent Frame</span>
+        <input
+          type="text"
+          value={activeScene.cameraParentFrame}
+          onChange={(event) => {
+            updateDraftScene((scene) => {
+              scene.cameraParentFrame = event.target.value;
+            });
+          }}
+        />
+      </label>
+      <label className="editor-field">
+        <span>Camera Up X</span>
+        <NumericInput value={activeScene.cameraUp?.[0] ?? 0} onValueChange={(nextValue) => updateSceneVector('cameraUp', 0, nextValue, [0, 0, 1])} />
+      </label>
+      <label className="editor-field">
+        <span>Camera Up Y</span>
+        <NumericInput value={activeScene.cameraUp?.[1] ?? 0} onValueChange={(nextValue) => updateSceneVector('cameraUp', 1, nextValue, [0, 0, 1])} />
+      </label>
+      <label className="editor-field">
+        <span>Camera Up Z</span>
+        <NumericInput value={activeScene.cameraUp?.[2] ?? 1} onValueChange={(nextValue) => updateSceneVector('cameraUp', 2, nextValue, [0, 0, 1])} />
+      </label>
+      <label className="editor-field">
+        <span>Speed Factor</span>
+        <NumericInput
+          value={activeScene.speedFactor ?? 1}
+          onValueChange={(nextValue) => {
+            updateDraftScene((scene) => {
+              scene.speedFactor = nextValue;
+            });
+          }}
+        />
+      </label>
+      <label className="editor-field">
+        <span>Camera Eye X</span>
+        <NumericInput value={activeScene.cameraEye?.[0] ?? 0} onValueChange={(nextValue) => updateSceneVector('cameraEye', 0, nextValue, [0, 0, 10])} />
+      </label>
+      <label className="editor-field">
+        <span>Camera Eye Y</span>
+        <NumericInput value={activeScene.cameraEye?.[1] ?? 0} onValueChange={(nextValue) => updateSceneVector('cameraEye', 1, nextValue, [0, 0, 10])} />
+      </label>
+      <label className="editor-field">
+        <span>Camera Eye Z</span>
+        <NumericInput value={activeScene.cameraEye?.[2] ?? 10} onValueChange={(nextValue) => updateSceneVector('cameraEye', 2, nextValue, [0, 0, 10])} />
+      </label>
+      <label className="editor-field">
+        <span>Camera Focus X</span>
+        <NumericInput value={activeScene.cameraFocus?.[0] ?? 0} onValueChange={(nextValue) => updateSceneVector('cameraFocus', 0, nextValue, [0, 0, 0])} />
+      </label>
+      <label className="editor-field">
+        <span>Camera Focus Y</span>
+        <NumericInput value={activeScene.cameraFocus?.[1] ?? 0} onValueChange={(nextValue) => updateSceneVector('cameraFocus', 1, nextValue, [0, 0, 0])} />
+      </label>
+      <label className="editor-field">
+        <span>Camera Focus Z</span>
+        <NumericInput value={activeScene.cameraFocus?.[2] ?? 0} onValueChange={(nextValue) => updateSceneVector('cameraFocus', 2, nextValue, [0, 0, 0])} />
+      </label>
+    </div>
+  );
+}
+
 export default function App() {
   const [sceneInput, setSceneInput] = useState(getScenePathFromUrl);
   const [loaded, setLoaded] = useState<LoadedSceneData | null>(null);
   const [draftScene, setDraftScene] = useState<NormalizedSceneConfig | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [browserListing, setBrowserListing] = useState<FileBrowserListing | null>(null);
   const [browserLoading, setBrowserLoading] = useState(false);
   const [browserError, setBrowserError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [loadOverlayOpen, setLoadOverlayOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [channelPreviewOpen, setChannelPreviewOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<'visual' | 'scene' | 'json'>('visual');
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [rightDrawerCollapsed, setRightDrawerCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedObjectName, setSelectedObjectName] = useState<string | null>(null);
@@ -280,6 +402,13 @@ export default function App() {
       `${actionLabel} will discard unsaved local edits for ${loaded.scenePath}.\n\nContinue to ${nextScenePath}?`
     );
   };
+
+  const activeScene = draftScene ?? loaded?.scene ?? null;
+  const hasLocalEdits =
+    loaded !== null &&
+    draftScene !== null &&
+    JSON.stringify(draftScene) !== JSON.stringify(loaded.scene);
+  const showWorkspaceShell = loaded !== null || loading;
 
   async function handleBrowse(nextPath: string) {
     setBrowserLoading(true);
@@ -314,15 +443,18 @@ export default function App() {
     try {
       const nextLoaded = await loadSceneData(scenePath);
       setLoaded(nextLoaded);
+      setSceneInput(scenePath);
       setDraftScene(cloneScene(nextLoaded.scene));
       setCurrentTime(nextLoaded.timeline.tInitial);
       setSelectedObjectName(nextLoaded.objectInspections[0]?.name ?? null);
       setSelectedVisualName(nextLoaded.objectInspections[0]?.visuals[0]?.name ?? null);
+      setEditorMode('visual');
       const url = new URL(window.location.href);
       url.searchParams.set('scene', scenePath);
       window.history.replaceState({}, '', url);
       setSaveMessage(settings.statusMessage ?? `Loaded ${scenePath}`);
       void handleBrowse(getDirectoryPath(scenePath));
+      setLoadOverlayOpen(false);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unknown load error');
       return false;
@@ -331,18 +463,6 @@ export default function App() {
     }
 
     return true;
-  }
-
-  async function handleReloadFromDisk() {
-    if (!loaded) {
-      return;
-    }
-
-    void handleLoad(loaded.scenePath, {
-      force: true,
-      statusMessage: `Reloaded ${loaded.scenePath} from disk`,
-      actionLabel: 'Reloading from disk',
-    });
   }
 
   async function handleSaveScene() {
@@ -370,6 +490,19 @@ export default function App() {
     }
   }
 
+  const handleRevertDraft = () => {
+    if (!loaded || !hasLocalEdits) {
+      return;
+    }
+
+    if (!window.confirm(`Discard unsaved local edits for ${loaded.scenePath}?`)) {
+      return;
+    }
+
+    setDraftScene(cloneScene(loaded.scene));
+    setSaveMessage(`Reverted local edits for ${loaded.scenePath}`);
+  };
+
   useEffect(() => {
     void handleLoad(sceneInput);
   }, []);
@@ -386,18 +519,12 @@ export default function App() {
     setIsPlaying(false);
   }, [loaded?.scenePath]);
 
-  const activeScene = draftScene ?? loaded?.scene ?? null;
   const activeObjectInspections = useMemo(() => {
     if (!loaded || !activeScene) {
       return [];
     }
     return buildObjectInspections(loaded.rawScene, activeScene);
   }, [loaded, activeScene]);
-
-  const hasLocalEdits =
-    loaded !== null &&
-    draftScene !== null &&
-    JSON.stringify(draftScene) !== JSON.stringify(loaded.scene);
 
   const currentFrame = useMemo(() => {
     if (!loaded) {
@@ -411,10 +538,7 @@ export default function App() {
       return undefined;
     }
 
-    return (
-      activeObjectInspections.find((entry) => entry.name === selectedObjectName) ??
-      activeObjectInspections[0]
-    );
+    return activeObjectInspections.find((entry) => entry.name === selectedObjectName) ?? activeObjectInspections[0];
   }, [activeObjectInspections, selectedObjectName]);
 
   const selectedVisual = useMemo(() => {
@@ -422,10 +546,7 @@ export default function App() {
       return undefined;
     }
 
-    return (
-      selectedObject.visuals.find((entry) => entry.name === selectedVisualName) ??
-      selectedObject.visuals[0]
-    );
+    return selectedObject.visuals.find((entry) => entry.name === selectedVisualName) ?? selectedObject.visuals[0];
   }, [selectedObject, selectedVisualName]);
 
   useEffect(() => {
@@ -438,6 +559,12 @@ export default function App() {
       setSelectedVisualName(selectedObject.visuals[0]?.name ?? null);
     }
   }, [selectedObject, selectedVisualName]);
+
+  useEffect(() => {
+    if (selectedObject) {
+      setEditorMode('visual');
+    }
+  }, [selectedObject?.name]);
 
   const previewEntries = useMemo(() => {
     return Object.entries(currentFrame?.frame.data ?? {}).slice(0, PREVIEW_CHANNEL_COUNT);
@@ -512,13 +639,6 @@ export default function App() {
     });
   };
 
-  const resetDraftScene = () => {
-    if (!loaded) {
-      return;
-    }
-    setDraftScene(cloneScene(loaded.scene));
-  };
-
   const groupedSamples = useMemo(() => sampleGroups(), []);
 
   const updateSceneVector = (
@@ -582,203 +702,585 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <section className="hero">
-        <div className="hero-kicker">Main App</div>
-        <h1>MGView Scene Inspector</h1>
-        <p>
-          This route is now the richer inspector-oriented app. It still uses the same extracted
-          core and local scene files, but it now has local editable scene state on top of the
-          normalized model, and it can browse and save scene JSON back through the local server.
-        </p>
+      <SceneHeaderBar
+        scenePath={loaded?.scenePath ?? null}
+        sceneName={activeScene?.name ?? loaded?.scene.name ?? null}
+        hasLocalEdits={hasLocalEdits}
+        loading={loading}
+        saving={saving}
+        statusMessage={saveMessage}
+        errorMessage={error}
+        onOpenLoadOverlay={() => {
+          setLoadOverlayOpen(true);
+          void handleBrowse(getDirectoryPath(sceneInput));
+        }}
+        onOpenDiagnostics={() => setDiagnosticsOpen(true)}
+        onOpenChannels={() => setChannelPreviewOpen(true)}
+        onSave={() => void handleSaveScene()}
+        onRevert={handleRevertDraft}
+      />
 
-        <form className="loader-form" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={sceneInput}
-            onChange={(event) => setSceneInput(event.target.value)}
-            aria-label="Scene path"
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? 'Loading…' : 'Inspect Scene'}
-          </button>
-        </form>
-
-        <div className="hero-actions">
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => void handleBrowse(getDirectoryPath(sceneInput))}
-            disabled={browserLoading}
+      {showWorkspaceShell ? (
+          <div
+            className={`workspace-shell ${leftSidebarCollapsed ? 'workspace-shell-left-collapsed' : ''} ${
+              rightDrawerCollapsed ? 'workspace-shell-right-collapsed' : ''
+            }`}
           >
-            Browse Scene Folder
-          </button>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => void handleBrowse('..')}
-            disabled={browserLoading}
-          >
-            Browse Workspace Root
-          </button>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() =>
-              void handleLoad(sceneInput, {
-                actionLabel: 'Opening a scene from the selected path',
-              })
-            }
-            disabled={loading || !isJsonPath(sceneInput)}
-          >
-            Open Selected Path
-          </button>
-        </div>
-
-        <div className="hero-links">
-          <a href={`${getAppBasePath()}/simple` || '/simple'}>Open Simple App</a>
-        </div>
-
-        {loaded ? (
-          <div className="status">
-            Current scene target: <code>{loaded.scenePath}</code>
-          </div>
-        ) : null}
-
-        {hasLocalEdits ? (
-          <div className="status">Local inspector edits are active and not yet saved back to files.</div>
-        ) : null}
-        {saveMessage ? <div className={`status ${saveMessage.startsWith('Saved ') ? 'success' : 'error'}`}>{saveMessage}</div> : null}
-        {error ? <div className="status error">{error}</div> : null}
-        {!error && loading ? <div className="status">Loading scene, simulation files, and diagnostics…</div> : null}
-      </section>
-
-      {loaded ? (
-        <div className="panel-grid inspector-grid">
-          {activeScene ? (
-            <>
-              <RendererPanel
-                cameraSeedKey={cameraSeedKey}
-                scenePath={loaded.scenePath}
-                scene={activeScene}
-                frame={currentFrame?.frame}
-                selectedObjectName={selectedObject?.name ?? null}
-              />
-
-              <section className="panel span-6">
-                <div className="panel-header">
-                  <div>
-                    <h2>Timeline</h2>
-                    <p className="panel-subtitle">
-                      Playback uses the scene speed factor and stops at the final frame.
-                    </p>
-                  </div>
-                  <div className="inline-tags">
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => {
-                        if (currentTimeRef.current >= loaded.timeline.tFinal) {
-                          currentTimeRef.current = loaded.timeline.tInitial;
-                          setCurrentTime(loaded.timeline.tInitial);
-                        }
-                        setIsPlaying((current) => !current);
-                      }}
-                    >
-                      {isPlaying ? 'Pause' : 'Play'}
-                    </button>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => {
-                        setIsPlaying(false);
-                        currentTimeRef.current = loaded.timeline.tInitial;
-                        setCurrentTime(loaded.timeline.tInitial);
-                      }}
-                    >
-                      Reset
-                    </button>
-                  </div>
-                </div>
-                <div className="meta-list">
-                  <div>
-                    <label>Start</label>
-                    <code>{formatNumber(loaded.timeline.tInitial)}</code>
-                  </div>
-                  <div>
-                    <label>End</label>
-                    <code>{formatNumber(loaded.timeline.tFinal)}</code>
-                  </div>
-                  <div>
-                    <label>Step</label>
-                    <code>{formatNumber(loaded.timeline.tStep)}</code>
-                  </div>
-                  <div>
-                    <label>Current Time</label>
-                    <code>{formatNumber(currentFrame?.frame.time ?? loaded.timeline.tInitial)}</code>
-                  </div>
-                  <div>
-                    <label>Speed Factor</label>
-                    <input
-                      type="number"
-                      min={0.1}
-                      max={10}
-                      step={0.1}
-                      value={playbackSpeed}
-                      onChange={(event) => {
-                        const nextValue = Number(event.target.value);
-                        if (!Number.isFinite(nextValue)) {
-                          return;
-                        }
-
-                        updateDraftScene((scene) => {
-                          scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
-                        });
+            {!leftSidebarCollapsed ? (
+              <div className="workspace-sidebar">
+                <div className="workspace-pane-scroll">
+                  {loaded ? (
+                    <ObjectList
+                      entries={activeObjectInspections}
+                      selectedObjectName={selectedObject?.name ?? null}
+                      onSelectObject={(objectName, firstVisualName) => {
+                        setSelectedObjectName(objectName);
+                        setSelectedVisualName(firstVisualName);
                       }}
                     />
-                  </div>
+                  ) : (
+                    <section className="panel loading-panel">
+                      <h2>Objects</h2>
+                      <div className="loading-placeholder-list">
+                        <div className="loading-placeholder-row" />
+                        <div className="loading-placeholder-row" />
+                        <div className="loading-placeholder-row" />
+                        <div className="loading-placeholder-row" />
+                      </div>
+                    </section>
+                  )}
                 </div>
+              </div>
+            ) : null}
 
-                <div className="scrubber-meta">
-                  <span>{isPlaying ? 'Playing' : 'Current frame preview'}</span>
-                  <span>{currentFrame?.tFinalExceeded ? 'clamped to final frame' : 'in range'}</span>
-                </div>
-                <input
-                  type="range"
-                  min={loaded.timeline.tInitial}
-                  max={loaded.timeline.tFinal}
-                  step={loaded.timeline.tStep || 0.001}
-                  value={currentTime}
-                  onChange={(event) => {
+            <button
+              type="button"
+              className="workspace-edge-handle"
+              onClick={() => setLeftSidebarCollapsed((current) => !current)}
+              aria-label={leftSidebarCollapsed ? 'Expand objects pane' : 'Collapse objects pane'}
+            >
+              {leftSidebarCollapsed ? '>' : '<'}
+            </button>
+
+          <div className="workspace-main">
+            {activeScene ? (
+              <>
+                <RendererPanel
+                  cameraSeedKey={cameraSeedKey}
+                  scenePath={loaded.scenePath}
+                  scene={activeScene}
+                  frame={currentFrame?.frame}
+                  selectedObjectName={selectedObject?.name ?? null}
+                />
+
+                <PlaybackStrip
+                  isPlaying={isPlaying}
+                  currentTime={currentTime}
+                  tInitial={loaded.timeline.tInitial}
+                  tFinal={loaded.timeline.tFinal}
+                  tStep={loaded.timeline.tStep || 0.001}
+                  playbackSpeed={playbackSpeed}
+                  onTogglePlay={() => {
+                    if (currentTimeRef.current >= loaded.timeline.tFinal) {
+                      currentTimeRef.current = loaded.timeline.tInitial;
+                      setCurrentTime(loaded.timeline.tInitial);
+                    }
+                    setIsPlaying((current) => !current);
+                  }}
+                  onReset={() => {
                     setIsPlaying(false);
-                    const nextTime = Number(event.target.value);
+                    currentTimeRef.current = loaded.timeline.tInitial;
+                    setCurrentTime(loaded.timeline.tInitial);
+                  }}
+                  onChangeTime={(nextTime) => {
+                    setIsPlaying(false);
                     currentTimeRef.current = nextTime;
                     setCurrentTime(nextTime);
                   }}
+                  onChangeSpeed={(nextValue) => {
+                    if (!Number.isFinite(nextValue)) {
+                      return;
+                    }
+
+                    updateDraftScene((scene) => {
+                      scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
+                    });
+                  }}
                 />
-              </section>
+              </>
+            ) : (
+              <>
+                <section className="panel span-12 renderer-panel loading-panel">
+                  <div className="renderer-surface renderer-loading-surface">
+                    <div className="renderer-loading-copy">Loading scene and simulation data…</div>
+                  </div>
+                </section>
+                <section className="panel playback-strip loading-panel">
+                  <div className="loading-placeholder-row loading-placeholder-row-short" />
+                </section>
+              </>
+            )}
+          </div>
 
-              <section className="panel span-6">
-                <h2>Channel Preview</h2>
-                <table className="preview-table">
-                  <tbody>
-                    {previewEntries.map(([channelName, value]) => (
-                      <tr key={channelName}>
-                        <td>
-                          <code>{channelName}</code>
-                        </td>
-                        <td>
-                          <code>{formatNumber(value)}</code>
-                        </td>
-                      </tr>
+            <button
+              type="button"
+              className="workspace-edge-handle"
+              onClick={() => setRightDrawerCollapsed((current) => !current)}
+              aria-label={rightDrawerCollapsed ? 'Expand inspector pane' : 'Collapse inspector pane'}
+            >
+              {rightDrawerCollapsed ? '<' : '>'}
+            </button>
+
+          {!rightDrawerCollapsed ? (
+          <div className="workspace-drawer">
+            <div className="workspace-pane-scroll">
+            {loaded ? (
+            <section className="panel drawer-panel">
+              <div className="drawer-tabs">
+                <button
+                  type="button"
+                  className={`tag-button ${editorMode === 'visual' ? 'tag-button-active' : ''}`}
+                  onClick={() => setEditorMode('visual')}
+                >
+                  Visual Editor
+                </button>
+                <button
+                  type="button"
+                  className={`tag-button ${editorMode === 'scene' ? 'tag-button-active' : ''}`}
+                  onClick={() => setEditorMode('scene')}
+                >
+                  Scene Settings
+                </button>
+                <button
+                  type="button"
+                  className={`tag-button ${editorMode === 'json' ? 'tag-button-active' : ''}`}
+                  onClick={() => setEditorMode('json')}
+                >
+                  JSON Editor
+                </button>
+              </div>
+
+              {editorMode === 'scene' ? (
+                <>
+                  <h2>Scene Settings</h2>
+                  <SceneSettingsEditor
+                    activeScene={activeScene}
+                    updateDraftScene={updateDraftScene}
+                    updateSceneVector={updateSceneVector}
+                  />
+                </>
+              ) : editorMode === 'json' ? (
+                <>
+                  <h2>JSON Editor</h2>
+                  <SavePreviewPanel
+                    scenePath={loaded.scenePath}
+                    hasLocalEdits={hasLocalEdits}
+                    savePreview={savePreview}
+                  />
+                </>
+              ) : (
+                <>
+                  <h2>Visual Editor</h2>
+                  {selectedObject ? (
+                    <>
+                      <div className="selected-header">
+                        <code>{selectedObject.name}</code>
+                        <span className="tag">{selectedObject.type}</span>
+                      </div>
+                      <div className="stacked-meta">
+                        <div className="meta-row">
+                          <label>Rotation Frame</label>
+                          <code>{selectedObject.rotationFrame ?? '(none)'}</code>
+                        </div>
+                        <div className="meta-row">
+                          <label>Selected Visual</label>
+                          <div className="inline-tags">
+                            {selectedObject.visuals.map((visual) => (
+                              <button
+                                key={visual.name}
+                                type="button"
+                                className={`tag-button ${selectedVisual?.name === visual.name ? 'tag-button-active' : ''}`}
+                                onClick={() => setSelectedVisualName(visual.name)}
+                              >
+                                {visual.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="meta-row">
+                          <label>Inspector Tags</label>
+                          <div className="inline-tags">
+                            {selectedObject.tags.length > 0 ? (
+                              selectedObject.tags.map((tag) => (
+                                <span key={tag} className="tag tag-accent">
+                                  {tag}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="tag">none</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="empty-state">Select an object to inspect its visuals.</div>
+                  )}
+
+                  {selectedObject && selectedVisual && liveSelectedVisual ? (
+                    <div className="visual-card-list">
+                      <div className="visual-card">
+                        <div className="visual-card-header">
+                          <code>{selectedVisual.name}</code>
+                          <div className="inline-tags">
+                            <span className="tag">{selectedVisual.type ?? 'unknown'}</span>
+                            <span className="tag">{selectedVisual.visible ? 'visible' : 'hidden'}</span>
+                          </div>
+                        </div>
+
+                        <div className="editor-grid">
+                          <label className="editor-field editor-field-checkbox">
+                            <span>Visible</span>
+                            <input
+                              type="checkbox"
+                              checked={selectedVisual.visible}
+                              onChange={(event) => {
+                                updateSelectedVisual((visual) => {
+                                  visual.visible = event.target.checked;
+                                });
+                              }}
+                            />
+                          </label>
+                          <label className="editor-field">
+                            <span>Material</span>
+                            <input
+                              type="text"
+                              value={selectedVisual.materialName ?? ''}
+                              onChange={(event) => {
+                                updateSelectedVisual((visual) => {
+                                  visual.material = {
+                                    ...(visual.material ?? { name: '' }),
+                                    name: event.target.value,
+                                  };
+                                });
+                              }}
+                            />
+                          </label>
+                          <label className="editor-field">
+                            <span>Position X</span>
+                            <NumericInput
+                              value={selectedVisual.position?.x ?? 0}
+                              onValueChange={(nextValue) => {
+                                updateSelectedVisual((visual) => {
+                                  visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), x: nextValue };
+                                });
+                              }}
+                            />
+                          </label>
+                          <label className="editor-field">
+                            <span>Position Y</span>
+                            <NumericInput
+                              value={selectedVisual.position?.y ?? 0}
+                              onValueChange={(nextValue) => {
+                                updateSelectedVisual((visual) => {
+                                  visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), y: nextValue };
+                                });
+                              }}
+                            />
+                          </label>
+                          <label className="editor-field">
+                            <span>Position Z</span>
+                            <NumericInput
+                              value={selectedVisual.position?.z ?? 0}
+                              onValueChange={(nextValue) => {
+                                updateSelectedVisual((visual) => {
+                                  visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), z: nextValue };
+                                });
+                              }}
+                            />
+                          </label>
+                          <label className="editor-field">
+                            <span>Rotation X</span>
+                            <NumericInput
+                              value={selectedVisual.rotation?.x ?? 0}
+                              onValueChange={(nextValue) => {
+                                updateSelectedVisual((visual) => {
+                                  visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), x: nextValue };
+                                });
+                              }}
+                            />
+                          </label>
+                          <label className="editor-field">
+                            <span>Rotation Y</span>
+                            <NumericInput
+                              value={selectedVisual.rotation?.y ?? 0}
+                              onValueChange={(nextValue) => {
+                                updateSelectedVisual((visual) => {
+                                  visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), y: nextValue };
+                                });
+                              }}
+                            />
+                          </label>
+                          <label className="editor-field">
+                            <span>Rotation Z</span>
+                            <NumericInput
+                              value={selectedVisual.rotation?.z ?? 0}
+                              onValueChange={(nextValue) => {
+                                updateSelectedVisual((visual) => {
+                                  visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), z: nextValue };
+                                });
+                              }}
+                            />
+                          </label>
+
+                          {getEditableScalarKeys(liveSelectedVisual).map((key) => {
+                            const value = liveSelectedVisual[key];
+
+                            if (typeof value === 'boolean') {
+                              return (
+                                <label key={key} className="editor-field editor-field-checkbox">
+                                  <span>{key}</span>
+                                  <input
+                                    type="checkbox"
+                                    checked={value}
+                                    onChange={(event) => {
+                                      updateSelectedVisual((visual) => {
+                                        visual[key] = event.target.checked;
+                                      });
+                                    }}
+                                  />
+                                </label>
+                              );
+                            }
+
+                            if (typeof value === 'number') {
+                              return (
+                                <label key={key} className="editor-field">
+                                  <span>{key}</span>
+                                  <NumericInput
+                                    value={value}
+                                    onValueChange={(nextValue) => {
+                                      updateSelectedVisual((visual) => {
+                                        visual[key] = nextValue;
+                                      });
+                                    }}
+                                  />
+                                </label>
+                              );
+                            }
+
+                            if (typeof value === 'string') {
+                              return (
+                                <label key={key} className="editor-field">
+                                  <span>{key}</span>
+                                  <input
+                                    type="text"
+                                    value={value}
+                                    onChange={(event) => {
+                                      updateSelectedVisual((visual) => {
+                                        visual[key] = event.target.value;
+                                      });
+                                    }}
+                                  />
+                                </label>
+                              );
+                            }
+
+                            return null;
+                          })}
+                        </div>
+
+                        <div className="meta-list visual-meta">
+                          <div>
+                            <label>Material</label>
+                            <code>{selectedVisual.materialName ?? '(none)'}</code>
+                          </div>
+                          <div>
+                            <label>Position</label>
+                            <code>{formatVector(selectedVisual.position)}</code>
+                          </div>
+                          <div>
+                            <label>Rotation</label>
+                            <code>{formatVector(selectedVisual.rotation)}</code>
+                          </div>
+                          <div>
+                            <label>Tags</label>
+                            <div className="inline-tags">
+                              {selectedVisual.tags.length > 0 ? (
+                                selectedVisual.tags.map((tag) => (
+                                  <span key={tag} className="tag tag-soft">
+                                    {tag}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="tag">none</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="property-block">
+                            <label>Geometry Properties</label>
+                            <div className="property-list">
+                              {selectedVisual.propertySummary.length > 0 ? (
+                                selectedVisual.propertySummary.map((property) => (
+                                  <div key={property.key} className="property-item">
+                                    <span>{property.key}</span>
+                                    <code>{property.value}</code>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="property-item">
+                                  <span>properties</span>
+                                  <code>none</code>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="empty-state">Select an object and visual to edit its draft scene state.</div>
+                  )}
+                </>
+              )}
+
+              <div className="stacked-meta">
+                <div className="meta-row">
+                  <label>Simulation Files</label>
+                  <div className="pill-list">
+                    {loaded.simulationFiles.map((filePath) => (
+                      <span key={filePath} className="pill">
+                        <code>{filePath}</code>
+                      </span>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                </div>
+              </div>
+            </section>
+            ) : (
+              <section className="panel drawer-panel loading-panel">
+                <h2>Inspector</h2>
+                <div className="loading-placeholder-list">
+                  <div className="loading-placeholder-row" />
+                  <div className="loading-placeholder-row" />
+                  <div className="loading-placeholder-row" />
+                  <div className="loading-placeholder-row loading-placeholder-row-tall" />
+                </div>
               </section>
-            </>
+            )}
+            </div>
+          </div>
           ) : null}
+        </div>
+      ) : null}
 
-          <section className="panel span-12">
-            <h2>Diagnostics</h2>
+      {loadOverlayOpen ? (
+        <OverlayPanel
+          title="Load Scene"
+          subtitle="Browse local folders or choose a bundled sample, then explicitly open the selected JSON scene."
+          actions={
+            <button
+              type="button"
+              onClick={() => {
+                void handleLoad(sceneInput, {
+                  actionLabel: 'Loading a scene from the load overlay',
+                });
+              }}
+              disabled={loading || !isJsonPath(sceneInput)}
+            >
+              Open Selected Scene
+            </button>
+          }
+          onClose={() => setLoadOverlayOpen(false)}
+        >
+          <div className="overlay-layout">
+            <section className="panel">
+              <div className="panel-header">
+                <div>
+                  <h2>Selected Path</h2>
+                  <p className="panel-subtitle">Only JSON scene files can be opened.</p>
+                </div>
+              </div>
+              <form className="loader-form" onSubmit={handleSubmit}>
+                <input
+                  type="text"
+                  value={sceneInput}
+                  onChange={(event) => setSceneInput(event.target.value)}
+                  aria-label="Scene path"
+                />
+                <button type="submit" disabled={loading || !isJsonPath(sceneInput)}>
+                  Open
+                </button>
+              </form>
+            </section>
+
+            <LocalFileBrowser
+              browserListing={browserListing}
+              browserError={browserError}
+              browserLoading={browserLoading}
+              sceneInput={sceneInput}
+              onBrowse={(path) => {
+                void handleBrowse(path);
+              }}
+              onSelectFile={(path) => {
+                setSceneInput(path);
+              }}
+              getDirectoryPath={getDirectoryPath}
+            />
+
+            <section className="panel">
+              <div className="panel-header">
+                <div>
+                  <h2>Built-in Sample Shortcuts</h2>
+                  <p className="panel-subtitle">Choose a bundled sample and then open it.</p>
+                </div>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setSampleBrowserExpanded((current) => !current)}
+                >
+                  {sampleBrowserExpanded ? 'Hide Samples' : 'Show Samples'}
+                </button>
+              </div>
+
+              {sampleBrowserExpanded ? (
+                <div className="sample-groups">
+                  {groupedSamples.map(([groupName, samples]) => (
+                    <div key={groupName} className="sample-group">
+                      <div className="sample-group-title">{groupName}</div>
+                      <div className="sample-list">
+                        {samples.map((sample) => (
+                          <button
+                            key={sample.path}
+                            type="button"
+                            className={`sample-button ${sceneInput === sample.path ? 'sample-button-active' : ''}`}
+                            onClick={() => {
+                              setSceneInput(sample.path);
+                            }}
+                          >
+                            <span>{sample.label}</span>
+                            <code>{sample.path}</code>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">Sample shortcuts are hidden.</div>
+              )}
+            </section>
+          </div>
+        </OverlayPanel>
+      ) : null}
+
+      {diagnosticsOpen && loaded ? (
+        <OverlayPanel
+          title="Diagnostics"
+          subtitle="Scene normalization, inference, and load diagnostics."
+          onClose={() => setDiagnosticsOpen(false)}
+        >
+          <section className="panel">
             <div className="diagnostic-list">
               {loaded.diagnostics.length === 0 ? (
                 <div className="diagnostic diagnostic-info">
@@ -797,601 +1299,34 @@ export default function App() {
               )}
             </div>
           </section>
-
-          <section className="panel span-4">
-            <h2>Overview</h2>
-            <div className="stat-grid">
-              <div className="stat-card">
-                <label>Scene</label>
-                <strong>{activeScene?.name ?? loaded.scene.name ?? '(unnamed)'}</strong>
-              </div>
-              <div className="stat-card">
-                <label>Objects</label>
-                <strong>{activeObjectInspections.length}</strong>
-              </div>
-              <div className="stat-card">
-                <label>Visuals</label>
-                <strong>{activeObjectInspections.reduce((sum, entry) => sum + entry.visualCount, 0)}</strong>
-              </div>
-              <div className="stat-card">
-                <label>Channels</label>
-                <strong>{loaded.channelNames.length}</strong>
-              </div>
-            </div>
-
-            <div className="stacked-meta">
-              <div className="meta-row">
-                <label>Scene Path</label>
-                <code>{loaded.scenePath}</code>
-              </div>
-              <div className="meta-row">
-                <label>Scene Folder</label>
-                <div className="inline-tags">
-                  <code>{getDirectoryPath(loaded.scenePath)}</code>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => void handleBrowse(getDirectoryPath(loaded.scenePath))}
-                  >
-                    Browse Here
-                  </button>
-                </div>
-              </div>
-              <div className="meta-row">
-                <label>Newtonian Frame</label>
-                <code>{activeScene?.newtonianFrame ?? loaded.scene.newtonianFrame}</code>
-              </div>
-              <div className="meta-row">
-                <label>Camera Parent</label>
-                <code>{activeScene?.cameraParentFrame ?? loaded.scene.cameraParentFrame}</code>
-              </div>
-              <div className="meta-row">
-                <label>Simulation Specs</label>
-                <code>{(loaded.rawScene.simulationData ?? []).join(', ') || '(none)'}</code>
-              </div>
-              <div className="meta-row">
-                <label>Draft State</label>
-                <div className="inline-tags">
-                  <span className={`tag ${hasLocalEdits ? 'tag-accent' : ''}`}>
-                    {hasLocalEdits ? 'edited locally' : 'matches loaded scene'}
-                  </span>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => void handleSaveScene()}
-                    disabled={!hasLocalEdits || saving}
-                  >
-                    {saving ? 'Saving…' : 'Save Scene JSON'}
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => void handleReloadFromDisk()}
-                    disabled={loading || saving || !loaded}
-                  >
-                    Reload From Disk
-                  </button>
-                  <button type="button" className="secondary-button" onClick={resetDraftScene}>
-                    Reset Draft
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="panel span-8">
-            <h2>Scene Settings</h2>
-            {activeScene ? (
-              <div className="editor-grid">
-                <label className="editor-field">
-                  <span>Scene Name</span>
-                  <input
-                    type="text"
-                    value={activeScene.name ?? ''}
-                    onChange={(event) => {
-                      updateDraftScene((scene) => {
-                        scene.name = event.target.value;
-                      });
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Workspace Size</span>
-                  <NumericInput
-                    value={activeScene.workspaceSize}
-                    onValueChange={(nextValue) => {
-                      updateDraftScene((scene) => {
-                        scene.workspaceSize = nextValue;
-                      });
-                    }}
-                  />
-                </label>
-                <label className="editor-field editor-field-checkbox">
-                  <span>Show Axes</span>
-                  <input
-                    type="checkbox"
-                    checked={activeScene.showAxes}
-                    onChange={(event) => {
-                      updateDraftScene((scene) => {
-                        scene.showAxes = event.target.checked;
-                      });
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Camera Parent Frame</span>
-                  <input
-                    type="text"
-                    value={activeScene.cameraParentFrame}
-                    onChange={(event) => {
-                      updateDraftScene((scene) => {
-                        scene.cameraParentFrame = event.target.value;
-                      });
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Camera Up X</span>
-                  <NumericInput
-                    value={activeScene.cameraUp?.[0] ?? 0}
-                    onValueChange={(nextValue) => {
-                      updateSceneVector('cameraUp', 0, nextValue, [0, 0, 1]);
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Camera Up Y</span>
-                  <NumericInput
-                    value={activeScene.cameraUp?.[1] ?? 0}
-                    onValueChange={(nextValue) => {
-                      updateSceneVector('cameraUp', 1, nextValue, [0, 0, 1]);
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Camera Up Z</span>
-                  <NumericInput
-                    value={activeScene.cameraUp?.[2] ?? 1}
-                    onValueChange={(nextValue) => {
-                      updateSceneVector('cameraUp', 2, nextValue, [0, 0, 1]);
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Speed Factor</span>
-                  <NumericInput
-                    value={activeScene.speedFactor ?? 1}
-                    onValueChange={(nextValue) => {
-                      updateDraftScene((scene) => {
-                        scene.speedFactor = nextValue;
-                      });
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Camera Eye X</span>
-                  <NumericInput
-                    value={activeScene.cameraEye?.[0] ?? 0}
-                    onValueChange={(nextValue) => {
-                      updateSceneVector('cameraEye', 0, nextValue, [0, 0, 10]);
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Camera Eye Y</span>
-                  <NumericInput
-                    value={activeScene.cameraEye?.[1] ?? 0}
-                    onValueChange={(nextValue) => {
-                      updateSceneVector('cameraEye', 1, nextValue, [0, 0, 10]);
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Camera Eye Z</span>
-                  <NumericInput
-                    value={activeScene.cameraEye?.[2] ?? 10}
-                    onValueChange={(nextValue) => {
-                      updateSceneVector('cameraEye', 2, nextValue, [0, 0, 10]);
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Camera Focus X</span>
-                  <NumericInput
-                    value={activeScene.cameraFocus?.[0] ?? 0}
-                    onValueChange={(nextValue) => {
-                      updateSceneVector('cameraFocus', 0, nextValue, [0, 0, 0]);
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Camera Focus Y</span>
-                  <NumericInput
-                    value={activeScene.cameraFocus?.[1] ?? 0}
-                    onValueChange={(nextValue) => {
-                      updateSceneVector('cameraFocus', 1, nextValue, [0, 0, 0]);
-                    }}
-                  />
-                </label>
-                <label className="editor-field">
-                  <span>Camera Focus Z</span>
-                  <NumericInput
-                    value={activeScene.cameraFocus?.[2] ?? 0}
-                    onValueChange={(nextValue) => {
-                      updateSceneVector('cameraFocus', 2, nextValue, [0, 0, 0]);
-                    }}
-                  />
-                </label>
-              </div>
-            ) : (
-              <div className="empty-state">Load a scene to edit scene-level settings.</div>
-            )}
-          </section>
-
-          <ObjectList
-            entries={activeObjectInspections}
-            selectedObjectName={selectedObject?.name ?? null}
-            onSelectObject={(objectName, firstVisualName) => {
-              setSelectedObjectName(objectName);
-              setSelectedVisualName(firstVisualName);
-            }}
-          />
-
-          <section className="panel span-4">
-            <h2>Selected Object</h2>
-            {selectedObject ? (
-              <>
-                <div className="selected-header">
-                  <code>{selectedObject.name}</code>
-                  <span className="tag">{selectedObject.type}</span>
-                </div>
-                <div className="stacked-meta">
-                  <div className="meta-row">
-                    <label>Rotation Frame</label>
-                    <code>{selectedObject.rotationFrame ?? '(none)'}</code>
-                  </div>
-                  <div className="meta-row">
-                    <label>Selected Visual</label>
-                    <div className="inline-tags">
-                      {selectedObject.visuals.map((visual) => (
-                        <button
-                          key={visual.name}
-                          type="button"
-                          className={`tag-button ${selectedVisual?.name === visual.name ? 'tag-button-active' : ''}`}
-                          onClick={() => setSelectedVisualName(visual.name)}
-                        >
-                          {visual.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="meta-row">
-                    <label>Inspector Tags</label>
-                    <div className="inline-tags">
-                      {selectedObject.tags.length > 0 ? (
-                        selectedObject.tags.map((tag) => (
-                          <span key={tag} className="tag tag-accent">
-                            {tag}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="tag">none</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="empty-state">Select an object to inspect its visuals.</div>
-            )}
-          </section>
-
-          <section className="panel span-8">
-            <h2>Visual Editor</h2>
-            {selectedObject && selectedVisual && liveSelectedVisual ? (
-              <div className="visual-card-list">
-                <div className="visual-card">
-                  <div className="visual-card-header">
-                    <code>{selectedVisual.name}</code>
-                    <div className="inline-tags">
-                      <span className="tag">{selectedVisual.type ?? 'unknown'}</span>
-                      <span className="tag">{selectedVisual.visible ? 'visible' : 'hidden'}</span>
-                    </div>
-                  </div>
-
-                  <div className="editor-grid">
-                    <label className="editor-field editor-field-checkbox">
-                      <span>Visible</span>
-                      <input
-                        type="checkbox"
-                        checked={selectedVisual.visible}
-                        onChange={(event) => {
-                          updateSelectedVisual((visual) => {
-                            visual.visible = event.target.checked;
-                          });
-                        }}
-                      />
-                    </label>
-                    <label className="editor-field">
-                      <span>Material</span>
-                      <input
-                        type="text"
-                        value={selectedVisual.materialName ?? ''}
-                        onChange={(event) => {
-                          updateSelectedVisual((visual) => {
-                            visual.material = {
-                              ...(visual.material ?? { name: '' }),
-                              name: event.target.value,
-                            };
-                          });
-                        }}
-                      />
-                    </label>
-                    <label className="editor-field">
-                      <span>Position X</span>
-                      <NumericInput
-                        value={selectedVisual.position?.x ?? 0}
-                        onValueChange={(nextValue) => {
-                          updateSelectedVisual((visual) => {
-                            visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), x: nextValue };
-                          });
-                        }}
-                      />
-                    </label>
-                    <label className="editor-field">
-                      <span>Position Y</span>
-                      <NumericInput
-                        value={selectedVisual.position?.y ?? 0}
-                        onValueChange={(nextValue) => {
-                          updateSelectedVisual((visual) => {
-                            visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), y: nextValue };
-                          });
-                        }}
-                      />
-                    </label>
-                    <label className="editor-field">
-                      <span>Position Z</span>
-                      <NumericInput
-                        value={selectedVisual.position?.z ?? 0}
-                        onValueChange={(nextValue) => {
-                          updateSelectedVisual((visual) => {
-                            visual.position = { ...(visual.position ?? { x: 0, y: 0, z: 0 }), z: nextValue };
-                          });
-                        }}
-                      />
-                    </label>
-                    <label className="editor-field">
-                      <span>Rotation X</span>
-                      <NumericInput
-                        value={selectedVisual.rotation?.x ?? 0}
-                        onValueChange={(nextValue) => {
-                          updateSelectedVisual((visual) => {
-                            visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), x: nextValue };
-                          });
-                        }}
-                      />
-                    </label>
-                    <label className="editor-field">
-                      <span>Rotation Y</span>
-                      <NumericInput
-                        value={selectedVisual.rotation?.y ?? 0}
-                        onValueChange={(nextValue) => {
-                          updateSelectedVisual((visual) => {
-                            visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), y: nextValue };
-                          });
-                        }}
-                      />
-                    </label>
-                    <label className="editor-field">
-                      <span>Rotation Z</span>
-                      <NumericInput
-                        value={selectedVisual.rotation?.z ?? 0}
-                        onValueChange={(nextValue) => {
-                          updateSelectedVisual((visual) => {
-                            visual.rotation = { ...(visual.rotation ?? { x: 0, y: 0, z: 0 }), z: nextValue };
-                          });
-                        }}
-                      />
-                    </label>
-
-                    {getEditableScalarKeys(liveSelectedVisual).map((key) => {
-                      const value = liveSelectedVisual[key];
-
-                      if (typeof value === 'boolean') {
-                        return (
-                          <label key={key} className="editor-field editor-field-checkbox">
-                            <span>{key}</span>
-                            <input
-                              type="checkbox"
-                              checked={value}
-                              onChange={(event) => {
-                                updateSelectedVisual((visual) => {
-                                  visual[key] = event.target.checked;
-                                });
-                              }}
-                            />
-                          </label>
-                        );
-                      }
-
-                      if (typeof value === 'number') {
-                        return (
-                          <label key={key} className="editor-field">
-                            <span>{key}</span>
-                            <NumericInput
-                              value={value}
-                              onValueChange={(nextValue) => {
-                                updateSelectedVisual((visual) => {
-                                  visual[key] = nextValue;
-                                });
-                              }}
-                            />
-                          </label>
-                        );
-                      }
-
-                      if (typeof value === 'string') {
-                        return (
-                          <label key={key} className="editor-field">
-                            <span>{key}</span>
-                            <input
-                              type="text"
-                              value={value}
-                              onChange={(event) => {
-                                updateSelectedVisual((visual) => {
-                                  visual[key] = event.target.value;
-                                });
-                              }}
-                            />
-                          </label>
-                        );
-                      }
-
-                      return null;
-                    })}
-                  </div>
-
-                  <div className="meta-list visual-meta">
-                    <div>
-                      <label>Material</label>
-                      <code>{selectedVisual.materialName ?? '(none)'}</code>
-                    </div>
-                    <div>
-                      <label>Position</label>
-                      <code>{formatVector(selectedVisual.position)}</code>
-                    </div>
-                    <div>
-                      <label>Rotation</label>
-                      <code>{formatVector(selectedVisual.rotation)}</code>
-                    </div>
-                    <div>
-                      <label>Tags</label>
-                      <div className="inline-tags">
-                        {selectedVisual.tags.length > 0 ? (
-                          selectedVisual.tags.map((tag) => (
-                            <span key={tag} className="tag tag-soft">
-                              {tag}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="tag">none</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="property-block">
-                      <label>Geometry Properties</label>
-                      <div className="property-list">
-                        {selectedVisual.propertySummary.length > 0 ? (
-                          selectedVisual.propertySummary.map((property) => (
-                            <div key={property.key} className="property-item">
-                              <span>{property.key}</span>
-                              <code>{property.value}</code>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="property-item">
-                            <span>properties</span>
-                            <code>none</code>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="empty-state">Select an object and visual to edit its draft scene state.</div>
-            )}
-          </section>
-
-          <section className="panel span-4">
-            <h2>Simulation Files</h2>
-            <div className="pill-list">
-              {loaded.simulationFiles.map((filePath) => (
-                <span key={filePath} className="pill">
-                  <code>{filePath}</code>
-                </span>
-              ))}
-            </div>
-          </section>
-
-          <LocalFileBrowser
-            browserListing={browserListing}
-            browserError={browserError}
-            browserLoading={browserLoading}
-            sceneInput={sceneInput}
-            onBrowse={(path) => {
-              void handleBrowse(path);
-            }}
-            onSelectFile={(path, isSceneFile) => {
-              setSceneInput(path);
-              if (isSceneFile) {
-                void handleLoad(path, {
-                  actionLabel: 'Opening a scene from the local file browser',
-                });
-              }
-            }}
-            getDirectoryPath={getDirectoryPath}
-          />
-
-          <section className="panel span-8">
-            <div className="panel-header">
-              <div>
-                <h2>Built-in Sample Shortcuts</h2>
-                <p className="panel-subtitle">
-                  Quick-open shortcuts for a few bundled examples. The full filesystem view is above.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => setSampleBrowserExpanded((current) => !current)}
-              >
-                {sampleBrowserExpanded ? 'Hide Shortcuts' : 'Show Shortcuts'}
-              </button>
-            </div>
-
-            {sampleBrowserExpanded ? (
-              <div className="sample-groups">
-                {groupedSamples.map(([groupName, samples]) => (
-                  <div key={groupName} className="sample-group">
-                    <div className="sample-group-title">{groupName}</div>
-                    <div className="sample-list">
-                      {samples.map((sample) => (
-                        <button
-                          key={sample.path}
-                          type="button"
-                          className={`sample-button ${sceneInput === sample.path ? 'sample-button-active' : ''}`}
-                          onClick={() => {
-                            setSceneInput(sample.path);
-                            void handleLoad(sample.path, {
-                              actionLabel: 'Opening a built-in sample shortcut',
-                            });
-                          }}
-                        >
-                          <span>{sample.label}</span>
-                          <code>{sample.path}</code>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state">
-                Built-in sample shortcuts are hidden. Use the button above if you want quick access to bundled examples.
-              </div>
-            )}
-          </section>
-
-          <SavePreviewPanel
-            scenePath={loaded.scenePath}
-            hasLocalEdits={hasLocalEdits}
-            savePreview={savePreview}
-          />
-
-        </div>
+        </OverlayPanel>
       ) : null}
+
+      {channelPreviewOpen && loaded ? (
+        <OverlayPanel
+          title="Channel Preview"
+          subtitle={`First ${PREVIEW_CHANNEL_COUNT} channel values at the current time.`}
+          onClose={() => setChannelPreviewOpen(false)}
+        >
+          <section className="panel">
+            <table className="preview-table">
+              <tbody>
+                {previewEntries.map(([channelName, value]) => (
+                  <tr key={channelName}>
+                    <td>
+                      <code>{channelName}</code>
+                    </td>
+                    <td>
+                      <code>{formatNumber(value)}</code>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </OverlayPanel>
+      ) : null}
+
     </div>
   );
 }

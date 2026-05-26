@@ -6,7 +6,7 @@ interface LocalFileBrowserProps {
   browserLoading: boolean;
   sceneInput: string;
   onBrowse: (path: string) => void;
-  onSelectFile: (path: string, isSceneFile: boolean) => void;
+  onSelectFile: (path: string) => void;
   getDirectoryPath: (filePath: string) => string;
 }
 
@@ -22,7 +22,7 @@ export default function LocalFileBrowser({
   const currentFolderLabel = browserListing?.path || '(workspace root)';
 
   return (
-    <section className="panel span-8">
+    <section className="panel">
       <h2>Local File Browser</h2>
       <div className="stacked-meta">
         <div className="meta-row">
@@ -51,7 +51,6 @@ export default function LocalFileBrowser({
       {browserListing ? (
         <div className="sample-list file-browser-list">
           {browserListing.entries.map((entry) => {
-            const isSceneFile = entry.type === 'file' && entry.path.toLowerCase().endsWith('.json');
             return (
               <button
                 key={`${entry.type}:${entry.path}`}
@@ -63,7 +62,7 @@ export default function LocalFileBrowser({
                     return;
                   }
 
-                  onSelectFile(entry.path, isSceneFile);
+                  onSelectFile(entry.path);
                 }}
               >
                 <span>{entry.name}</span>

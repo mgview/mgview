@@ -81,8 +81,7 @@ export default function RendererPanel({
     host.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
+    controls.enableDamping = false;
     controls.addEventListener('start', () => {
       cameraDirtyRef.current = true;
     });
@@ -226,15 +225,7 @@ export default function RendererPanel({
   }, [frame, scene, scenePath, selectedObjectName]);
 
   return (
-    <section className="panel span-12">
-      <div className="panel-header">
-        <div>
-          <h2>Renderer</h2>
-          <p className="panel-subtitle">
-            First modern `three` slice. It renders live scene geometry from the normalized model and current timeline frame.
-          </p>
-        </div>
-      </div>
+    <section className="panel span-12 renderer-panel">
       <div className="renderer-surface" ref={hostRef} />
     </section>
   );
