@@ -1,5 +1,4 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { listLocalFiles, loadSceneJson, loadTextFile, saveSceneJson, type FileBrowserListing } from './api/localFiles.ts';
 import LocalFileBrowser from './components/LocalFileBrowser.tsx';
 import ObjectList from './components/ObjectList.tsx';
 import OverlayPanel from './components/OverlayPanel.tsx';
@@ -7,19 +6,13 @@ import PlaybackStrip from './components/PlaybackStrip.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SavePreviewPanel from './components/SavePreviewPanel.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
-import { expandSimulationFiles } from './core/expandSimulationFiles.ts';
-import { getBasePath } from './core/pathUtils.ts';
-import { parseSimulationText } from './core/parseSimulationText.ts';
-import { createSceneDocument } from './core/sceneDocument.ts';
-import { buildObjectInspections, collectSceneDiagnostics } from './core/sceneInspector.ts';
+import { buildObjectInspections } from './core/sceneInspector.ts';
 import { buildTimeline, getFrameAtTime } from './core/timeline.ts';
+import { createSavableScene, getDirectoryPath, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
 import type {
   NormalizedSceneConfig,
-  SceneConfig,
-  SceneDiagnostic,
   SceneObjectInspection,
   SceneVisual,
-  Timeline,
 } from './core/types.ts';
 
 const DEFAULT_SCENE_PATH = 'samples/particle_pendulum/particle_pendulum.json';
@@ -38,17 +31,6 @@ const SAMPLE_SCENES = [
   { group: 'Meshes', label: 'Wooden Phantom', path: 'samples/wooden_phantom/wooden_phantom.json' },
   { group: 'Meshes', label: 'Wooden Phantom GUI', path: 'samples/wooden_phantom/wooden_phantom_gui.json' },
 ] as const;
-
-interface LoadedSceneData {
-  rawScene: SceneConfig;
-  scenePath: string;
-  scene: NormalizedSceneConfig;
-  simulationFiles: string[];
-  timeline: Timeline;
-  channelNames: string[];
-  diagnostics: SceneDiagnostic[];
-  objectInspections: SceneObjectInspection[];
-}
 
 type EditableScalarKey =
   | 'text'
@@ -95,15 +77,6 @@ function getAppBasePath(): string {
     return pathname.slice(0, -'/simple'.length);
   }
   return pathname;
-}
-
-function cloneScene(scene: NormalizedSceneConfig): NormalizedSceneConfig {
-  return structuredClone(scene);
-}
-
-function getDirectoryPath(filePath: string): string {
-  const basePath = getBasePath(filePath).replace(/\/$/, '');
-  return basePath || '.';
 }
 
 function isJsonPath(filePath: string): boolean {
@@ -155,45 +128,6 @@ function NumericInput({
   );
 }
 
-function createSavableScene(rawScene: SceneConfig, draftScene: NormalizedSceneConfig): SceneConfig {
-  const nextScene = structuredClone(rawScene);
-
-  nextScene.name = draftScene.name;
-  nextScene.simulationData = [...draftScene.simulationData];
-  nextScene.newtonianFrame = draftScene.newtonianFrame;
-  nextScene.sceneOrigin = draftScene.sceneOrigin;
-  nextScene.backgroundColor = draftScene.backgroundColor;
-  nextScene.showAxes = draftScene.showAxes;
-  nextScene.workspaceSize = draftScene.workspaceSize;
-  nextScene.cameraParentFrame = draftScene.cameraParentFrame;
-  nextScene.cameraUp = draftScene.cameraUp ? [...draftScene.cameraUp] as [number, number, number] : undefined;
-  nextScene.cameraEye = draftScene.cameraEye ? [...draftScene.cameraEye] as [number, number, number] : undefined;
-  nextScene.cameraFocus = draftScene.cameraFocus ? [...draftScene.cameraFocus] as [number, number, number] : undefined;
-  nextScene.speedFactor = draftScene.speedFactor;
-
-  if (!rawScene.objects) {
-    return nextScene;
-  }
-
-  nextScene.objects = {};
-  for (const [objectName, rawObject] of Object.entries(rawScene.objects)) {
-    const draftObject = draftScene.objects[objectName];
-    if (!draftObject) {
-      nextScene.objects[objectName] = structuredClone(rawObject);
-      continue;
-    }
-
-    nextScene.objects[objectName] = {
-      ...structuredClone(rawObject),
-      type: draftObject.type,
-      rotationFrame: draftObject.rotationFrame,
-      visual: draftObject.visual ? structuredClone(draftObject.visual) : undefined,
-    };
-  }
-
-  return nextScene;
-}
-
 function getEditableScalarKeys(visual: SceneVisual): EditableScalarKey[] {
   const orderedKeys: EditableScalarKey[] = [
     'text',
@@ -218,33 +152,6 @@ function sampleGroups() {
     groups.set(sample.group, group);
   }
   return [...groups.entries()];
-}
-
-async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
-  const rawScene = await loadSceneJson(scenePath);
-  const basePath = getBasePath(scenePath);
-  const simulationFiles = expandSimulationFiles(rawScene.simulationData ?? [], basePath);
-
-  const tables = await Promise.all(
-    simulationFiles.map(async (filePath) => parseSimulationText(await loadTextFile(filePath), filePath))
-  );
-
-  const channelNames = [...new Set(tables.flatMap((table) => table.channelNames))];
-  const scene = createSceneDocument(rawScene, channelNames);
-  const diagnostics = collectSceneDiagnostics(rawScene, scene, simulationFiles, channelNames);
-  const objectInspections = buildObjectInspections(rawScene, scene);
-  const timeline = buildTimeline(tables);
-
-  return {
-    rawScene,
-    scenePath,
-    scene,
-    simulationFiles,
-    timeline,
-    channelNames,
-    diagnostics,
-    objectInspections,
-  };
 }
 
 function SceneSettingsEditor({
@@ -366,16 +273,7 @@ function SceneSettingsEditor({
 }
 
 export default function App() {
-  const [sceneInput, setSceneInput] = useState(getScenePathFromUrl);
-  const [loaded, setLoaded] = useState<LoadedSceneData | null>(null);
-  const [draftScene, setDraftScene] = useState<NormalizedSceneConfig | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [browserListing, setBrowserListing] = useState<FileBrowserListing | null>(null);
-  const [browserLoading, setBrowserLoading] = useState(false);
-  const [browserError, setBrowserError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const workspace = useSceneWorkspace(getScenePathFromUrl());
   const [loadOverlayOpen, setLoadOverlayOpen] = useState(false);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [channelPreviewOpen, setChannelPreviewOpen] = useState(false);
@@ -384,132 +282,34 @@ export default function App() {
   const [rightDrawerCollapsed, setRightDrawerCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [selectedObjectName, setSelectedObjectName] = useState<string | null>(null);
-  const [selectedVisualName, setSelectedVisualName] = useState<string | null>(null);
   const [sampleBrowserExpanded, setSampleBrowserExpanded] = useState(false);
   const currentTimeRef = useRef(0);
-
-  const confirmDiscardLocalEdits = (nextScenePath: string, actionLabel: string): boolean => {
-    if (!loaded || !draftScene) {
-      return true;
-    }
-
-    if (JSON.stringify(draftScene) === JSON.stringify(loaded.scene)) {
-      return true;
-    }
-
-    return window.confirm(
-      `${actionLabel} will discard unsaved local edits for ${loaded.scenePath}.\n\nContinue to ${nextScenePath}?`
-    );
-  };
-
-  const activeScene = draftScene ?? loaded?.scene ?? null;
-  const hasLocalEdits =
-    loaded !== null &&
-    draftScene !== null &&
-    JSON.stringify(draftScene) !== JSON.stringify(loaded.scene);
-  const showWorkspaceShell = loaded !== null || loading;
-
-  async function handleBrowse(nextPath: string) {
-    setBrowserLoading(true);
-    setBrowserError(null);
-
-    try {
-      setBrowserListing(await listLocalFiles(nextPath));
-    } catch (browseError) {
-      setBrowserError(browseError instanceof Error ? browseError.message : 'Unknown browse error');
-    } finally {
-      setBrowserLoading(false);
-    }
-  }
-
-  async function handleLoad(
-    scenePath: string,
-    options?: {
-      force?: boolean;
-      statusMessage?: string;
-      actionLabel?: string;
-    }
-  ) {
-    const settings = options ?? {};
-    if (!settings.force && !confirmDiscardLocalEdits(scenePath, settings.actionLabel ?? 'Loading another scene')) {
-      return false;
-    }
-
-    setLoading(true);
-    setError(null);
-    setSaveMessage(null);
-
-    try {
-      const nextLoaded = await loadSceneData(scenePath);
-      setLoaded(nextLoaded);
-      setSceneInput(scenePath);
-      setDraftScene(cloneScene(nextLoaded.scene));
-      setCurrentTime(nextLoaded.timeline.tInitial);
-      setSelectedObjectName(nextLoaded.objectInspections[0]?.name ?? null);
-      setSelectedVisualName(nextLoaded.objectInspections[0]?.visuals[0]?.name ?? null);
-      setEditorMode('visual');
-      const url = new URL(window.location.href);
-      url.searchParams.set('scene', scenePath);
-      window.history.replaceState({}, '', url);
-      setSaveMessage(settings.statusMessage ?? `Loaded ${scenePath}`);
-      void handleBrowse(getDirectoryPath(scenePath));
-      setLoadOverlayOpen(false);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Unknown load error');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-
-    return true;
-  }
-
-  async function handleSaveScene() {
-    if (!loaded || !draftScene) {
-      return;
-    }
-
-    setSaving(true);
-    setSaveMessage(null);
-
-    try {
-      await saveSceneJson(loaded.scenePath, createSavableScene(loaded.rawScene, draftScene));
-      const nextLoaded = await loadSceneData(loaded.scenePath);
-      setLoaded(nextLoaded);
-      setDraftScene(cloneScene(nextLoaded.scene));
-      setCurrentTime(nextLoaded.timeline.tInitial);
-      setSelectedObjectName(nextLoaded.objectInspections[0]?.name ?? null);
-      setSelectedVisualName(nextLoaded.objectInspections[0]?.visuals[0]?.name ?? null);
-      setSaveMessage(`Saved changes to ${loaded.scenePath}`);
-      void handleBrowse(getDirectoryPath(loaded.scenePath));
-    } catch (saveError) {
-      setSaveMessage(saveError instanceof Error ? saveError.message : 'Unknown save error');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const handleRevertDraft = () => {
-    if (!loaded || !hasLocalEdits) {
-      return;
-    }
-
-    if (!window.confirm(`Discard unsaved local edits for ${loaded.scenePath}?`)) {
-      return;
-    }
-
-    setDraftScene(cloneScene(loaded.scene));
-    setSaveMessage(`Reverted local edits for ${loaded.scenePath}`);
-  };
-
-  useEffect(() => {
-    void handleLoad(sceneInput);
-  }, []);
-
-  useEffect(() => {
-    void handleBrowse(getDirectoryPath(sceneInput));
-  }, []);
+  const {
+    activeScene,
+    browserError,
+    browserListing,
+    browserLoading,
+    browseSceneInputDirectory,
+    draftScene,
+    error,
+    handleBrowse,
+    handleLoad,
+    handleRevertDraft,
+    handleSaveScene,
+    hasLocalEdits,
+    loaded,
+    loading,
+    saveMessage,
+    saving,
+    sceneInput,
+    selectedObjectName,
+    selectedVisualName,
+    setSceneInput,
+    setSelectedObjectName,
+    setSelectedVisualName,
+    showWorkspaceShell,
+    updateDraftScene,
+  } = workspace;
 
   useEffect(() => {
     currentTimeRef.current = currentTime;
@@ -517,6 +317,13 @@ export default function App() {
 
   useEffect(() => {
     setIsPlaying(false);
+  }, [loaded?.scenePath]);
+
+  useEffect(() => {
+    if (loaded) {
+      setCurrentTime(loaded.timeline.tInitial);
+      setEditorMode('visual');
+    }
   }, [loaded?.scenePath]);
 
   const activeObjectInspections = useMemo(() => {
@@ -603,18 +410,11 @@ export default function App() {
     event.preventDefault();
     void handleLoad(sceneInput, {
       actionLabel: 'Loading a scene by path',
-    });
-  };
-
-  const updateDraftScene = (updater: (scene: NormalizedSceneConfig) => void) => {
-    setDraftScene((currentDraft) => {
-      if (!currentDraft) {
-        return currentDraft;
+    }).then((didLoad) => {
+      if (didLoad) {
+        setLoadOverlayOpen(false);
+        setEditorMode('visual');
       }
-
-      const nextDraft = cloneScene(currentDraft);
-      updater(nextDraft);
-      return nextDraft;
     });
   };
 
@@ -628,7 +428,7 @@ export default function App() {
         return currentDraft;
       }
 
-      const nextDraft = cloneScene(currentDraft);
+      const nextDraft = structuredClone(currentDraft);
       const visual = nextDraft.objects[selectedObject.name]?.visual?.[selectedVisual.name];
       if (!visual) {
         return currentDraft;
@@ -712,12 +512,16 @@ export default function App() {
         errorMessage={error}
         onOpenLoadOverlay={() => {
           setLoadOverlayOpen(true);
-          void handleBrowse(getDirectoryPath(sceneInput));
+          void browseSceneInputDirectory();
         }}
         onOpenDiagnostics={() => setDiagnosticsOpen(true)}
         onOpenChannels={() => setChannelPreviewOpen(true)}
         onSave={() => void handleSaveScene()}
-        onRevert={handleRevertDraft}
+        onRevert={() => {
+          if (handleRevertDraft()) {
+            setEditorMode('visual');
+          }
+        }}
       />
 
       {showWorkspaceShell ? (
@@ -1184,6 +988,11 @@ export default function App() {
               onClick={() => {
                 void handleLoad(sceneInput, {
                   actionLabel: 'Loading a scene from the load overlay',
+                }).then((didLoad) => {
+                  if (didLoad) {
+                    setLoadOverlayOpen(false);
+                    setEditorMode('visual');
+                  }
                 });
               }}
               disabled={loading || !isJsonPath(sceneInput)}
