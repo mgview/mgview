@@ -1,15 +1,16 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import LocalFileBrowser from './components/LocalFileBrowser.tsx';
+import { useEffect, useMemo, useState } from 'react';
+import ChannelPreviewOverlay from './components/ChannelPreviewOverlay.tsx';
+import DiagnosticsOverlay from './components/DiagnosticsOverlay.tsx';
 import InspectorDrawer, { type InspectorEditorMode } from './components/InspectorDrawer.tsx';
+import LoadSceneOverlay from './components/LoadSceneOverlay.tsx';
 import ObjectList from './components/ObjectList.tsx';
-import OverlayPanel from './components/OverlayPanel.tsx';
 import PlaybackStrip from './components/PlaybackStrip.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import { buildObjectInspections } from './core/sceneInspector.ts';
 import { getFrameAtTime } from './core/timeline.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
-import { createSavableScene, getDirectoryPath, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
+import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
 import type { SceneVisual } from './core/types.ts';
 
 const DEFAULT_SCENE_PATH = 'samples/particle_pendulum/particle_pendulum.json';
@@ -29,18 +30,6 @@ const SAMPLE_SCENES = [
   { group: 'Meshes', label: 'Wooden Phantom GUI', path: 'samples/wooden_phantom/wooden_phantom_gui.json' },
 ] as const;
 
-function formatNumber(value: number): string {
-  if (!Number.isFinite(value)) {
-    return 'n/a';
-  }
-
-  if (Math.abs(value) >= 1000 || (Math.abs(value) > 0 && Math.abs(value) < 0.001)) {
-    return value.toExponential(3);
-  }
-
-  return value.toFixed(4).replace(/\.?0+$/, '');
-}
-
 function getScenePathFromUrl(): string {
   const params = new URLSearchParams(window.location.search);
   return params.get('scene') ?? DEFAULT_SCENE_PATH;
@@ -55,10 +44,6 @@ function getAppBasePath(): string {
     return pathname.slice(0, -'/simple'.length);
   }
   return pathname;
-}
-
-function isJsonPath(filePath: string): boolean {
-  return filePath.toLowerCase().endsWith('.json');
 }
 
 function sampleGroups() {
@@ -194,8 +179,7 @@ export default function App() {
     return JSON.stringify(createSavableScene(loaded.rawScene, draftScene), null, 2);
   }, [draftScene, loaded]);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleOpenSelectedScene = () => {
     void handleLoad(sceneInput, {
       actionLabel: 'Loading a scene by path',
     }).then((didLoad) => {
@@ -394,161 +378,37 @@ export default function App() {
       ) : null}
 
       {loadOverlayOpen ? (
-        <OverlayPanel
-          title="Load Scene"
-          subtitle="Browse local folders or choose a bundled sample, then explicitly open the selected JSON scene."
-          actions={
-            <button
-              type="button"
-              onClick={() => {
-                void handleLoad(sceneInput, {
-                  actionLabel: 'Loading a scene from the load overlay',
-                }).then((didLoad) => {
-                  if (didLoad) {
-                    setLoadOverlayOpen(false);
-                    setEditorMode('visual');
-                  }
-                });
-              }}
-              disabled={loading || !isJsonPath(sceneInput)}
-            >
-              Open Selected Scene
-            </button>
-          }
+        <LoadSceneOverlay
+          browserError={browserError}
+          browserListing={browserListing}
+          browserLoading={browserLoading}
+          groupedSamples={groupedSamples}
+          loading={loading}
+          onBrowse={(path) => {
+            void handleBrowse(path);
+          }}
           onClose={() => setLoadOverlayOpen(false)}
-        >
-          <div className="overlay-layout">
-            <section className="panel">
-              <div className="panel-header">
-                <div>
-                  <h2>Selected Path</h2>
-                  <p className="panel-subtitle">Only JSON scene files can be opened.</p>
-                </div>
-              </div>
-              <form className="loader-form" onSubmit={handleSubmit}>
-                <input
-                  type="text"
-                  value={sceneInput}
-                  onChange={(event) => setSceneInput(event.target.value)}
-                  aria-label="Scene path"
-                />
-                <button type="submit" disabled={loading || !isJsonPath(sceneInput)}>
-                  Open
-                </button>
-              </form>
-            </section>
-
-            <LocalFileBrowser
-              browserListing={browserListing}
-              browserError={browserError}
-              browserLoading={browserLoading}
-              sceneInput={sceneInput}
-              onBrowse={(path) => {
-                void handleBrowse(path);
-              }}
-              onSelectFile={(path) => {
-                setSceneInput(path);
-              }}
-              getDirectoryPath={getDirectoryPath}
-            />
-
-            <section className="panel">
-              <div className="panel-header">
-                <div>
-                  <h2>Built-in Sample Shortcuts</h2>
-                  <p className="panel-subtitle">Choose a bundled sample and then open it.</p>
-                </div>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => setSampleBrowserExpanded((current) => !current)}
-                >
-                  {sampleBrowserExpanded ? 'Hide Samples' : 'Show Samples'}
-                </button>
-              </div>
-
-              {sampleBrowserExpanded ? (
-                <div className="sample-groups">
-                  {groupedSamples.map(([groupName, samples]) => (
-                    <div key={groupName} className="sample-group">
-                      <div className="sample-group-title">{groupName}</div>
-                      <div className="sample-list">
-                        {samples.map((sample) => (
-                          <button
-                            key={sample.path}
-                            type="button"
-                            className={`sample-button ${sceneInput === sample.path ? 'sample-button-active' : ''}`}
-                            onClick={() => {
-                              setSceneInput(sample.path);
-                            }}
-                          >
-                            <span>{sample.label}</span>
-                            <code>{sample.path}</code>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">Sample shortcuts are hidden.</div>
-              )}
-            </section>
-          </div>
-        </OverlayPanel>
+          onOpenSelectedScene={handleOpenSelectedScene}
+          sampleBrowserExpanded={sampleBrowserExpanded}
+          sceneInput={sceneInput}
+          setSampleBrowserExpanded={setSampleBrowserExpanded}
+          setSceneInput={setSceneInput}
+        />
       ) : null}
 
       {diagnosticsOpen && loaded ? (
-        <OverlayPanel
-          title="Diagnostics"
-          subtitle="Scene normalization, inference, and load diagnostics."
+        <DiagnosticsOverlay
+          diagnostics={loaded.diagnostics}
           onClose={() => setDiagnosticsOpen(false)}
-        >
-          <section className="panel">
-            <div className="diagnostic-list">
-              {loaded.diagnostics.length === 0 ? (
-                <div className="diagnostic diagnostic-info">
-                  No scene warnings. Core extraction matched this sample cleanly.
-                </div>
-              ) : (
-                loaded.diagnostics.map((diagnostic, index) => (
-                  <div
-                    key={`${diagnostic.severity}-${index}`}
-                    className={`diagnostic ${diagnostic.severity === 'warning' ? 'diagnostic-warning' : 'diagnostic-info'}`}
-                  >
-                    <strong>{diagnostic.severity}</strong>
-                    <span>{diagnostic.message}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-        </OverlayPanel>
+        />
       ) : null}
 
       {channelPreviewOpen && loaded ? (
-        <OverlayPanel
-          title="Channel Preview"
-          subtitle={`First ${PREVIEW_CHANNEL_COUNT} channel values at the current time.`}
+        <ChannelPreviewOverlay
           onClose={() => setChannelPreviewOpen(false)}
-        >
-          <section className="panel">
-            <table className="preview-table">
-              <tbody>
-                {previewEntries.map(([channelName, value]) => (
-                  <tr key={channelName}>
-                    <td>
-                      <code>{channelName}</code>
-                    </td>
-                    <td>
-                      <code>{formatNumber(value)}</code>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        </OverlayPanel>
+          previewEntries={previewEntries}
+          previewLimit={PREVIEW_CHANNEL_COUNT}
+        />
       ) : null}
 
     </div>
