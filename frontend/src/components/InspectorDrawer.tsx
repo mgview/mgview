@@ -1,5 +1,10 @@
 import type { LoadedSceneData } from '../hooks/useSceneWorkspace.ts';
-import type { NormalizedSceneConfig, SceneObjectInspection, SceneVisual } from '../core/types.ts';
+import type {
+  NormalizedSceneConfig,
+  SceneObjectInspection,
+  SceneVisual,
+  VisualType,
+} from '../core/types.ts';
 import JsonEditorPanel from './JsonEditorPanel.tsx';
 import SceneSettingsPanel from './SceneSettingsPanel.tsx';
 import VisualEditorPanel from './VisualEditorPanel.tsx';
@@ -15,6 +20,9 @@ interface InspectorDrawerProps {
   savePreview: string;
   selectedObject?: SceneObjectInspection;
   selectedVisual?: SceneObjectInspection['visuals'][number];
+  createVisual: (name: string, type: VisualType) => boolean;
+  deleteSelectedVisual: () => boolean;
+  changeSelectedVisualType: (type: VisualType) => void;
   setEditorMode: (mode: InspectorEditorMode) => void;
   setSelectedVisualName: (name: string | null) => void;
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
@@ -36,6 +44,9 @@ export default function InspectorDrawer({
   savePreview,
   selectedObject,
   selectedVisual,
+  createVisual,
+  deleteSelectedVisual,
+  changeSelectedVisualType,
   setEditorMode,
   setSelectedVisualName,
   updateDraftScene,
@@ -99,6 +110,9 @@ export default function InspectorDrawer({
           liveSelectedVisual={liveSelectedVisual}
           selectedObject={selectedObject}
           selectedVisual={selectedVisual}
+          createVisual={createVisual}
+          deleteSelectedVisual={deleteSelectedVisual}
+          changeSelectedVisualType={changeSelectedVisualType}
           setSelectedVisualName={setSelectedVisualName}
           updateSelectedVisual={updateSelectedVisual}
         />

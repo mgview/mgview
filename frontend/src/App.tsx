@@ -11,7 +11,8 @@ import { buildObjectInspections } from './core/sceneInspector.ts';
 import { getFrameAtTime } from './core/timeline.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
 import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
-import type { SceneVisual } from './core/types.ts';
+import type { SceneVisual, VisualType } from './core/types.ts';
+import { createDefaultVisual } from './components/editorShared.tsx';
 
 const DEFAULT_SCENE_PATH = 'samples/particle_pendulum/particle_pendulum.json';
 const PREVIEW_CHANNEL_COUNT = 14;
@@ -195,19 +196,75 @@ export default function App() {
       return;
     }
 
-    setDraftScene((currentDraft) => {
-      if (!currentDraft) {
-        return currentDraft;
-      }
-
-      const nextDraft = structuredClone(currentDraft);
-      const visual = nextDraft.objects[selectedObject.name]?.visual?.[selectedVisual.name];
+    updateDraftScene((scene) => {
+      const visual = scene.objects[selectedObject.name]?.visual?.[selectedVisual.name];
       if (!visual) {
-        return currentDraft;
+        return;
       }
 
       updater(visual);
-      return nextDraft;
+    });
+  };
+
+  const createVisual = (name: string, type: VisualType) => {
+    const trimmedName = name.trim();
+    if (!draftScene || !selectedObject?.name || trimmedName.length === 0) {
+      return false;
+    }
+
+    if (draftScene.objects[selectedObject.name]?.visual?.[trimmedName]) {
+      return false;
+    }
+
+    updateDraftScene((scene) => {
+      const sceneObject = scene.objects[selectedObject.name];
+      if (!sceneObject) {
+        return;
+      }
+
+      sceneObject.visual ??= {};
+      sceneObject.visual[trimmedName] = createDefaultVisual(type);
+    });
+    setSelectedVisualName(trimmedName);
+    return true;
+  };
+
+  const deleteSelectedVisual = () => {
+    if (!draftScene || !selectedObject?.name || !selectedVisual?.name) {
+      return false;
+    }
+
+    const remainingVisualNames = selectedObject.visuals
+      .map((visual) => visual.name)
+      .filter((name) => name !== selectedVisual.name);
+
+    updateDraftScene((scene) => {
+      const sceneObject = scene.objects[selectedObject.name];
+      if (!sceneObject?.visual?.[selectedVisual.name]) {
+        return;
+      }
+
+      delete sceneObject.visual[selectedVisual.name];
+    });
+    setSelectedVisualName(remainingVisualNames[0] ?? null);
+    return true;
+  };
+
+  const changeSelectedVisualType = (type: VisualType) => {
+    if (!draftScene || !selectedObject?.name || !selectedVisual?.name) {
+      return;
+    }
+
+    updateSelectedVisual((visual) => {
+      const nextVisual = createDefaultVisual(type, visual.material);
+      nextVisual.visible = visual.visible ?? true;
+      nextVisual.position = visual.position ? { ...visual.position } : nextVisual.position;
+      nextVisual.rotation = visual.rotation ? { ...visual.rotation } : nextVisual.rotation;
+      nextVisual.material = visual.material ?? nextVisual.material;
+      Object.keys(visual).forEach((key) => {
+        delete visual[key];
+      });
+      Object.assign(visual, nextVisual);
     });
   };
 
@@ -332,7 +389,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <section className="panel span-12 renderer-panel loading-panel">
+                <section className="panel renderer-panel loading-panel">
                   <div className="renderer-surface renderer-loading-surface">
                     <div className="renderer-loading-copy">Loading scene and simulation data…</div>
                   </div>
@@ -365,6 +422,9 @@ export default function App() {
                 savePreview={savePreview}
                 selectedObject={selectedObject}
                 selectedVisual={selectedVisual}
+                createVisual={createVisual}
+                deleteSelectedVisual={deleteSelectedVisual}
+                changeSelectedVisualType={changeSelectedVisualType}
                 setEditorMode={setEditorMode}
                 setSelectedVisualName={setSelectedVisualName}
                 updateDraftScene={updateDraftScene}

@@ -68,7 +68,7 @@ export default function PlaybackStrip({
           />
         </div>
         <label className="playback-speed-inline">
-          <span>Playback Speed</span>
+          <span>Speed</span>
           <input
             type="number"
             min={0.1}

@@ -225,7 +225,7 @@ export default function RendererPanel({
   }, [frame, scene, scenePath, selectedObjectName]);
 
   return (
-    <section className="panel span-12 renderer-panel">
+    <section className="panel renderer-panel">
       <div className="renderer-surface" ref={hostRef} />
     </section>
   );

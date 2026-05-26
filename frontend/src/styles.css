@@ -24,6 +24,15 @@ select {
   font: inherit;
 }
 
+select {
+  width: 100%;
+  border: 1px solid rgba(162, 185, 214, 0.25);
+  border-radius: 8px;
+  background: rgba(10, 18, 32, 0.7);
+  color: inherit;
+  padding: 0.58rem 0.72rem;
+}
+
 a {
   color: #a5ccff;
   text-decoration: none;
@@ -222,38 +231,38 @@ input[inputmode="decimal"] {
 
 .playback-primary {
   display: grid;
-  grid-template-columns: auto auto auto minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: auto auto minmax(64px, auto) minmax(0, 1fr) auto;
+  gap: 6px;
   align-items: center;
   width: 100%;
   min-width: 0;
 }
 
 .playback-scrubber {
-  min-width: 300px;
+  min-width: 220px;
   width: 100%;
 }
 
 .playback-speed-inline {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   justify-self: end;
   white-space: nowrap;
-  margin-left: 12px;
+  margin-left: 4px;
 }
 
 .playback-speed-inline span {
   color: #8ea3be;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .playback-speed-inline input {
-  width: 60px;
-  padding: 0.28rem 0.52rem;
-  text-align: left;
+  width: 54px;
+  padding: 0.24rem 0.45rem;
+  text-align: center;
 }
 
 .playback-icon-button {
@@ -265,7 +274,7 @@ input[inputmode="decimal"] {
 
 .playback-readout {
   color: #8ea3be;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   white-space: nowrap;
 }
 
@@ -738,6 +747,17 @@ input[inputmode="decimal"] {
   gap: 12px;
 }
 
+.visual-toolbar {
+  display: grid;
+  gap: 10px;
+}
+
+.visual-toolbar-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+}
+
 .visual-card {
   padding: 10px;
   border-radius: 10px;
@@ -782,6 +802,10 @@ input[inputmode="decimal"] {
 .editor-field-checkbox input {
   width: 18px;
   height: 18px;
+}
+
+.editor-field-spacer {
+  min-height: 0;
 }
 
 .sample-groups {
