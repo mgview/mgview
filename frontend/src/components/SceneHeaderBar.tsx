@@ -92,7 +92,7 @@ export default function SceneHeaderBar({
               Diagnostics
             </button>
             <button type="button" className="secondary-button" onClick={onOpenChannels}>
-              Channels
+              Sim Files
             </button>
             <button type="button" onClick={onSave} disabled={!hasLocalEdits || saving}>
               {saving ? 'Saving…' : 'Save'}

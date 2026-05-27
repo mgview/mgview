@@ -119,6 +119,11 @@ export interface SimulationTable {
   rows: SimulationTableRow[];
 }
 
+export interface ParsedSimulationFile {
+  filePath: string;
+  channelNames: string[];
+}
+
 export interface TimelineFrame {
   time: number;
   data: Record<string, number>;
@@ -160,6 +165,7 @@ export interface SceneObjectInspection {
   type: ObjectType;
   rotationFrame?: string;
   inferred: boolean;
+  missingSimulationData: boolean;
   visualCount: number;
   visuals: SceneObjectVisualInspection[];
   tags: string[];

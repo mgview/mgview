@@ -8,6 +8,10 @@ import type {
   SceneVisual,
   Vector3Like,
 } from './types.ts';
+import {
+  collectPositionOrigins,
+  hasRenderableSimulationAnchor,
+} from './simulationChannels.ts';
 
 function hasOwn<K extends PropertyKey>(value: object, key: K): boolean {
   return Object.prototype.hasOwnProperty.call(value, key);
@@ -123,7 +127,8 @@ function summarizeVisualProperties(visual: SceneVisual): Array<{ key: string; va
 
 export function buildObjectInspections(
   rawScene: SceneConfig,
-  scene: NormalizedSceneConfig
+  scene: NormalizedSceneConfig,
+  channelNames: string[] = []
 ): SceneObjectInspection[] {
   const rawObjects = rawScene.objects ?? {};
 
@@ -157,11 +162,19 @@ export function buildObjectInspections(
         tags.push('promoted to frame');
       }
 
+      const missingSimulationData = !hasRenderableSimulationAnchor(
+        scene,
+        objectName,
+        sceneObject,
+        channelNames
+      );
+
       return {
         name: objectName,
         type: sceneObject.type,
         rotationFrame: sceneObject.rotationFrame,
         inferred: !rawObject,
+        missingSimulationData,
         visualCount: visuals.length,
         visuals,
         tags,
@@ -174,7 +187,8 @@ export function collectSceneDiagnostics(
   rawScene: SceneConfig,
   scene: NormalizedSceneConfig,
   simulationFiles: string[],
-  channelNames: string[]
+  channelNames: string[],
+  fileErrors: string[] = []
 ): SceneDiagnostic[] {
   const diagnostics: SceneDiagnostic[] = [];
   const rawObjects = rawScene.objects ?? {};
@@ -221,6 +235,34 @@ export function collectSceneDiagnostics(
     diagnostics.push({
       severity: 'warning',
       message: 'No simulation channels were parsed from the selected files.',
+    });
+  }
+
+  const positionOrigins = collectPositionOrigins(channelNames);
+  if (positionOrigins.length > 1) {
+    diagnostics.push({
+      severity: 'warning',
+      message: `Simulation files mix multiple position origins: ${positionOrigins.join(', ')}`,
+    });
+  }
+
+  const missingObjects = Object.entries(scene.objects)
+    .filter(
+      ([objectName, sceneObject]) =>
+        !hasRenderableSimulationAnchor(scene, objectName, sceneObject, channelNames)
+    )
+    .map(([objectName]) => objectName);
+  if (missingObjects.length > 0) {
+    diagnostics.push({
+      severity: 'warning',
+      message: `Object(s) without backing simulation data will not render: ${missingObjects.join(', ')}`,
+    });
+  }
+
+  for (const fileError of fileErrors) {
+    diagnostics.push({
+      severity: 'warning',
+      message: fileError,
     });
   }
 

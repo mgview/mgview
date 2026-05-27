@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { createSceneDocument } from './sceneDocument.ts';
 import { buildObjectInspections, collectSceneDiagnostics } from './sceneInspector.ts';
 import { expandSimulationFiles } from './expandSimulationFiles.ts';
-import { getBasePath, getFileExtension } from './pathUtils.ts';
+import { getBasePath, getFileExtension, getRelativePath } from './pathUtils.ts';
 import type { SceneConfig } from './types.ts';
 
 async function readSceneFixture(relativePath: string): Promise<SceneConfig> {
@@ -18,6 +18,10 @@ test('path helpers preserve MGView-style relative paths', () => {
   assert.equal(getBasePath('samples/tricycle/tricycle.json'), 'samples/tricycle/');
   assert.equal(getBasePath('tricycle.json'), '');
   assert.equal(getFileExtension('samples\\tricycle\\tricycle.JSON'), 'json');
+  assert.equal(
+    getRelativePath('samples/tricycle/', 'samples/common/demo.1'),
+    '../common/demo.1'
+  );
 });
 
 test('simulation file expansion matches legacy numeric range behavior', () => {
@@ -75,7 +79,7 @@ test('scene inspector surfaces inferred objects and default visuals', async () =
     'P_No_Q[3]',
   ]);
 
-  const inspections = buildObjectInspections(scene, document);
+  const inspections = buildObjectInspections(scene, document, ['P_No_Q[1]']);
   const diagnostics = collectSceneDiagnostics(scene, document, ['samples/default.1'], ['P_No_Q[1]']);
   const qObject = inspections.find((entry) => entry.name === 'Q');
   const nObject = inspections.find((entry) => entry.name === 'N');
@@ -83,7 +87,46 @@ test('scene inspector surfaces inferred objects and default visuals', async () =
 
   assert.ok(qObject);
   assert.equal(qObject.inferred, true);
+  assert.equal(qObject.missingSimulationData, false);
   assert.ok(nObject?.visuals.some((visual) => visual.tags.includes('default label')));
   assert.ok(nLabel?.propertySummary.some((property) => property.key === 'text' && property.value === 'N'));
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('Inferred')));
+});
+
+test('scene inspector warns about mixed origins and objects missing sim data', async () => {
+  const scene = {
+    ...(await readSceneFixture('default.json')),
+    objects: {
+      N: { type: 'frame', visual: {} },
+      Ghost: {
+        type: 'frame',
+        visual: {
+          marker: {
+            type: 'sphere',
+            radius: 0.25,
+          },
+        },
+      },
+    },
+  };
+  const document = createSceneDocument(scene, [
+    'P_No_Q[1]',
+    'P_Ao_R[1]',
+    'P_Ao_R[2]',
+    'P_Ao_R[3]',
+  ]);
+  const inspections = buildObjectInspections(scene, document, ['P_No_Q[1]', 'P_Ao_R[1]', 'P_Ao_R[2]', 'P_Ao_R[3]']);
+  const diagnostics = collectSceneDiagnostics(
+    scene,
+    document,
+    ['samples/default.1', 'samples/default.2'],
+    ['P_No_Q[1]', 'P_Ao_R[1]', 'P_Ao_R[2]', 'P_Ao_R[3]'],
+    ['Could not parse simulation file samples/default.2: missing']
+  );
+
+  assert.equal(inspections.find((entry) => entry.name === 'N')?.missingSimulationData, false);
+  assert.equal(inspections.find((entry) => entry.name === 'Ghost')?.missingSimulationData, true);
+  assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('multiple position origins')));
+  assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('will not render')));
+  assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('Could not parse simulation file')));
 });

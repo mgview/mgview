@@ -4,7 +4,9 @@ interface LocalFileBrowserProps {
   browserListing: FileBrowserListing | null;
   browserError: string | null;
   browserLoading: boolean;
+  emptyStateMessage?: string;
   sceneInput: string;
+  title?: string;
   onBrowse: (path: string) => void;
   onSelectFile: (path: string) => void;
   getDirectoryPath: (filePath: string) => string;
@@ -14,7 +16,9 @@ export default function LocalFileBrowser({
   browserListing,
   browserError,
   browserLoading,
+  emptyStateMessage = 'Browse a scene folder to load JSON files through the local API.',
   sceneInput,
+  title = 'Local File Browser',
   onBrowse,
   onSelectFile,
   getDirectoryPath,
@@ -23,7 +27,7 @@ export default function LocalFileBrowser({
 
   return (
     <section className="panel">
-      <h2>Local File Browser</h2>
+      <h2>{title}</h2>
       <div className="stacked-meta">
         <div className="meta-row">
           <label>Current Folder</label>
@@ -72,7 +76,7 @@ export default function LocalFileBrowser({
           })}
         </div>
       ) : (
-        <div className="empty-state">Browse a scene folder to load JSON files through the local API.</div>
+        <div className="empty-state">{emptyStateMessage}</div>
       )}
     </section>
   );

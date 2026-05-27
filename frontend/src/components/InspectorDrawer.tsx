@@ -124,19 +124,6 @@ export default function InspectorDrawer({
           updateSelectedVisual={updateSelectedVisual}
         />
       )}
-
-      <div className="stacked-meta">
-        <div className="meta-row">
-          <label>Simulation Files</label>
-          <div className="pill-list">
-            {loaded.simulationFiles.map((filePath) => (
-              <span key={filePath} className="pill">
-                <code>{filePath}</code>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
     </section>
   );
 }

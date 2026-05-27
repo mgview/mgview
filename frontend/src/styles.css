@@ -333,6 +333,79 @@ input[inputmode="decimal"] {
   gap: 10px;
 }
 
+.sim-entry-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sim-entry-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.2rem 0.28rem 0.2rem 0.48rem;
+  border-radius: 999px;
+  background: rgba(40, 64, 96, 0.72);
+}
+
+.sim-entry-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.empty-state-inline {
+  color: #9ab0cb;
+  font-size: 0.9rem;
+}
+
+.sim-file-channel-list {
+  display: grid;
+  gap: 10px;
+}
+
+.sim-file-channel-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 0.55rem 0;
+  border-top: 1px solid rgba(141, 178, 227, 0.1);
+}
+
+.sim-file-channel-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.sim-file-channel-file {
+  display: grid;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.sim-file-channel-dir {
+  display: block;
+  color: #9ab0cb;
+}
+
+.sim-file-channel-name {
+  display: block;
+  font-weight: 700;
+  color: #dfeafb;
+}
+
+.sim-file-channel-pills {
+  display: grid;
+  gap: 8px;
+}
+
+.sim-file-channel-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .save-preview-panel {
   display: grid;
   gap: 8px;
@@ -717,6 +790,12 @@ input[inputmode="decimal"] {
   margin-bottom: 12px;
 }
 
+.object-list-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .inline-tags {
   display: flex;
   flex-wrap: wrap;
@@ -735,6 +814,11 @@ input[inputmode="decimal"] {
 
 .tag-accent {
   background: rgba(60, 107, 181, 0.7);
+}
+
+.tag-warning {
+  background: rgba(176, 109, 30, 0.82);
+  color: #fff3d1;
 }
 
 .tag-soft {
@@ -828,6 +912,12 @@ input[inputmode="decimal"] {
 .icon-button svg {
   width: 0.95rem;
   height: 0.95rem;
+}
+
+.subtle-icon-button {
+  width: 1.55rem;
+  height: 1.55rem;
+  font-size: 0.84rem;
 }
 
 .editor-field-topline {

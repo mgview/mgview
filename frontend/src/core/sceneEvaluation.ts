@@ -9,6 +9,7 @@ import type {
   TimelineFrame,
   Vector3Like,
 } from './types.ts';
+import { hasRenderableSimulationAnchor } from './simulationChannels.ts';
 
 export interface SceneObjectSnapshot {
   name: string;
@@ -94,7 +95,7 @@ function multiplyMatrixVector(matrix: number[] | null, value: Vector3Like): Vect
 function readPosition(
   values: Record<string, number>,
   objectName: string
-): Vector3Like {
+): Vector3Like | null {
   const candidates = [objectName, `${objectName}o`, `${objectName}cm`].map(escapeForRegex);
   const x = candidates
     .map((candidate) => readByPattern(values, new RegExp(`^P_[^_]+_${candidate}\\[1\\]$`)))
@@ -106,7 +107,11 @@ function readPosition(
     .map((candidate) => readByPattern(values, new RegExp(`^P_[^_]+_${candidate}\\[3\\]$`)))
     .find((value) => typeof value === 'number');
 
-  return vector(x ?? 0, y ?? 0, z ?? 0);
+  if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') {
+    return null;
+  }
+
+  return vector(x, y, z);
 }
 
 function readRotationMatrix(
@@ -318,13 +323,20 @@ function evaluateObjects(
   const snapshots: Record<string, SceneObjectSnapshot> = {};
 
   for (const [objectName, sceneObject] of Object.entries(scene.objects)) {
+    const position = readPosition(values, objectName);
+    const rotationMatrix = readRotationMatrix(values, sceneObject.rotationFrame ?? objectName);
+    const hasSimulationData =
+      position !== null || rotationMatrix !== null || hasRenderableSimulationAnchor(scene, objectName, sceneObject, []);
+
     snapshots[objectName] = {
       name: objectName,
-      position: readPosition(values, objectName),
-      rotationMatrix: readRotationMatrix(values, sceneObject.rotationFrame ?? objectName),
-      visuals: Object.entries(sceneObject.visual ?? {})
-        .map(([visualName, visual]) => normalizeRenderVisual(visualName, visual))
-        .filter((visual): visual is RenderVisual => visual !== null),
+      position: position ?? vector(0, 0, 0),
+      rotationMatrix,
+      visuals: hasSimulationData
+        ? Object.entries(sceneObject.visual ?? {})
+            .map(([visualName, visual]) => normalizeRenderVisual(visualName, visual))
+            .filter((visual): visual is RenderVisual => visual !== null)
+        : [],
     };
   }
 

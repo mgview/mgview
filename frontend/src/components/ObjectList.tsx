@@ -36,7 +36,10 @@ export default function ObjectList({
                 >
                   <span className="inspector-item-top">
                     <code>{entry.name}</code>
-                    <strong>{entry.type}</strong>
+                    <span className="object-list-meta">
+                      {entry.missingSimulationData ? <span className="tag tag-warning">!</span> : null}
+                      <strong>{entry.type}</strong>
+                    </span>
                   </span>
                 </button>
               ))}

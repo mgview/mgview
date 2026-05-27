@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import ChannelPreviewOverlay from './components/ChannelPreviewOverlay.tsx';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.tsx';
 import InspectorDrawer, { type InspectorEditorMode } from './components/InspectorDrawer.tsx';
 import LoadSceneOverlay from './components/LoadSceneOverlay.tsx';
@@ -7,7 +6,8 @@ import ObjectList from './components/ObjectList.tsx';
 import PlaybackStrip from './components/PlaybackStrip.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
-import { buildObjectInspections } from './core/sceneInspector.ts';
+import SimulationDataOverlay from './components/SimulationDataOverlay.tsx';
+import { getBasePath, getRelativePath } from './core/pathUtils.ts';
 import { getFrameAtTime } from './core/timeline.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
 import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
@@ -15,7 +15,6 @@ import type { SceneVisual, VisualType } from './core/types.ts';
 import { createDefaultVisual } from './components/editorShared.tsx';
 
 const DEFAULT_SCENE_PATH = 'samples/particle_pendulum/particle_pendulum.json';
-const PREVIEW_CHANNEL_COUNT = 14;
 const SAMPLE_SCENES = [
   { group: 'Basics', label: 'Particle Pendulum', path: 'samples/particle_pendulum/particle_pendulum.json' },
   { group: 'Basics', label: 'Default Template', path: 'samples/default.json' },
@@ -61,7 +60,8 @@ export default function App() {
   const workspace = useSceneWorkspace(getScenePathFromUrl());
   const [loadOverlayOpen, setLoadOverlayOpen] = useState(false);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
-  const [channelPreviewOpen, setChannelPreviewOpen] = useState(false);
+  const [simulationOverlayOpen, setSimulationOverlayOpen] = useState(false);
+  const [simulationEntryInput, setSimulationEntryInput] = useState('');
   const [editorMode, setEditorMode] = useState<InspectorEditorMode>('visual');
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [rightDrawerCollapsed, setRightDrawerCollapsed] = useState(false);
@@ -79,8 +79,13 @@ export default function App() {
     handleRevertDraft,
     handleSaveScene,
     hasLocalEdits,
+    channelNames,
+    diagnostics,
+    fileErrors,
     loaded,
     loading,
+    objectInspections,
+    parsedSimulationFiles,
     saveMessage,
     saving,
     sceneInput,
@@ -90,6 +95,9 @@ export default function App() {
     setSelectedObjectName,
     setSelectedVisualName,
     showWorkspaceShell,
+    simulationFiles,
+    simulationLoading,
+    timeline,
     updateDraftScene,
   } = workspace;
 
@@ -99,30 +107,23 @@ export default function App() {
     }
   }, [loaded?.scenePath]);
 
-  const activeObjectInspections = useMemo(() => {
-    if (!loaded || !activeScene) {
-      return [];
-    }
-    return buildObjectInspections(loaded.rawScene, activeScene);
-  }, [loaded, activeScene]);
-
   const playbackSpeed = activeScene?.speedFactor ?? loaded?.scene.speedFactor ?? 1;
-  const playback = usePlaybackController(loaded?.timeline ?? null, playbackSpeed);
+  const playback = usePlaybackController(loaded ? timeline : null, playbackSpeed);
 
   const currentFrame = useMemo(() => {
     if (!loaded) {
       return undefined;
     }
-    return getFrameAtTime(loaded.timeline, playback.currentTime);
-  }, [loaded, playback.currentTime]);
+    return getFrameAtTime(timeline, playback.currentTime);
+  }, [loaded, playback.currentTime, timeline]);
 
   const selectedObject = useMemo(() => {
-    if (!activeObjectInspections.length) {
+    if (!objectInspections.length) {
       return undefined;
     }
 
-    return activeObjectInspections.find((entry) => entry.name === selectedObjectName) ?? activeObjectInspections[0];
-  }, [activeObjectInspections, selectedObjectName]);
+    return objectInspections.find((entry) => entry.name === selectedObjectName) ?? objectInspections[0];
+  }, [objectInspections, selectedObjectName]);
 
   const selectedVisual = useMemo(() => {
     if (!selectedObject) {
@@ -149,9 +150,6 @@ export default function App() {
     }
   }, [selectedObject?.name]);
 
-  const previewEntries = useMemo(() => {
-    return Object.entries(currentFrame?.frame.data ?? {}).slice(0, PREVIEW_CHANNEL_COUNT);
-  }, [currentFrame]);
   const cameraSeedKey = useMemo(() => {
     if (!activeScene || !loaded) {
       return 'no-scene';
@@ -353,7 +351,12 @@ export default function App() {
           void browseSceneInputDirectory();
         }}
         onOpenDiagnostics={() => setDiagnosticsOpen(true)}
-        onOpenChannels={() => setChannelPreviewOpen(true)}
+        onOpenChannels={() => {
+          setSimulationOverlayOpen(true);
+          if (loaded) {
+            void handleBrowse(getBasePath(loaded.scenePath));
+          }
+        }}
         onSceneNameChange={(nextName) => {
           updateDraftScene((scene) => {
             scene.name = nextName;
@@ -378,7 +381,7 @@ export default function App() {
                 <div className="workspace-pane-scroll">
                   {loaded ? (
                     <ObjectList
-                      entries={activeObjectInspections}
+                      entries={objectInspections}
                       selectedObjectName={selectedObject?.name ?? null}
                       onSelectObject={(objectName, firstVisualName) => {
                         setSelectedObjectName(objectName);
@@ -423,9 +426,9 @@ export default function App() {
                 <PlaybackStrip
                   isPlaying={playback.isPlaying}
                   currentTime={playback.currentTime}
-                  tInitial={loaded.timeline.tInitial}
-                  tFinal={loaded.timeline.tFinal}
-                  tStep={loaded.timeline.tStep || 0.001}
+                  tInitial={timeline.tInitial}
+                  tFinal={timeline.tFinal}
+                  tStep={timeline.tStep || 0.001}
                   playbackSpeed={playbackSpeed}
                   onTogglePlay={playback.togglePlay}
                   onReset={playback.resetPlayback}
@@ -514,19 +517,52 @@ export default function App() {
 
       {diagnosticsOpen && loaded ? (
         <DiagnosticsOverlay
-          diagnostics={loaded.diagnostics}
+          diagnostics={diagnostics}
           onClose={() => setDiagnosticsOpen(false)}
         />
       ) : null}
 
-      {channelPreviewOpen && loaded ? (
-        <ChannelPreviewOverlay
-          onClose={() => setChannelPreviewOpen(false)}
-          previewEntries={previewEntries}
-          previewLimit={PREVIEW_CHANNEL_COUNT}
+      {simulationOverlayOpen && loaded && draftScene ? (
+        <SimulationDataOverlay
+          browserError={browserError}
+          browserListing={browserListing}
+          browserLoading={browserLoading}
+          channelNames={channelNames}
+          expandedFiles={simulationFiles}
+          fileErrors={fileErrors}
+          onAddSimulationEntry={() => {
+            const trimmedEntry = simulationEntryInput.trim();
+            if (trimmedEntry.length === 0) {
+              return;
+            }
+
+            updateDraftScene((scene) => {
+              if (!scene.simulationData.includes(trimmedEntry)) {
+                scene.simulationData.push(trimmedEntry);
+              }
+            });
+            setSimulationEntryInput('');
+          }}
+          onBrowse={(path) => {
+            void handleBrowse(path);
+          }}
+          onClose={() => setSimulationOverlayOpen(false)}
+          onRemoveSimulationEntry={(entry) => {
+            updateDraftScene((scene) => {
+              scene.simulationData = scene.simulationData.filter((value) => value !== entry);
+            });
+          }}
+          onSelectBrowserFile={(path) => {
+            setSimulationEntryInput(getRelativePath(getBasePath(loaded.scenePath), path));
+          }}
+          parsedSimulationFiles={parsedSimulationFiles}
+          scenePath={loaded.scenePath}
+          simulationEntries={draftScene.simulationData}
+          simulationEntryInput={simulationEntryInput}
+          simulationLoading={simulationLoading}
+          setSimulationEntryInput={setSimulationEntryInput}
         />
       ) : null}
-
     </div>
   );
 }

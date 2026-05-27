@@ -147,7 +147,23 @@ test('scene evaluation normalizes cone, torus, and mesh visuals for rendering', 
     },
   });
 
-  const evaluation = evaluateScene(scene, undefined);
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {
+      'P_No_N[1]': 0,
+      'P_No_N[2]': 0,
+      'P_No_N[3]': 0,
+      'World_N[1,1]': 1,
+      'World_N[1,2]': 0,
+      'World_N[1,3]': 0,
+      'World_N[2,1]': 0,
+      'World_N[2,2]': 1,
+      'World_N[2,3]': 0,
+      'World_N[3,1]': 0,
+      'World_N[3,2]': 0,
+      'World_N[3,3]': 1,
+    },
+  });
   const visuals = evaluation.objects.N.visuals;
 
   assert.deepEqual(visuals.find((visual) => visual.name === 'cone'), {
@@ -220,7 +236,14 @@ test('scene evaluation normalizes text visuals for rendering', () => {
     },
   });
 
-  const evaluation = evaluateScene(scene, undefined);
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {
+      'P_No_N[1]': 0,
+      'P_No_N[2]': 0,
+      'P_No_N[3]': 0,
+    },
+  });
 
   assert.deepEqual(evaluation.objects.N.visuals.find((visual) => visual.name === 'label'), {
     name: 'label',
@@ -232,6 +255,58 @@ test('scene evaluation normalizes text visuals for rendering', () => {
     text: 'N',
     scale: 0.5,
   });
+});
+
+test('scene evaluation skips visuals for objects with no backing simulation data', () => {
+  const scene = createSceneDocument({
+    newtonianFrame: 'N',
+    objects: {
+      Ghost: {
+        type: 'frame',
+        visual: {
+          marker: {
+            type: 'sphere',
+            radius: 0.25,
+          },
+        },
+      },
+    },
+  });
+
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {
+      'P_No_N[1]': 0,
+      'P_No_N[2]': 0,
+      'P_No_N[3]': 0,
+    },
+  });
+
+  assert.deepEqual(evaluation.objects.Ghost.visuals, []);
+});
+
+test('scene evaluation keeps the newtonian frame renderable without explicit sim channels', () => {
+  const scene = createSceneDocument({
+    newtonianFrame: 'N',
+    objects: {
+      N: {
+        type: 'frame',
+        visual: {
+          marker: {
+            type: 'sphere',
+            radius: 0.25,
+          },
+        },
+      },
+    },
+  });
+
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {},
+  });
+
+  assert.equal(evaluation.objects.N.visuals.length, 3);
 });
 
 test('scene evaluation resolves cable spans from sceneOrigin point data', () => {
