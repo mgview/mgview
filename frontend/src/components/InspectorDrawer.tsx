@@ -13,6 +13,13 @@ export type InspectorEditorMode = 'visual' | 'scene' | 'json';
 
 interface InspectorDrawerProps {
   activeScene: NormalizedSceneConfig | null;
+  cameraPreview?: {
+    cameraParentFrame: string;
+    cameraEye: [number, number, number];
+    cameraFocus: [number, number, number];
+    cameraUp: [number, number, number];
+  } | null;
+  clearCameraPreview: () => void;
   editorMode: InspectorEditorMode;
   hasLocalEdits: boolean;
   liveSelectedVisual?: SceneVisual;
@@ -39,6 +46,8 @@ interface InspectorDrawerProps {
 
 export default function InspectorDrawer({
   activeScene,
+  cameraPreview,
+  clearCameraPreview,
   editorMode,
   hasLocalEdits,
   liveSelectedVisual,
@@ -100,6 +109,8 @@ export default function InspectorDrawer({
       {editorMode === 'scene' ? (
         <SceneSettingsPanel
           activeScene={activeScene}
+          cameraPreview={cameraPreview}
+          clearCameraPreview={clearCameraPreview}
           objectNames={activeScene ? Object.keys(activeScene.objects) : []}
           updateDraftScene={updateDraftScene}
           updateSceneVector={updateSceneVector}

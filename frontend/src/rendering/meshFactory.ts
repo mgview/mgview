@@ -40,7 +40,8 @@ function colorFromName(materialName: string | undefined): THREE.Color {
   }
 
   const normalized = normalizeMaterialName(materialName);
-  return new THREE.Color(LEGACY_COLOR_PRESETS[normalized] ?? materialName);
+  const presetColor = LEGACY_COLOR_PRESETS[normalized] ?? LEGACY_TEXTURE_PRESETS[normalized]?.color;
+  return new THREE.Color(presetColor ?? '#b8c7df');
 }
 
 function colorFromMaterial(material: RenderMaterial): THREE.Color {

@@ -68,6 +68,13 @@ function tupleApproximatelyEqual(
   );
 }
 
+type CameraDraftPreview = {
+  cameraParentFrame: string;
+  cameraEye: [number, number, number];
+  cameraFocus: [number, number, number];
+  cameraUp: [number, number, number];
+};
+
 export default function App() {
   const workspace = useSceneWorkspace(getScenePathFromUrl());
   const [loadOverlayOpen, setLoadOverlayOpen] = useState(false);
@@ -78,6 +85,7 @@ export default function App() {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [rightDrawerCollapsed, setRightDrawerCollapsed] = useState(false);
   const [sampleBrowserExpanded, setSampleBrowserExpanded] = useState(false);
+  const [cameraPreview, setCameraPreview] = useState<CameraDraftPreview | null>(null);
   const {
     activeScene,
     browserError,
@@ -118,6 +126,21 @@ export default function App() {
       setEditorMode('visual');
     }
   }, [loaded?.scenePath]);
+
+  useEffect(() => {
+    if (!activeScene || !cameraPreview) {
+      return;
+    }
+
+    const parentMatches = activeScene.cameraParentFrame === cameraPreview.cameraParentFrame;
+    const eyeMatches = tupleApproximatelyEqual(activeScene.cameraEye, cameraPreview.cameraEye);
+    const focusMatches = tupleApproximatelyEqual(activeScene.cameraFocus, cameraPreview.cameraFocus);
+    const upMatches = tupleApproximatelyEqual(activeScene.cameraUp, cameraPreview.cameraUp);
+
+    if (parentMatches && eyeMatches && focusMatches && upMatches) {
+      setCameraPreview(null);
+    }
+  }, [activeScene, cameraPreview]);
 
   const playbackSpeed = activeScene?.speedFactor ?? loaded?.scene.speedFactor ?? 1;
   const playback = usePlaybackController(loaded ? timeline : null, playbackSpeed);
@@ -215,6 +238,7 @@ export default function App() {
     nextValue: number,
     fallback: [number, number, number]
   ) => {
+    setCameraPreview(null);
     updateDraftScene((scene) => {
       const current = scene[key] ?? fallback;
       const nextTuple: [number, number, number] = [...current] as [number, number, number];
@@ -301,14 +325,23 @@ export default function App() {
               <>
                 <RendererPanel
                   cameraSeedKey={cameraSeedKey}
-                  onCameraChange={({ cameraParentFrame, cameraEye, cameraFocus, cameraUp }) => {
+                  onCameraPreviewChange={(nextCameraPreview) => {
+                    setCameraPreview(nextCameraPreview);
+                  }}
+                  onCameraCommit={({ cameraParentFrame, cameraEye, cameraFocus, cameraUp }) => {
+                    setCameraPreview({
+                      cameraParentFrame,
+                      cameraEye,
+                      cameraFocus,
+                      cameraUp,
+                    });
                     updateDraftScene((scene) => {
-                      const parentUnchanged = scene.cameraParentFrame === cameraParentFrame;
-                      const eyeUnchanged = tupleApproximatelyEqual(scene.cameraEye, cameraEye);
-                      const focusUnchanged = tupleApproximatelyEqual(scene.cameraFocus, cameraFocus);
-                      const upUnchanged = tupleApproximatelyEqual(scene.cameraUp, cameraUp);
-
-                      if (parentUnchanged && eyeUnchanged && focusUnchanged && upUnchanged) {
+                      if (
+                        scene.cameraParentFrame === cameraParentFrame &&
+                        tupleApproximatelyEqual(scene.cameraEye, cameraEye) &&
+                        tupleApproximatelyEqual(scene.cameraFocus, cameraFocus) &&
+                        tupleApproximatelyEqual(scene.cameraUp, cameraUp)
+                      ) {
                         return;
                       }
 
@@ -373,6 +406,8 @@ export default function App() {
             <div className="workspace-pane-scroll">
               <InspectorDrawer
                 activeScene={activeScene}
+                cameraPreview={cameraPreview}
+                clearCameraPreview={() => setCameraPreview(null)}
                 editorMode={editorMode}
                 hasLocalEdits={hasLocalEdits}
                 liveSelectedVisual={liveSelectedVisual}

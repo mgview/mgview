@@ -42,7 +42,13 @@ function getRendererBackgroundColor(color: string | undefined) {
 
 interface RendererPanelProps {
   cameraSeedKey: string;
-  onCameraChange?: (camera: {
+  onCameraCommit?: (camera: {
+    cameraParentFrame: string;
+    cameraEye: [number, number, number];
+    cameraFocus: [number, number, number];
+    cameraUp: [number, number, number];
+  }) => void;
+  onCameraPreviewChange?: (camera: {
     cameraParentFrame: string;
     cameraEye: [number, number, number];
     cameraFocus: [number, number, number];
@@ -70,7 +76,8 @@ interface SceneHandle {
 
 export default function RendererPanel({
   cameraSeedKey,
-  onCameraChange,
+  onCameraCommit,
+  onCameraPreviewChange,
   scenePath,
   scene,
   frame,
@@ -84,34 +91,44 @@ export default function RendererPanel({
   const latestSceneRef = useRef(scene);
   const latestFrameRef = useRef(frame);
   const isApplyingCameraRef = useRef(false);
-  const latestCameraChangeRef = useRef(onCameraChange);
+  const latestCameraCommitRef = useRef(onCameraCommit);
+  const latestCameraPreviewChangeRef = useRef(onCameraPreviewChange);
   const lastEmittedCameraSeedKeyRef = useRef<string | null>(null);
 
-  latestCameraChangeRef.current = onCameraChange;
+  latestCameraCommitRef.current = onCameraCommit;
+  latestCameraPreviewChangeRef.current = onCameraPreviewChange;
 
-  const emitCameraChange = (override: CameraOverride) => {
-    const callback = latestCameraChangeRef.current;
+  const toCameraState = (override: CameraOverride) => ({
+    cameraParentFrame: override.parentFrame,
+    cameraEye: [override.localEye.x, override.localEye.y, override.localEye.z] as [number, number, number],
+    cameraFocus: [override.localFocus.x, override.localFocus.y, override.localFocus.z] as [number, number, number],
+    cameraUp: [override.localUp.x, override.localUp.y, override.localUp.z] as [number, number, number],
+  });
+
+  const emitCameraPreviewChange = (override: CameraOverride) => {
+    latestCameraPreviewChangeRef.current?.(toCameraState(override));
+  };
+
+  const emitCameraCommit = (override: CameraOverride) => {
+    const callback = latestCameraCommitRef.current;
     if (!callback) {
       return;
     }
 
-    const cameraEye: [number, number, number] = [override.localEye.x, override.localEye.y, override.localEye.z];
-    const cameraFocus: [number, number, number] = [override.localFocus.x, override.localFocus.y, override.localFocus.z];
-    const cameraUp: [number, number, number] = [override.localUp.x, override.localUp.y, override.localUp.z];
-
+    const nextCameraState = toCameraState(override);
     lastEmittedCameraSeedKeyRef.current = buildCameraSeedKey(
       scenePath,
-      override.parentFrame,
-      cameraEye,
-      cameraFocus,
-      cameraUp
+      nextCameraState.cameraParentFrame,
+      nextCameraState.cameraEye,
+      nextCameraState.cameraFocus,
+      nextCameraState.cameraUp
     );
 
     callback({
-      cameraParentFrame: override.parentFrame,
-      cameraEye,
-      cameraFocus,
-      cameraUp,
+      cameraParentFrame: nextCameraState.cameraParentFrame,
+      cameraEye: nextCameraState.cameraEye,
+      cameraFocus: nextCameraState.cameraFocus,
+      cameraUp: nextCameraState.cameraUp,
     });
   };
 
@@ -137,6 +154,15 @@ export default function RendererPanel({
     controls.enableDamping = false;
     controls.addEventListener('start', () => {
       cameraDirtyRef.current = true;
+      const currentScene = latestSceneRef.current;
+      const currentFrame = latestFrameRef.current;
+      const currentEvaluation = evaluateScene(currentScene, currentFrame);
+      cameraOverrideRef.current = deriveCameraOverride(currentScene, currentEvaluation, camera, controls);
+    });
+    controls.addEventListener('end', () => {
+      if (cameraOverrideRef.current) {
+        emitCameraCommit(cameraOverrideRef.current);
+      }
     });
     controls.addEventListener('change', () => {
       if (!cameraDirtyRef.current || isApplyingCameraRef.current === true) {
@@ -153,7 +179,7 @@ export default function RendererPanel({
       handleRef.current!.cameraChangeFrameId = requestAnimationFrame(() => {
         handleRef.current!.cameraChangeFrameId = null;
         if (cameraOverrideRef.current) {
-          emitCameraChange(cameraOverrideRef.current);
+          emitCameraPreviewChange(cameraOverrideRef.current);
         }
       });
     });
@@ -264,7 +290,7 @@ export default function RendererPanel({
     handle.worldAxes.quaternion.copy(activeCamera.sceneToCanonical);
     handle.worldAxes.visible = scene.showAxes;
 
-    if (!cameraDirtyRef.current) {
+    if (!cameraDirtyRef.current || !cameraOverrideRef.current) {
       isApplyingCameraRef.current = true;
       handle.camera.up.copy(canonicalCamera.worldUp);
       handle.camera.position.copy(canonicalCamera.worldEye);
