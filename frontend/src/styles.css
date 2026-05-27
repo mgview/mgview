@@ -176,7 +176,7 @@ input[inputmode="decimal"] {
 
 .workspace-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 18px minmax(540px, 670px);
+  grid-template-columns: minmax(0, 1fr) 18px minmax(510px, 568px);
   gap: 10px;
   align-items: stretch;
   min-height: 0;
@@ -198,7 +198,7 @@ input[inputmode="decimal"] {
 }
 
 .workspace-left-rail {
-  grid-template-columns: minmax(190px, 230px) minmax(340px, 430px);
+  grid-template-columns: minmax(108px, 128px) minmax(392px, 430px);
   align-items: stretch;
 }
 

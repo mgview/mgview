@@ -187,15 +187,16 @@ export default function RendererPanel({
       });
     });
 
-    const ambientLight = new THREE.AmbientLight(0x222222);
-    const cameraLight = new THREE.PointLight(0xffffff, 0.9, 0);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const hemisphereLight = new THREE.HemisphereLight(0xeaf4ff, 0x4a5568, 1.15);
+    const cameraLight = new THREE.PointLight(0xffffff, 1.2, 0);
     cameraLight.position.set(-1, 1, 1);
     camera.add(cameraLight);
-    const fillLight = new THREE.PointLight(0xffffff, 0.35, 0);
-    fillLight.position.set(1, -0.5, -1);
+    const fillLight = new THREE.PointLight(0xdfe8ff, 0.65, 0);
+    fillLight.position.set(1.5, 0.2, -1.25);
     camera.add(fillLight);
-    const sceneLight = new THREE.PointLight(0xffffff, 1.2, 0);
-    world.add(ambientLight, sceneLight, camera);
+    const sceneLight = new THREE.PointLight(0xffffff, 1.7, 0);
+    world.add(ambientLight, hemisphereLight, sceneLight, camera);
 
     const worldAxes = createLegacyAxes(
       Math.max(scene.workspaceSize, 0.1),
