@@ -206,14 +206,36 @@ export default function App() {
     });
   };
 
-  const createVisual = (name: string, type: VisualType) => {
-    const trimmedName = name.trim();
-    if (!draftScene || !selectedObject?.name || trimmedName.length === 0) {
+  const updateSelectedObject = (
+    updater: (sceneObject: NonNullable<NonNullable<typeof draftScene>['objects'][string]>) => void
+  ) => {
+    if (!draftScene || !selectedObject?.name) {
+      return;
+    }
+
+    updateDraftScene((scene) => {
+      const sceneObject = scene.objects[selectedObject.name];
+      if (!sceneObject) {
+        return;
+      }
+
+      updater(sceneObject);
+    });
+  };
+
+  const createVisual = (type: VisualType) => {
+    if (!draftScene || !selectedObject?.name) {
       return false;
     }
 
-    if (draftScene.objects[selectedObject.name]?.visual?.[trimmedName]) {
-      return false;
+    const existingNames = new Set(
+      Object.keys(draftScene.objects[selectedObject.name]?.visual ?? {})
+    );
+    let nextIndex = 1;
+    let nextName = `visual_${nextIndex}`;
+    while (existingNames.has(nextName)) {
+      nextIndex += 1;
+      nextName = `visual_${nextIndex}`;
     }
 
     updateDraftScene((scene) => {
@@ -223,7 +245,34 @@ export default function App() {
       }
 
       sceneObject.visual ??= {};
-      sceneObject.visual[trimmedName] = createDefaultVisual(type);
+      sceneObject.visual[nextName] = createDefaultVisual(type, undefined, scene.workspaceSize);
+    });
+    setSelectedVisualName(nextName);
+    return true;
+  };
+
+  const renameVisual = (currentName: string, nextName: string) => {
+    const trimmedName = nextName.trim();
+    if (!draftScene || !selectedObject?.name || trimmedName.length === 0 || currentName === trimmedName) {
+      return currentName === trimmedName;
+    }
+
+    if (draftScene.objects[selectedObject.name]?.visual?.[trimmedName]) {
+      return false;
+    }
+
+    updateDraftScene((scene) => {
+      const sceneObject = scene.objects[selectedObject.name];
+      const visuals = sceneObject?.visual;
+      const visual = visuals?.[currentName];
+      if (!sceneObject || !visuals || !visual) {
+        return;
+      }
+
+      const reorderedEntries = Object.entries(visuals).map(([name, entry]) =>
+        name === currentName ? [trimmedName, entry] : [name, entry]
+      );
+      sceneObject.visual = Object.fromEntries(reorderedEntries);
     });
     setSelectedVisualName(trimmedName);
     return true;
@@ -256,7 +305,7 @@ export default function App() {
     }
 
     updateSelectedVisual((visual) => {
-      const nextVisual = createDefaultVisual(type, visual.material);
+      const nextVisual = createDefaultVisual(type, visual.material, draftScene.workspaceSize);
       nextVisual.visible = visual.visible ?? true;
       nextVisual.position = visual.position ? { ...visual.position } : nextVisual.position;
       nextVisual.rotation = visual.rotation ? { ...visual.rotation } : nextVisual.rotation;
@@ -305,6 +354,11 @@ export default function App() {
         }}
         onOpenDiagnostics={() => setDiagnosticsOpen(true)}
         onOpenChannels={() => setChannelPreviewOpen(true)}
+        onSceneNameChange={(nextName) => {
+          updateDraftScene((scene) => {
+            scene.name = nextName;
+          });
+        }}
         onSave={() => void handleSaveScene()}
         onRevert={() => {
           if (handleRevertDraft()) {
@@ -422,7 +476,9 @@ export default function App() {
                 savePreview={savePreview}
                 selectedObject={selectedObject}
                 selectedVisual={selectedVisual}
+                updateSelectedObject={updateSelectedObject}
                 createVisual={createVisual}
+                renameVisual={renameVisual}
                 deleteSelectedVisual={deleteSelectedVisual}
                 changeSelectedVisualType={changeSelectedVisualType}
                 setEditorMode={setEditorMode}

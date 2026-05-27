@@ -131,6 +131,12 @@ test('scene evaluation normalizes cone, torus, and mesh visuals for rendering', 
             segments_thickness: 10,
             arc: Math.PI,
           },
+          grid: {
+            type: 'grid',
+            cell_size: 0.5,
+            count_x: 8,
+            count_y: 4,
+          },
           mesh: {
             type: 'mesh',
             path: 'LinkA.obj',
@@ -171,6 +177,18 @@ test('scene evaluation normalizes cone, torus, and mesh visuals for rendering', 
     segmentsRadius: 24,
     segmentsThickness: 10,
     arc: Math.PI,
+  });
+
+  assert.deepEqual(visuals.find((visual) => visual.name === 'grid'), {
+    name: 'grid',
+    type: 'grid',
+    visible: true,
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    material: { name: 'SILVER', color: undefined },
+    cellSize: 0.5,
+    countX: 8,
+    countY: 4,
   });
 
   assert.deepEqual(visuals.find((visual) => visual.name === 'mesh'), {

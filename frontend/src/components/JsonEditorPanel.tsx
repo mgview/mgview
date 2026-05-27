@@ -13,7 +13,6 @@ export default function JsonEditorPanel({
 }: JsonEditorPanelProps) {
   return (
     <>
-      <h2>JSON Editor</h2>
       <SavePreviewPanel
         scenePath={scenePath}
         hasLocalEdits={hasLocalEdits}

@@ -40,7 +40,6 @@ interface SceneHandle {
   cameraLight: THREE.PointLight;
   sceneLight: THREE.PointLight;
   worldAxes: THREE.Group;
-  grid: THREE.GridHelper;
   sceneRoot: THREE.Group;
   resizeObserver: ResizeObserver;
   frameId: number | null;
@@ -106,13 +105,12 @@ export default function RendererPanel({
     const sceneLight = new THREE.PointLight(0xffffff, 1.2, 0);
     world.add(ambientLight, sceneLight, camera);
 
-    const grid = new THREE.GridHelper(Math.max(scene.workspaceSize * 6, 1), 12, 0x36506f, 0x223347);
     const worldAxes = createLegacyAxes(
       Math.max(scene.workspaceSize, 0.1),
       Math.max(scene.workspaceSize / 100, 0.001)
     );
     const sceneRoot = new THREE.Group();
-    world.add(grid, worldAxes, sceneRoot);
+    world.add(worldAxes, sceneRoot);
 
     const resize = () => {
       const width = host.clientWidth || 1;
@@ -140,7 +138,6 @@ export default function RendererPanel({
       cameraLight,
       sceneLight,
       worldAxes,
-      grid,
       sceneRoot,
       resizeObserver,
       frameId: requestAnimationFrame(tick),
@@ -194,7 +191,6 @@ export default function RendererPanel({
     handle.sceneRoot.quaternion.copy(activeCamera.sceneToCanonical);
     handle.worldAxes.quaternion.copy(activeCamera.sceneToCanonical);
     handle.worldAxes.visible = scene.showAxes;
-    handle.grid.visible = true;
 
     if (!cameraDirtyRef.current) {
       isApplyingCameraRef.current = true;

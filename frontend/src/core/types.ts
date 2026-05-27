@@ -5,6 +5,7 @@ export type VisualType =
   | 'cylinder'
   | 'cone'
   | 'torus'
+  | 'grid'
   | 'mesh'
   | 'text'
   | 'basis'
@@ -50,6 +51,9 @@ export interface SceneVisual {
   segments_depth?: number;
   segments_radius?: number;
   segments_thickness?: number;
+  cell_size?: number;
+  count_x?: number;
+  count_y?: number;
   size?: Vector3Like;
   [key: string]: unknown;
 }
@@ -224,6 +228,13 @@ export interface RenderTorusVisual extends RenderVisualBase {
   arc?: number;
 }
 
+export interface RenderGridVisual extends RenderVisualBase {
+  type: 'grid';
+  cellSize: number;
+  countX: number;
+  countY: number;
+}
+
 export interface RenderMeshVisual extends RenderVisualBase {
   type: 'mesh';
   path: string;
@@ -257,6 +268,7 @@ export type RenderVisual =
   | RenderCylinderVisual
   | RenderConeVisual
   | RenderTorusVisual
+  | RenderGridVisual
   | RenderMeshVisual
   | RenderTextVisual
   | RenderBasisVisual;

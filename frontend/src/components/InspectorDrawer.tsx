@@ -20,7 +20,9 @@ interface InspectorDrawerProps {
   savePreview: string;
   selectedObject?: SceneObjectInspection;
   selectedVisual?: SceneObjectInspection['visuals'][number];
-  createVisual: (name: string, type: VisualType) => boolean;
+  updateSelectedObject: (updater: (sceneObject: NormalizedSceneConfig['objects'][string]) => void) => void;
+  createVisual: (type: VisualType) => boolean;
+  renameVisual: (currentName: string, nextName: string) => boolean;
   deleteSelectedVisual: () => boolean;
   changeSelectedVisualType: (type: VisualType) => void;
   setEditorMode: (mode: InspectorEditorMode) => void;
@@ -44,7 +46,9 @@ export default function InspectorDrawer({
   savePreview,
   selectedObject,
   selectedVisual,
+  updateSelectedObject,
   createVisual,
+  renameVisual,
   deleteSelectedVisual,
   changeSelectedVisualType,
   setEditorMode,
@@ -96,6 +100,7 @@ export default function InspectorDrawer({
       {editorMode === 'scene' ? (
         <SceneSettingsPanel
           activeScene={activeScene}
+          objectNames={activeScene ? Object.keys(activeScene.objects) : []}
           updateDraftScene={updateDraftScene}
           updateSceneVector={updateSceneVector}
         />
@@ -110,7 +115,9 @@ export default function InspectorDrawer({
           liveSelectedVisual={liveSelectedVisual}
           selectedObject={selectedObject}
           selectedVisual={selectedVisual}
+          updateSelectedObject={updateSelectedObject}
           createVisual={createVisual}
+          renameVisual={renameVisual}
           deleteSelectedVisual={deleteSelectedVisual}
           changeSelectedVisualType={changeSelectedVisualType}
           setSelectedVisualName={setSelectedVisualName}

@@ -345,6 +345,15 @@ StaticServlet.prototype.sendJson_ = function(res, statusCode, value) {
 };
 
 StaticServlet.prototype.sendError_ = function(req, res, error) {
+  if (res.headersSent) {
+    console.log('Stream error after headers sent');
+    console.log(util.inspect(error));
+    if (!res.destroyed) {
+      res.end();
+    }
+    return;
+  }
+
   res.writeHead(500, {
     'Content-Type': 'text/html',
   });
@@ -417,10 +426,15 @@ StaticServlet.prototype.sendFile_ = function(req, res, filePath) {
 
   file.on('data', res.write.bind(res));
   file.on('close', function() {
-    res.end();
+    if (!res.destroyed) {
+      res.end();
+    }
   });
   file.on('error', (error) => {
     this.sendError_(req, res, error);
+  });
+  res.on('close', function() {
+    file.destroy();
   });
 };
 

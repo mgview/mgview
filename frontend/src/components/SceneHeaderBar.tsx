@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 interface SceneHeaderBarProps {
   scenePath: string | null;
   sceneName: string | null;
@@ -9,6 +11,7 @@ interface SceneHeaderBarProps {
   onOpenLoadOverlay: () => void;
   onOpenDiagnostics: () => void;
   onOpenChannels: () => void;
+  onSceneNameChange: (nextName: string) => void;
   onSave: () => void;
   onRevert: () => void;
 }
@@ -24,14 +27,56 @@ export default function SceneHeaderBar({
   onOpenLoadOverlay,
   onOpenDiagnostics,
   onOpenChannels,
+  onSceneNameChange,
   onSave,
   onRevert,
 }: SceneHeaderBarProps) {
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(sceneName ?? '');
+
+  useEffect(() => {
+    if (!isEditingName) {
+      setNameDraft(sceneName ?? '');
+    }
+  }, [isEditingName, sceneName]);
+
+  const commitSceneName = () => {
+    onSceneNameChange(nameDraft);
+    setIsEditingName(false);
+  };
+
   return (
     <section className="scene-header">
       <div className="scene-header-row">
         <div className="scene-header-main">
-          <strong className="scene-header-title">{sceneName ?? 'MGView Workspace'}</strong>
+          {isEditingName ? (
+            <input
+              className="scene-header-title-input"
+              type="text"
+              autoFocus
+              value={nameDraft}
+              onChange={(event) => setNameDraft(event.target.value)}
+              onBlur={commitSceneName}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  commitSceneName();
+                }
+                if (event.key === 'Escape') {
+                  setNameDraft(sceneName ?? '');
+                  setIsEditingName(false);
+                }
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              className="scene-header-title-button"
+              onClick={() => setIsEditingName(true)}
+            >
+              {sceneName ?? 'MGView Workspace'}
+            </button>
+          )}
           <code className="scene-header-code">{scenePath ?? '(none loaded)'}</code>
         </div>
 

@@ -194,6 +194,14 @@ function normalizeRenderVisual(visualName: string, visual: SceneVisual): RenderV
         segmentsThickness: visual.segments_thickness ?? 8,
         arc: typeof visual.arc === 'number' ? visual.arc : undefined,
       };
+    case 'grid':
+      return {
+        ...base,
+        type: 'grid',
+        cellSize: visual.cell_size ?? 0.5,
+        countX: visual.count_x ?? 6,
+        countY: visual.count_y ?? 6,
+      };
     case 'mesh':
       if (typeof visual.path !== 'string' || visual.path.trim() === '') {
         return null;

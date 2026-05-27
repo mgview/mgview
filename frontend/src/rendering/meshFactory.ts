@@ -3,6 +3,12 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 
 import type { RenderCableSpan, RenderMaterial, RenderVisual, RgbaColor } from '../core/types.ts';
+import {
+  LEGACY_COLOR_PRESETS,
+  LEGACY_TEXTURE_PRESETS,
+  normalizeMaterialName,
+  parseCssColorString,
+} from '../core/materialPresets.ts';
 import { createBasis } from './axisHelpers.ts';
 import { toThreeVector } from './coordinateConvention.ts';
 
@@ -19,76 +25,8 @@ const textureCache = new Map<string, Promise<THREE.Texture>>();
 const objCache = new Map<string, Promise<THREE.Group>>();
 const stlCache = new Map<string, Promise<THREE.BufferGeometry>>();
 
-const LEGACY_PALETTE: Record<string, string> = {
-  SILVER: '#c7d2e2',
-  SHINY_SILVER: '#d7e1ee',
-  GRAY: '#7f8da3',
-  GREY: '#7f8da3',
-  SHINY_GRAY: '#97a3b5',
-  WHITE: '#edf3ff',
-  SHINY_WHITE: '#f7faff',
-  BLACK: '#111827',
-  SHINY_BLACK: '#222222',
-  RED: '#ff6b6b',
-  SHINY_RED: '#ff8787',
-  GREEN: '#51cf66',
-  SHINY_GREEN: '#69db7c',
-  BLUE: '#4dabf7',
-  SHINY_BLUE: '#74c0fc',
-  YELLOW: '#ffd43b',
-  ORANGE: '#ffa94d',
-  PURPLE: '#9775fa',
-};
-
-const LEGACY_TEXTURES: Record<
-  string,
-  { path: string; repeat?: [number, number]; color?: string; bumpScale?: number; roughness?: number; metalness?: number }
-> = {
-  CHECKERBOARD: { path: 'app/textures/checkerboard.jpg', color: '#ffffff', roughness: 0.85, metalness: 0.05 },
-  METAL: { path: 'app/textures/metal.jpg', repeat: [2, 2], color: '#ffffff', roughness: 0.35, metalness: 0.75 },
-  DIRT: { path: 'app/textures/terrain/backgrounddetailed6.jpg', color: '#ffffff', roughness: 0.95, metalness: 0.02 },
-  FOIL: { path: 'app/textures/water.jpg', color: '#ccccaa', roughness: 0.28, metalness: 0.7 },
-  WATER: { path: 'app/textures/water.jpg', color: '#3333aa', roughness: 0.12, metalness: 0.15 },
-  GRASS: { path: 'app/textures/terrain/grasslight-big.jpg', color: '#ffffff', roughness: 1.0, metalness: 0.0 },
-  LAVA: { path: 'app/textures/lavatile.jpg', repeat: [4, 2], color: '#ffffff', roughness: 0.7, metalness: 0.05 },
-  MOON: { path: 'app/textures/planets/moon_1024.jpg', color: '#ffffff', roughness: 1.0, metalness: 0.0 },
-  EARTH: { path: 'app/textures/planets/earth_atmos_2048.jpg', color: '#ffffff', roughness: 0.85, metalness: 0.0 },
-};
-
 function colorFromRgba(color: RgbaColor): THREE.Color {
   return new THREE.Color(color.r, color.g, color.b);
-}
-
-function parseCssColorString(value: string | undefined): { color: THREE.Color; opacity?: number } | null {
-  if (!value) {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  const rgbaMatch = trimmed.match(
-    /^rgba\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)\s*\)$/i
-  );
-  if (rgbaMatch) {
-    const [, r, g, b, a] = rgbaMatch;
-    return {
-      color: new THREE.Color(Number(r) / 255, Number(g) / 255, Number(b) / 255),
-      opacity: Number(a),
-    };
-  }
-
-  const rgbMatch = trimmed.match(/^rgb\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)\s*\)$/i);
-  if (rgbMatch) {
-    const [, r, g, b] = rgbMatch;
-    return {
-      color: new THREE.Color(Number(r) / 255, Number(g) / 255, Number(b) / 255),
-    };
-  }
-
-  try {
-    return { color: new THREE.Color(trimmed) };
-  } catch {
-    return null;
-  }
 }
 
 function colorFromName(materialName: string | undefined): THREE.Color {
@@ -98,11 +36,11 @@ function colorFromName(materialName: string | undefined): THREE.Color {
 
   const parsed = parseCssColorString(materialName);
   if (parsed) {
-    return parsed.color;
+    return new THREE.Color(parsed.red / 255, parsed.green / 255, parsed.blue / 255);
   }
 
-  const normalized = materialName.trim().toUpperCase();
-  return new THREE.Color(LEGACY_PALETTE[normalized] ?? materialName);
+  const normalized = normalizeMaterialName(materialName);
+  return new THREE.Color(LEGACY_COLOR_PRESETS[normalized] ?? materialName);
 }
 
 function colorFromMaterial(material: RenderMaterial): THREE.Color {
@@ -111,8 +49,8 @@ function colorFromMaterial(material: RenderMaterial): THREE.Color {
 
 function getOpacity(material: RenderMaterial): number {
   const parsed = parseCssColorString(material.name);
-  if (typeof parsed?.opacity === 'number') {
-    return parsed.opacity;
+  if (typeof parsed?.alpha === 'number') {
+    return parsed.alpha;
   }
 
   const alpha = material.color?.a;
@@ -120,7 +58,7 @@ function getOpacity(material: RenderMaterial): number {
 }
 
 function getMaterialKey(material: RenderMaterial): string {
-  return material.name.trim().toUpperCase();
+  return normalizeMaterialName(material.name);
 }
 
 function loadTexture(url: string, repeat?: [number, number]): Promise<THREE.Texture> {
@@ -152,7 +90,7 @@ function loadTexture(url: string, repeat?: [number, number]): Promise<THREE.Text
 
 function createMaterial(visualMaterial: RenderMaterial, context: RenderAssetContext): THREE.MeshPhongMaterial {
   const materialKey = getMaterialKey(visualMaterial);
-  const texturePreset = LEGACY_TEXTURES[materialKey];
+  const texturePreset = LEGACY_TEXTURE_PRESETS[materialKey];
   const opacity = getOpacity(visualMaterial);
   const color = visualMaterial.color ? colorFromRgba(visualMaterial.color) : colorFromName(visualMaterial.name);
 
@@ -260,6 +198,40 @@ function createTextVisual(visual: Extract<RenderVisual, { type: 'text' }>) {
   });
 
   return new THREE.Mesh(geometry, material);
+}
+
+function createGridVisual(visual: Extract<RenderVisual, { type: 'grid' }>, highlightSelection: boolean | undefined) {
+  const countX = Math.max(1, Math.round(visual.countX));
+  const countY = Math.max(1, Math.round(visual.countY));
+  const cellSize = Math.max(0, visual.cellSize);
+  const width = countX * cellSize;
+  const height = countY * cellSize;
+  const xStart = -width / 2;
+  const xEnd = width / 2;
+  const zStart = -height / 2;
+  const zEnd = height / 2;
+  const positions: number[] = [];
+
+  for (let xIndex = 0; xIndex <= countX; xIndex += 1) {
+    const x = xStart + xIndex * cellSize;
+    positions.push(x, 0, zStart, x, 0, zEnd);
+  }
+
+  for (let yIndex = 0; yIndex <= countY; yIndex += 1) {
+    const z = zStart + yIndex * cellSize;
+    positions.push(xStart, 0, z, xEnd, 0, z);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  const opacity = getOpacity(visual.material);
+  const material = new THREE.LineBasicMaterial({
+    color: highlightSelection ? new THREE.Color('#2e7dd7') : colorFromMaterial(visual.material),
+    opacity,
+    transparent: opacity < 1,
+  });
+
+  return new THREE.LineSegments(geometry, material);
 }
 
 function applyMaterialToObject(root: THREE.Object3D, material: THREE.MeshPhongMaterial) {
@@ -415,6 +387,9 @@ export function createVisualMesh(visual: RenderVisual, context: RenderAssetConte
         ),
         material
       ));
+    case 'grid':
+      material.dispose();
+      return createGridVisual(visual, context.highlightSelection);
     case 'mesh':
       return buildMeshVisual(visual, context);
     case 'text':

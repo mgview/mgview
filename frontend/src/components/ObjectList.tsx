@@ -38,12 +38,11 @@ export default function ObjectList({
                     <code>{entry.name}</code>
                     <strong>{entry.type}</strong>
                   </span>
-                  <span className="inspector-item-bottom">
-                    <span>
-                      {entry.visualCount} visual{entry.visualCount === 1 ? '' : 's'}
+                  {entry.inferred ? (
+                    <span className="inspector-item-bottom">
+                      <span className="tag tag-accent">inferred</span>
                     </span>
-                    {entry.inferred ? <span className="tag tag-accent">inferred</span> : null}
-                  </span>
+                  ) : null}
                 </button>
               ))}
             </div>
