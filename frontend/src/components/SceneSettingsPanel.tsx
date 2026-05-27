@@ -1,4 +1,5 @@
 import type { NormalizedSceneConfig } from '../core/types.ts';
+import ColorPicker from './ColorPicker.tsx';
 import { NumericInput } from './editorShared.tsx';
 
 interface SceneSettingsPanelProps {
@@ -33,6 +34,17 @@ export default function SceneSettingsPanel({
             onValueChange={(nextValue) => {
               updateDraftScene((scene) => {
                 scene.workspaceSize = nextValue;
+              });
+            }}
+          />
+        </label>
+        <label className="editor-field">
+          <span>Background</span>
+          <ColorPicker
+            value={activeScene.backgroundColor}
+            onChange={(nextValue) => {
+              updateDraftScene((scene) => {
+                scene.backgroundColor = nextValue;
               });
             }}
           />

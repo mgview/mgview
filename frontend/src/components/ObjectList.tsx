@@ -38,11 +38,6 @@ export default function ObjectList({
                     <code>{entry.name}</code>
                     <strong>{entry.type}</strong>
                   </span>
-                  {entry.inferred ? (
-                    <span className="inspector-item-bottom">
-                      <span className="tag tag-accent">inferred</span>
-                    </span>
-                  ) : null}
                 </button>
               ))}
             </div>

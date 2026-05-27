@@ -181,7 +181,7 @@ export default function MaterialPicker({ material, onMaterialChange }: MaterialP
                   onClick={() => applyMaterialName(name)}
                 >
                   <span
-                    className="material-option-swatch material-option-swatch-large"
+                    className="material-option-swatch material-option-swatch-large material-option-swatch-texture"
                     aria-hidden="true"
                     style={{
                       backgroundImage: `url("${texturePreviewUrl(preset.path)}")`,
@@ -218,16 +218,17 @@ export default function MaterialPicker({ material, onMaterialChange }: MaterialP
                 value={customAlpha}
                 dragStep={0.01}
                 decimalPlaces={3}
-                prefixLabel="a"
+                prefixLabel="opacity"
+                minValue={0}
+                maxValue={1}
                 onValueChange={(nextValue) => {
-                  const boundedAlpha = Math.min(1, Math.max(0, nextValue));
                   const nextCssText = formatCssColor(
                     Number.parseInt(customHex.slice(1, 3), 16),
                     Number.parseInt(customHex.slice(3, 5), 16),
                     Number.parseInt(customHex.slice(5, 7), 16),
-                    boundedAlpha
+                    nextValue
                   );
-                  setCustomAlpha(boundedAlpha);
+                  setCustomAlpha(nextValue);
                   setCustomCssText(nextCssText);
                   applyMaterialName(nextCssText);
                 }}

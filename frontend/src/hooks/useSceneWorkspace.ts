@@ -71,23 +71,46 @@ export function createSavableScene(
     : undefined;
   nextScene.speedFactor = draftScene.speedFactor;
 
-  if (!rawScene.objects) {
-    return nextScene;
-  }
-
   nextScene.objects = {};
-  for (const [objectName, rawObject] of Object.entries(rawScene.objects)) {
-    const draftObject = draftScene.objects[objectName];
-    if (!draftObject) {
-      nextScene.objects[objectName] = structuredClone(rawObject);
-      continue;
-    }
-
+  for (const [objectName, draftObject] of Object.entries(draftScene.objects)) {
+    const rawObject = rawScene.objects?.[objectName];
     nextScene.objects[objectName] = {
-      ...structuredClone(rawObject),
+      ...(rawObject ? structuredClone(rawObject) : {}),
       type: draftObject.type,
       rotationFrame: draftObject.rotationFrame,
       visual: draftObject.visual ? structuredClone(draftObject.visual) : undefined,
+    };
+  }
+
+  if (rawScene.objects) {
+    for (const [objectName, rawObject] of Object.entries(rawScene.objects)) {
+      if (nextScene.objects[objectName]) {
+        continue;
+      }
+
+      nextScene.objects[objectName] = structuredClone(rawObject);
+    }
+  }
+
+  if (!rawScene.spans) {
+    return nextScene;
+  }
+
+  nextScene.spans = {};
+  for (const [spanName, rawSpan] of Object.entries(rawScene.spans)) {
+    const draftSpan = draftScene.spans[spanName];
+    if (!draftSpan) {
+      nextScene.spans[spanName] = structuredClone(rawSpan);
+      continue;
+    }
+
+    nextScene.spans[spanName] = {
+      ...structuredClone(rawSpan),
+      type: draftSpan.type,
+      point1: draftSpan.point1,
+      point2: draftSpan.point2,
+      showLabel: draftSpan.showLabel,
+      visual: draftSpan.visual ? structuredClone(draftSpan.visual) : undefined,
     };
   }
 

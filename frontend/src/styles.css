@@ -1003,7 +1003,8 @@ input[inputmode="decimal"] {
 }
 
 .material-swatch-button-texture {
-  aspect-ratio: 1;
+  padding-top: 0.18rem;
+  padding-bottom: 0.18rem;
 }
 
 .material-option-active {
@@ -1019,6 +1020,10 @@ input[inputmode="decimal"] {
   border-radius: 0.42rem;
 }
 
+.material-option-swatch-texture {
+  aspect-ratio: 1.6 / 1;
+}
+
 .material-picker-custom {
   padding-top: 8px;
   border-top: 1px solid rgba(159, 182, 212, 0.12);
@@ -1026,9 +1031,20 @@ input[inputmode="decimal"] {
 
 .material-custom-controls {
   display: grid;
-  grid-template-columns: 1fr minmax(84px, 110px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   align-items: center;
+}
+
+.material-custom-controls-single {
+  grid-template-columns: 1fr;
+}
+
+.material-custom-label {
+  color: #9ab0cb;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .material-picker-custom input[type="color"] {
