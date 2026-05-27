@@ -176,31 +176,30 @@ input[inputmode="decimal"] {
 
 .workspace-shell {
   display: grid;
-  grid-template-columns: minmax(190px, 230px) 18px minmax(0, 1fr) 18px minmax(340px, 430px);
+  grid-template-columns: minmax(0, 1fr) 18px minmax(540px, 670px);
   gap: 10px;
   align-items: stretch;
   min-height: 0;
   height: 100%;
 }
 
-.workspace-shell-left-collapsed {
-  grid-template-columns: 18px minmax(0, 1fr) 18px minmax(340px, 430px);
+.workspace-shell-left-rail-collapsed {
+  grid-template-columns: minmax(0, 1fr) 18px;
 }
 
-.workspace-shell-right-collapsed {
-  grid-template-columns: minmax(190px, 230px) 18px minmax(0, 1fr) 18px;
-}
-
-.workspace-shell-left-collapsed.workspace-shell-right-collapsed {
-  grid-template-columns: 18px minmax(0, 1fr) 18px;
-}
-
+.workspace-left-rail,
 .workspace-sidebar,
 .workspace-main,
 .workspace-drawer {
   display: grid;
   gap: 10px;
   min-height: 0;
+  min-width: 0;
+}
+
+.workspace-left-rail {
+  grid-template-columns: minmax(190px, 230px) minmax(340px, 430px);
+  align-items: stretch;
 }
 
 .workspace-drawer {
@@ -1375,9 +1374,7 @@ input[inputmode="decimal"] {
   }
 
   .workspace-shell,
-  .workspace-shell-left-collapsed,
-  .workspace-shell-right-collapsed,
-  .workspace-shell-left-collapsed.workspace-shell-right-collapsed,
+  .workspace-shell-left-rail-collapsed,
   .playback-primary,
   .overlay-header {
     grid-template-columns: 1fr;
@@ -1385,10 +1382,12 @@ input[inputmode="decimal"] {
   }
 
   .workspace-shell,
-  .workspace-shell-left-collapsed,
-  .workspace-shell-right-collapsed,
-  .workspace-shell-left-collapsed.workspace-shell-right-collapsed {
+  .workspace-shell-left-rail-collapsed {
     height: auto;
+  }
+
+  .workspace-left-rail {
+    grid-template-columns: 1fr;
   }
 
   .loader-form,

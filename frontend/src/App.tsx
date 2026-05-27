@@ -82,8 +82,7 @@ export default function App() {
   const [simulationOverlayOpen, setSimulationOverlayOpen] = useState(false);
   const [simulationEntryInput, setSimulationEntryInput] = useState('');
   const [editorMode, setEditorMode] = useState<InspectorEditorMode>('visual');
-  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
-  const [rightDrawerCollapsed, setRightDrawerCollapsed] = useState(false);
+  const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
   const [sampleBrowserExpanded, setSampleBrowserExpanded] = useState(false);
   const [cameraPreview, setCameraPreview] = useState<CameraDraftPreview | null>(null);
   const {
@@ -283,154 +282,143 @@ export default function App() {
 
       {showWorkspaceShell ? (
           <div
-            className={`workspace-shell ${leftSidebarCollapsed ? 'workspace-shell-left-collapsed' : ''} ${
-              rightDrawerCollapsed ? 'workspace-shell-right-collapsed' : ''
-            }`}
+            className={`workspace-shell ${leftRailCollapsed ? 'workspace-shell-left-rail-collapsed' : ''}`}
           >
-            {!leftSidebarCollapsed ? (
-              <div className="workspace-sidebar">
-                <div className="workspace-pane-scroll">
-                  {loaded ? (
-                    <ObjectList
-                      entries={objectInspections}
-                      selectedObjectName={selectedObject?.name ?? null}
-                      onSelectObject={selectObject}
-                    />
-                  ) : (
-                    <section className="panel loading-panel">
-                      <h2>Objects</h2>
-                      <div className="loading-placeholder-list">
-                        <div className="loading-placeholder-row" />
-                        <div className="loading-placeholder-row" />
-                        <div className="loading-placeholder-row" />
-                        <div className="loading-placeholder-row" />
-                      </div>
-                    </section>
-                  )}
-                </div>
-              </div>
-            ) : null}
+            <div className="workspace-main">
+              {activeScene ? (
+                <>
+                  <RendererPanel
+                    cameraSeedKey={cameraSeedKey}
+                    layoutSizeKey={`${leftRailCollapsed}`}
+                    onCameraPreviewChange={(nextCameraPreview) => {
+                      setCameraPreview(nextCameraPreview);
+                    }}
+                    onCameraCommit={({ cameraParentFrame, cameraEye, cameraFocus, cameraUp }) => {
+                      setCameraPreview({
+                        cameraParentFrame,
+                        cameraEye,
+                        cameraFocus,
+                        cameraUp,
+                      });
+                      updateDraftScene((scene) => {
+                        if (
+                          scene.cameraParentFrame === cameraParentFrame &&
+                          tupleApproximatelyEqual(scene.cameraEye, cameraEye) &&
+                          tupleApproximatelyEqual(scene.cameraFocus, cameraFocus) &&
+                          tupleApproximatelyEqual(scene.cameraUp, cameraUp)
+                        ) {
+                          return;
+                        }
 
-            <button
-              type="button"
-              className="workspace-edge-handle"
-              onClick={() => setLeftSidebarCollapsed((current) => !current)}
-              aria-label={leftSidebarCollapsed ? 'Expand objects pane' : 'Collapse objects pane'}
-            >
-              {leftSidebarCollapsed ? '>' : '<'}
-            </button>
+                        scene.cameraParentFrame = cameraParentFrame;
+                        scene.cameraEye = cameraEye;
+                        scene.cameraFocus = cameraFocus;
+                        scene.cameraUp = cameraUp;
+                      });
+                    }}
+                    scenePath={loaded.scenePath}
+                    scene={activeScene}
+                    frame={currentFrame?.frame}
+                    selectedObjectName={selectedObject?.name ?? null}
+                  />
 
-          <div className="workspace-main">
-            {activeScene ? (
-              <>
-                <RendererPanel
-                  cameraSeedKey={cameraSeedKey}
-                  layoutSizeKey={`${leftSidebarCollapsed}:${rightDrawerCollapsed}`}
-                  onCameraPreviewChange={(nextCameraPreview) => {
-                    setCameraPreview(nextCameraPreview);
-                  }}
-                  onCameraCommit={({ cameraParentFrame, cameraEye, cameraFocus, cameraUp }) => {
-                    setCameraPreview({
-                      cameraParentFrame,
-                      cameraEye,
-                      cameraFocus,
-                      cameraUp,
-                    });
-                    updateDraftScene((scene) => {
-                      if (
-                        scene.cameraParentFrame === cameraParentFrame &&
-                        tupleApproximatelyEqual(scene.cameraEye, cameraEye) &&
-                        tupleApproximatelyEqual(scene.cameraFocus, cameraFocus) &&
-                        tupleApproximatelyEqual(scene.cameraUp, cameraUp)
-                      ) {
+                  <PlaybackStrip
+                    isPlaying={playback.isPlaying}
+                    currentTime={playback.currentTime}
+                    tInitial={timeline.tInitial}
+                    tFinal={timeline.tFinal}
+                    tStep={timeline.tStep || 0.001}
+                    playbackSpeed={playbackSpeed}
+                    onTogglePlay={playback.togglePlay}
+                    onReset={playback.resetPlayback}
+                    onChangeTime={playback.changeTime}
+                    onChangeSpeed={(nextValue) => {
+                      if (!Number.isFinite(nextValue)) {
                         return;
                       }
 
-                      scene.cameraParentFrame = cameraParentFrame;
-                      scene.cameraEye = cameraEye;
-                      scene.cameraFocus = cameraFocus;
-                      scene.cameraUp = cameraUp;
-                    });
-                  }}
-                  scenePath={loaded.scenePath}
-                  scene={activeScene}
-                  frame={currentFrame?.frame}
-                  selectedObjectName={selectedObject?.name ?? null}
-                />
-
-                <PlaybackStrip
-                  isPlaying={playback.isPlaying}
-                  currentTime={playback.currentTime}
-                  tInitial={timeline.tInitial}
-                  tFinal={timeline.tFinal}
-                  tStep={timeline.tStep || 0.001}
-                  playbackSpeed={playbackSpeed}
-                  onTogglePlay={playback.togglePlay}
-                  onReset={playback.resetPlayback}
-                  onChangeTime={playback.changeTime}
-                  onChangeSpeed={(nextValue) => {
-                    if (!Number.isFinite(nextValue)) {
-                      return;
-                    }
-
-                    updateDraftScene((scene) => {
-                      scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
-                    });
-                  }}
-                />
-              </>
-            ) : (
-              <>
-                <section className="panel renderer-panel loading-panel">
-                  <div className="renderer-surface renderer-loading-surface">
-                    <div className="renderer-loading-copy">Loading scene and simulation data…</div>
-                  </div>
-                </section>
-                <section className="panel playback-strip loading-panel">
-                  <div className="loading-placeholder-row loading-placeholder-row-short" />
-                </section>
-              </>
-            )}
-          </div>
+                      updateDraftScene((scene) => {
+                        scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
+                      });
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  <section className="panel renderer-panel loading-panel">
+                    <div className="renderer-surface renderer-loading-surface">
+                      <div className="renderer-loading-copy">Loading scene and simulation data…</div>
+                    </div>
+                  </section>
+                  <section className="panel playback-strip loading-panel">
+                    <div className="loading-placeholder-row loading-placeholder-row-short" />
+                  </section>
+                </>
+              )}
+            </div>
 
             <button
               type="button"
               className="workspace-edge-handle"
-              onClick={() => setRightDrawerCollapsed((current) => !current)}
-              aria-label={rightDrawerCollapsed ? 'Expand inspector pane' : 'Collapse inspector pane'}
+              onClick={() => setLeftRailCollapsed((current) => !current)}
+              aria-label={leftRailCollapsed ? 'Expand editor rail' : 'Collapse editor rail'}
             >
-              {rightDrawerCollapsed ? '<' : '>'}
+              {leftRailCollapsed ? '<' : '>'}
             </button>
 
-          {!rightDrawerCollapsed ? (
-          <div className="workspace-drawer">
-            <div className="workspace-pane-scroll">
-              <InspectorDrawer
-                activeScene={activeScene}
-                cameraPreview={cameraPreview}
-                clearCameraPreview={() => setCameraPreview(null)}
-                editorMode={editorMode}
-                hasLocalEdits={hasLocalEdits}
-                liveSelectedVisual={liveSelectedVisual}
-                loaded={loaded}
-                savePreview={savePreview}
-                selectedObject={selectedObject}
-                selectedVisual={selectedVisual}
-                updateSelectedObject={updateSelectedObject}
-                createVisual={createVisual}
-                renameVisual={renameVisual}
-                deleteSelectedVisual={deleteSelectedVisual}
-                changeSelectedVisualType={changeSelectedVisualType}
-                setEditorMode={setEditorMode}
-                setSelectedVisualName={setSelectedVisualName}
-                updateDraftScene={updateDraftScene}
-                updateSceneVector={updateSceneVector}
-                updateSelectedVisual={updateSelectedVisual}
-              />
-            </div>
+            {!leftRailCollapsed ? (
+              <div className="workspace-left-rail">
+                <div className="workspace-sidebar">
+                  <div className="workspace-pane-scroll">
+                    {loaded ? (
+                      <ObjectList
+                        entries={objectInspections}
+                        selectedObjectName={selectedObject?.name ?? null}
+                        onSelectObject={selectObject}
+                      />
+                    ) : (
+                      <section className="panel loading-panel">
+                        <h2>Objects</h2>
+                        <div className="loading-placeholder-list">
+                          <div className="loading-placeholder-row" />
+                          <div className="loading-placeholder-row" />
+                          <div className="loading-placeholder-row" />
+                          <div className="loading-placeholder-row" />
+                        </div>
+                      </section>
+                    )}
+                  </div>
+                </div>
+
+                <div className="workspace-drawer">
+                  <div className="workspace-pane-scroll">
+                    <InspectorDrawer
+                      activeScene={activeScene}
+                      cameraPreview={cameraPreview}
+                      clearCameraPreview={() => setCameraPreview(null)}
+                      editorMode={editorMode}
+                      hasLocalEdits={hasLocalEdits}
+                      liveSelectedVisual={liveSelectedVisual}
+                      loaded={loaded}
+                      savePreview={savePreview}
+                      selectedObject={selectedObject}
+                      selectedVisual={selectedVisual}
+                      updateSelectedObject={updateSelectedObject}
+                      createVisual={createVisual}
+                      renameVisual={renameVisual}
+                      deleteSelectedVisual={deleteSelectedVisual}
+                      changeSelectedVisualType={changeSelectedVisualType}
+                      setEditorMode={setEditorMode}
+                      setSelectedVisualName={setSelectedVisualName}
+                      updateDraftScene={updateDraftScene}
+                      updateSceneVector={updateSceneVector}
+                      updateSelectedVisual={updateSelectedVisual}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
-          ) : null}
-        </div>
       ) : null}
 
       {loadOverlayOpen ? (
