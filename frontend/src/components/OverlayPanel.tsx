@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 interface OverlayPanelProps {
@@ -15,6 +16,20 @@ export default function OverlayPanel({
   children,
   onClose,
 }: OverlayPanelProps) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   return (
     <div className="overlay-backdrop" role="dialog" aria-modal="true">
       <div className="overlay-card">

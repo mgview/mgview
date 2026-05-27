@@ -88,7 +88,11 @@ export default function SimulationDataOverlay({
       title="Simulation Data"
       subtitle="Manage simulation file entries and inspect the parsed channels driving inference."
       actions={
-        simulationLoading ? <span className="tag tag-soft">Refreshing…</span> : <span className="tag tag-soft">Live</span>
+        simulationLoading ? (
+          <span className="tag tag-soft">Refreshing…</span>
+        ) : (
+          <span className="tag tag-soft">Auto-refresh on</span>
+        )
       }
       onClose={onClose}
     >

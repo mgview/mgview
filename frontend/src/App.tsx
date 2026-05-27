@@ -149,6 +149,37 @@ export default function App() {
   const playbackSpeed = activeScene?.speedFactor ?? loaded?.scene.speedFactor ?? 1;
   const playback = usePlaybackController(loaded ? timeline : null, playbackSpeed);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat || event.code !== 'Space') {
+        return;
+      }
+
+      if (loadOverlayOpen || diagnosticsOpen || simulationOverlayOpen) {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target instanceof HTMLButtonElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      playback.togglePlay();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [diagnosticsOpen, loadOverlayOpen, playback.togglePlay, simulationOverlayOpen]);
+
   const currentFrame = useMemo(() => {
     if (!loaded) {
       return undefined;
