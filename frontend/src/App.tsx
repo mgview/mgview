@@ -7,7 +7,7 @@ import PlaybackStrip from './components/PlaybackStrip.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import SimulationDataOverlay from './components/SimulationDataOverlay.tsx';
-import { getBasePath, getRelativePath } from './core/pathUtils.ts';
+import { getBasePath } from './core/pathUtils.ts';
 import { getFrameAtTime } from './core/timeline.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
 import { createSavableScene, getDirectoryPath, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
@@ -532,6 +532,21 @@ export default function App() {
             });
             setSimulationEntryInput('');
           }}
+          onAddSimulationEntries={(entries) => {
+            const trimmedEntries = entries.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+            if (trimmedEntries.length === 0) {
+              return;
+            }
+
+            updateDraftScene((scene) => {
+              for (const entry of trimmedEntries) {
+                if (!scene.simulationData.includes(entry)) {
+                  scene.simulationData.push(entry);
+                }
+              }
+            });
+            setSimulationEntryInput('');
+          }}
           onBrowse={(path) => {
             void handleBrowse(path);
           }}
@@ -540,9 +555,6 @@ export default function App() {
             updateDraftScene((scene) => {
               scene.simulationData = scene.simulationData.filter((value) => value !== entry);
             });
-          }}
-          onSelectBrowserFile={(path) => {
-            setSimulationEntryInput(getRelativePath(getBasePath(loaded.scenePath), path));
           }}
           parsedSimulationFiles={parsedSimulationFiles}
           scenePath={loaded.scenePath}

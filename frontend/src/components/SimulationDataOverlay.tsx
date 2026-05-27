@@ -1,5 +1,7 @@
+import { useMemo, useState } from 'react';
 import type { FileBrowserListing } from '../api/localFiles.ts';
 import type { ParsedSimulationFile } from '../core/types.ts';
+import { getBasePath, getRelativePath } from '../core/pathUtils.ts';
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
@@ -52,10 +54,10 @@ interface SimulationDataOverlayProps {
   expandedFiles: string[];
   fileErrors: string[];
   onAddSimulationEntry: () => void;
+  onAddSimulationEntries: (entries: string[]) => void;
   onBrowse: (path: string) => void;
   onClose: () => void;
   onRemoveSimulationEntry: (entry: string) => void;
-  onSelectBrowserFile: (path: string) => void;
   parsedSimulationFiles: ParsedSimulationFile[];
   scenePath: string;
   simulationEntries: string[];
@@ -72,10 +74,10 @@ export default function SimulationDataOverlay({
   expandedFiles,
   fileErrors,
   onAddSimulationEntry,
+  onAddSimulationEntries,
   onBrowse,
   onClose,
   onRemoveSimulationEntry,
-  onSelectBrowserFile,
   parsedSimulationFiles,
   scenePath,
   simulationEntries,
@@ -83,6 +85,17 @@ export default function SimulationDataOverlay({
   simulationLoading,
   setSimulationEntryInput,
 }: SimulationDataOverlayProps) {
+  const [selectedBrowserPaths, setSelectedBrowserPaths] = useState<string[]>([]);
+  const [manualEntryExpanded, setManualEntryExpanded] = useState(false);
+  const sceneBasePath = useMemo(() => getBasePath(scenePath), [scenePath]);
+  const selectedRelativeEntries = useMemo(
+    () => selectedBrowserPaths.map((path) => getRelativePath(sceneBasePath, path)),
+    [sceneBasePath, selectedBrowserPaths]
+  );
+  const clearBrowserSelection = () => {
+    setSelectedBrowserPaths([]);
+  };
+
   return (
     <OverlayPanel
       title="Simulation Data"
@@ -117,14 +130,29 @@ export default function SimulationDataOverlay({
                 )}
               </div>
             </div>
+          </div>
 
-            <div className="meta-row">
-              <label>Add Entry</label>
+          <div className="sim-entry-manual-toggle">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setManualEntryExpanded((current) => !current)}
+            >
+              {manualEntryExpanded ? 'Hide Manual Path Entry' : 'Advanced Path Entry…'}
+            </button>
+          </div>
+
+          {manualEntryExpanded ? (
+            <div className="meta-row sim-entry-manual-panel">
+              <label>Add Entry By Path</label>
               <div className="sim-entry-controls">
                 <input
                   type="text"
                   value={simulationEntryInput}
-                  onChange={(event) => setSimulationEntryInput(event.target.value)}
+                  onChange={(event) => {
+                    clearBrowserSelection();
+                    setSimulationEntryInput(event.target.value);
+                  }}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') {
                       event.preventDefault();
@@ -137,9 +165,9 @@ export default function SimulationDataOverlay({
                   Add
                 </button>
               </div>
-              <p className="panel-subtitle">File browser picks are converted relative to the current scene folder.</p>
+              <p className="panel-subtitle">Use this for manual ranges or paths the browser view does not already expose.</p>
             </div>
-          </div>
+          ) : null}
 
           {fileErrors.length > 0 ? (
             <div className="status error">
@@ -156,10 +184,45 @@ export default function SimulationDataOverlay({
           browserLoading={browserLoading}
           emptyStateMessage="Browse the workspace and click a file to add it as a simulation entry."
           sceneInput={simulationEntryInput || scenePath}
+          selectedPaths={selectedBrowserPaths}
           title="Simulation File Browser"
-          onBrowse={onBrowse}
-          onOpenFile={onSelectBrowserFile}
-          onSelectFile={onSelectBrowserFile}
+          titleActions={
+            <>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={selectedRelativeEntries.length === 0}
+                onClick={clearBrowserSelection}
+                aria-label="Clear selected simulation files"
+              >
+                x
+              </button>
+              <button
+                type="button"
+                className={selectedRelativeEntries.length > 0 ? '' : 'secondary-button'}
+                disabled={selectedRelativeEntries.length === 0}
+                onClick={() => {
+                  onAddSimulationEntries(selectedRelativeEntries);
+                  clearBrowserSelection();
+                }}
+              >
+                {selectedRelativeEntries.length > 1 ? `Add Selected (${selectedRelativeEntries.length})` : 'Add Selected'}
+              </button>
+            </>
+          }
+          onBrowse={(path) => {
+            clearBrowserSelection();
+            onBrowse(path);
+          }}
+          onSelectFile={(path, options) => {
+            setSelectedBrowserPaths((current) => {
+              const additive = options?.additive ?? false;
+              if (!additive) {
+                return current.length === 1 && current[0] === path ? current : [path];
+              }
+              return current.includes(path) ? current.filter((entry) => entry !== path) : [...current, path];
+            });
+          }}
           getDirectoryPath={getDirectoryPath}
         />
 

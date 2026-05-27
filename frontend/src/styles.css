@@ -363,6 +363,16 @@ input[inputmode="decimal"] {
   gap: 10px;
 }
 
+.sim-entry-manual-toggle {
+  margin-top: 12px;
+}
+
+.sim-entry-manual-panel {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(141, 178, 227, 0.1);
+}
+
 .empty-state-inline {
   color: #9ab0cb;
   font-size: 0.9rem;

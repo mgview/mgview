@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { FileBrowserListing } from '../api/localFiles.ts';
 
 interface LocalFileBrowserProps {
@@ -7,10 +8,12 @@ interface LocalFileBrowserProps {
   emptyStateMessage?: string;
   filterEntry?: (entry: FileBrowserListing['entries'][number]) => boolean;
   sceneInput: string;
+  selectedPaths?: string[];
   title?: string;
+  titleActions?: ReactNode;
   onBrowse: (path: string) => void;
   onOpenFile?: (path: string) => void;
-  onSelectFile: (path: string) => void;
+  onSelectFile: (path: string, options?: { additive: boolean }) => void;
   getDirectoryPath: (filePath: string) => string;
 }
 
@@ -40,7 +43,9 @@ export default function LocalFileBrowser({
   emptyStateMessage = 'Browse a scene folder to load JSON files through the local API.',
   filterEntry,
   sceneInput,
+  selectedPaths,
   title = 'Local File Browser',
+  titleActions,
   onBrowse,
   onOpenFile,
   onSelectFile,
@@ -48,10 +53,14 @@ export default function LocalFileBrowser({
 }: LocalFileBrowserProps) {
   const currentFolderLabel = browserListing?.path || '(workspace root)';
   const breadcrumbs = buildBreadcrumbs(browserListing?.path || getDirectoryPath(sceneInput));
+  const activePaths = selectedPaths ?? [sceneInput];
 
   return (
     <section className="panel">
-      <h2>{title}</h2>
+      <div className="section-label-with-actions">
+        <h2>{title}</h2>
+        {titleActions ? <div className="visual-toolbar-actions">{titleActions}</div> : null}
+      </div>
       <div className="stacked-meta">
         <div className="meta-row">
           <label>Current Folder</label>
@@ -83,14 +92,16 @@ export default function LocalFileBrowser({
               <button
                 key={`${entry.type}:${entry.path}`}
                 type="button"
-                className={`sample-button ${sceneInput === entry.path ? 'sample-button-active' : ''}`}
-                onClick={() => {
+                className={`sample-button ${activePaths.includes(entry.path) ? 'sample-button-active' : ''}`}
+                onClick={(event) => {
                   if (entry.type === 'directory') {
                     onBrowse(entry.path);
                     return;
                   }
 
-                  onSelectFile(entry.path);
+                  onSelectFile(entry.path, {
+                    additive: event.metaKey || event.ctrlKey || event.shiftKey,
+                  });
                 }}
                 onDoubleClick={() => {
                   if (entry.type === 'file' && onOpenFile) {
