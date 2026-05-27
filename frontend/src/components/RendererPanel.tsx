@@ -16,6 +16,22 @@ import { buildRenderableScene } from '../rendering/sceneGraph.ts';
 
 const DEFAULT_BACKGROUND_COLOR = '#e0f0ff';
 
+function buildCameraSeedKey(
+  scenePath: string,
+  cameraParentFrame: string,
+  cameraEye: [number, number, number],
+  cameraFocus: [number, number, number],
+  cameraUp: [number, number, number]
+) {
+  return JSON.stringify({
+    scenePath,
+    cameraParentFrame,
+    cameraEye,
+    cameraFocus,
+    cameraUp,
+  });
+}
+
 function getRendererBackgroundColor(color: string | undefined) {
   try {
     return new THREE.Color(color || DEFAULT_BACKGROUND_COLOR);
@@ -26,6 +42,12 @@ function getRendererBackgroundColor(color: string | undefined) {
 
 interface RendererPanelProps {
   cameraSeedKey: string;
+  onCameraChange?: (camera: {
+    cameraParentFrame: string;
+    cameraEye: [number, number, number];
+    cameraFocus: [number, number, number];
+    cameraUp: [number, number, number];
+  }) => void;
   scenePath: string;
   scene: NormalizedSceneConfig;
   frame: TimelineFrame | undefined;
@@ -43,10 +65,12 @@ interface SceneHandle {
   sceneRoot: THREE.Group;
   resizeObserver: ResizeObserver;
   frameId: number | null;
+  cameraChangeFrameId: number | null;
 }
 
 export default function RendererPanel({
   cameraSeedKey,
+  onCameraChange,
   scenePath,
   scene,
   frame,
@@ -60,6 +84,36 @@ export default function RendererPanel({
   const latestSceneRef = useRef(scene);
   const latestFrameRef = useRef(frame);
   const isApplyingCameraRef = useRef(false);
+  const latestCameraChangeRef = useRef(onCameraChange);
+  const lastEmittedCameraSeedKeyRef = useRef<string | null>(null);
+
+  latestCameraChangeRef.current = onCameraChange;
+
+  const emitCameraChange = (override: CameraOverride) => {
+    const callback = latestCameraChangeRef.current;
+    if (!callback) {
+      return;
+    }
+
+    const cameraEye: [number, number, number] = [override.localEye.x, override.localEye.y, override.localEye.z];
+    const cameraFocus: [number, number, number] = [override.localFocus.x, override.localFocus.y, override.localFocus.z];
+    const cameraUp: [number, number, number] = [override.localUp.x, override.localUp.y, override.localUp.z];
+
+    lastEmittedCameraSeedKeyRef.current = buildCameraSeedKey(
+      scenePath,
+      override.parentFrame,
+      cameraEye,
+      cameraFocus,
+      cameraUp
+    );
+
+    callback({
+      cameraParentFrame: override.parentFrame,
+      cameraEye,
+      cameraFocus,
+      cameraUp,
+    });
+  };
 
   latestSceneRef.current = scene;
   latestFrameRef.current = frame;
@@ -93,6 +147,15 @@ export default function RendererPanel({
       const currentFrame = latestFrameRef.current;
       const currentEvaluation = evaluateScene(currentScene, currentFrame);
       cameraOverrideRef.current = deriveCameraOverride(currentScene, currentEvaluation, camera, controls);
+      if (handleRef.current?.cameraChangeFrameId !== null) {
+        cancelAnimationFrame(handleRef.current.cameraChangeFrameId);
+      }
+      handleRef.current!.cameraChangeFrameId = requestAnimationFrame(() => {
+        handleRef.current!.cameraChangeFrameId = null;
+        if (cameraOverrideRef.current) {
+          emitCameraChange(cameraOverrideRef.current);
+        }
+      });
     });
 
     const ambientLight = new THREE.AmbientLight(0x222222);
@@ -141,6 +204,7 @@ export default function RendererPanel({
       sceneRoot,
       resizeObserver,
       frameId: requestAnimationFrame(tick),
+      cameraChangeFrameId: null,
     };
 
     return () => {
@@ -151,6 +215,9 @@ export default function RendererPanel({
 
       if (handle.frameId !== null) {
         cancelAnimationFrame(handle.frameId);
+      }
+      if (handle.cameraChangeFrameId !== null) {
+        cancelAnimationFrame(handle.cameraChangeFrameId);
       }
       handle.resizeObserver.disconnect();
       handle.controls.dispose();
@@ -169,7 +236,9 @@ export default function RendererPanel({
 
     const evaluation = evaluateScene(scene, frame);
     const canonicalCamera = toCanonicalCamera(scene, evaluation);
-    const shouldResetCamera = cameraSeedKeyRef.current !== cameraSeedKey;
+    const seedChanged = cameraSeedKeyRef.current !== cameraSeedKey;
+    const matchesRendererUpdate = lastEmittedCameraSeedKeyRef.current === cameraSeedKey;
+    const shouldResetCamera = seedChanged && !matchesRendererUpdate;
 
     handle.scene.background = getRendererBackgroundColor(scene.backgroundColor);
     const lightPosition = sceneUpVector(scene)
@@ -181,6 +250,9 @@ export default function RendererPanel({
       cameraSeedKeyRef.current = cameraSeedKey;
       cameraDirtyRef.current = false;
       cameraOverrideRef.current = null;
+      lastEmittedCameraSeedKeyRef.current = null;
+    } else if (seedChanged) {
+      cameraSeedKeyRef.current = cameraSeedKey;
     }
 
     const activeCamera =

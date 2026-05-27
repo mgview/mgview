@@ -203,6 +203,10 @@ input[inputmode="decimal"] {
   min-height: 0;
 }
 
+.workspace-drawer {
+  grid-template-rows: minmax(0, 1fr);
+}
+
 .workspace-pane-scroll {
   min-height: 0;
   height: 100%;
@@ -226,6 +230,12 @@ input[inputmode="decimal"] {
   display: flex;
   gap: 8px;
   margin-bottom: 14px;
+}
+
+.drawer-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
 }
 
 .playback-strip {
@@ -440,7 +450,7 @@ input[inputmode="decimal"] {
 
 .save-preview-panel {
   display: grid;
-  gap: 8px;
+  min-height: 0;
 }
 
 .object-groups {
@@ -1338,9 +1348,10 @@ input[inputmode="decimal"] {
 }
 
 .json-preview {
-  margin: 8px 0 0;
+  margin: 0;
   padding: 10px;
-  max-height: 420px;
+  min-height: 0;
+  height: 100%;
   overflow: auto;
   border-radius: 10px;
   background: rgba(10, 18, 32, 0.75);

@@ -106,8 +106,6 @@ export default function InspectorDrawer({
         />
       ) : editorMode === 'json' ? (
         <JsonEditorPanel
-          scenePath={loaded.scenePath}
-          hasLocalEdits={hasLocalEdits}
           savePreview={savePreview}
         />
       ) : (

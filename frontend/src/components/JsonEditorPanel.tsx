@@ -1,23 +1,9 @@
 import SavePreviewPanel from './SavePreviewPanel.tsx';
 
 interface JsonEditorPanelProps {
-  hasLocalEdits: boolean;
   savePreview: string;
-  scenePath: string;
 }
 
-export default function JsonEditorPanel({
-  hasLocalEdits,
-  savePreview,
-  scenePath,
-}: JsonEditorPanelProps) {
-  return (
-    <>
-      <SavePreviewPanel
-        scenePath={scenePath}
-        hasLocalEdits={hasLocalEdits}
-        savePreview={savePreview}
-      />
-    </>
-  );
+export default function JsonEditorPanel({ savePreview }: JsonEditorPanelProps) {
+  return <SavePreviewPanel savePreview={savePreview} />;
 }
