@@ -325,6 +325,7 @@ export default function App() {
               <>
                 <RendererPanel
                   cameraSeedKey={cameraSeedKey}
+                  layoutSizeKey={`${leftSidebarCollapsed}:${rightDrawerCollapsed}`}
                   onCameraPreviewChange={(nextCameraPreview) => {
                     setCameraPreview(nextCameraPreview);
                   }}

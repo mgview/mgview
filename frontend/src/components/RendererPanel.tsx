@@ -42,6 +42,7 @@ function getRendererBackgroundColor(color: string | undefined) {
 
 interface RendererPanelProps {
   cameraSeedKey: string;
+  layoutSizeKey?: string;
   onCameraCommit?: (camera: {
     cameraParentFrame: string;
     cameraEye: [number, number, number];
@@ -70,12 +71,14 @@ interface SceneHandle {
   worldAxes: THREE.Group;
   sceneRoot: THREE.Group;
   resizeObserver: ResizeObserver;
+  resize: () => void;
   frameId: number | null;
   cameraChangeFrameId: number | null;
 }
 
 export default function RendererPanel({
   cameraSeedKey,
+  layoutSizeKey,
   onCameraCommit,
   onCameraPreviewChange,
   scenePath,
@@ -204,6 +207,7 @@ export default function RendererPanel({
     const resize = () => {
       const width = host.clientWidth || 1;
       const height = host.clientHeight || 1;
+      renderer.setPixelRatio(window.devicePixelRatio);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
@@ -229,6 +233,7 @@ export default function RendererPanel({
       worldAxes,
       sceneRoot,
       resizeObserver,
+      resize,
       frameId: requestAnimationFrame(tick),
       cameraChangeFrameId: null,
     };
@@ -251,6 +256,42 @@ export default function RendererPanel({
       handle.sceneRoot.clear();
       handle.renderer.domElement.remove();
       handleRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handle = handleRef.current;
+    if (!handle) {
+      return;
+    }
+
+    // Grid and viewport changes can settle across multiple frames, so we resize
+    // once immediately and again on the next two frames to catch the final box.
+    handle.resize();
+    const frameOne = requestAnimationFrame(() => {
+      handle.resize();
+    });
+    const frameTwo = requestAnimationFrame(() => {
+      handle.resize();
+    });
+
+    return () => {
+      cancelAnimationFrame(frameOne);
+      cancelAnimationFrame(frameTwo);
+    };
+  }, [layoutSizeKey]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      handleRef.current?.resize();
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.visualViewport?.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('resize', handleResize);
     };
   }, []);
 
