@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { createSceneDocument } from '../core/sceneDocument.ts';
-import { createSavableScene } from './useSceneWorkspace.ts';
+import { createNewSceneTemplate, createSavableScene } from './useSceneWorkspace.ts';
 
 test('createSavableScene preserves inferred objects added through the draft scene', () => {
   const rawScene = {
@@ -28,4 +28,14 @@ test('createSavableScene preserves inferred objects added through the draft scen
 
   assert.equal(savableScene.objects?.Qo?.type, 'point');
   assert.deepEqual(savableScene.objects?.Qo?.visual?.marker, draftScene.objects.Qo.visual.marker);
+});
+
+test('createNewSceneTemplate derives a scene name and starts without simulation files', () => {
+  const template = createNewSceneTemplate('projects/demo/my_scene.json');
+
+  assert.equal(template.name, 'my_scene');
+  assert.deepEqual(template.simulationData, []);
+  assert.equal(template.newtonianFrame, 'N');
+  assert.equal(template.sceneOrigin, 'No');
+  assert.deepEqual(template.cameraUp, [0, 0, 1]);
 });

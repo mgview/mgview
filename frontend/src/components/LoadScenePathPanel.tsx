@@ -1,6 +1,8 @@
 interface LoadScenePathPanelProps {
+  actionLabel: string;
+  helperText?: string;
   loading: boolean;
-  onOpen: () => void;
+  onSubmit: () => void;
   onSceneInputChange: (value: string) => void;
   sceneInput: string;
 }
@@ -10,19 +12,22 @@ function isJsonPath(filePath: string): boolean {
 }
 
 export default function LoadScenePathPanel({
+  actionLabel,
+  helperText,
   loading,
-  onOpen,
+  onSubmit,
   onSceneInputChange,
   sceneInput,
 }: LoadScenePathPanelProps) {
   return (
     <section className="panel">
       <h2>Scene</h2>
+      {helperText ? <p className="panel-subtitle">{helperText}</p> : null}
       <form
         className="loader-form"
         onSubmit={(event) => {
           event.preventDefault();
-          onOpen();
+          onSubmit();
         }}
       >
         <input
@@ -32,7 +37,7 @@ export default function LoadScenePathPanel({
           aria-label="Scene path"
         />
         <button type="submit" disabled={loading || !isJsonPath(sceneInput)}>
-          Load
+          {actionLabel}
         </button>
       </form>
     </section>

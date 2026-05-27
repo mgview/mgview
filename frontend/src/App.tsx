@@ -10,7 +10,7 @@ import SimulationDataOverlay from './components/SimulationDataOverlay.tsx';
 import { getBasePath, getRelativePath } from './core/pathUtils.ts';
 import { getFrameAtTime } from './core/timeline.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
-import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
+import { createSavableScene, getDirectoryPath, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
 import { useSceneSelectionEditor } from './hooks/useSceneSelectionEditor.ts';
 
 const DEFAULT_SCENE_PATH = 'samples/particle_pendulum/particle_pendulum.json';
@@ -75,9 +75,12 @@ type CameraDraftPreview = {
   cameraUp: [number, number, number];
 };
 
+type SceneOverlayMode = 'load' | 'create';
+
 export default function App() {
   const workspace = useSceneWorkspace(getScenePathFromUrl());
   const [loadOverlayOpen, setLoadOverlayOpen] = useState(false);
+  const [sceneOverlayMode, setSceneOverlayMode] = useState<SceneOverlayMode>('load');
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [simulationOverlayOpen, setSimulationOverlayOpen] = useState(false);
   const [simulationEntryInput, setSimulationEntryInput] = useState('');
@@ -94,6 +97,7 @@ export default function App() {
     draftScene,
     error,
     handleBrowse,
+    handleCreateScene,
     handleLoad,
     handleRevertDraft,
     handleSaveScene,
@@ -108,6 +112,7 @@ export default function App() {
     saveMessage,
     saving,
     sceneInput,
+    setError,
     selectedObjectName,
     selectedVisualName,
     setSceneInput,
@@ -207,6 +212,23 @@ export default function App() {
     return JSON.stringify(createSavableScene(loaded.rawScene, draftScene), null, 2);
   }, [draftScene, loaded]);
 
+  const openLoadOverlay = () => {
+    setError(null);
+    setSceneOverlayMode('load');
+    setLoadOverlayOpen(true);
+    void browseSceneInputDirectory();
+  };
+
+  const openCreateOverlay = () => {
+    setError(null);
+    setSceneOverlayMode('create');
+    const defaultDirectory = loaded ? getBasePath(loaded.scenePath).replace(/\/$/, '') : getDirectoryPath(sceneInput);
+    const nextPath = defaultDirectory && defaultDirectory !== '.' ? `${defaultDirectory}/new_scene.json` : 'new_scene.json';
+    setSceneInput(nextPath);
+    setLoadOverlayOpen(true);
+    void handleBrowse(defaultDirectory || '.');
+  };
+
   const handleOpenSelectedScene = () => {
     void handleLoad(sceneInput, {
       actionLabel: 'Loading a scene by path',
@@ -223,6 +245,15 @@ export default function App() {
       actionLabel: 'Loading a scene by path',
     }).then((didLoad) => {
       if (didLoad) {
+        setLoadOverlayOpen(false);
+        setEditorMode('visual');
+      }
+    });
+  };
+
+  const handleCreateScenePath = (path: string) => {
+    void handleCreateScene(path).then((didCreate) => {
+      if (didCreate) {
         setLoadOverlayOpen(false);
         setEditorMode('visual');
       }
@@ -256,10 +287,8 @@ export default function App() {
         saving={saving}
         statusMessage={saveMessage}
         errorMessage={error}
-        onOpenLoadOverlay={() => {
-          setLoadOverlayOpen(true);
-          void browseSceneInputDirectory();
-        }}
+        onOpenCreateOverlay={openCreateOverlay}
+        onOpenLoadOverlay={openLoadOverlay}
         onOpenDiagnostics={() => setDiagnosticsOpen(true)}
         onOpenChannels={() => {
           setSimulationOverlayOpen(true);
@@ -426,12 +455,15 @@ export default function App() {
           browserError={browserError}
           browserListing={browserListing}
           browserLoading={browserLoading}
+          errorMessage={error}
           groupedSamples={groupedSamples}
           loading={loading}
+          mode={sceneOverlayMode}
           onBrowse={(path) => {
             void handleBrowse(path);
           }}
           onClose={() => setLoadOverlayOpen(false)}
+          onCreateScenePath={handleCreateScenePath}
           onOpenScenePath={handleOpenScenePath}
           onOpenSelectedScene={handleOpenSelectedScene}
           sampleBrowserExpanded={sampleBrowserExpanded}

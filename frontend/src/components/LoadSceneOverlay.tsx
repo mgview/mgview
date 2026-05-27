@@ -9,10 +9,13 @@ interface LoadSceneOverlayProps {
   browserError: string | null;
   browserListing: FileBrowserListing | null;
   browserLoading: boolean;
+  errorMessage: string | null;
   groupedSamples: Array<[string, SampleShortcut[]]>;
   loading: boolean;
+  mode: 'load' | 'create';
   onBrowse: (path: string) => void;
   onClose: () => void;
+  onCreateScenePath: (path: string) => void;
   onOpenScenePath: (path: string) => void;
   onOpenSelectedScene: () => void;
   sampleBrowserExpanded: boolean;
@@ -29,10 +32,13 @@ export default function LoadSceneOverlay({
   browserError,
   browserListing,
   browserLoading,
+  errorMessage,
   groupedSamples,
   loading,
+  mode,
   onBrowse,
   onClose,
+  onCreateScenePath,
   onOpenScenePath,
   onOpenSelectedScene,
   sampleBrowserExpanded,
@@ -40,18 +46,39 @@ export default function LoadSceneOverlay({
   setSampleBrowserExpanded,
   setSceneInput,
 }: LoadSceneOverlayProps) {
+  const isCreateMode = mode === 'create';
+
   return (
     <OverlayPanel
-      title="Load Scene"
+      title={isCreateMode ? 'Create Scene' : 'Load Scene'}
+      subtitle={
+        isCreateMode
+          ? 'Choose a new JSON path, browse nearby files for context, and create a fresh scene from the default template.'
+          : undefined
+      }
       onClose={onClose}
     >
       <div className="overlay-layout">
         <LoadScenePathPanel
+          actionLabel={isCreateMode ? 'Create' : 'Load'}
+          helperText={
+            isCreateMode
+              ? 'Create a new scene JSON at the typed path. Existing files are not overwritten.'
+              : 'Load an existing JSON scene file through the local API.'
+          }
           loading={loading}
-          onOpen={onOpenSelectedScene}
+          onSubmit={() => {
+            if (isCreateMode) {
+              onCreateScenePath(sceneInput);
+              return;
+            }
+            onOpenSelectedScene();
+          }}
           onSceneInputChange={setSceneInput}
           sceneInput={sceneInput}
         />
+
+        {errorMessage ? <div className="status error">{errorMessage}</div> : null}
 
         <LocalFileBrowser
           browserListing={browserListing}
@@ -61,10 +88,14 @@ export default function LoadSceneOverlay({
           sceneInput={sceneInput}
           title="Scene Browser"
           onBrowse={onBrowse}
-          onOpenFile={(path) => {
-            setSceneInput(path);
-            onOpenScenePath(path);
-          }}
+          onOpenFile={
+            isCreateMode
+              ? undefined
+              : (path) => {
+                  setSceneInput(path);
+                  onOpenScenePath(path);
+                }
+          }
           onSelectFile={setSceneInput}
           getDirectoryPath={getDirectoryPath}
         />

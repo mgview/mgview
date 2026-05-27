@@ -19,6 +19,7 @@ function main(argv) {
   new HttpServer({
     GET: createServlet(StaticServlet),
     HEAD: createServlet(StaticServlet),
+    POST: createServlet(StaticServlet),
     PUT: createServlet(StaticServlet),
   }).start(Number(argv[2]) || DEFAULT_PORT);
 }
@@ -152,9 +153,78 @@ StaticServlet.prototype.handleApiRequest_ = function(req, res, pathname) {
   if (pathname === API_PREFIX + '/file' && req.method === 'PUT') {
     return this.handlePutFileApi_(req, res);
   }
+  if (pathname === API_PREFIX + '/file' && req.method === 'POST') {
+    return this.handlePostFileApi_(req, res);
+  }
 
   this.sendJson_(res, 404, {
     error: 'Not found',
+  });
+};
+
+StaticServlet.prototype.handlePostFileApi_ = function(req, res) {
+  const requestedPath = req.url.searchParams.get('path');
+  if (!requestedPath) {
+    return this.sendJson_(res, 400, { error: 'Missing path.' });
+  }
+
+  const filePath = this.resolveApiPath_(requestedPath);
+  if (!filePath) {
+    return this.sendJson_(res, 403, { error: 'Forbidden path.' });
+  }
+
+  if (path.extname(filePath).toLowerCase() !== '.json') {
+    return this.sendJson_(res, 400, { error: 'Only JSON scene files can be created through this API.' });
+  }
+
+  const parentDirectory = path.dirname(filePath);
+  fs.stat(parentDirectory, (parentError, parentStat) => {
+    if (parentError) {
+      return this.sendJson_(res, 404, { error: 'Parent directory not found.' });
+    }
+    if (!parentStat.isDirectory()) {
+      return this.sendJson_(res, 400, { error: 'Parent path is not a directory.' });
+    }
+
+    fs.stat(filePath, (statError, stat) => {
+      if (!statError && stat.isFile()) {
+        return this.sendJson_(res, 409, { error: 'File already exists.' });
+      }
+      if (!statError) {
+        return this.sendJson_(res, 400, { error: 'Requested path is not a file.' });
+      }
+      if (statError.code !== 'ENOENT') {
+        return this.sendJson_(res, 500, { error: 'Could not inspect target file.' });
+      }
+
+      this.readRequestBody_(req, (bodyError, body) => {
+        if (bodyError) {
+          return this.sendJson_(res, 500, { error: 'Could not read request body.' });
+        }
+
+        let parsed;
+        try {
+          parsed = JSON.parse(body);
+        } catch (parseError) {
+          return this.sendJson_(res, 400, { error: 'Invalid JSON body.' });
+        }
+
+        const serialized = JSON.stringify(parsed, null, 2) + '\n';
+        fs.writeFile(filePath, serialized, { encoding: 'utf8', flag: 'wx' }, (writeError) => {
+          if (writeError) {
+            if (writeError.code === 'EEXIST') {
+              return this.sendJson_(res, 409, { error: 'File already exists.' });
+            }
+            return this.sendJson_(res, 500, { error: 'Could not create file.' });
+          }
+
+          this.sendJson_(res, 201, {
+            ok: true,
+            path: this.normalizeRelativePath_(filePath),
+          });
+        });
+      });
+    });
   });
 };
 

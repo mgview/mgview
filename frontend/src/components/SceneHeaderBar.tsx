@@ -8,6 +8,7 @@ interface SceneHeaderBarProps {
   saving: boolean;
   statusMessage: string | null;
   errorMessage: string | null;
+  onOpenCreateOverlay: () => void;
   onOpenLoadOverlay: () => void;
   onOpenDiagnostics: () => void;
   onOpenChannels: () => void;
@@ -24,6 +25,7 @@ export default function SceneHeaderBar({
   saving,
   statusMessage,
   errorMessage,
+  onOpenCreateOverlay,
   onOpenLoadOverlay,
   onOpenDiagnostics,
   onOpenChannels,
@@ -85,6 +87,9 @@ export default function SceneHeaderBar({
             <span className={`tag ${hasLocalEdits ? 'tag-accent' : 'tag-soft'}`}>
               {hasLocalEdits ? 'Unsaved edits' : 'Saved state'}
             </span>
+            <button type="button" className="secondary-button" onClick={onOpenCreateOverlay} disabled={loading}>
+              New…
+            </button>
             <button type="button" className="secondary-button" onClick={onOpenLoadOverlay} disabled={loading}>
               Load…
             </button>

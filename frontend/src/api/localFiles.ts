@@ -68,3 +68,14 @@ export async function saveSceneJson(scenePath: string, scene: SceneConfig): Prom
   });
   await expectOk(response, `Could not save scene file: ${scenePath}`);
 }
+
+export async function createSceneJson(scenePath: string, scene: SceneConfig): Promise<void> {
+  const response = await fetch(getApiUrl('file', scenePath), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(scene),
+  });
+  await expectOk(response, `Could not create scene file: ${scenePath}`);
+}

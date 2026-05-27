@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  createSceneJson,
   listLocalFiles,
   loadSceneJson,
   loadTextFile,
@@ -56,6 +57,29 @@ function cloneScene(scene: NormalizedSceneConfig): NormalizedSceneConfig {
 export function getDirectoryPath(filePath: string): string {
   const basePath = getBasePath(filePath).replace(/\/$/, '');
   return basePath || '.';
+}
+
+function getFileStem(filePath: string): string {
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  const fileName = normalizedPath.split('/').pop() ?? normalizedPath;
+  return fileName.replace(/\.json$/i, '') || 'new_scene';
+}
+
+export function createNewSceneTemplate(scenePath: string): SceneConfig {
+  const sceneName = getFileStem(scenePath);
+  return {
+    name: sceneName,
+    simulationData: [],
+    newtonianFrame: 'N',
+    sceneOrigin: 'No',
+    showAxes: false,
+    workspaceSize: 1,
+    cameraParentFrame: 'N',
+    cameraUp: [0, 0, 1],
+    cameraEye: [3, 3, 3],
+    cameraFocus: [0, 0, 0],
+    speedFactor: 1,
+  };
 }
 
 export function createSavableScene(
@@ -283,6 +307,25 @@ export function useSceneWorkspace(initialScenePath: string) {
     return `${loaded.scenePath}::${JSON.stringify(draftScene.simulationData)}`;
   }, [draftScene?.simulationData, loaded?.scenePath]);
 
+  const commitLoadedScene = (nextLoaded: LoadedSceneData, statusMessage: string) => {
+    setLoaded(nextLoaded);
+    setSimulationState({
+      simulationFiles: nextLoaded.simulationFiles,
+      timeline: nextLoaded.timeline,
+      channelNames: nextLoaded.channelNames,
+      parsedSimulationFiles: nextLoaded.parsedSimulationFiles,
+      fileErrors: nextLoaded.fileErrors,
+    });
+    setSceneInput(nextLoaded.scenePath);
+    setDraftScene(cloneScene(nextLoaded.scene));
+    updateSelectionFromLoadedScene(nextLoaded);
+    const url = new URL(window.location.href);
+    url.searchParams.set('scene', nextLoaded.scenePath);
+    window.history.replaceState({}, '', url);
+    setSaveMessage(statusMessage);
+    void handleBrowse(getDirectoryPath(nextLoaded.scenePath));
+  };
+
   const handleLoad = async (scenePath: string, options?: LoadSceneOptions) => {
     const settings = options ?? {};
     if (
@@ -298,25 +341,43 @@ export function useSceneWorkspace(initialScenePath: string) {
 
     try {
       const nextLoaded = await loadSceneData(scenePath);
-      setLoaded(nextLoaded);
-      setSimulationState({
-        simulationFiles: nextLoaded.simulationFiles,
-        timeline: nextLoaded.timeline,
-        channelNames: nextLoaded.channelNames,
-        parsedSimulationFiles: nextLoaded.parsedSimulationFiles,
-        fileErrors: nextLoaded.fileErrors,
-      });
-      setSceneInput(scenePath);
-      setDraftScene(cloneScene(nextLoaded.scene));
-      updateSelectionFromLoadedScene(nextLoaded);
-      const url = new URL(window.location.href);
-      url.searchParams.set('scene', scenePath);
-      window.history.replaceState({}, '', url);
-      setSaveMessage(settings.statusMessage ?? `Loaded ${scenePath}`);
-      void handleBrowse(getDirectoryPath(scenePath));
+      commitLoadedScene(nextLoaded, settings.statusMessage ?? `Loaded ${scenePath}`);
       return true;
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unknown load error');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateScene = async (scenePath: string) => {
+    const trimmedPath = scenePath.trim();
+    if (trimmedPath.length === 0) {
+      setError('Choose a JSON path for the new scene.');
+      return false;
+    }
+
+    if (!trimmedPath.toLowerCase().endsWith('.json')) {
+      setError('New scene paths must end in .json.');
+      return false;
+    }
+
+    if (!confirmDiscardLocalEdits(trimmedPath, 'Creating a new scene')) {
+      return false;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSaveMessage(null);
+
+    try {
+      await createSceneJson(trimmedPath, createNewSceneTemplate(trimmedPath));
+      const nextLoaded = await loadSceneData(trimmedPath);
+      commitLoadedScene(nextLoaded, `Created ${trimmedPath}`);
+      return true;
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : 'Unknown create error');
       return false;
     } finally {
       setLoading(false);
@@ -432,6 +493,7 @@ export function useSceneWorkspace(initialScenePath: string) {
     draftScene,
     error,
     handleBrowse,
+    handleCreateScene,
     handleLoad,
     handleRevertDraft,
     handleSaveScene,
@@ -449,6 +511,7 @@ export function useSceneWorkspace(initialScenePath: string) {
     selectedObjectName,
     selectedVisualName,
     setDraftScene,
+    setError,
     setSaveMessage,
     setSceneInput,
     setSelectedObjectName,
