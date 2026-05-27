@@ -13,6 +13,7 @@ interface LoadSceneOverlayProps {
   loading: boolean;
   onBrowse: (path: string) => void;
   onClose: () => void;
+  onOpenScenePath: (path: string) => void;
   onOpenSelectedScene: () => void;
   sampleBrowserExpanded: boolean;
   sceneInput: string;
@@ -32,6 +33,7 @@ export default function LoadSceneOverlay({
   loading,
   onBrowse,
   onClose,
+  onOpenScenePath,
   onOpenSelectedScene,
   sampleBrowserExpanded,
   sceneInput,
@@ -41,16 +43,6 @@ export default function LoadSceneOverlay({
   return (
     <OverlayPanel
       title="Load Scene"
-      subtitle="Browse local folders or choose a bundled sample, then explicitly open the selected JSON scene."
-      actions={
-        <button
-          type="button"
-          onClick={onOpenSelectedScene}
-          disabled={loading || !isJsonPath(sceneInput)}
-        >
-          Open Selected Scene
-        </button>
-      }
       onClose={onClose}
     >
       <div className="overlay-layout">
@@ -65,8 +57,14 @@ export default function LoadSceneOverlay({
           browserListing={browserListing}
           browserError={browserError}
           browserLoading={browserLoading}
+          filterEntry={(entry) => entry.type === 'directory' || isJsonPath(entry.name)}
           sceneInput={sceneInput}
+          title="Scene Browser"
           onBrowse={onBrowse}
+          onOpenFile={(path) => {
+            setSceneInput(path);
+            onOpenScenePath(path);
+          }}
           onSelectFile={setSceneInput}
           getDirectoryPath={getDirectoryPath}
         />

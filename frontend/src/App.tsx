@@ -189,6 +189,17 @@ export default function App() {
     });
   };
 
+  const handleOpenScenePath = (path: string) => {
+    void handleLoad(path, {
+      actionLabel: 'Loading a scene by path',
+    }).then((didLoad) => {
+      if (didLoad) {
+        setLoadOverlayOpen(false);
+        setEditorMode('visual');
+      }
+    });
+  };
+
   const updateSelectedVisual = (updater: (visual: SceneVisual) => void) => {
     if (!draftScene || !selectedObject?.name || !selectedVisual?.name) {
       return;
@@ -507,6 +518,7 @@ export default function App() {
             void handleBrowse(path);
           }}
           onClose={() => setLoadOverlayOpen(false)}
+          onOpenScenePath={handleOpenScenePath}
           onOpenSelectedScene={handleOpenSelectedScene}
           sampleBrowserExpanded={sampleBrowserExpanded}
           sceneInput={sceneInput}

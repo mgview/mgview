@@ -154,6 +154,7 @@ export default function SimulationDataOverlay({
           sceneInput={simulationEntryInput || scenePath}
           title="Simulation File Browser"
           onBrowse={onBrowse}
+          onOpenFile={onSelectBrowserFile}
           onSelectFile={onSelectBrowserFile}
           getDirectoryPath={getDirectoryPath}
         />

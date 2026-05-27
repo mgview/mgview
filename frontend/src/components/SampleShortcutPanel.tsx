@@ -23,8 +23,7 @@ export default function SampleShortcutPanel({
     <section className="panel">
       <div className="panel-header">
         <div>
-          <h2>Built-in Sample Shortcuts</h2>
-          <p className="panel-subtitle">Choose a bundled sample and then open it.</p>
+          <h2>Samples</h2>
         </div>
         <button
           type="button"
@@ -58,9 +57,7 @@ export default function SampleShortcutPanel({
             </div>
           ))}
         </div>
-      ) : (
-        <div className="empty-state">Sample shortcuts are hidden.</div>
-      )}
+      ) : null}
     </section>
   );
 }

@@ -359,6 +359,38 @@ input[inputmode="decimal"] {
   font-size: 0.9rem;
 }
 
+.file-browser-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.file-browser-breadcrumb-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.file-browser-breadcrumb-separator {
+  color: #7690b1;
+}
+
+.file-browser-breadcrumb-trailing {
+  color: #7690b1;
+}
+
+.file-browser-breadcrumb-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #d4e3f8;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(141, 178, 227, 0.3);
+  text-underline-offset: 0.14em;
+}
+
 .sim-file-channel-list {
   display: grid;
   gap: 10px;
@@ -1265,17 +1297,12 @@ input[inputmode="decimal"] {
 }
 
 .sample-button {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  align-items: center;
   justify-items: start;
   text-align: left;
   border: 1px solid rgba(159, 182, 212, 0.14);
   background: rgba(10, 18, 32, 0.65);
-}
-
-.sample-button code {
-  color: #98abc2;
-  font-size: 0.76rem;
 }
 
 .sample-button-active {

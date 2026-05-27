@@ -17,12 +17,7 @@ export default function LoadScenePathPanel({
 }: LoadScenePathPanelProps) {
   return (
     <section className="panel">
-      <div className="panel-header">
-        <div>
-          <h2>Selected Path</h2>
-          <p className="panel-subtitle">Only JSON scene files can be opened.</p>
-        </div>
-      </div>
+      <h2>Scene</h2>
       <form
         className="loader-form"
         onSubmit={(event) => {
@@ -37,7 +32,7 @@ export default function LoadScenePathPanel({
           aria-label="Scene path"
         />
         <button type="submit" disabled={loading || !isJsonPath(sceneInput)}>
-          Open
+          Load
         </button>
       </form>
     </section>
