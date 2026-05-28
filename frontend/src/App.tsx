@@ -1,18 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.tsx';
-import InspectorDrawer, { type InspectorEditorMode } from './components/InspectorDrawer.tsx';
+import InspectorDrawer from './components/InspectorDrawer.tsx';
 import LoadSceneOverlay from './components/LoadSceneOverlay.tsx';
 import ObjectList from './components/ObjectList.tsx';
 import PlaybackStrip from './components/PlaybackStrip.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import SimulationDataOverlay from './components/SimulationDataOverlay.tsx';
-import { getBasePath } from './core/pathUtils.ts';
 import { getFrameAtTime } from './core/timeline.ts';
+import { useInspectorSelectionState } from './hooks/useInspectorSelectionState.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
-import { createSavableScene, getDirectoryPath, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
+import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
 import { useSceneSelectionEditor } from './hooks/useSceneSelectionEditor.ts';
 import { useSceneSpanEditor } from './hooks/useSceneSpanEditor.ts';
+import { useWorkspaceShell } from './hooks/useWorkspaceShell.ts';
 
 const DEFAULT_SCENE_PATH = 'samples/particle_pendulum/particle_pendulum.json';
 const SAMPLE_SCENES = [
@@ -35,17 +36,6 @@ function getScenePathFromUrl(): string {
   return params.get('scene') ?? DEFAULT_SCENE_PATH;
 }
 
-function getAppBasePath(): string {
-  const pathname = window.location.pathname.replace(/\/$/, '');
-  if (pathname === '') {
-    return '';
-  }
-  if (pathname.endsWith('/simple')) {
-    return pathname.slice(0, -'/simple'.length);
-  }
-  return pathname;
-}
-
 function sampleGroups() {
   const groups = new Map<string, Array<(typeof SAMPLE_SCENES)[number]>>();
   for (const sample of SAMPLE_SCENES) {
@@ -56,46 +46,8 @@ function sampleGroups() {
   return [...groups.entries()];
 }
 
-function tupleApproximatelyEqual(
-  left: [number, number, number] | undefined,
-  right: [number, number, number],
-  epsilon = 1e-6
-) {
-  return (
-    left !== undefined &&
-    Math.abs(left[0] - right[0]) <= epsilon &&
-    Math.abs(left[1] - right[1]) <= epsilon &&
-    Math.abs(left[2] - right[2]) <= epsilon
-  );
-}
-
-type CameraDraftPreview = {
-  cameraParentFrame: string;
-  cameraEye: [number, number, number];
-  cameraFocus: [number, number, number];
-  cameraUp: [number, number, number];
-};
-
-type SceneOverlayMode = 'load' | 'create' | 'saveAs';
-
-function getFileName(filePath: string): string {
-  const normalizedPath = filePath.replace(/\\/g, '/');
-  return normalizedPath.split('/').pop() ?? normalizedPath;
-}
-
 export default function App() {
   const workspace = useSceneWorkspace(getScenePathFromUrl());
-  const [loadOverlayOpen, setLoadOverlayOpen] = useState(false);
-  const [sceneOverlayMode, setSceneOverlayMode] = useState<SceneOverlayMode>('load');
-  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
-  const [simulationOverlayOpen, setSimulationOverlayOpen] = useState(false);
-  const [simulationEntryInput, setSimulationEntryInput] = useState('');
-  const [editorMode, setEditorMode] = useState<InspectorEditorMode>('visual');
-  const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
-  const [sampleBrowserExpanded, setSampleBrowserExpanded] = useState(false);
-  const [cameraPreview, setCameraPreview] = useState<CameraDraftPreview | null>(null);
-  const [selectedSpanName, setSelectedSpanName] = useState<string | null>(null);
-  const [selectedSpanVisualName, setSelectedSpanVisualName] = useState<string | null>(null);
   const {
     activeScene,
     browserError,
@@ -132,116 +84,22 @@ export default function App() {
     timeline,
     updateDraftScene,
   } = workspace;
-
-  useEffect(() => {
-    if (loaded) {
-      setEditorMode('visual');
-      setSelectedSpanName(null);
-      setSelectedSpanVisualName(null);
-    }
-  }, [loaded?.scenePath]);
-
-  useEffect(() => {
-    if (!activeScene || !cameraPreview) {
-      return;
-    }
-
-    const parentMatches = activeScene.cameraParentFrame === cameraPreview.cameraParentFrame;
-    const eyeMatches = tupleApproximatelyEqual(activeScene.cameraEye, cameraPreview.cameraEye);
-    const focusMatches = tupleApproximatelyEqual(activeScene.cameraFocus, cameraPreview.cameraFocus);
-    const upMatches = tupleApproximatelyEqual(activeScene.cameraUp, cameraPreview.cameraUp);
-
-    if (parentMatches && eyeMatches && focusMatches && upMatches) {
-      setCameraPreview(null);
-    }
-  }, [activeScene, cameraPreview]);
+  const shell = useWorkspaceShell({
+    activeScene,
+    browserPath: browserListing?.path,
+    handleBrowse,
+    handleCreateScene,
+    handleLoad,
+    handleSaveSceneAs,
+    loaded,
+    sceneInput,
+    setError,
+    setSceneInput,
+    updateDraftScene,
+  });
 
   const playbackSpeed = activeScene?.speedFactor ?? loaded?.scene.speedFactor ?? 1;
   const playback = usePlaybackController(loaded ? timeline : null, playbackSpeed);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target;
-
-      if (event.key === 'Escape') {
-        const activeElement = document.activeElement;
-        if (
-          activeElement instanceof HTMLInputElement ||
-          activeElement instanceof HTMLTextAreaElement ||
-          activeElement instanceof HTMLSelectElement ||
-          activeElement instanceof HTMLButtonElement ||
-          (activeElement instanceof HTMLElement && activeElement.isContentEditable)
-        ) {
-          event.preventDefault();
-          activeElement.blur();
-          return;
-        }
-
-        if (!loadOverlayOpen && !diagnosticsOpen && !simulationOverlayOpen) {
-          const hasSelection =
-            selectedObjectName !== null ||
-            selectedVisualName !== null ||
-            selectedSpanName !== null ||
-            selectedSpanVisualName !== null;
-          if (hasSelection) {
-            event.preventDefault();
-            setSelectedObjectName(null);
-            setSelectedVisualName(null);
-            setSelectedSpanName(null);
-            setSelectedSpanVisualName(null);
-            return;
-          }
-        }
-      }
-
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
-        event.preventDefault();
-        if (!loadOverlayOpen && !loading && !saving && hasLocalEdits) {
-          void handleSaveScene();
-        }
-        return;
-      }
-
-      if (event.defaultPrevented || event.repeat || event.code !== 'Space') {
-        return;
-      }
-
-      if (loadOverlayOpen || diagnosticsOpen || simulationOverlayOpen) {
-        return;
-      }
-
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        target instanceof HTMLButtonElement ||
-        (target instanceof HTMLElement && target.isContentEditable)
-      ) {
-        return;
-      }
-
-      event.preventDefault();
-      playback.togglePlay();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [
-    diagnosticsOpen,
-    handleSaveScene,
-    hasLocalEdits,
-    loadOverlayOpen,
-    loading,
-    playback.togglePlay,
-    saving,
-    selectedObjectName,
-    selectedSpanName,
-    selectedSpanVisualName,
-    selectedVisualName,
-    simulationOverlayOpen,
-  ]);
 
   const currentFrame = useMemo(() => {
     if (!loaded) {
@@ -271,6 +129,13 @@ export default function App() {
     setSelectedVisualName,
     updateDraftScene,
   });
+  const selectionState = useInspectorSelectionState({
+    loadedScenePath: loaded?.scenePath,
+    selectedObject,
+    selectedObjectName,
+    setSelectedObjectName,
+    setSelectedVisualName,
+  });
 
   const {
     createSpan,
@@ -289,36 +154,91 @@ export default function App() {
   } = useSceneSpanEditor({
     activeScene,
     draftScene,
-    selectedSpanName,
-    selectedSpanVisualName,
-    setSelectedSpanName,
-    setSelectedSpanVisualName,
+    selectedSpanName: selectionState.selectedSpanName,
+    selectedSpanVisualName: selectionState.selectedSpanVisualName,
+    setSelectedSpanName: selectionState.setSelectedSpanName,
+    setSelectedSpanVisualName: selectionState.setSelectedSpanVisualName,
     updateDraftScene,
   });
 
   useEffect(() => {
-    if (selectedObject) {
-      setEditorMode('visual');
+    if (selectedSpanResolvedName) {
+      selectionState.setEditorMode('visual');
     }
-  }, [selectedObject?.name]);
+  }, [selectedSpanResolvedName, selectionState]);
 
   useEffect(() => {
-    if (selectedSpanResolvedName) {
-      setEditorMode('visual');
-    }
-  }, [selectedSpanResolvedName]);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
 
-  const selectObjectForEditor = (objectName: string, firstVisualName: string | null) => {
-    setSelectedSpanName(null);
-    setSelectedSpanVisualName(null);
-    selectObject(objectName, firstVisualName);
-  };
+      if (event.key === 'Escape') {
+        const activeElement = document.activeElement;
+        if (
+          activeElement instanceof HTMLInputElement ||
+          activeElement instanceof HTMLTextAreaElement ||
+          activeElement instanceof HTMLSelectElement ||
+          activeElement instanceof HTMLButtonElement ||
+          (activeElement instanceof HTMLElement && activeElement.isContentEditable)
+        ) {
+          event.preventDefault();
+          activeElement.blur();
+          return;
+        }
 
-  const selectSpanForEditor = (spanName: string, firstVisualName: string | null) => {
-    setSelectedObjectName(null);
-    setSelectedVisualName(null);
-    selectSpanOnly(spanName, firstVisualName);
-  };
+        if (!shell.loadOverlayOpen && !shell.diagnosticsOpen && !shell.simulationOverlayOpen) {
+          if (selectionState.hasAnySelection) {
+            event.preventDefault();
+            selectionState.clearAllSelections();
+            return;
+          }
+        }
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        if (!shell.loadOverlayOpen && !loading && !saving && hasLocalEdits) {
+          void handleSaveScene();
+        }
+        return;
+      }
+
+      if (event.defaultPrevented || event.repeat || event.code !== 'Space') {
+        return;
+      }
+
+      if (shell.loadOverlayOpen || shell.diagnosticsOpen || shell.simulationOverlayOpen) {
+        return;
+      }
+
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target instanceof HTMLButtonElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      playback.togglePlay();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    handleSaveScene,
+    hasLocalEdits,
+    loading,
+    playback.togglePlay,
+    saving,
+    selectionState,
+    shell.diagnosticsOpen,
+    shell.loadOverlayOpen,
+    shell.simulationOverlayOpen,
+  ]);
 
   const spanEntries = useMemo(
     () =>
@@ -337,26 +257,6 @@ export default function App() {
   const activeSelectedVisual = selectedSpanResolvedName ? undefined : selectedVisual;
   const activeLiveSelectedVisual = selectedSpanResolvedName ? undefined : liveSelectedVisual;
 
-  const cameraSeedKey = useMemo(() => {
-    if (!activeScene || !loaded) {
-      return 'no-scene';
-    }
-
-    return JSON.stringify({
-      scenePath: loaded.scenePath,
-      cameraParentFrame: activeScene.cameraParentFrame,
-      cameraUp: activeScene.cameraUp ?? null,
-      cameraEye: activeScene.cameraEye ?? null,
-      cameraFocus: activeScene.cameraFocus ?? null,
-    });
-  }, [
-    activeScene?.cameraEye,
-    activeScene?.cameraFocus,
-    activeScene?.cameraParentFrame,
-    activeScene?.cameraUp,
-    loaded,
-  ]);
-
   const savePreview = useMemo(() => {
     if (!loaded || !draftScene) {
       return '';
@@ -365,104 +265,7 @@ export default function App() {
     return JSON.stringify(createSavableScene(loaded.rawScene, draftScene), null, 2);
   }, [draftScene, loaded]);
 
-  const openLoadOverlay = () => {
-    setError(null);
-    setSceneOverlayMode('load');
-    setLoadOverlayOpen(true);
-    void handleBrowse(loaded ? getDirectoryPath(loaded.scenePath) : getDirectoryPath(sceneInput));
-  };
-
-  const openCreateOverlay = () => {
-    setError(null);
-    setSceneOverlayMode('create');
-    const defaultDirectory = loaded ? getBasePath(loaded.scenePath).replace(/\/$/, '') : getDirectoryPath(sceneInput);
-    setSceneInput('new_scene.json');
-    setLoadOverlayOpen(true);
-    void handleBrowse(defaultDirectory || '.');
-  };
-
-  const openSaveAsOverlay = () => {
-    if (!loaded) {
-      return;
-    }
-
-    setError(null);
-    setSceneOverlayMode('saveAs');
-    setSceneInput(getFileName(loaded.scenePath));
-    setLoadOverlayOpen(true);
-    void handleBrowse(getDirectoryPath(loaded.scenePath));
-  };
-
-  const handleOpenSelectedScene = () => {
-    void handleLoad(sceneInput, {
-      actionLabel: 'Loading a scene by path',
-    }).then((didLoad) => {
-      if (didLoad) {
-        setLoadOverlayOpen(false);
-        setEditorMode('visual');
-      }
-    });
-  };
-
-  const handleOpenScenePath = (path: string) => {
-    void handleLoad(path, {
-      actionLabel: 'Loading a scene by path',
-    }).then((didLoad) => {
-      if (didLoad) {
-        setLoadOverlayOpen(false);
-        setEditorMode('visual');
-      }
-    });
-  };
-
-  const handleCreateScenePath = (path: string) => {
-    const currentFolder = browserListing?.path || '.';
-    const trimmedPath = path.trim();
-    const combinedPath =
-      currentFolder && currentFolder !== '.'
-        ? `${currentFolder.replace(/\/+$/g, '')}/${trimmedPath}`
-        : trimmedPath;
-
-    void handleCreateScene(combinedPath).then((didCreate) => {
-      if (didCreate) {
-        setLoadOverlayOpen(false);
-        setEditorMode('visual');
-      }
-    });
-  };
-
-  const handleSaveScenePath = (path: string) => {
-    const currentFolder = browserListing?.path || '.';
-    const trimmedPath = path.trim();
-    const combinedPath =
-      currentFolder && currentFolder !== '.'
-        ? `${currentFolder.replace(/\/+$/g, '')}/${trimmedPath}`
-        : trimmedPath;
-
-    void handleSaveSceneAs(combinedPath).then((didSave) => {
-      if (didSave) {
-        setLoadOverlayOpen(false);
-        setEditorMode('visual');
-      }
-    });
-  };
-
   const groupedSamples = useMemo(() => sampleGroups(), []);
-
-  const updateSceneVector = (
-    key: 'cameraUp' | 'cameraEye' | 'cameraFocus',
-    index: 0 | 1 | 2,
-    nextValue: number,
-    fallback: [number, number, number]
-  ) => {
-    setCameraPreview(null);
-    updateDraftScene((scene) => {
-      const current = scene[key] ?? fallback;
-      const nextTuple: [number, number, number] = [...current] as [number, number, number];
-      nextTuple[index] = nextValue;
-      scene[key] = nextTuple;
-    });
-  };
 
   return (
     <div className="app-shell">
@@ -474,16 +277,11 @@ export default function App() {
         saving={saving}
         statusMessage={saveMessage}
         errorMessage={error}
-        onOpenCreateOverlay={openCreateOverlay}
-        onOpenLoadOverlay={openLoadOverlay}
-        onOpenDiagnostics={() => setDiagnosticsOpen(true)}
-        onOpenChannels={() => {
-          setSimulationOverlayOpen(true);
-          if (loaded) {
-            void handleBrowse(getBasePath(loaded.scenePath));
-          }
-        }}
-        onOpenSaveAsOverlay={openSaveAsOverlay}
+        onOpenCreateOverlay={shell.openCreateOverlay}
+        onOpenLoadOverlay={shell.openLoadOverlay}
+        onOpenDiagnostics={shell.openDiagnostics}
+        onOpenChannels={shell.openSimulationOverlay}
+        onOpenSaveAsOverlay={shell.openSaveAsOverlay}
         onSceneNameChange={(nextName) => {
           updateDraftScene((scene) => {
             scene.name = nextName;
@@ -492,47 +290,23 @@ export default function App() {
         onSave={() => void handleSaveScene()}
         onRevert={() => {
           if (handleRevertDraft()) {
-            setEditorMode('visual');
+            selectionState.setEditorMode('visual');
           }
         }}
       />
 
       {showWorkspaceShell ? (
           <div
-            className={`workspace-shell ${leftRailCollapsed ? 'workspace-shell-left-rail-collapsed' : ''}`}
+            className={`workspace-shell ${shell.leftRailCollapsed ? 'workspace-shell-left-rail-collapsed' : ''}`}
           >
             <div className="workspace-main">
               {activeScene ? (
                 <>
                   <RendererPanel
-                    cameraSeedKey={cameraSeedKey}
-                    layoutSizeKey={`${leftRailCollapsed}`}
-                    onCameraPreviewChange={(nextCameraPreview) => {
-                      setCameraPreview(nextCameraPreview);
-                    }}
-                    onCameraCommit={({ cameraParentFrame, cameraEye, cameraFocus, cameraUp }) => {
-                      setCameraPreview({
-                        cameraParentFrame,
-                        cameraEye,
-                        cameraFocus,
-                        cameraUp,
-                      });
-                      updateDraftScene((scene) => {
-                        if (
-                          scene.cameraParentFrame === cameraParentFrame &&
-                          tupleApproximatelyEqual(scene.cameraEye, cameraEye) &&
-                          tupleApproximatelyEqual(scene.cameraFocus, cameraFocus) &&
-                          tupleApproximatelyEqual(scene.cameraUp, cameraUp)
-                        ) {
-                          return;
-                        }
-
-                        scene.cameraParentFrame = cameraParentFrame;
-                        scene.cameraEye = cameraEye;
-                        scene.cameraFocus = cameraFocus;
-                        scene.cameraUp = cameraUp;
-                      });
-                    }}
+                    cameraSeedKey={shell.cameraSeedKey}
+                    layoutSizeKey={`${shell.leftRailCollapsed}`}
+                    onCameraPreviewChange={shell.setCameraPreview}
+                    onCameraCommit={shell.commitCameraPreview}
                     scenePath={loaded.scenePath}
                     scene={activeScene}
                     frame={currentFrame?.frame}
@@ -577,13 +351,13 @@ export default function App() {
             <button
               type="button"
               className="workspace-edge-handle"
-              onClick={() => setLeftRailCollapsed((current) => !current)}
-              aria-label={leftRailCollapsed ? 'Expand editor rail' : 'Collapse editor rail'}
+              onClick={() => shell.setLeftRailCollapsed((current) => !current)}
+              aria-label={shell.leftRailCollapsed ? 'Expand editor rail' : 'Collapse editor rail'}
             >
-              {leftRailCollapsed ? '<' : '>'}
+              {shell.leftRailCollapsed ? '<' : '>'}
             </button>
 
-            {!leftRailCollapsed ? (
+            {!shell.leftRailCollapsed ? (
               <div className="workspace-left-rail">
                 <div className="workspace-sidebar">
                   <div className="workspace-pane-scroll">
@@ -591,15 +365,17 @@ export default function App() {
                       <ObjectList
                         entries={objectInspections}
                         onCreateSpan={() => {
-                          setSelectedObjectName(null);
-                          setSelectedVisualName(null);
-                          createSpan();
+                          selectionState.beginSpanCreation(createSpan);
                         }}
                         selectedObjectName={activeSelectedObject?.name ?? null}
                         selectedSpanName={selectedSpanResolvedName}
                         spans={spanEntries}
-                        onSelectObject={selectObjectForEditor}
-                        onSelectSpan={selectSpanForEditor}
+                        onSelectObject={(objectName, firstVisualName) => {
+                          selectionState.selectObjectForEditor(objectName, firstVisualName, selectObject);
+                        }}
+                        onSelectSpan={(spanName, firstVisualName) => {
+                          selectionState.selectSpanForEditor(spanName, firstVisualName, selectSpanOnly);
+                        }}
                       />
                     ) : (
                       <section className="panel loading-panel">
@@ -619,10 +395,10 @@ export default function App() {
                   <div className="workspace-pane-scroll">
                     <InspectorDrawer
                       activeScene={activeScene}
-                      cameraPreview={cameraPreview}
+                      cameraPreview={shell.cameraPreview}
                       channelNames={channelNames}
-                      clearCameraPreview={() => setCameraPreview(null)}
-                      editorMode={editorMode}
+                      clearCameraPreview={() => shell.setCameraPreview(null)}
+                      editorMode={selectionState.editorMode}
                       hasLocalEdits={hasLocalEdits}
                       liveSelectedSpan={liveSelectedSpan}
                       liveSelectedSpanVisual={liveSelectedSpanVisual}
@@ -644,11 +420,13 @@ export default function App() {
                       deleteSelectedSpanVisual={deleteSelectedSpanVisual}
                       renameSpan={renameSpan}
                       renameSpanVisual={renameSpanVisual}
-                      selectSpan={selectSpanForEditor}
-                      setEditorMode={setEditorMode}
+                      selectSpan={(spanName, firstVisualName) => {
+                        selectionState.selectSpanForEditor(spanName, firstVisualName, selectSpanOnly);
+                      }}
+                      setEditorMode={selectionState.setEditorMode}
                       setSelectedVisualName={setSelectedVisualName}
                       updateDraftScene={updateDraftScene}
-                      updateSceneVector={updateSceneVector}
+                      updateSceneVector={shell.updateSceneVector}
                       updateSelectedSpan={updateSelectedSpan}
                       updateSelectedSpanVisual={updateSelectedSpanVisual}
                       updateSelectedVisual={updateSelectedVisual}
@@ -660,7 +438,7 @@ export default function App() {
           </div>
       ) : null}
 
-      {loadOverlayOpen ? (
+      {shell.loadOverlayOpen ? (
         <LoadSceneOverlay
           browserError={browserError}
           browserListing={browserListing}
@@ -668,30 +446,38 @@ export default function App() {
           errorMessage={error}
           groupedSamples={groupedSamples}
           loading={loading}
-          mode={sceneOverlayMode}
+          mode={shell.sceneOverlayMode}
           onBrowse={(path) => {
             void handleBrowse(path);
           }}
-          onClose={() => setLoadOverlayOpen(false)}
-          onCreateScenePath={handleCreateScenePath}
-          onOpenScenePath={handleOpenScenePath}
-          onOpenSelectedScene={handleOpenSelectedScene}
-          onSaveScenePath={handleSaveScenePath}
-          sampleBrowserExpanded={sampleBrowserExpanded}
+          onClose={shell.closeLoadOverlay}
+          onCreateScenePath={(path) => {
+            void shell.handleCreateScenePath(path);
+          }}
+          onOpenScenePath={(path) => {
+            void shell.handleOpenScenePath(path);
+          }}
+          onOpenSelectedScene={() => {
+            void shell.handleOpenSelectedScene();
+          }}
+          onSaveScenePath={(path) => {
+            void shell.handleSaveScenePath(path);
+          }}
+          sampleBrowserExpanded={shell.sampleBrowserExpanded}
           sceneInput={sceneInput}
-          setSampleBrowserExpanded={setSampleBrowserExpanded}
+          setSampleBrowserExpanded={shell.setSampleBrowserExpanded}
           setSceneInput={setSceneInput}
         />
       ) : null}
 
-      {diagnosticsOpen && loaded ? (
+      {shell.diagnosticsOpen && loaded ? (
         <DiagnosticsOverlay
           diagnostics={diagnostics}
-          onClose={() => setDiagnosticsOpen(false)}
+          onClose={shell.closeDiagnostics}
         />
       ) : null}
 
-      {simulationOverlayOpen && loaded && draftScene ? (
+      {shell.simulationOverlayOpen && loaded && draftScene ? (
         <SimulationDataOverlay
           browserError={browserError}
           browserListing={browserListing}
@@ -699,49 +485,19 @@ export default function App() {
           channelNames={channelNames}
           expandedFiles={simulationFiles}
           fileErrors={fileErrors}
-          onAddSimulationEntry={() => {
-            const trimmedEntry = simulationEntryInput.trim();
-            if (trimmedEntry.length === 0) {
-              return;
-            }
-
-            updateDraftScene((scene) => {
-              if (!scene.simulationData.includes(trimmedEntry)) {
-                scene.simulationData.push(trimmedEntry);
-              }
-            });
-            setSimulationEntryInput('');
-          }}
-          onAddSimulationEntries={(entries) => {
-            const trimmedEntries = entries.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
-            if (trimmedEntries.length === 0) {
-              return;
-            }
-
-            updateDraftScene((scene) => {
-              for (const entry of trimmedEntries) {
-                if (!scene.simulationData.includes(entry)) {
-                  scene.simulationData.push(entry);
-                }
-              }
-            });
-            setSimulationEntryInput('');
-          }}
+          onAddSimulationEntry={shell.addSimulationEntry}
+          onAddSimulationEntries={shell.addSimulationEntries}
           onBrowse={(path) => {
             void handleBrowse(path);
           }}
-          onClose={() => setSimulationOverlayOpen(false)}
-          onRemoveSimulationEntry={(entry) => {
-            updateDraftScene((scene) => {
-              scene.simulationData = scene.simulationData.filter((value) => value !== entry);
-            });
-          }}
+          onClose={shell.closeSimulationOverlay}
+          onRemoveSimulationEntry={shell.removeSimulationEntry}
           parsedSimulationFiles={parsedSimulationFiles}
           scenePath={loaded.scenePath}
           simulationEntries={draftScene.simulationData}
-          simulationEntryInput={simulationEntryInput}
+          simulationEntryInput={shell.simulationEntryInput}
           simulationLoading={simulationLoading}
-          setSimulationEntryInput={setSimulationEntryInput}
+          setSimulationEntryInput={shell.setSimulationEntryInput}
         />
       ) : null}
     </div>
