@@ -59,8 +59,10 @@ export default function App() {
     handleCreateScene,
     handleLoad,
     handleRevertDraft,
+    handleRedo,
     handleSaveSceneAs,
     handleSaveScene,
+    handleUndo,
     hasLocalEdits,
     channelNames,
     diagnostics,
@@ -71,6 +73,8 @@ export default function App() {
     parsedSimulationFiles,
     saveMessage,
     saving,
+    canRedoDraftScene,
+    canUndoDraftScene,
     sceneInput,
     setError,
     selectedObjectName,
@@ -83,6 +87,7 @@ export default function App() {
     simulationLoading,
     timeline,
     updateDraftScene,
+    updateDraftScenePreview,
   } = workspace;
   const shell = useWorkspaceShell({
     activeScene,
@@ -96,6 +101,7 @@ export default function App() {
     setError,
     setSceneInput,
     updateDraftScene,
+    updateDraftScenePreview,
   });
 
   const playbackSpeed = activeScene?.speedFactor ?? loaded?.scene.speedFactor ?? 1;
@@ -119,6 +125,7 @@ export default function App() {
     selectedVisual,
     updateSelectedObject,
     updateSelectedVisual,
+    updateSelectedVisualPreview,
   } = useSceneSelectionEditor({
     activeScene,
     draftScene,
@@ -128,6 +135,7 @@ export default function App() {
     setSelectedObjectName,
     setSelectedVisualName,
     updateDraftScene,
+    updateDraftScenePreview,
   });
   const selectionState = useInspectorSelectionState({
     loadedScenePath: loaded?.scenePath,
@@ -151,6 +159,7 @@ export default function App() {
     selectedSpanVisualResolvedName,
     updateSelectedSpan,
     updateSelectedSpanVisual,
+    updateSelectedSpanVisualPreview,
   } = useSceneSpanEditor({
     activeScene,
     draftScene,
@@ -159,6 +168,7 @@ export default function App() {
     setSelectedSpanName: selectionState.setSelectedSpanName,
     setSelectedSpanVisualName: selectionState.setSelectedSpanVisualName,
     updateDraftScene,
+    updateDraftScenePreview,
   });
 
   useEffect(() => {
@@ -168,8 +178,34 @@ export default function App() {
   }, [selectedSpanResolvedName, selectionState]);
 
   useEffect(() => {
+    const isTextEditingTarget = (target: EventTarget | null) => {
+      if (target instanceof HTMLTextAreaElement) {
+        return true;
+      }
+
+      if (target instanceof HTMLInputElement) {
+        return !['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color'].includes(target.type);
+      }
+
+      return target instanceof HTMLElement && target.isContentEditable;
+    };
+
+    const isInteractiveTarget = (target: EventTarget | null) =>
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      target instanceof HTMLButtonElement ||
+      (target instanceof HTMLElement && target.isContentEditable);
+
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+
       const target = event.target;
+      const isTextEditing = isTextEditingTarget(target);
+      const isInteractive = isInteractiveTarget(target);
+      const hasModifier = event.ctrlKey || event.metaKey;
 
       if (event.key === 'Escape') {
         const activeElement = document.activeElement;
@@ -194,7 +230,23 @@ export default function App() {
         }
       }
 
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      if (hasModifier && !isTextEditing && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) {
+          handleRedo();
+        } else {
+          handleUndo();
+        }
+        return;
+      }
+
+      if (hasModifier && !isTextEditing && event.key.toLowerCase() === 'y') {
+        event.preventDefault();
+        handleRedo();
+        return;
+      }
+
+      if (hasModifier && event.key.toLowerCase() === 's') {
         event.preventDefault();
         if (!shell.loadOverlayOpen && !loading && !saving && hasLocalEdits) {
           void handleSaveScene();
@@ -211,11 +263,7 @@ export default function App() {
       }
 
       if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        target instanceof HTMLButtonElement ||
-        (target instanceof HTMLElement && target.isContentEditable)
+        isInteractive
       ) {
         return;
       }
@@ -229,7 +277,9 @@ export default function App() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [
+    handleRedo,
     handleSaveScene,
+    handleUndo,
     hasLocalEdits,
     loading,
     playback.togglePlay,
@@ -275,6 +325,8 @@ export default function App() {
         hasLocalEdits={hasLocalEdits}
         loading={loading}
         saving={saving}
+        canRedo={canRedoDraftScene}
+        canUndo={canUndoDraftScene}
         statusMessage={saveMessage}
         errorMessage={error}
         onOpenCreateOverlay={shell.openCreateOverlay}
@@ -287,12 +339,14 @@ export default function App() {
             scene.name = nextName;
           });
         }}
+        onRedo={handleRedo}
         onSave={() => void handleSaveScene()}
         onRevert={() => {
           if (handleRevertDraft()) {
             selectionState.setEditorMode('visual');
           }
         }}
+        onUndo={handleUndo}
       />
 
       {showWorkspaceShell ? (
@@ -426,10 +480,14 @@ export default function App() {
                       setEditorMode={selectionState.setEditorMode}
                       setSelectedVisualName={setSelectedVisualName}
                       updateDraftScene={updateDraftScene}
+                      updateDraftScenePreview={updateDraftScenePreview}
                       updateSceneVector={shell.updateSceneVector}
+                      updateSceneVectorPreview={shell.updateSceneVectorPreview}
                       updateSelectedSpan={updateSelectedSpan}
                       updateSelectedSpanVisual={updateSelectedSpanVisual}
+                      updateSelectedSpanVisualPreview={updateSelectedSpanVisualPreview}
                       updateSelectedVisual={updateSelectedVisual}
+                      updateSelectedVisualPreview={updateSelectedVisualPreview}
                     />
                   </div>
                 </div>

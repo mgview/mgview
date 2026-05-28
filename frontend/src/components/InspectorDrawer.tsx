@@ -50,7 +50,14 @@ interface InspectorDrawerProps {
   setEditorMode: (mode: InspectorEditorMode) => void;
   setSelectedVisualName: (name: string | null) => void;
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
+  updateDraftScenePreview: (updater: (scene: NormalizedSceneConfig) => void) => void;
   updateSceneVector: (
+    key: 'cameraUp' | 'cameraEye' | 'cameraFocus',
+    index: 0 | 1 | 2,
+    nextValue: number,
+    fallback: [number, number, number]
+  ) => void;
+  updateSceneVectorPreview: (
     key: 'cameraUp' | 'cameraEye' | 'cameraFocus',
     index: 0 | 1 | 2,
     nextValue: number,
@@ -58,7 +65,9 @@ interface InspectorDrawerProps {
   ) => void;
   updateSelectedSpan: (updater: (span: SceneSpan) => void) => void;
   updateSelectedSpanVisual: (updater: (visual: SceneSpanVisual) => void) => void;
+  updateSelectedSpanVisualPreview: (updater: (visual: SceneSpanVisual) => void) => void;
   updateSelectedVisual: (updater: (visual: SceneVisual) => void) => void;
+  updateSelectedVisualPreview: (updater: (visual: SceneVisual) => void) => void;
 }
 
 export default function InspectorDrawer({
@@ -92,10 +101,14 @@ export default function InspectorDrawer({
   setEditorMode,
   setSelectedVisualName,
   updateDraftScene,
+  updateDraftScenePreview,
   updateSceneVector,
+  updateSceneVectorPreview,
   updateSelectedSpan,
   updateSelectedSpanVisual,
+  updateSelectedSpanVisualPreview,
   updateSelectedVisual,
+  updateSelectedVisualPreview,
 }: InspectorDrawerProps) {
   if (!loaded) {
     return (
@@ -144,7 +157,9 @@ export default function InspectorDrawer({
           clearCameraPreview={clearCameraPreview}
           objectNames={activeScene ? Object.keys(activeScene.objects) : []}
           updateDraftScene={updateDraftScene}
+          updateDraftScenePreview={updateDraftScenePreview}
           updateSceneVector={updateSceneVector}
+          updateSceneVectorPreview={updateSceneVectorPreview}
         />
       ) : editorMode === 'json' ? (
         <JsonEditorPanel
@@ -166,6 +181,7 @@ export default function InspectorDrawer({
           selectSpan={selectSpan}
           updateSelectedSpan={updateSelectedSpan}
           updateSelectedSpanVisual={updateSelectedSpanVisual}
+          updateSelectedSpanVisualPreview={updateSelectedSpanVisualPreview}
         />
       ) : (
         <VisualEditorPanel
@@ -179,6 +195,7 @@ export default function InspectorDrawer({
           changeSelectedVisualType={changeSelectedVisualType}
           setSelectedVisualName={setSelectedVisualName}
           updateSelectedVisual={updateSelectedVisual}
+          updateSelectedVisualPreview={updateSelectedVisualPreview}
         />
       )}
     </section>

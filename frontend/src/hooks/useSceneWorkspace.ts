@@ -13,6 +13,7 @@ import { parseSimulationText } from '../core/parseSimulationText.ts';
 import { createSceneDocument } from '../core/sceneDocument.ts';
 import { buildObjectInspections, collectSceneDiagnostics } from '../core/sceneInspector.ts';
 import { buildTimeline } from '../core/timeline.ts';
+import { useUndoRedo } from './useUndoRedo.ts';
 import type {
   NormalizedSceneConfig,
   ParsedSimulationFile,
@@ -52,6 +53,13 @@ interface LoadSceneOptions {
 
 function cloneScene(scene: NormalizedSceneConfig): NormalizedSceneConfig {
   return structuredClone(scene);
+}
+
+function sceneSnapshotsEqual(
+  left: NormalizedSceneConfig | null,
+  right: NormalizedSceneConfig | null
+): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 export function getDirectoryPath(filePath: string): string {
@@ -205,7 +213,6 @@ async function loadSimulationWorkspaceState(
 export function useSceneWorkspace(initialScenePath: string) {
   const [sceneInput, setSceneInput] = useState(initialScenePath);
   const [loaded, setLoaded] = useState<LoadedSceneData | null>(null);
-  const [draftScene, setDraftScene] = useState<NormalizedSceneConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [browserListing, setBrowserListing] = useState<FileBrowserListing | null>(null);
@@ -217,6 +224,18 @@ export function useSceneWorkspace(initialScenePath: string) {
   const [selectedVisualName, setSelectedVisualName] = useState<string | null>(null);
   const [simulationState, setSimulationState] = useState<SimulationWorkspaceState | null>(null);
   const [simulationLoading, setSimulationLoading] = useState(false);
+  const {
+    snapshot: draftScene,
+    set: pushDraftScene,
+    replaceCurrent: replaceDraftScene,
+    reset: resetDraftScene,
+    undo: undoDraftScene,
+    redo: redoDraftScene,
+    canUndo: canUndoDraftScene,
+    canRedo: canRedoDraftScene,
+  } = useUndoRedo<NormalizedSceneConfig | null>(null, {
+    isEqual: sceneSnapshotsEqual,
+  });
 
   const authoredScene = useMemo(() => {
     if (!loaded) {
@@ -302,7 +321,7 @@ export function useSceneWorkspace(initialScenePath: string) {
       fileErrors: nextLoaded.fileErrors,
     });
     setSceneInput(nextLoaded.scenePath);
-    setDraftScene(cloneScene(nextLoaded.scene));
+    resetDraftScene(cloneScene(nextLoaded.scene));
     updateSelectionFromLoadedScene(nextLoaded);
     const url = new URL(window.location.href);
     url.searchParams.set('scene', nextLoaded.scenePath);
@@ -422,7 +441,7 @@ export function useSceneWorkspace(initialScenePath: string) {
         parsedSimulationFiles: nextLoaded.parsedSimulationFiles,
         fileErrors: nextLoaded.fileErrors,
       });
-      setDraftScene(cloneScene(nextLoaded.scene));
+      resetDraftScene(cloneScene(nextLoaded.scene));
       updateSelectionFromLoadedScene(nextLoaded);
       setSaveMessage(`Saved changes to ${loaded.scenePath}`);
       void handleBrowse(getDirectoryPath(loaded.scenePath));
@@ -442,22 +461,30 @@ export function useSceneWorkspace(initialScenePath: string) {
       return false;
     }
 
-    setDraftScene(cloneScene(loaded.scene));
+    resetDraftScene(cloneScene(loaded.scene));
     setSaveMessage(`Reverted local edits for ${loaded.scenePath}`);
     updateSelectionFromLoadedScene(loaded);
     return true;
   };
 
   const updateDraftScene = (updater: (scene: NormalizedSceneConfig) => void) => {
-    setDraftScene((currentDraft) => {
-      if (!currentDraft) {
-        return currentDraft;
-      }
+    if (!draftScene) {
+      return false;
+    }
 
-      const nextDraft = cloneScene(currentDraft);
-      updater(nextDraft);
-      return nextDraft;
-    });
+    const nextDraft = cloneScene(draftScene);
+    updater(nextDraft);
+    return pushDraftScene(nextDraft);
+  };
+
+  const updateDraftScenePreview = (updater: (scene: NormalizedSceneConfig) => void) => {
+    if (!draftScene) {
+      return false;
+    }
+
+    const nextDraft = cloneScene(draftScene);
+    updater(nextDraft);
+    return replaceDraftScene(nextDraft);
   };
 
   useEffect(() => {
@@ -483,14 +510,8 @@ export function useSceneWorkspace(initialScenePath: string) {
         }
 
         setSimulationState(nextSimulationState);
-        setDraftScene((currentDraft) => {
-          if (!currentDraft) {
-            return currentDraft;
-          }
-
-          const inferredScene = createSceneDocument(currentDraft, nextSimulationState.channelNames);
-          return JSON.stringify(inferredScene) === JSON.stringify(currentDraft) ? currentDraft : inferredScene;
-        });
+        const inferredScene = createSceneDocument(draftScene, nextSimulationState.channelNames);
+        void replaceDraftScene(inferredScene);
       })
       .finally(() => {
         if (!cancelled) {
@@ -501,7 +522,10 @@ export function useSceneWorkspace(initialScenePath: string) {
     return () => {
       cancelled = true;
     };
-  }, [loaded?.scenePath, simulationDataKey]);
+  }, [draftScene, loaded?.scenePath, replaceDraftScene, simulationDataKey]);
+
+  const handleUndo = () => undoDraftScene();
+  const handleRedo = () => redoDraftScene();
 
   return {
     activeScene,
@@ -517,6 +541,8 @@ export function useSceneWorkspace(initialScenePath: string) {
     handleRevertDraft,
     handleSaveSceneAs,
     handleSaveScene,
+    handleRedo,
+    handleUndo,
     hasLocalEdits,
     channelNames,
     diagnostics,
@@ -527,10 +553,11 @@ export function useSceneWorkspace(initialScenePath: string) {
     parsedSimulationFiles,
     saveMessage,
     saving,
+    canRedoDraftScene,
+    canUndoDraftScene,
     sceneInput,
     selectedObjectName,
     selectedVisualName,
-    setDraftScene,
     setError,
     setSaveMessage,
     setSceneInput,
@@ -541,5 +568,6 @@ export function useSceneWorkspace(initialScenePath: string) {
     simulationLoading,
     timeline,
     updateDraftScene,
+    updateDraftScenePreview,
   };
 }

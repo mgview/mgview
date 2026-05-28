@@ -39,6 +39,7 @@ interface UseSceneSpanEditorOptions {
   setSelectedSpanName: (name: string | null) => void;
   setSelectedSpanVisualName: (name: string | null) => void;
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
+  updateDraftScenePreview: (updater: (scene: NormalizedSceneConfig) => void) => void;
 }
 
 export function useSceneSpanEditor({
@@ -49,6 +50,7 @@ export function useSceneSpanEditor({
   setSelectedSpanName,
   setSelectedSpanVisualName,
   updateDraftScene,
+  updateDraftScenePreview,
 }: UseSceneSpanEditorOptions) {
   const spanNames = useMemo(() => Object.keys(activeScene?.spans ?? {}), [activeScene?.spans]);
 
@@ -135,6 +137,21 @@ export function useSceneSpanEditor({
     }
 
     updateDraftScene((scene) => {
+      const visual = scene.spans[selectedSpanResolvedName]?.visual?.[selectedSpanVisualResolvedName];
+      if (!visual) {
+        return;
+      }
+
+      updater(visual);
+    });
+  };
+
+  const updateSelectedSpanVisualPreview = (updater: (visual: SceneSpanVisual) => void) => {
+    if (!selectedSpanResolvedName || !selectedSpanVisualResolvedName) {
+      return;
+    }
+
+    updateDraftScenePreview((scene) => {
       const visual = scene.spans[selectedSpanResolvedName]?.visual?.[selectedSpanVisualResolvedName];
       if (!visual) {
         return;
@@ -293,5 +310,6 @@ export function useSceneSpanEditor({
     selectedSpanVisualResolvedName,
     updateSelectedSpan,
     updateSelectedSpanVisual,
+    updateSelectedSpanVisualPreview,
   };
 }

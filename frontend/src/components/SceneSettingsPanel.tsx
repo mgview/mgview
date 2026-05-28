@@ -13,7 +13,14 @@ interface SceneSettingsPanelProps {
   clearCameraPreview: () => void;
   objectNames: string[];
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
+  updateDraftScenePreview: (updater: (scene: NormalizedSceneConfig) => void) => void;
   updateSceneVector: (
+    key: 'cameraUp' | 'cameraEye' | 'cameraFocus',
+    index: 0 | 1 | 2,
+    nextValue: number,
+    fallback: [number, number, number]
+  ) => void;
+  updateSceneVectorPreview: (
     key: 'cameraUp' | 'cameraEye' | 'cameraFocus',
     index: 0 | 1 | 2,
     nextValue: number,
@@ -27,7 +34,9 @@ export default function SceneSettingsPanel({
   clearCameraPreview,
   objectNames,
   updateDraftScene,
+  updateDraftScenePreview,
   updateSceneVector,
+  updateSceneVectorPreview,
 }: SceneSettingsPanelProps) {
   if (!activeScene) {
     return <div className="empty-state">Load a scene to edit scene-level settings.</div>;
@@ -45,6 +54,11 @@ export default function SceneSettingsPanel({
           <span>Workspace Size</span>
           <NumericInput
             value={activeScene.workspaceSize}
+            onValuePreviewChange={(nextValue) => {
+              updateDraftScenePreview((scene) => {
+                scene.workspaceSize = nextValue;
+              });
+            }}
             onValueChange={(nextValue) => {
               updateDraftScene((scene) => {
                 scene.workspaceSize = nextValue;
@@ -100,18 +114,27 @@ export default function SceneSettingsPanel({
               className="numeric-input-compact"
               prefixLabel="x"
               value={cameraFocus[0] ?? 0}
+              onValuePreviewChange={(nextValue) =>
+                updateSceneVectorPreview('cameraFocus', 0, nextValue, [0, 0, 0])
+              }
               onValueChange={(nextValue) => updateSceneVector('cameraFocus', 0, nextValue, [0, 0, 0])}
             />
             <NumericInput
               className="numeric-input-compact"
               prefixLabel="y"
               value={cameraFocus[1] ?? 0}
+              onValuePreviewChange={(nextValue) =>
+                updateSceneVectorPreview('cameraFocus', 1, nextValue, [0, 0, 0])
+              }
               onValueChange={(nextValue) => updateSceneVector('cameraFocus', 1, nextValue, [0, 0, 0])}
             />
             <NumericInput
               className="numeric-input-compact"
               prefixLabel="z"
               value={cameraFocus[2] ?? 0}
+              onValuePreviewChange={(nextValue) =>
+                updateSceneVectorPreview('cameraFocus', 2, nextValue, [0, 0, 0])
+              }
               onValueChange={(nextValue) => updateSceneVector('cameraFocus', 2, nextValue, [0, 0, 0])}
             />
           </div>
@@ -123,18 +146,27 @@ export default function SceneSettingsPanel({
               className="numeric-input-compact"
               prefixLabel="x"
               value={cameraEye[0] ?? 0}
+              onValuePreviewChange={(nextValue) =>
+                updateSceneVectorPreview('cameraEye', 0, nextValue, [0, 0, 10])
+              }
               onValueChange={(nextValue) => updateSceneVector('cameraEye', 0, nextValue, [0, 0, 10])}
             />
             <NumericInput
               className="numeric-input-compact"
               prefixLabel="y"
               value={cameraEye[1] ?? 0}
+              onValuePreviewChange={(nextValue) =>
+                updateSceneVectorPreview('cameraEye', 1, nextValue, [0, 0, 10])
+              }
               onValueChange={(nextValue) => updateSceneVector('cameraEye', 1, nextValue, [0, 0, 10])}
             />
             <NumericInput
               className="numeric-input-compact"
               prefixLabel="z"
               value={cameraEye[2] ?? 10}
+              onValuePreviewChange={(nextValue) =>
+                updateSceneVectorPreview('cameraEye', 2, nextValue, [0, 0, 10])
+              }
               onValueChange={(nextValue) => updateSceneVector('cameraEye', 2, nextValue, [0, 0, 10])}
             />
           </div>
@@ -146,18 +178,27 @@ export default function SceneSettingsPanel({
               className="numeric-input-compact"
               prefixLabel="x"
               value={cameraUp[0] ?? 0}
+              onValuePreviewChange={(nextValue) =>
+                updateSceneVectorPreview('cameraUp', 0, nextValue, [0, 0, 1])
+              }
               onValueChange={(nextValue) => updateSceneVector('cameraUp', 0, nextValue, [0, 0, 1])}
             />
             <NumericInput
               className="numeric-input-compact"
               prefixLabel="y"
               value={cameraUp[1] ?? 0}
+              onValuePreviewChange={(nextValue) =>
+                updateSceneVectorPreview('cameraUp', 1, nextValue, [0, 0, 1])
+              }
               onValueChange={(nextValue) => updateSceneVector('cameraUp', 1, nextValue, [0, 0, 1])}
             />
             <NumericInput
               className="numeric-input-compact"
               prefixLabel="z"
               value={cameraUp[2] ?? 1}
+              onValuePreviewChange={(nextValue) =>
+                updateSceneVectorPreview('cameraUp', 2, nextValue, [0, 0, 1])
+              }
               onValueChange={(nextValue) => updateSceneVector('cameraUp', 2, nextValue, [0, 0, 1])}
             />
           </div>

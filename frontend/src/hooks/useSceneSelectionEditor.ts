@@ -20,6 +20,7 @@ interface UseSceneSelectionEditorOptions {
   setSelectedObjectName: (name: string | null) => void;
   setSelectedVisualName: (name: string | null) => void;
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
+  updateDraftScenePreview: (updater: (scene: NormalizedSceneConfig) => void) => void;
 }
 
 export function useSceneSelectionEditor({
@@ -31,6 +32,7 @@ export function useSceneSelectionEditor({
   setSelectedObjectName,
   setSelectedVisualName,
   updateDraftScene,
+  updateDraftScenePreview,
 }: UseSceneSelectionEditorOptions) {
   const selectedObject = useMemo(() => {
     if (!objectInspections.length || !selectedObjectName) {
@@ -65,6 +67,21 @@ export function useSceneSelectionEditor({
     }
 
     updateDraftScene((scene) => {
+      const visual = scene.objects[selectedObject.name]?.visual?.[selectedVisual.name];
+      if (!visual) {
+        return;
+      }
+
+      updater(visual);
+    });
+  };
+
+  const updateSelectedVisualPreview = (updater: (visual: SceneVisual) => void) => {
+    if (!draftScene || !selectedObject?.name || !selectedVisual?.name) {
+      return;
+    }
+
+    updateDraftScenePreview((scene) => {
       const visual = scene.objects[selectedObject.name]?.visual?.[selectedVisual.name];
       if (!visual) {
         return;
@@ -204,5 +221,6 @@ export function useSceneSelectionEditor({
     selectedVisual,
     updateSelectedObject,
     updateSelectedVisual,
+    updateSelectedVisualPreview,
   };
 }

@@ -54,6 +54,7 @@ interface UseWorkspaceShellOptions {
   setError: (message: string | null) => void;
   setSceneInput: (value: string) => void;
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
+  updateDraftScenePreview: (updater: (scene: NormalizedSceneConfig) => void) => void;
 }
 
 export function useWorkspaceShell({
@@ -68,6 +69,7 @@ export function useWorkspaceShell({
   setError,
   setSceneInput,
   updateDraftScene,
+  updateDraftScenePreview,
 }: UseWorkspaceShellOptions) {
   const [loadOverlayOpen, setLoadOverlayOpen] = useState(false);
   const [sceneOverlayMode, setSceneOverlayMode] = useState<SceneOverlayMode>('load');
@@ -199,6 +201,21 @@ export function useWorkspaceShell({
     });
   };
 
+  const updateSceneVectorPreview = (
+    key: 'cameraUp' | 'cameraEye' | 'cameraFocus',
+    index: 0 | 1 | 2,
+    nextValue: number,
+    fallback: [number, number, number]
+  ) => {
+    setCameraPreview(null);
+    updateDraftScenePreview((scene) => {
+      const current = scene[key] ?? fallback;
+      const nextTuple: [number, number, number] = [...current] as [number, number, number];
+      nextTuple[index] = nextValue;
+      scene[key] = nextTuple;
+    });
+  };
+
   const commitCameraPreview = ({
     cameraParentFrame,
     cameraEye,
@@ -294,6 +311,7 @@ export function useWorkspaceShell({
     simulationEntryInput,
     simulationOverlayOpen,
     updateSceneVector,
+    updateSceneVectorPreview,
     removeSimulationEntry,
   };
 }

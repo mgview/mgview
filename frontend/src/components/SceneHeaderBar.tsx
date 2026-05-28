@@ -6,6 +6,8 @@ interface SceneHeaderBarProps {
   hasLocalEdits: boolean;
   loading: boolean;
   saving: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
   statusMessage: string | null;
   errorMessage: string | null;
   onOpenCreateOverlay: () => void;
@@ -14,8 +16,10 @@ interface SceneHeaderBarProps {
   onOpenChannels: () => void;
   onOpenSaveAsOverlay: () => void;
   onSceneNameChange: (nextName: string) => void;
+  onRedo: () => void;
   onSave: () => void;
   onRevert: () => void;
+  onUndo: () => void;
 }
 
 export default function SceneHeaderBar({
@@ -24,6 +28,8 @@ export default function SceneHeaderBar({
   hasLocalEdits,
   loading,
   saving,
+  canUndo,
+  canRedo,
   statusMessage,
   errorMessage,
   onOpenCreateOverlay,
@@ -32,11 +38,14 @@ export default function SceneHeaderBar({
   onOpenChannels,
   onOpenSaveAsOverlay,
   onSceneNameChange,
+  onRedo,
   onSave,
   onRevert,
+  onUndo,
 }: SceneHeaderBarProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(sceneName ?? '');
+  const [loadMenuOpen, setLoadMenuOpen] = useState(false);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -46,15 +55,17 @@ export default function SceneHeaderBar({
   }, [isEditingName, sceneName]);
 
   useEffect(() => {
-    if (!saveMenuOpen) {
+    if (!loadMenuOpen && !saveMenuOpen) {
       return;
     }
 
     const handleWindowPointerDown = () => {
+      setLoadMenuOpen(false);
       setSaveMenuOpen(false);
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        setLoadMenuOpen(false);
         setSaveMenuOpen(false);
       }
     };
@@ -65,7 +76,7 @@ export default function SceneHeaderBar({
       window.removeEventListener('pointerdown', handleWindowPointerDown);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [saveMenuOpen]);
+  }, [loadMenuOpen, saveMenuOpen]);
 
   const commitSceneName = () => {
     onSceneNameChange(nameDraft);
@@ -109,12 +120,104 @@ export default function SceneHeaderBar({
 
         <div className="scene-header-side">
           <div className="scene-header-actions">
-            <button type="button" className="secondary-button" onClick={onOpenCreateOverlay} disabled={loading}>
-              New…
+            <button
+              type="button"
+              className="icon-button"
+              onClick={onUndo}
+              disabled={!canUndo || loading}
+              aria-label="Undo"
+              title="Undo"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M9 7H5v4M5 11a8 8 0 1 1 2.3 5.7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
-            <button type="button" className="secondary-button" onClick={onOpenLoadOverlay} disabled={loading}>
-              Load…
+            <button
+              type="button"
+              className="icon-button"
+              onClick={onRedo}
+              disabled={!canRedo || loading}
+              aria-label="Redo"
+              title="Redo"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M15 7h4v4M19 11a8 8 0 1 0-2.3 5.7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
+            <div
+              className="split-button"
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              <button type="button" onClick={onOpenLoadOverlay} disabled={loading}>
+                Load…
+              </button>
+              <button
+                type="button"
+                className="split-button-toggle"
+                aria-label="Open load menu"
+                aria-haspopup="menu"
+                aria-expanded={loadMenuOpen}
+                disabled={loading}
+                onClick={() => {
+                  setSaveMenuOpen(false);
+                  setLoadMenuOpen((current) => !current);
+                }}
+              >
+                <svg viewBox="0 0 12 12" aria-hidden="true">
+                  <path
+                    d="M2.25 4.5 6 7.5l3.75-3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+              {loadMenuOpen ? (
+                <div className="split-button-menu" role="menu">
+                  <button
+                    type="button"
+                    className="split-button-menu-item"
+                    role="menuitem"
+                    disabled={!hasLocalEdits || saving}
+                    onClick={() => {
+                      setLoadMenuOpen(false);
+                      onRevert();
+                    }}
+                  >
+                    Reload
+                  </button>
+                  <button
+                    type="button"
+                    className="split-button-menu-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setLoadMenuOpen(false);
+                      onOpenCreateOverlay();
+                    }}
+                  >
+                    New…
+                  </button>
+                </div>
+              ) : null}
+            </div>
             <button type="button" className="secondary-button" onClick={onOpenDiagnostics}>
               Diagnostics
             </button>
@@ -137,9 +240,21 @@ export default function SceneHeaderBar({
                 aria-haspopup="menu"
                 aria-expanded={saveMenuOpen}
                 disabled={saving}
-                onClick={() => setSaveMenuOpen((current) => !current)}
+                onClick={() => {
+                  setLoadMenuOpen(false);
+                  setSaveMenuOpen((current) => !current);
+                }}
               >
-                v
+                <svg viewBox="0 0 12 12" aria-hidden="true">
+                  <path
+                    d="M2.25 4.5 6 7.5l3.75-3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
               {saveMenuOpen ? (
                 <div className="split-button-menu" role="menu">
@@ -157,9 +272,6 @@ export default function SceneHeaderBar({
                 </div>
               ) : null}
             </div>
-            <button type="button" className="secondary-button" onClick={onRevert} disabled={!hasLocalEdits || saving}>
-              Revert
-            </button>
           </div>
 
           {statusMessage ? <div className={`status scene-header-status ${statusMessage.startsWith('Saved ') ? 'success' : ''}`}>{statusMessage}</div> : null}

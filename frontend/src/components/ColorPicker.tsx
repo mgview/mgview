@@ -83,16 +83,17 @@ export default function ColorPicker({
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
         setPickerOpen(false);
       }
     };
 
     window.addEventListener('pointerdown', handlePointerDown);
-    window.addEventListener('keydown', handleEscape);
+    window.addEventListener('keydown', handleEscape, true);
 
     return () => {
       window.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('keydown', handleEscape, true);
     };
   }, [pickerOpen]);
 

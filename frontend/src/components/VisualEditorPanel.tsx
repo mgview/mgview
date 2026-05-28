@@ -26,6 +26,7 @@ interface VisualEditorPanelProps {
   deleteSelectedVisual: () => boolean;
   changeSelectedVisualType: (type: VisualType) => void;
   updateSelectedVisual: (updater: (visual: SceneVisual) => void) => void;
+  updateSelectedVisualPreview: (updater: (visual: SceneVisual) => void) => void;
 }
 
 function updateVectorAxis(
@@ -121,6 +122,7 @@ export default function VisualEditorPanel({
   deleteSelectedVisual,
   changeSelectedVisualType,
   updateSelectedVisual,
+  updateSelectedVisualPreview,
 }: VisualEditorPanelProps) {
   const [renamingVisualName, setRenamingVisualName] = useState<string | null>(null);
   const [renameText, setRenameText] = useState('');
@@ -327,6 +329,13 @@ export default function VisualEditorPanel({
                 <span>Material</span>
                 <MaterialPicker
                   material={liveSelectedVisual.material}
+                  onMaterialPreviewChange={(nextMaterial) => {
+                    updateSelectedVisualPreview((visual) => {
+                      visual.material = {
+                        ...nextMaterial,
+                      };
+                    });
+                  }}
                   onMaterialChange={(nextMaterial) => {
                     updateSelectedVisual((visual) => {
                       visual.material = {
@@ -344,6 +353,11 @@ export default function VisualEditorPanel({
                     prefixLabel="x"
                     value={liveSelectedVisual.position?.x ?? 0}
                     dragStep={0.01}
+                    onValuePreviewChange={(nextValue) => {
+                      updateSelectedVisualPreview((visual) => {
+                        visual.position = updateVectorAxis(visual.position, 'x', nextValue);
+                      });
+                    }}
                     onValueChange={(nextValue) => {
                       updateSelectedVisual((visual) => {
                         visual.position = updateVectorAxis(visual.position, 'x', nextValue);
@@ -355,6 +369,11 @@ export default function VisualEditorPanel({
                     prefixLabel="y"
                     value={liveSelectedVisual.position?.y ?? 0}
                     dragStep={0.01}
+                    onValuePreviewChange={(nextValue) => {
+                      updateSelectedVisualPreview((visual) => {
+                        visual.position = updateVectorAxis(visual.position, 'y', nextValue);
+                      });
+                    }}
                     onValueChange={(nextValue) => {
                       updateSelectedVisual((visual) => {
                         visual.position = updateVectorAxis(visual.position, 'y', nextValue);
@@ -366,6 +385,11 @@ export default function VisualEditorPanel({
                     prefixLabel="z"
                     value={liveSelectedVisual.position?.z ?? 0}
                     dragStep={0.01}
+                    onValuePreviewChange={(nextValue) => {
+                      updateSelectedVisualPreview((visual) => {
+                        visual.position = updateVectorAxis(visual.position, 'z', nextValue);
+                      });
+                    }}
                     onValueChange={(nextValue) => {
                       updateSelectedVisual((visual) => {
                         visual.position = updateVectorAxis(visual.position, 'z', nextValue);
@@ -382,6 +406,11 @@ export default function VisualEditorPanel({
                     prefixLabel="x"
                     value={radiansToDegrees(liveSelectedVisual.rotation?.x ?? 0)}
                     dragStep={0.25}
+                    onValuePreviewChange={(nextValue) => {
+                      updateSelectedVisualPreview((visual) => {
+                        visual.rotation = updateVectorAxis(visual.rotation, 'x', degreesToRadians(nextValue));
+                      });
+                    }}
                     onValueChange={(nextValue) => {
                       updateSelectedVisual((visual) => {
                         visual.rotation = updateVectorAxis(visual.rotation, 'x', degreesToRadians(nextValue));
@@ -393,6 +422,11 @@ export default function VisualEditorPanel({
                     prefixLabel="y"
                     value={radiansToDegrees(liveSelectedVisual.rotation?.y ?? 0)}
                     dragStep={0.25}
+                    onValuePreviewChange={(nextValue) => {
+                      updateSelectedVisualPreview((visual) => {
+                        visual.rotation = updateVectorAxis(visual.rotation, 'y', degreesToRadians(nextValue));
+                      });
+                    }}
                     onValueChange={(nextValue) => {
                       updateSelectedVisual((visual) => {
                         visual.rotation = updateVectorAxis(visual.rotation, 'y', degreesToRadians(nextValue));
@@ -404,6 +438,11 @@ export default function VisualEditorPanel({
                     prefixLabel="z"
                     value={radiansToDegrees(liveSelectedVisual.rotation?.z ?? 0)}
                     dragStep={0.25}
+                    onValuePreviewChange={(nextValue) => {
+                      updateSelectedVisualPreview((visual) => {
+                        visual.rotation = updateVectorAxis(visual.rotation, 'z', degreesToRadians(nextValue));
+                      });
+                    }}
                     onValueChange={(nextValue) => {
                       updateSelectedVisual((visual) => {
                         visual.rotation = updateVectorAxis(visual.rotation, 'z', degreesToRadians(nextValue));
@@ -425,6 +464,11 @@ export default function VisualEditorPanel({
                     value={liveSelectedVisual.size.x}
                     dragStep={0.01}
                     minValue={0}
+                    onValuePreviewChange={(nextValue) => {
+                      updateSelectedVisualPreview((visual) => {
+                        visual.size = updateVectorAxis(visual.size, 'x', nextValue);
+                      });
+                    }}
                     onValueChange={(nextValue) => {
                       updateSelectedVisual((visual) => {
                         visual.size = updateVectorAxis(visual.size, 'x', nextValue);
@@ -437,6 +481,11 @@ export default function VisualEditorPanel({
                     value={liveSelectedVisual.size.y}
                     dragStep={0.01}
                     minValue={0}
+                    onValuePreviewChange={(nextValue) => {
+                      updateSelectedVisualPreview((visual) => {
+                        visual.size = updateVectorAxis(visual.size, 'y', nextValue);
+                      });
+                    }}
                     onValueChange={(nextValue) => {
                       updateSelectedVisual((visual) => {
                         visual.size = updateVectorAxis(visual.size, 'y', nextValue);
@@ -449,6 +498,11 @@ export default function VisualEditorPanel({
                     value={liveSelectedVisual.size.z}
                     dragStep={0.01}
                     minValue={0}
+                    onValuePreviewChange={(nextValue) => {
+                      updateSelectedVisualPreview((visual) => {
+                        visual.size = updateVectorAxis(visual.size, 'z', nextValue);
+                      });
+                    }}
                     onValueChange={(nextValue) => {
                       updateSelectedVisual((visual) => {
                         visual.size = updateVectorAxis(visual.size, 'z', nextValue);
@@ -469,6 +523,11 @@ export default function VisualEditorPanel({
                       value={typeof liveSelectedVisual.cell_size === 'number' ? liveSelectedVisual.cell_size : 0}
                       dragStep={dragStepForKey('cell_size')}
                       minValue={minValueForKey('cell_size')}
+                      onValuePreviewChange={(nextValue) => {
+                        updateSelectedVisualPreview((visual) => {
+                          visual.cell_size = nextValue;
+                        });
+                      }}
                       onValueChange={(nextValue) => {
                         updateSelectedVisual((visual) => {
                           visual.cell_size = nextValue;
@@ -482,6 +541,11 @@ export default function VisualEditorPanel({
                       dragStep={dragStepForKey('count_x')}
                       minValue={minValueForKey('count_x')}
                       integer={isIntegerKey('count_x')}
+                      onValuePreviewChange={(nextValue) => {
+                        updateSelectedVisualPreview((visual) => {
+                          visual.count_x = nextValue;
+                        });
+                      }}
                       onValueChange={(nextValue) => {
                         updateSelectedVisual((visual) => {
                           visual.count_x = nextValue;
@@ -495,6 +559,11 @@ export default function VisualEditorPanel({
                       dragStep={dragStepForKey('count_y')}
                       minValue={minValueForKey('count_y')}
                       integer={isIntegerKey('count_y')}
+                      onValuePreviewChange={(nextValue) => {
+                        updateSelectedVisualPreview((visual) => {
+                          visual.count_y = nextValue;
+                        });
+                      }}
                       onValueChange={(nextValue) => {
                         updateSelectedVisual((visual) => {
                           visual.count_y = nextValue;
@@ -537,6 +606,11 @@ export default function VisualEditorPanel({
                               dragStep={dragStepForKey(key)}
                               minValue={minValueForKey(key)}
                               integer={isIntegerKey(key)}
+                              onValuePreviewChange={(nextValue) => {
+                                updateSelectedVisualPreview((visual) => {
+                                  visual[key] = nextValue;
+                                });
+                              }}
                               onValueChange={(nextValue) => {
                                 updateSelectedVisual((visual) => {
                                   visual[key] = nextValue;

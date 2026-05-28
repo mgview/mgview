@@ -17,6 +17,7 @@ import { NumericInput } from './editorShared.tsx';
 
 interface MaterialPickerProps {
   material: SceneMaterial | undefined;
+  onMaterialPreviewChange?: (material: { name: string }) => void;
   onMaterialChange: (material: { name: string }) => void;
 }
 
@@ -59,7 +60,11 @@ function texturePreviewUrl(path: string): string {
   return `${getServerRootPrefix()}${normalizedPath}`;
 }
 
-export default function MaterialPicker({ material, onMaterialChange }: MaterialPickerProps) {
+export default function MaterialPicker({
+  material,
+  onMaterialPreviewChange,
+  onMaterialChange,
+}: MaterialPickerProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const materialDefinition = useMemo(() => materialDefinitionFromSceneMaterial(material), [material]);
@@ -94,16 +99,17 @@ export default function MaterialPicker({ material, onMaterialChange }: MaterialP
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
         setPickerOpen(false);
       }
     };
 
     window.addEventListener('pointerdown', handlePointerDown);
-    window.addEventListener('keydown', handleEscape);
+    window.addEventListener('keydown', handleEscape, true);
 
     return () => {
       window.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('keydown', handleEscape, true);
     };
   }, [pickerOpen]);
 
@@ -221,6 +227,17 @@ export default function MaterialPicker({ material, onMaterialChange }: MaterialP
                 prefixLabel="opacity"
                 minValue={0}
                 maxValue={1}
+                onValuePreviewChange={(nextValue) => {
+                  const nextCssText = formatCssColor(
+                    Number.parseInt(customHex.slice(1, 3), 16),
+                    Number.parseInt(customHex.slice(3, 5), 16),
+                    Number.parseInt(customHex.slice(5, 7), 16),
+                    nextValue
+                  );
+                  setCustomAlpha(nextValue);
+                  setCustomCssText(nextCssText);
+                  (onMaterialPreviewChange ?? onMaterialChange)({ name: nextCssText });
+                }}
                 onValueChange={(nextValue) => {
                   const nextCssText = formatCssColor(
                     Number.parseInt(customHex.slice(1, 3), 16),

@@ -14,6 +14,7 @@ export default function DiagnosticsOverlay({
     <OverlayPanel
       title="Diagnostics"
       subtitle="Scene normalization, inference, and load diagnostics."
+      size="narrow"
       onClose={onClose}
     >
       <section className="panel">

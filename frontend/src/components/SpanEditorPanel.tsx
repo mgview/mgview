@@ -51,6 +51,7 @@ interface SpanEditorPanelProps {
   selectSpan: (spanName: string, firstVisualName: string | null) => void;
   updateSelectedSpan: (updater: (span: SceneSpan) => void) => void;
   updateSelectedSpanVisual: (updater: (visual: SceneSpanVisual) => void) => void;
+  updateSelectedSpanVisualPreview: (updater: (visual: SceneSpanVisual) => void) => void;
 }
 
 export default function SpanEditorPanel({
@@ -68,6 +69,7 @@ export default function SpanEditorPanel({
   selectSpan,
   updateSelectedSpan,
   updateSelectedSpanVisual,
+  updateSelectedSpanVisualPreview,
 }: SpanEditorPanelProps) {
   const [spanNameDraft, setSpanNameDraft] = useState(selectedSpanName ?? '');
   const [renamingSpanVisualName, setRenamingSpanVisualName] = useState<string | null>(null);
@@ -487,6 +489,12 @@ export default function SpanEditorPanel({
                       <NumericInput
                         value={liveSelectedSpanVisual.width ?? liveSelectedSpanVisual.thickness ?? 0.12}
                         minValue={0}
+                        onValuePreviewChange={(nextValue) => {
+                          updateSelectedSpanVisualPreview((visual) => {
+                            visual.width = nextValue;
+                            delete visual.thickness;
+                          });
+                        }}
                         onValueChange={(nextValue) => {
                           updateSelectedSpanVisual((visual) => {
                             visual.width = nextValue;
@@ -505,6 +513,11 @@ export default function SpanEditorPanel({
                       <NumericInput
                         value={liveSelectedSpanVisual.naturalLength ?? DEFAULT_SPRING_NATURAL_LENGTH}
                         minValue={0}
+                        onValuePreviewChange={(nextValue) => {
+                          updateSelectedSpanVisualPreview((visual) => {
+                            visual.naturalLength = nextValue;
+                          });
+                        }}
                         onValueChange={(nextValue) => {
                           updateSelectedSpanVisual((visual) => {
                             visual.naturalLength = nextValue;
@@ -517,6 +530,11 @@ export default function SpanEditorPanel({
                       <NumericInput
                         value={liveSelectedSpanVisual.coilWidth ?? DEFAULT_SPRING_COIL_WIDTH}
                         minValue={0}
+                        onValuePreviewChange={(nextValue) => {
+                          updateSelectedSpanVisualPreview((visual) => {
+                            visual.coilWidth = nextValue;
+                          });
+                        }}
                         onValueChange={(nextValue) => {
                           updateSelectedSpanVisual((visual) => {
                             visual.coilWidth = nextValue;
@@ -542,6 +560,11 @@ export default function SpanEditorPanel({
                       <NumericInput
                         value={liveSelectedSpanVisual.stretchWidth ?? DEFAULT_SPRING_STRETCH_WIDTH}
                         minValue={0}
+                        onValuePreviewChange={(nextValue) => {
+                          updateSelectedSpanVisualPreview((visual) => {
+                            visual.stretchWidth = nextValue;
+                          });
+                        }}
                         onValueChange={(nextValue) => {
                           updateSelectedSpanVisual((visual) => {
                             visual.stretchWidth = nextValue;

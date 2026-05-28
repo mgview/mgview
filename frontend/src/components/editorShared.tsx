@@ -231,6 +231,7 @@ export function getEditableScalarKeys(visual: SceneVisual): EditableScalarKey[] 
 export function NumericInput({
   value,
   onValueChange,
+  onValuePreviewChange,
   dragStep = 0.01,
   className,
   prefixLabel,
@@ -241,6 +242,7 @@ export function NumericInput({
 }: {
   value: number;
   onValueChange: (value: number) => void;
+  onValuePreviewChange?: (value: number) => void;
   dragStep?: number;
   className?: string;
   prefixLabel?: string;
@@ -257,6 +259,7 @@ export function NumericInput({
     pointerId: number;
     startY: number;
     startValue: number;
+    currentValue: number;
     moved: boolean;
   } | null>(null);
 
@@ -311,6 +314,7 @@ export function NumericInput({
           pointerId: event.pointerId,
           startY: event.clientY,
           startValue: value,
+          currentValue: value,
           moved: false,
         };
       }}
@@ -325,6 +329,7 @@ export function NumericInput({
           return;
         }
 
+        const isFirstMovedFrame = !dragState.moved;
         dragState.moved = true;
         setIsDragging(true);
         const rawValue = dragState.startValue + deltaY * dragStep;
@@ -335,7 +340,16 @@ export function NumericInput({
           decimalPlaces,
         });
         setText(formatEditableNumber(nextValue, decimalPlaces));
-        onValueChange(nextValue);
+        dragState.currentValue = nextValue;
+        if (isFirstMovedFrame || !onValuePreviewChange) {
+          onValueChange(nextValue);
+          return;
+        }
+
+        if (onValuePreviewChange) {
+          onValuePreviewChange(nextValue);
+          return;
+        }
       }}
       onPointerUp={(event) => finalizeDrag(event.pointerId)}
       onPointerCancel={(event) => finalizeDrag(event.pointerId)}
@@ -385,6 +399,19 @@ export function NumericInput({
           });
           setText(formatEditableNumber(roundedValue, decimalPlaces));
           onValueChange(roundedValue);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            event.currentTarget.blur();
+            return;
+          }
+
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            setText(formatEditableNumber(value, decimalPlaces));
+            event.currentTarget.blur();
+          }
         }}
       />
       <div className="numeric-input-grip" aria-hidden="true">
