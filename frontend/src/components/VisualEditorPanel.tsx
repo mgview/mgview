@@ -246,9 +246,7 @@ export default function VisualEditorPanel({
             </div>
           </div>
         </div>
-      ) : (
-        <div className="empty-state">Select an object to inspect its visuals.</div>
-      )}
+      ) : null}
 
       {selectedObject && selectedVisual && liveSelectedVisual ? (
         <div className="visual-card-list">

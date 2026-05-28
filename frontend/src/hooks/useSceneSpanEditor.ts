@@ -230,6 +230,33 @@ export function useSceneSpanEditor({
     return true;
   };
 
+  const renameSpanVisual = (currentName: string, nextName: string) => {
+    const trimmedName = nextName.trim();
+    if (!selectedSpanResolvedName || !draftScene || trimmedName.length === 0 || currentName === trimmedName) {
+      return currentName === trimmedName;
+    }
+
+    const visuals = draftScene.spans[selectedSpanResolvedName]?.visual ?? {};
+    if (visuals[trimmedName]) {
+      return false;
+    }
+
+    updateDraftScene((scene) => {
+      const span = scene.spans[selectedSpanResolvedName];
+      const visual = span?.visual?.[currentName];
+      if (!span?.visual || !visual) {
+        return;
+      }
+
+      const reorderedEntries = Object.entries(span.visual).map(([name, entry]) =>
+        name === currentName ? [trimmedName, entry] : [name, entry]
+      );
+      span.visual = Object.fromEntries(reorderedEntries);
+    });
+    setSelectedSpanVisualName(trimmedName);
+    return true;
+  };
+
   const deleteSelectedSpanVisual = () => {
     if (!selectedSpanResolvedName || !selectedSpanVisualResolvedName || !selectedSpan) {
       return false;
@@ -259,6 +286,7 @@ export function useSceneSpanEditor({
     liveSelectedSpan,
     liveSelectedSpanVisual,
     renameSpan,
+    renameSpanVisual,
     selectSpan,
     selectedSpan,
     selectedSpanResolvedName,

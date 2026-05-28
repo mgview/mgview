@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import {
   parseCssColorString,
@@ -51,7 +51,9 @@ export default function ColorPicker({
   onChange,
 }: ColorPickerProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const shellRef = useRef<HTMLDivElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
   const [customCssText, setCustomCssText] = useState('#e0f0ff');
   const [customHex, setCustomHex] = useState('#e0f0ff');
 
@@ -94,6 +96,32 @@ export default function ColorPicker({
     };
   }, [pickerOpen]);
 
+  useLayoutEffect(() => {
+    if (!pickerOpen || !shellRef.current || !popoverRef.current) {
+      return;
+    }
+
+    const updatePlacement = () => {
+      const shellRect = shellRef.current?.getBoundingClientRect();
+      const popoverRect = popoverRef.current?.getBoundingClientRect();
+      if (!shellRect || !popoverRect) {
+        return;
+      }
+
+      const spaceBelow = window.innerHeight - shellRect.bottom;
+      const spaceAbove = shellRect.top;
+      setOpenUpward(spaceBelow < popoverRect.height + 12 && spaceAbove > spaceBelow);
+    };
+
+    updatePlacement();
+    window.addEventListener('resize', updatePlacement);
+    window.addEventListener('scroll', updatePlacement, true);
+    return () => {
+      window.removeEventListener('resize', updatePlacement);
+      window.removeEventListener('scroll', updatePlacement, true);
+    };
+  }, [pickerOpen]);
+
   return (
     <div
       className="material-picker-shell"
@@ -116,7 +144,9 @@ export default function ColorPicker({
 
       {pickerOpen ? (
         <div
+          ref={popoverRef}
           className="material-popover"
+          data-open-direction={openUpward ? 'up' : 'down'}
           role="dialog"
           aria-modal="false"
           aria-label={`${popoverTitle} picker`}

@@ -45,6 +45,7 @@ interface InspectorDrawerProps {
   deleteSelectedSpan: () => boolean;
   deleteSelectedSpanVisual: () => boolean;
   renameSpan: (currentName: string, nextName: string) => boolean;
+  renameSpanVisual: (currentName: string, nextName: string) => boolean;
   selectSpan: (spanName: string, firstVisualName: string | null) => void;
   setEditorMode: (mode: InspectorEditorMode) => void;
   setSelectedVisualName: (name: string | null) => void;
@@ -86,6 +87,7 @@ export default function InspectorDrawer({
   deleteSelectedSpan,
   deleteSelectedSpanVisual,
   renameSpan,
+  renameSpanVisual,
   selectSpan,
   setEditorMode,
   setSelectedVisualName,
@@ -158,6 +160,7 @@ export default function InspectorDrawer({
           liveSelectedSpan={liveSelectedSpan}
           liveSelectedSpanVisual={liveSelectedSpanVisual}
           renameSpan={renameSpan}
+          renameSpanVisual={renameSpanVisual}
           selectedSpanName={selectedSpanName}
           selectedSpanVisualName={selectedSpanVisualName}
           selectSpan={selectSpan}

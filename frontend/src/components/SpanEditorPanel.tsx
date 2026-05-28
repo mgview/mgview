@@ -45,6 +45,7 @@ interface SpanEditorPanelProps {
   liveSelectedSpan?: SceneSpan;
   liveSelectedSpanVisual?: SceneSpanVisual;
   renameSpan: (currentName: string, nextName: string) => boolean;
+  renameSpanVisual: (currentName: string, nextName: string) => boolean;
   selectedSpanName: string | null;
   selectedSpanVisualName: string | null;
   selectSpan: (spanName: string, firstVisualName: string | null) => void;
@@ -61,6 +62,7 @@ export default function SpanEditorPanel({
   liveSelectedSpan,
   liveSelectedSpanVisual,
   renameSpan,
+  renameSpanVisual,
   selectedSpanName,
   selectedSpanVisualName,
   selectSpan,
@@ -68,6 +70,8 @@ export default function SpanEditorPanel({
   updateSelectedSpanVisual,
 }: SpanEditorPanelProps) {
   const [spanNameDraft, setSpanNameDraft] = useState(selectedSpanName ?? '');
+  const [renamingSpanVisualName, setRenamingSpanVisualName] = useState<string | null>(null);
+  const [spanVisualNameDraft, setSpanVisualNameDraft] = useState(selectedSpanVisualName ?? '');
   const pointOptions = useMemo(() => {
     const names = new Set(
       Object.entries(activeScene?.objects ?? {})
@@ -93,6 +97,15 @@ export default function SpanEditorPanel({
     setSpanNameDraft(selectedSpanName ?? '');
   }, [selectedSpanName]);
 
+  useEffect(() => {
+    setSpanVisualNameDraft(selectedSpanVisualName ?? '');
+  }, [selectedSpanVisualName]);
+
+  useEffect(() => {
+    setRenamingSpanVisualName(null);
+    setSpanVisualNameDraft('');
+  }, [selectedSpanName]);
+
   const commitSpanRename = () => {
     if (!selectedSpanName) {
       return;
@@ -102,6 +115,26 @@ export default function SpanEditorPanel({
     if (!didRename) {
       setSpanNameDraft(selectedSpanName);
     }
+  };
+
+  const commitSpanVisualRename = () => {
+    if (!renamingSpanVisualName) {
+      return;
+    }
+
+    const didRename = renameSpanVisual(renamingSpanVisualName, spanVisualNameDraft);
+    if (!didRename) {
+      setSpanVisualNameDraft(renamingSpanVisualName);
+      return;
+    }
+
+    setRenamingSpanVisualName(null);
+    setSpanVisualNameDraft('');
+  };
+
+  const beginSpanVisualRename = (visualName: string) => {
+    setRenamingSpanVisualName(visualName);
+    setSpanVisualNameDraft(visualName);
   };
 
   const selectedKind = liveSelectedSpanVisual?.kind ?? 'line';
@@ -137,12 +170,13 @@ export default function SpanEditorPanel({
                 </button>
               </div>
             </div>
-            <div className="editor-grid">
-              <label className="editor-field">
-                <span>Span Name</span>
+            <div className="editor-grid span-editor-grid">
+              <label className="editor-field span-name-field span-name-shell">
+                <span className="span-name-ghost">Name</span>
                 <input
                   type="text"
                   value={spanNameDraft}
+                  aria-label="Span name"
                   onChange={(event) => setSpanNameDraft(event.target.value)}
                   onBlur={commitSpanRename}
                   onKeyDown={(event) => {
@@ -156,40 +190,66 @@ export default function SpanEditorPanel({
                   }}
                 />
               </label>
-              <label className="editor-field">
-                <span>Point 1</span>
-                <select
-                  value={liveSelectedSpan.point1}
-                  onChange={(event) => {
+              <div className="span-endpoint-row">
+                <label className="editor-field span-endpoint-field">
+                  <span>Point 1</span>
+                  <select
+                    value={liveSelectedSpan.point1}
+                    onChange={(event) => {
+                      updateSelectedSpan((span) => {
+                        span.point1 = event.target.value;
+                      });
+                    }}
+                  >
+                    {pointOptions.map((pointName) => (
+                      <option key={pointName} value={pointName}>
+                        {pointName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="icon-button span-endpoint-reverse-button"
+                  aria-label="Reverse span direction"
+                  title="Reverse span direction"
+                  onClick={() => {
                     updateSelectedSpan((span) => {
-                      span.point1 = event.target.value;
+                      const nextPoint1 = span.point2;
+                      span.point2 = span.point1;
+                      span.point1 = nextPoint1;
                     });
                   }}
                 >
-                  {pointOptions.map((pointName) => (
-                    <option key={pointName} value={pointName}>
-                      {pointName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="editor-field">
-                <span>Point 2</span>
-                <select
-                  value={liveSelectedSpan.point2}
-                  onChange={(event) => {
-                    updateSelectedSpan((span) => {
-                      span.point2 = event.target.value;
-                    });
-                  }}
-                >
-                  {pointOptions.map((pointName) => (
-                    <option key={pointName} value={pointName}>
-                      {pointName}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M7 8h10M13 4l4 4-4 4M17 16H7M11 20l-4-4 4-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                <label className="editor-field span-endpoint-field">
+                  <span>Point 2</span>
+                  <select
+                    value={liveSelectedSpan.point2}
+                    onChange={(event) => {
+                      updateSelectedSpan((span) => {
+                        span.point2 = event.target.value;
+                      });
+                    }}
+                  >
+                    {pointOptions.map((pointName) => (
+                      <option key={pointName} value={pointName}>
+                        {pointName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             </div>
           </div>
 
@@ -236,14 +296,42 @@ export default function SpanEditorPanel({
                 <div className="inline-tags">
                   {Object.keys(liveSelectedSpan.visual ?? {}).length > 0 ? (
                     Object.keys(liveSelectedSpan.visual ?? {}).map((visualName) => (
-                      <button
-                        key={visualName}
-                        type="button"
-                        className={`tag-button ${selectedSpanVisualName === visualName ? 'tag-button-active' : ''}`}
-                        onClick={() => selectSpan(selectedSpanName, visualName)}
-                      >
-                        {visualName}
-                      </button>
+                      renamingSpanVisualName === visualName ? (
+                        <input
+                          key={visualName}
+                          className="tag-input"
+                          type="text"
+                          autoFocus
+                          value={spanVisualNameDraft}
+                          onChange={(event) => setSpanVisualNameDraft(event.target.value)}
+                          onBlur={commitSpanVisualRename}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              commitSpanVisualRename();
+                            }
+                            if (event.key === 'Escape') {
+                              setRenamingSpanVisualName(null);
+                              setSpanVisualNameDraft('');
+                            }
+                          }}
+                        />
+                      ) : (
+                        <button
+                          key={visualName}
+                          type="button"
+                          className={`tag-button ${selectedSpanVisualName === visualName ? 'tag-button-active' : ''}`}
+                          onClick={() => {
+                            if (selectedSpanVisualName === visualName) {
+                              beginSpanVisualRename(visualName);
+                            } else {
+                              selectSpan(selectedSpanName, visualName);
+                            }
+                          }}
+                        >
+                          {visualName}
+                        </button>
+                      )
                     ))
                   ) : (
                     <span className="empty-state-inline">No span visuals yet.</span>
@@ -437,18 +525,6 @@ export default function SpanEditorPanel({
                       />
                     </div>
                     <div className="editor-field">
-                      <span>Stretch Width</span>
-                      <NumericInput
-                        value={liveSelectedSpanVisual.stretchWidth ?? DEFAULT_SPRING_STRETCH_WIDTH}
-                        minValue={0}
-                        onValueChange={(nextValue) => {
-                          updateSelectedSpanVisual((visual) => {
-                            visual.stretchWidth = nextValue;
-                          });
-                        }}
-                      />
-                    </div>
-                    <div className="editor-field">
                       <span>Coil Color</span>
                       <ColorPicker
                         label="coil color"
@@ -457,6 +533,18 @@ export default function SpanEditorPanel({
                         onChange={(nextValue) => {
                           updateSelectedSpanVisual((visual) => {
                             visual.material = nextValue;
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="editor-field">
+                      <span>Stretch Width</span>
+                      <NumericInput
+                        value={liveSelectedSpanVisual.stretchWidth ?? DEFAULT_SPRING_STRETCH_WIDTH}
+                        minValue={0}
+                        onValueChange={(nextValue) => {
+                          updateSelectedSpanVisual((visual) => {
+                            visual.stretchWidth = nextValue;
                           });
                         }}
                       />

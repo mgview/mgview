@@ -163,14 +163,35 @@ export default function App() {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target;
 
-      if (
-        event.key === 'Escape' &&
-        target instanceof HTMLInputElement &&
-        target.type === 'range'
-      ) {
-        event.preventDefault();
-        target.blur();
-        return;
+      if (event.key === 'Escape') {
+        const activeElement = document.activeElement;
+        if (
+          activeElement instanceof HTMLInputElement ||
+          activeElement instanceof HTMLTextAreaElement ||
+          activeElement instanceof HTMLSelectElement ||
+          activeElement instanceof HTMLButtonElement ||
+          (activeElement instanceof HTMLElement && activeElement.isContentEditable)
+        ) {
+          event.preventDefault();
+          activeElement.blur();
+          return;
+        }
+
+        if (!loadOverlayOpen && !diagnosticsOpen && !simulationOverlayOpen) {
+          const hasSelection =
+            selectedObjectName !== null ||
+            selectedVisualName !== null ||
+            selectedSpanName !== null ||
+            selectedSpanVisualName !== null;
+          if (hasSelection) {
+            event.preventDefault();
+            setSelectedObjectName(null);
+            setSelectedVisualName(null);
+            setSelectedSpanName(null);
+            setSelectedSpanVisualName(null);
+            return;
+          }
+        }
       }
 
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
@@ -215,6 +236,10 @@ export default function App() {
     loading,
     playback.togglePlay,
     saving,
+    selectedObjectName,
+    selectedSpanName,
+    selectedSpanVisualName,
+    selectedVisualName,
     simulationOverlayOpen,
   ]);
 
@@ -255,6 +280,7 @@ export default function App() {
     liveSelectedSpan,
     liveSelectedSpanVisual,
     renameSpan,
+    renameSpanVisual,
     selectSpan: selectSpanOnly,
     selectedSpanResolvedName,
     selectedSpanVisualResolvedName,
@@ -617,6 +643,7 @@ export default function App() {
                       deleteSelectedSpan={deleteSelectedSpan}
                       deleteSelectedSpanVisual={deleteSelectedSpanVisual}
                       renameSpan={renameSpan}
+                      renameSpanVisual={renameSpanVisual}
                       selectSpan={selectSpanForEditor}
                       setEditorMode={setEditorMode}
                       setSelectedVisualName={setSelectedVisualName}

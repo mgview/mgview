@@ -33,11 +33,11 @@ export function useSceneSelectionEditor({
   updateDraftScene,
 }: UseSceneSelectionEditorOptions) {
   const selectedObject = useMemo(() => {
-    if (!objectInspections.length) {
+    if (!objectInspections.length || !selectedObjectName) {
       return undefined;
     }
 
-    return objectInspections.find((entry) => entry.name === selectedObjectName) ?? objectInspections[0];
+    return objectInspections.find((entry) => entry.name === selectedObjectName);
   }, [objectInspections, selectedObjectName]);
 
   const selectedVisual = useMemo(() => {

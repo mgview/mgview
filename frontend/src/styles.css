@@ -515,6 +515,12 @@ input[inputmode="decimal"] {
   min-height: 0;
 }
 
+.save-preview-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
 .object-groups {
   display: grid;
   gap: 12px;
@@ -543,6 +549,62 @@ input[inputmode="decimal"] {
 .span-editor-header {
   margin-bottom: 12px;
 }
+
+.span-editor-grid {
+  gap: 8px;
+}
+
+.span-name-field {
+  grid-column: 1 / -1;
+}
+
+.span-name-shell {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(162, 185, 214, 0.25);
+  border-radius: 8px;
+  background: rgba(10, 18, 32, 0.7);
+  overflow: hidden;
+}
+
+.span-name-ghost {
+  position: static;
+  padding-left: 0.72rem;
+  color: rgba(154, 176, 203, 0.62);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.span-name-shell input {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding-left: 0.18rem;
+  padding-right: 1rem;
+}
+
+.span-endpoint-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+
+.span-endpoint-field {
+  min-width: 0;
+}
+
+.span-endpoint-reverse-button {
+  align-self: end;
+  margin-bottom: 1px;
+}
+
 
 .hero {
   margin-bottom: 20px;
@@ -1191,6 +1253,11 @@ input[inputmode="decimal"] {
   backdrop-filter: blur(14px);
   display: grid;
   gap: 10px;
+}
+
+.material-popover[data-open-direction="up"] {
+  top: auto;
+  bottom: calc(100% + 8px);
 }
 
 .material-popover-header {
