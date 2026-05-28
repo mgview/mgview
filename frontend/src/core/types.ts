@@ -30,6 +30,8 @@ export interface MaterialDefinition {
 }
 
 export type SceneMaterial = MaterialDefinition | string;
+export type SpanVisualKind = 'line' | 'cylinder' | 'spring';
+export type SpanLineStyle = 'solid' | 'dashed';
 
 export interface SceneVisual {
   visible?: boolean;
@@ -60,12 +62,19 @@ export interface SceneVisual {
 
 export interface SceneSpanVisual {
   visible?: boolean;
+  kind?: SpanVisualKind;
+  lineStyle?: SpanLineStyle;
   material?: SceneMaterial;
+  stretchMaterial?: SceneMaterial;
+  width?: number;
+  naturalLength?: number;
+  coilWidth?: number;
+  stretchWidth?: number;
   thickness?: number;
 }
 
 export interface SceneSpan {
-  type: string;
+  type?: string;
   point1: string;
   point2: string;
   showLabel?: boolean;
@@ -260,15 +269,44 @@ export interface RenderBasisVisual extends RenderVisualBase {
   scale: number;
 }
 
-export interface RenderCableSpan {
+export interface RenderLineSpan {
   name: string;
-  type: 'cable';
+  kind: 'line';
   visible: boolean;
   material: RenderMaterial;
-  thickness: number;
+  width: number;
+  lineStyle: SpanLineStyle;
   start: ConcreteVector3;
   end: ConcreteVector3;
 }
+
+export interface RenderCylinderSpan {
+  name: string;
+  kind: 'cylinder';
+  visible: boolean;
+  material: RenderMaterial;
+  width: number;
+  segmentsLength: number;
+  segmentsRadius: number;
+  start: ConcreteVector3;
+  end: ConcreteVector3;
+}
+
+export interface RenderSpringSpan {
+  name: string;
+  kind: 'spring';
+  visible: boolean;
+  material: RenderMaterial;
+  stretchMaterial: RenderMaterial;
+  naturalLength: number;
+  coilWidth: number;
+  stretchWidth: number;
+  segmentsRadius: number;
+  start: ConcreteVector3;
+  end: ConcreteVector3;
+}
+
+export type RenderSpan = RenderLineSpan | RenderCylinderSpan | RenderSpringSpan;
 
 export type RenderVisual =
   | RenderSphereVisual

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 
-import type { RenderCableSpan, RenderMaterial, RenderVisual, RgbaColor } from '../core/types.ts';
+import type { RenderMaterial, RenderSpan, RenderVisual, RgbaColor } from '../core/types.ts';
 import {
   LEGACY_COLOR_PRESETS,
   LEGACY_TEXTURE_PRESETS,
@@ -405,19 +405,134 @@ export function createVisualMesh(visual: RenderVisual, context: RenderAssetConte
   }
 }
 
-export function createCableSpan(span: RenderCableSpan) {
+function createSpanSegment(
+  start: THREE.Vector3,
+  end: THREE.Vector3,
+  width: number,
+  material: THREE.Material,
+  segmentsRadius: number,
+  segmentsLength: number
+) {
+  const direction = end.clone().sub(start);
+  const length = direction.length();
+  if (!Number.isFinite(length) || length <= 1e-9) {
+    return null;
+  }
+
+  const radius = Math.max(width / 2, 1e-4);
+  const geometry = new THREE.CylinderGeometry(
+    radius,
+    radius,
+    length,
+    segmentsRadius,
+    segmentsLength,
+    false
+  );
+  const mesh = finalizeMesh(new THREE.Mesh(geometry, material));
+  const midpoint = start.clone().add(end).multiplyScalar(0.5);
+  mesh.position.copy(midpoint);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  return mesh;
+}
+
+function createLineSpan(span: Extract<RenderSpan, { kind: 'line' }>) {
   const geometry = new THREE.BufferGeometry().setFromPoints([
     toThreeVector(span.start),
     toThreeVector(span.end),
   ]);
-  const material = new THREE.LineBasicMaterial({
-    color: colorFromMaterial(span.material),
-    opacity: getOpacity(span.material),
-    transparent: getOpacity(span.material) < 1,
-  });
+  const color = colorFromMaterial(span.material);
+  const opacity = getOpacity(span.material);
+  const material =
+    span.lineStyle === 'dashed'
+      ? new THREE.LineDashedMaterial({
+          color,
+          opacity,
+          transparent: opacity < 1,
+          dashSize: 0.12,
+          gapSize: 0.08,
+        })
+      : new THREE.LineBasicMaterial({
+          color,
+          opacity,
+          transparent: opacity < 1,
+        });
 
   const line = new THREE.Line(geometry, material);
-  line.userData.kind = 'cable';
-  line.userData.thickness = span.thickness;
+  if (span.lineStyle === 'dashed') {
+    line.computeLineDistances();
+  }
+  line.userData.kind = 'span-line';
+  line.userData.width = span.width;
   return line;
+}
+
+function createCylinderSpan(span: Extract<RenderSpan, { kind: 'cylinder' }>, context: RenderAssetContext) {
+  const material = createMaterial(span.material, context);
+  return createSpanSegment(
+    toThreeVector(span.start),
+    toThreeVector(span.end),
+    span.width,
+    material,
+    span.segmentsRadius,
+    span.segmentsLength
+  );
+}
+
+function createSpringSpan(span: Extract<RenderSpan, { kind: 'spring' }>, context: RenderAssetContext) {
+  const start = toThreeVector(span.start);
+  const end = toThreeVector(span.end);
+  const direction = end.clone().sub(start);
+  const totalLength = direction.length();
+  if (!Number.isFinite(totalLength) || totalLength <= 1e-9) {
+    return null;
+  }
+
+  const group = new THREE.Group();
+  group.userData.kind = 'span-spring';
+  const normalizedDirection = direction.clone().normalize();
+  const naturalLength = Math.max(span.naturalLength, 0);
+
+  const coilMaterial = createMaterial(span.material, context);
+  const stretchMaterial = createMaterial(span.stretchMaterial, context);
+
+  if (totalLength <= naturalLength || naturalLength <= 1e-9) {
+    const coil = createSpanSegment(start, end, span.coilWidth, coilMaterial, span.segmentsRadius, 2);
+    if (coil) {
+      group.add(coil);
+    }
+    return group;
+  }
+
+  const stretchLength = (totalLength - naturalLength) / 2;
+  const middleStart = start.clone().addScaledVector(normalizedDirection, stretchLength);
+  const middleEnd = end.clone().addScaledVector(normalizedDirection, -stretchLength);
+
+  const leftStretch = createSpanSegment(start, middleStart, span.stretchWidth, stretchMaterial.clone(), span.segmentsRadius, 2);
+  const coil = createSpanSegment(middleStart, middleEnd, span.coilWidth, coilMaterial, span.segmentsRadius, 2);
+  const rightStretch = createSpanSegment(middleEnd, end, span.stretchWidth, stretchMaterial, span.segmentsRadius, 2);
+
+  if (leftStretch) {
+    group.add(leftStretch);
+  }
+  if (coil) {
+    group.add(coil);
+  }
+  if (rightStretch) {
+    group.add(rightStretch);
+  }
+
+  return group;
+}
+
+export function createSpanMesh(span: RenderSpan, context: RenderAssetContext) {
+  switch (span.kind) {
+    case 'line':
+      return createLineSpan(span);
+    case 'cylinder':
+      return createCylinderSpan(span, context);
+    case 'spring':
+      return createSpringSpan(span, context);
+    default:
+      return null;
+  }
 }

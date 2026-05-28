@@ -8,8 +8,10 @@ import type {
 function createDefaultSpanVisual(): SceneSpanVisual {
   return {
     visible: true,
-    material: { name: 'SHINY_RED' },
-    thickness: 1,
+    kind: 'line',
+    material: '#ff8787',
+    width: 1,
+    lineStyle: 'solid',
   };
 }
 
@@ -21,10 +23,8 @@ function createDefaultSpan(scene: NormalizedSceneConfig): SceneSpan {
   const point2 = pointNames[1] ?? point1;
 
   return {
-    type: 'cable',
     point1,
     point2,
-    showLabel: false,
     visual: {
       wire: createDefaultSpanVisual(),
     },

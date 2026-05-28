@@ -344,10 +344,11 @@ test('scene evaluation resolves cable spans from sceneOrigin point data', () => 
   assert.deepEqual(evaluation.spans, [
     {
       name: 'cable1.wire1',
-      type: 'cable',
+      kind: 'line',
       visible: true,
       material: { name: 'BLACK', color: undefined },
-      thickness: 2,
+      width: 2,
+      lineStyle: 'solid',
       start: { x: 1, y: 2, z: 3 },
       end: { x: 4, y: 5, z: 6 },
     },

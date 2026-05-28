@@ -1,6 +1,6 @@
 import type {
   NormalizedSceneConfig,
-  RenderCableSpan,
+  RenderSpan,
   RenderVisual,
   SceneMaterial,
   SceneSpan,
@@ -33,7 +33,7 @@ export interface SceneCameraSnapshot {
 export interface SceneEvaluation {
   objects: Record<string, SceneObjectSnapshot>;
   camera: SceneCameraSnapshot;
-  spans: RenderCableSpan[];
+  spans: RenderSpan[];
 }
 
 function vector(x = 0, y = 0, z = 0): Vector3Like {
@@ -260,10 +260,8 @@ function normalizeSpanVisual(
   visual: SceneSpanVisual,
   sceneOrigin: string,
   values: Record<string, number>
-): RenderCableSpan | null {
-  if (span.type !== 'cable') {
-    return null;
-  }
+): RenderSpan | null {
+  const kind = visual.kind ?? 'line';
 
   const start = readPointPosition(values, sceneOrigin, span.point1);
   const end = readPointPosition(values, sceneOrigin, span.point2);
@@ -271,22 +269,52 @@ function normalizeSpanVisual(
     return null;
   }
 
-  return {
+  const base = {
     name: `${spanName}.${visualName}`,
-    type: 'cable',
     visible: visual.visible !== false,
-    material: normalizeMaterialDefinition(visual.material),
-    thickness: visual.thickness ?? 1,
     start,
     end,
-  };
+  } as const;
+  const legacyWidth = visual.width ?? visual.thickness ?? 1;
+
+  switch (kind) {
+    case 'cylinder':
+      return {
+        ...base,
+        kind: 'cylinder',
+        material: normalizeMaterialDefinition(visual.material),
+        width: legacyWidth,
+        segmentsLength: 2,
+        segmentsRadius: 8,
+      };
+    case 'spring':
+      return {
+        ...base,
+        kind: 'spring',
+        material: normalizeMaterialDefinition(visual.material),
+        stretchMaterial: normalizeMaterialDefinition(visual.stretchMaterial ?? '#74c0fc'),
+        naturalLength: visual.naturalLength ?? 1,
+        coilWidth: visual.coilWidth ?? 0.12,
+        stretchWidth: visual.stretchWidth ?? 0.06,
+        segmentsRadius: 12,
+      };
+    case 'line':
+    default:
+      return {
+        ...base,
+        kind: 'line',
+        material: normalizeMaterialDefinition(visual.material),
+        width: legacyWidth,
+        lineStyle: visual.lineStyle ?? 'solid',
+      };
+  }
 }
 
 function evaluateSpans(
   scene: NormalizedSceneConfig,
   values: Record<string, number>
-): RenderCableSpan[] {
-  const spans: RenderCableSpan[] = [];
+): RenderSpan[] {
+  const spans: RenderSpan[] = [];
 
   for (const [spanName, span] of Object.entries(scene.spans)) {
     const visuals = Object.entries(span.visual ?? {});
@@ -295,7 +323,7 @@ function evaluateSpans(
         spanName,
         span,
         'wire',
-        { material: 'SHINY_RED', thickness: 1 },
+        { kind: 'line', material: '#ff8787', width: 1, lineStyle: 'solid' },
         scene.sceneOrigin,
         values
       );

@@ -1,10 +1,40 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { NormalizedSceneConfig, SceneSpan, SceneSpanVisual } from '../core/types.ts';
+import ColorPicker from './ColorPicker.tsx';
 import { NumericInput } from './editorShared.tsx';
-import MaterialPicker from './MaterialPicker.tsx';
+import {
+  LEGACY_COLOR_PRESETS,
+  LEGACY_TEXTURE_PRESETS,
+  materialDefinitionFromSceneMaterial,
+  normalizeMaterialName,
+  parseCssColorString,
+} from '../core/materialPresets.ts';
 
-const SPAN_TYPE_OPTIONS = ['cable'] as const;
+const SPAN_VISUAL_KIND_OPTIONS = ['line', 'cylinder', 'spring'] as const;
 const POSITION_CHANNEL = /^P_([^_]+)_([^\[]+)\[([123])\]$/;
+const SPAN_LINE_STYLE_OPTIONS = ['solid', 'dashed'] as const;
+const DEFAULT_LINE_WIDTH = 1;
+const DEFAULT_CYLINDER_WIDTH = 0.12;
+const DEFAULT_SPRING_NATURAL_LENGTH = 1;
+const DEFAULT_SPRING_COIL_WIDTH = 0.12;
+const DEFAULT_SPRING_STRETCH_WIDTH = 0.06;
+
+function materialToColorValue(material: SceneSpanVisual['material']): string {
+  const definition = materialDefinitionFromSceneMaterial(material);
+  if (parseCssColorString(definition.name)) {
+    return definition.name;
+  }
+
+  const normalized = normalizeMaterialName(definition.name);
+  if (LEGACY_COLOR_PRESETS[normalized]) {
+    return LEGACY_COLOR_PRESETS[normalized];
+  }
+  if (LEGACY_TEXTURE_PRESETS[normalized]?.color) {
+    return LEGACY_TEXTURE_PRESETS[normalized].color!;
+  }
+
+  return '#c7d2e2';
+}
 
 interface SpanEditorPanelProps {
   activeScene: NormalizedSceneConfig | null;
@@ -74,6 +104,9 @@ export default function SpanEditorPanel({
     }
   };
 
+  const selectedKind = liveSelectedSpanVisual?.kind ?? 'line';
+  const isVisible = liveSelectedSpanVisual?.visible !== false;
+
   return (
     <>
       {selectedSpanName && liveSelectedSpan ? (
@@ -124,23 +157,6 @@ export default function SpanEditorPanel({
                 />
               </label>
               <label className="editor-field">
-                <span>Span Type</span>
-                <select
-                  value={liveSelectedSpan.type}
-                  onChange={(event) => {
-                    updateSelectedSpan((span) => {
-                      span.type = event.target.value;
-                    });
-                  }}
-                >
-                  {SPAN_TYPE_OPTIONS.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="editor-field">
                 <span>Point 1</span>
                 <select
                   value={liveSelectedSpan.point1}
@@ -173,18 +189,6 @@ export default function SpanEditorPanel({
                     </option>
                   ))}
                 </select>
-              </label>
-              <label className="editor-field editor-field-checkbox">
-                <span>Show Label</span>
-                <input
-                  type="checkbox"
-                  checked={liveSelectedSpan.showLabel ?? false}
-                  onChange={(event) => {
-                    updateSelectedSpan((span) => {
-                      span.showLabel = event.target.checked;
-                    });
-                  }}
-                />
               </label>
             </div>
           </div>
@@ -251,45 +255,230 @@ export default function SpanEditorPanel({
             {selectedSpanVisualName && liveSelectedSpanVisual ? (
               <div className="editor-grid">
                 <div className="editor-field">
-                  <span>Material</span>
-                  <MaterialPicker
-                    material={liveSelectedSpanVisual.material}
-                    onMaterialChange={(nextMaterial) => {
-                      updateSelectedSpanVisual((visual) => {
-                        visual.material = {
-                          ...nextMaterial,
-                        };
-                      });
-                    }}
-                  />
+                  <span>Visual Kind</span>
+                  <div className="geometry-control-row">
+                    <select
+                      className="geometry-select"
+                      value={selectedKind}
+                      onChange={(event) => {
+                        const nextKind = event.target.value as (typeof SPAN_VISUAL_KIND_OPTIONS)[number];
+                        updateSelectedSpanVisual((visual) => {
+                          const preservedVisible = visual.visible !== false;
+                          if (nextKind === 'line') {
+                            Object.assign(visual, {
+                              visible: preservedVisible,
+                              kind: 'line',
+                              material: '#ff8787',
+                              width: DEFAULT_LINE_WIDTH,
+                              lineStyle: 'solid',
+                            });
+                            delete visual.stretchMaterial;
+                            delete visual.naturalLength;
+                            delete visual.coilWidth;
+                            delete visual.stretchWidth;
+                            delete visual.thickness;
+                            return;
+                          }
+                          if (nextKind === 'cylinder') {
+                            Object.assign(visual, {
+                              visible: preservedVisible,
+                              kind: 'cylinder',
+                              material: '#ff8787',
+                              width: DEFAULT_CYLINDER_WIDTH,
+                            });
+                            delete visual.lineStyle;
+                            delete visual.stretchMaterial;
+                            delete visual.naturalLength;
+                            delete visual.coilWidth;
+                            delete visual.stretchWidth;
+                            delete visual.thickness;
+                            return;
+                          }
+
+                          Object.assign(visual, {
+                            visible: preservedVisible,
+                            kind: 'spring',
+                            material: '#ff8787',
+                            stretchMaterial: '#74c0fc',
+                            naturalLength: DEFAULT_SPRING_NATURAL_LENGTH,
+                            coilWidth: DEFAULT_SPRING_COIL_WIDTH,
+                            stretchWidth: DEFAULT_SPRING_STRETCH_WIDTH,
+                          });
+                          delete visual.lineStyle;
+                          delete visual.width;
+                          delete visual.thickness;
+                        });
+                      }}
+                    >
+                      {SPAN_VISUAL_KIND_OPTIONS.map((kind) => (
+                        <option key={kind} value={kind}>
+                          {kind}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className={`visibility-eye-button ${isVisible ? 'visibility-eye-button-active' : ''}`}
+                      aria-label={isVisible ? 'Hide span visual' : 'Show span visual'}
+                      aria-pressed={isVisible}
+                      onClick={() => {
+                        updateSelectedSpanVisual((visual) => {
+                          visual.visible = visual.visible === false;
+                        });
+                      }}
+                    >
+                      {isVisible ? (
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6-10-6-10-6Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M3 3l18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          <path d="M10.7 5.2A11.2 11.2 0 0 1 12 5c6.2 0 10 7 10 7a17.7 17.7 0 0 1-4 4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M6.2 6.3C3.7 8.1 2 12 2 12s3.8 6 10 6c1.4 0 2.6-.3 3.8-.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M9.9 9.9A3.1 3.1 0 0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="editor-field">
-                  <span>Thickness</span>
-                  <NumericInput
-                    value={liveSelectedSpanVisual.thickness ?? 1}
-                    minValue={0}
-                    onValueChange={(nextValue) => {
-                      updateSelectedSpanVisual((visual) => {
-                        visual.thickness = nextValue;
-                      });
-                    }}
-                  />
-                </div>
-                <label className="editor-field editor-field-checkbox">
-                  <span>Visible</span>
-                  <input
-                    type="checkbox"
-                    checked={liveSelectedSpanVisual.visible !== false}
-                    onChange={(event) => {
-                      updateSelectedSpanVisual((visual) => {
-                        visual.visible = event.target.checked;
-                      });
-                    }}
-                  />
-                </label>
+
+                {selectedKind === 'line' ? (
+                  <>
+                    <div className="editor-field">
+                      <span>Color</span>
+                      <ColorPicker
+                        label="line color"
+                        popoverTitle="Line Color"
+                        value={materialToColorValue(liveSelectedSpanVisual.material)}
+                        onChange={(nextValue) => {
+                          updateSelectedSpanVisual((visual) => {
+                            visual.material = nextValue;
+                          });
+                        }}
+                      />
+                    </div>
+                    <label className="editor-field">
+                      <span>Style</span>
+                      <select
+                        value={liveSelectedSpanVisual.lineStyle ?? 'solid'}
+                        onChange={(event) => {
+                          updateSelectedSpanVisual((visual) => {
+                            visual.lineStyle = event.target.value as (typeof SPAN_LINE_STYLE_OPTIONS)[number];
+                          });
+                        }}
+                      >
+                        {SPAN_LINE_STYLE_OPTIONS.map((style) => (
+                          <option key={style} value={style}>
+                            {style}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                ) : null}
+
+                {selectedKind === 'cylinder' ? (
+                  <>
+                    <div className="editor-field">
+                      <span>Color</span>
+                      <ColorPicker
+                        label="cylinder color"
+                        popoverTitle="Cylinder Color"
+                        value={materialToColorValue(liveSelectedSpanVisual.material)}
+                        onChange={(nextValue) => {
+                          updateSelectedSpanVisual((visual) => {
+                            visual.material = nextValue;
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="editor-field">
+                      <span>Width</span>
+                      <NumericInput
+                        value={liveSelectedSpanVisual.width ?? liveSelectedSpanVisual.thickness ?? 0.12}
+                        minValue={0}
+                        onValueChange={(nextValue) => {
+                          updateSelectedSpanVisual((visual) => {
+                            visual.width = nextValue;
+                            delete visual.thickness;
+                          });
+                        }}
+                      />
+                    </div>
+                  </>
+                ) : null}
+
+                {selectedKind === 'spring' ? (
+                  <>
+                    <div className="editor-field">
+                      <span>Natural Length</span>
+                      <NumericInput
+                        value={liveSelectedSpanVisual.naturalLength ?? DEFAULT_SPRING_NATURAL_LENGTH}
+                        minValue={0}
+                        onValueChange={(nextValue) => {
+                          updateSelectedSpanVisual((visual) => {
+                            visual.naturalLength = nextValue;
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="editor-field">
+                      <span>Coil Width</span>
+                      <NumericInput
+                        value={liveSelectedSpanVisual.coilWidth ?? DEFAULT_SPRING_COIL_WIDTH}
+                        minValue={0}
+                        onValueChange={(nextValue) => {
+                          updateSelectedSpanVisual((visual) => {
+                            visual.coilWidth = nextValue;
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="editor-field">
+                      <span>Stretch Width</span>
+                      <NumericInput
+                        value={liveSelectedSpanVisual.stretchWidth ?? DEFAULT_SPRING_STRETCH_WIDTH}
+                        minValue={0}
+                        onValueChange={(nextValue) => {
+                          updateSelectedSpanVisual((visual) => {
+                            visual.stretchWidth = nextValue;
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="editor-field">
+                      <span>Coil Color</span>
+                      <ColorPicker
+                        label="coil color"
+                        popoverTitle="Coil Color"
+                        value={materialToColorValue(liveSelectedSpanVisual.material)}
+                        onChange={(nextValue) => {
+                          updateSelectedSpanVisual((visual) => {
+                            visual.material = nextValue;
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="editor-field">
+                      <span>Stretch Color</span>
+                      <ColorPicker
+                        label="stretch color"
+                        popoverTitle="Stretch Color"
+                        value={materialToColorValue(liveSelectedSpanVisual.stretchMaterial ?? '#74c0fc')}
+                        onChange={(nextValue) => {
+                          updateSelectedSpanVisual((visual) => {
+                            visual.stretchMaterial = nextValue;
+                          });
+                        }}
+                      />
+                    </div>
+                  </>
+                ) : null}
               </div>
             ) : (
-              <div className="empty-state">Add a span visual to control cable appearance.</div>
+              <div className="empty-state">Add a span visual to control line, cylinder, or spring appearance.</div>
             )}
           </div>
         </div>

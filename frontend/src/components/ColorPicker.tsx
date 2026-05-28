@@ -5,6 +5,8 @@ import {
 } from '../core/materialPresets.ts';
 
 interface ColorPickerProps {
+  label?: string;
+  popoverTitle?: string;
   value: string;
   onChange: (nextValue: string) => void;
 }
@@ -42,7 +44,12 @@ const PRESET_COLORS = [
   '#000000',
 ];
 
-export default function ColorPicker({ value, onChange }: ColorPickerProps) {
+export default function ColorPicker({
+  label = 'color',
+  popoverTitle = 'Color',
+  value,
+  onChange,
+}: ColorPickerProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const [customCssText, setCustomCssText] = useState('#e0f0ff');
@@ -103,7 +110,7 @@ export default function ColorPicker({ value, onChange }: ColorPickerProps) {
         />
         <span className="material-trigger-copy">
           <strong>{normalizedValue}</strong>
-          <small>background</small>
+          <small>{label}</small>
         </span>
       </button>
 
@@ -112,13 +119,13 @@ export default function ColorPicker({ value, onChange }: ColorPickerProps) {
           className="material-popover"
           role="dialog"
           aria-modal="false"
-          aria-label="Background color picker"
+          aria-label={`${popoverTitle} picker`}
           onPointerDown={(event) => {
             event.stopPropagation();
           }}
         >
           <div className="material-popover-header">
-            <strong>Background Color</strong>
+            <strong>{popoverTitle}</strong>
             <button type="button" className="secondary-button material-popover-close" onClick={() => setPickerOpen(false)}>
               Close
             </button>
@@ -149,7 +156,7 @@ export default function ColorPicker({ value, onChange }: ColorPickerProps) {
             <div className="material-custom-controls material-custom-controls-single">
               <input
                 type="color"
-                aria-label="Background color"
+                aria-label={label}
                 value={customHex}
                 onChange={(event) => {
                   const nextHex = event.target.value;
@@ -162,7 +169,7 @@ export default function ColorPicker({ value, onChange }: ColorPickerProps) {
             <input
               type="text"
               value={customCssText}
-              aria-label="Background CSS color"
+              aria-label={`${label} CSS color`}
               onChange={(event) => {
                 const nextText = event.target.value;
                 setCustomCssText(nextText);

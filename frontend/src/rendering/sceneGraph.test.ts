@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { buildRenderableScene } from './sceneGraph.ts';
 
-test('renderable scene includes cable span lines', () => {
+test('renderable scene includes line span renderables', () => {
   globalThis.window = {
     location: {
       pathname: '/MGView/modern/',
@@ -28,10 +28,11 @@ test('renderable scene includes cable span lines', () => {
       spans: [
         {
           name: 'cable1.wire1',
-          type: 'cable',
+          kind: 'line',
           visible: true,
           material: { name: 'BLACK' },
-          thickness: 1,
+          width: 1,
+          lineStyle: 'solid',
           start: { x: 1, y: 2, z: 3 },
           end: { x: 4, y: 5, z: 6 },
         },
@@ -43,5 +44,5 @@ test('renderable scene includes cable span lines', () => {
 
   assert.equal(renderRoot.children.length, 1);
   assert.equal(renderRoot.children[0].type, 'Line');
-  assert.equal(renderRoot.children[0].userData.kind, 'cable');
+  assert.equal(renderRoot.children[0].userData.kind, 'span-line');
 });

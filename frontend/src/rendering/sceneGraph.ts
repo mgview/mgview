@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { getServerRootPrefix } from '../api/localFiles.ts';
 import type { SceneEvaluation } from '../core/sceneEvaluation.ts';
 import { getBasePath, normalizePathSeparators } from '../core/pathUtils.ts';
-import { createCableSpan, createVisualMesh } from './meshFactory.ts';
+import { createSpanMesh, createVisualMesh } from './meshFactory.ts';
 import { toThreeVector } from './coordinateConvention.ts';
 
 export function applyMatrix(group: THREE.Group, rotationMatrix: number[] | null) {
@@ -75,7 +75,10 @@ export function buildRenderableScene(
       continue;
     }
 
-    root.add(createCableSpan(span));
+    const spanNode = createSpanMesh(span, assetContext);
+    if (spanNode) {
+      root.add(spanNode);
+    }
   }
 
   return root;
