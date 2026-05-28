@@ -1,12 +1,15 @@
 import type { LoadedSceneData } from '../hooks/useSceneWorkspace.ts';
 import type {
   NormalizedSceneConfig,
+  SceneSpan,
+  SceneSpanVisual,
   SceneObjectInspection,
   SceneVisual,
   VisualType,
 } from '../core/types.ts';
 import JsonEditorPanel from './JsonEditorPanel.tsx';
 import SceneSettingsPanel from './SceneSettingsPanel.tsx';
+import SpanEditorPanel from './SpanEditorPanel.tsx';
 import VisualEditorPanel from './VisualEditorPanel.tsx';
 
 export type InspectorEditorMode = 'visual' | 'scene' | 'json';
@@ -19,6 +22,7 @@ interface InspectorDrawerProps {
     cameraFocus: [number, number, number];
     cameraUp: [number, number, number];
   } | null;
+  channelNames: string[];
   clearCameraPreview: () => void;
   editorMode: InspectorEditorMode;
   hasLocalEdits: boolean;
@@ -26,12 +30,22 @@ interface InspectorDrawerProps {
   loaded: LoadedSceneData | null;
   savePreview: string;
   selectedObject?: SceneObjectInspection;
+  selectedSpanName: string | null;
+  selectedSpanVisualName: string | null;
+  liveSelectedSpan?: SceneSpan;
+  liveSelectedSpanVisual?: SceneSpanVisual;
   selectedVisual?: SceneObjectInspection['visuals'][number];
   updateSelectedObject: (updater: (sceneObject: NormalizedSceneConfig['objects'][string]) => void) => void;
   createVisual: (type: VisualType) => boolean;
   renameVisual: (currentName: string, nextName: string) => boolean;
   deleteSelectedVisual: () => boolean;
   changeSelectedVisualType: (type: VisualType) => void;
+  createSpan: () => boolean;
+  createSpanVisual: () => boolean;
+  deleteSelectedSpan: () => boolean;
+  deleteSelectedSpanVisual: () => boolean;
+  renameSpan: (currentName: string, nextName: string) => boolean;
+  selectSpan: (spanName: string, firstVisualName: string | null) => void;
   setEditorMode: (mode: InspectorEditorMode) => void;
   setSelectedVisualName: (name: string | null) => void;
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
@@ -41,12 +55,15 @@ interface InspectorDrawerProps {
     nextValue: number,
     fallback: [number, number, number]
   ) => void;
+  updateSelectedSpan: (updater: (span: SceneSpan) => void) => void;
+  updateSelectedSpanVisual: (updater: (visual: SceneSpanVisual) => void) => void;
   updateSelectedVisual: (updater: (visual: SceneVisual) => void) => void;
 }
 
 export default function InspectorDrawer({
   activeScene,
   cameraPreview,
+  channelNames,
   clearCameraPreview,
   editorMode,
   hasLocalEdits,
@@ -54,16 +71,28 @@ export default function InspectorDrawer({
   loaded,
   savePreview,
   selectedObject,
+  selectedSpanName,
+  selectedSpanVisualName,
+  liveSelectedSpan,
+  liveSelectedSpanVisual,
   selectedVisual,
   updateSelectedObject,
   createVisual,
   renameVisual,
   deleteSelectedVisual,
   changeSelectedVisualType,
+  createSpan,
+  createSpanVisual,
+  deleteSelectedSpan,
+  deleteSelectedSpanVisual,
+  renameSpan,
+  selectSpan,
   setEditorMode,
   setSelectedVisualName,
   updateDraftScene,
   updateSceneVector,
+  updateSelectedSpan,
+  updateSelectedSpanVisual,
   updateSelectedVisual,
 }: InspectorDrawerProps) {
   if (!loaded) {
@@ -88,7 +117,7 @@ export default function InspectorDrawer({
           className={`tag-button ${editorMode === 'visual' ? 'tag-button-active' : ''}`}
           onClick={() => setEditorMode('visual')}
         >
-          Visual Editor
+          Editor
         </button>
         <button
           type="button"
@@ -118,6 +147,22 @@ export default function InspectorDrawer({
       ) : editorMode === 'json' ? (
         <JsonEditorPanel
           savePreview={savePreview}
+        />
+      ) : selectedSpanName ? (
+        <SpanEditorPanel
+          activeScene={activeScene}
+          channelNames={channelNames}
+          createSpanVisual={createSpanVisual}
+          deleteSelectedSpan={deleteSelectedSpan}
+          deleteSelectedSpanVisual={deleteSelectedSpanVisual}
+          liveSelectedSpan={liveSelectedSpan}
+          liveSelectedSpanVisual={liveSelectedSpanVisual}
+          renameSpan={renameSpan}
+          selectedSpanName={selectedSpanName}
+          selectedSpanVisualName={selectedSpanVisualName}
+          selectSpan={selectSpan}
+          updateSelectedSpan={updateSelectedSpan}
+          updateSelectedSpanVisual={updateSelectedSpanVisual}
         />
       ) : (
         <VisualEditorPanel

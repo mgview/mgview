@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 
-import { createSceneDocument } from './sceneDocument.ts';
+import { createSceneDocument, DEFAULT_POINT_MARKER_WORKSPACE_FRACTION } from './sceneDocument.ts';
 import { buildObjectInspections, collectSceneDiagnostics } from './sceneInspector.ts';
 import { expandSimulationFiles } from './expandSimulationFiles.ts';
 import { getBasePath, getFileExtension, getRelativePath } from './pathUtils.ts';
@@ -45,7 +45,13 @@ test('simulation file expansion matches legacy numeric range behavior', () => {
 });
 
 test('scene normalization adds legacy defaults and generated visuals', async () => {
-  const scene = await readSceneFixture('default.json');
+  const scene = {
+    ...(await readSceneFixture('default.json')),
+    objects: {
+      N: { type: 'frame', visual: {} },
+      P: { type: 'point', visual: {} },
+    },
+  };
   const document = createSceneDocument(scene);
 
   assert.equal(document.newtonianFrame, 'N');
@@ -56,6 +62,48 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
   assert.equal(document.objects.N.type, 'frame');
   assert.ok(document.objects.N.visual?.label);
   assert.ok(document.objects.N.visual?.basis);
+  assert.equal(document.objects.P.type, 'point');
+  assert.ok(document.objects.P.visual?.label);
+  assert.ok(document.objects.P.visual?.point);
+  assert.equal(document.objects.P.visual?.basis, undefined);
+  assert.equal(
+    document.objects.P.visual?.point?.radius,
+    document.workspaceSize * DEFAULT_POINT_MARKER_WORKSPACE_FRACTION
+  );
+});
+
+test('scene normalization does not auto-add defaults when authored visuals already exist', () => {
+  const document = createSceneDocument({
+    newtonianFrame: 'N',
+    sceneOrigin: 'No',
+    workspaceSize: 2,
+    objects: {
+      N: {
+        type: 'frame',
+        showBasis: false,
+        showLabel: false,
+        visual: {
+          body: {
+            type: 'box',
+            size: { x: 1, y: 1, z: 1 },
+          },
+        },
+      },
+      P: {
+        type: 'point',
+        showLabel: true,
+        visual: {
+          dot: {
+            type: 'sphere',
+            radius: 0.05,
+          },
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(Object.keys(document.objects.N.visual ?? {}), ['body']);
+  assert.deepEqual(Object.keys(document.objects.P.visual ?? {}), ['dot']);
 });
 
 test('channel inference promotes frames and adds missing points', async () => {
@@ -83,11 +131,13 @@ test('scene inspector surfaces inferred objects and default visuals', async () =
   const diagnostics = collectSceneDiagnostics(scene, document, ['samples/default.1'], ['P_No_Q[1]']);
   const qObject = inspections.find((entry) => entry.name === 'Q');
   const nObject = inspections.find((entry) => entry.name === 'N');
+  const qMarker = qObject?.visuals.find((visual) => visual.name === 'point');
   const nLabel = nObject?.visuals.find((visual) => visual.name === 'label');
 
   assert.ok(qObject);
   assert.equal(qObject.inferred, true);
   assert.equal(qObject.missingSimulationData, false);
+  assert.ok(qMarker?.tags.includes('default point marker'));
   assert.ok(nObject?.visuals.some((visual) => visual.tags.includes('default label')));
   assert.ok(nLabel?.propertySummary.some((property) => property.key === 'text' && property.value === 'N'));
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('Inferred')));

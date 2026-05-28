@@ -65,6 +65,15 @@ export default function PlaybackStrip({
             step={tStep || 0.001}
             value={currentTime}
             onChange={(event) => onChangeTime(Number(event.target.value))}
+            onPointerUp={(event) => {
+              event.currentTarget.blur();
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                event.currentTarget.blur();
+              }
+            }}
           />
         </div>
         <label className="playback-speed-inline">

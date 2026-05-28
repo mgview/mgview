@@ -12,6 +12,7 @@ import { getFrameAtTime } from './core/timeline.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
 import { createSavableScene, getDirectoryPath, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
 import { useSceneSelectionEditor } from './hooks/useSceneSelectionEditor.ts';
+import { useSceneSpanEditor } from './hooks/useSceneSpanEditor.ts';
 
 const DEFAULT_SCENE_PATH = 'samples/particle_pendulum/particle_pendulum.json';
 const SAMPLE_SCENES = [
@@ -93,6 +94,8 @@ export default function App() {
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
   const [sampleBrowserExpanded, setSampleBrowserExpanded] = useState(false);
   const [cameraPreview, setCameraPreview] = useState<CameraDraftPreview | null>(null);
+  const [selectedSpanName, setSelectedSpanName] = useState<string | null>(null);
+  const [selectedSpanVisualName, setSelectedSpanVisualName] = useState<string | null>(null);
   const {
     activeScene,
     browserError,
@@ -133,6 +136,8 @@ export default function App() {
   useEffect(() => {
     if (loaded) {
       setEditorMode('visual');
+      setSelectedSpanName(null);
+      setSelectedSpanVisualName(null);
     }
   }, [loaded?.scenePath]);
 
@@ -156,6 +161,26 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+
+      if (
+        event.key === 'Escape' &&
+        target instanceof HTMLInputElement &&
+        target.type === 'range'
+      ) {
+        event.preventDefault();
+        target.blur();
+        return;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        if (!loadOverlayOpen && !loading && !saving && hasLocalEdits) {
+          void handleSaveScene();
+        }
+        return;
+      }
+
       if (event.defaultPrevented || event.repeat || event.code !== 'Space') {
         return;
       }
@@ -164,7 +189,6 @@ export default function App() {
         return;
       }
 
-      const target = event.target;
       if (
         target instanceof HTMLInputElement ||
         target instanceof HTMLTextAreaElement ||
@@ -183,7 +207,16 @@ export default function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [diagnosticsOpen, loadOverlayOpen, playback.togglePlay, simulationOverlayOpen]);
+  }, [
+    diagnosticsOpen,
+    handleSaveScene,
+    hasLocalEdits,
+    loadOverlayOpen,
+    loading,
+    playback.togglePlay,
+    saving,
+    simulationOverlayOpen,
+  ]);
 
   const currentFrame = useMemo(() => {
     if (!loaded) {
@@ -214,11 +247,69 @@ export default function App() {
     updateDraftScene,
   });
 
+  const {
+    createSpan,
+    createSpanVisual,
+    deleteSelectedSpan,
+    deleteSelectedSpanVisual,
+    liveSelectedSpan,
+    liveSelectedSpanVisual,
+    renameSpan,
+    selectSpan: selectSpanOnly,
+    selectedSpanResolvedName,
+    selectedSpanVisualResolvedName,
+    updateSelectedSpan,
+    updateSelectedSpanVisual,
+  } = useSceneSpanEditor({
+    activeScene,
+    draftScene,
+    selectedSpanName,
+    selectedSpanVisualName,
+    setSelectedSpanName,
+    setSelectedSpanVisualName,
+    updateDraftScene,
+  });
+
   useEffect(() => {
     if (selectedObject) {
       setEditorMode('visual');
     }
   }, [selectedObject?.name]);
+
+  useEffect(() => {
+    if (selectedSpanResolvedName) {
+      setEditorMode('visual');
+    }
+  }, [selectedSpanResolvedName]);
+
+  const selectObjectForEditor = (objectName: string, firstVisualName: string | null) => {
+    setSelectedSpanName(null);
+    setSelectedSpanVisualName(null);
+    selectObject(objectName, firstVisualName);
+  };
+
+  const selectSpanForEditor = (spanName: string, firstVisualName: string | null) => {
+    setSelectedObjectName(null);
+    setSelectedVisualName(null);
+    selectSpanOnly(spanName, firstVisualName);
+  };
+
+  const spanEntries = useMemo(
+    () =>
+      Object.entries(activeScene?.spans ?? {}).map(([name, span]) => ({
+        name,
+        type: span.type,
+        point1: span.point1,
+        point2: span.point2,
+        visualCount: Object.keys(span.visual ?? {}).length,
+        visualNames: Object.keys(span.visual ?? {}),
+      })),
+    [activeScene?.spans]
+  );
+
+  const activeSelectedObject = selectedSpanResolvedName ? undefined : selectedObject;
+  const activeSelectedVisual = selectedSpanResolvedName ? undefined : selectedVisual;
+  const activeLiveSelectedVisual = selectedSpanResolvedName ? undefined : liveSelectedVisual;
 
   const cameraSeedKey = useMemo(() => {
     if (!activeScene || !loaded) {
@@ -419,7 +510,7 @@ export default function App() {
                     scenePath={loaded.scenePath}
                     scene={activeScene}
                     frame={currentFrame?.frame}
-                    selectedObjectName={selectedObject?.name ?? null}
+                    selectedObjectName={activeSelectedObject?.name ?? null}
                   />
 
                   <PlaybackStrip
@@ -473,8 +564,16 @@ export default function App() {
                     {loaded ? (
                       <ObjectList
                         entries={objectInspections}
-                        selectedObjectName={selectedObject?.name ?? null}
-                        onSelectObject={selectObject}
+                        onCreateSpan={() => {
+                          setSelectedObjectName(null);
+                          setSelectedVisualName(null);
+                          createSpan();
+                        }}
+                        selectedObjectName={activeSelectedObject?.name ?? null}
+                        selectedSpanName={selectedSpanResolvedName}
+                        spans={spanEntries}
+                        onSelectObject={selectObjectForEditor}
+                        onSelectSpan={selectSpanForEditor}
                       />
                     ) : (
                       <section className="panel loading-panel">
@@ -495,23 +594,36 @@ export default function App() {
                     <InspectorDrawer
                       activeScene={activeScene}
                       cameraPreview={cameraPreview}
+                      channelNames={channelNames}
                       clearCameraPreview={() => setCameraPreview(null)}
                       editorMode={editorMode}
                       hasLocalEdits={hasLocalEdits}
-                      liveSelectedVisual={liveSelectedVisual}
+                      liveSelectedSpan={liveSelectedSpan}
+                      liveSelectedSpanVisual={liveSelectedSpanVisual}
+                      liveSelectedVisual={activeLiveSelectedVisual}
                       loaded={loaded}
                       savePreview={savePreview}
-                      selectedObject={selectedObject}
-                      selectedVisual={selectedVisual}
+                      selectedObject={activeSelectedObject}
+                      selectedSpanName={selectedSpanResolvedName}
+                      selectedSpanVisualName={selectedSpanVisualResolvedName}
+                      selectedVisual={activeSelectedVisual}
                       updateSelectedObject={updateSelectedObject}
                       createVisual={createVisual}
                       renameVisual={renameVisual}
                       deleteSelectedVisual={deleteSelectedVisual}
                       changeSelectedVisualType={changeSelectedVisualType}
+                      createSpan={createSpan}
+                      createSpanVisual={createSpanVisual}
+                      deleteSelectedSpan={deleteSelectedSpan}
+                      deleteSelectedSpanVisual={deleteSelectedSpanVisual}
+                      renameSpan={renameSpan}
+                      selectSpan={selectSpanForEditor}
                       setEditorMode={setEditorMode}
                       setSelectedVisualName={setSelectedVisualName}
                       updateDraftScene={updateDraftScene}
                       updateSceneVector={updateSceneVector}
+                      updateSelectedSpan={updateSelectedSpan}
+                      updateSelectedSpanVisual={updateSelectedSpanVisual}
                       updateSelectedVisual={updateSelectedVisual}
                     />
                   </div>

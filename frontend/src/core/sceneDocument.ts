@@ -14,6 +14,8 @@ function vector(x = 0, y = 0, z = 0): Vector3Like {
   return { x, y, z };
 }
 
+export const DEFAULT_POINT_MARKER_WORKSPACE_FRACTION = 0.05;
+
 function cloneVisual(visual: SceneVisual): SceneVisual {
   return {
     ...visual,
@@ -99,11 +101,17 @@ function addEmptyDefaults(scene: SceneConfig): NormalizedSceneConfig {
 
 function addDefaultBasesAndLabels(scene: NormalizedSceneConfig): NormalizedSceneConfig {
   const size = scene.workspaceSize / 4;
+  const pointMarkerRadius = scene.workspaceSize * DEFAULT_POINT_MARKER_WORKSPACE_FRACTION;
 
   for (const [objectName, sceneObject] of Object.entries(scene.objects)) {
     sceneObject.visual ??= {};
+    const hasAnyVisual = Object.keys(sceneObject.visual).length > 0;
 
-    if (!sceneObject.visual.label) {
+    if (hasAnyVisual) {
+      continue;
+    }
+
+    if (sceneObject.showLabel !== false && !sceneObject.visual.label) {
       sceneObject.visual.label = {
         visible: true,
         type: 'text',
@@ -115,11 +123,24 @@ function addDefaultBasesAndLabels(scene: NormalizedSceneConfig): NormalizedScene
       };
     }
 
-    if (!sceneObject.visual.basis) {
+    if (sceneObject.type === 'frame' && sceneObject.showBasis !== false && !sceneObject.visual.basis) {
       sceneObject.visual.basis = {
         visible: true,
         type: 'basis',
         scale: size,
+        position: vector(0, 0, 0),
+        rotation: vector(0, 0, 0),
+        material: { name: 'SILVER' },
+      };
+    }
+
+    if (sceneObject.type === 'point' && !sceneObject.visual.point) {
+      sceneObject.visual.point = {
+        visible: true,
+        type: 'sphere',
+        radius: pointMarkerRadius,
+        segments_width: 16,
+        segments_height: 12,
         position: vector(0, 0, 0),
         rotation: vector(0, 0, 0),
         material: { name: 'SILVER' },
@@ -150,5 +171,7 @@ export function createSceneDocument(
   channelNames: string[] = []
 ): NormalizedSceneConfig {
   const normalized = normalizeScene(scene);
-  return inferObjectsFromChannels(normalized, channelNames);
+  return addDefaultPositionAndRotation(
+    addDefaultBasesAndLabels(inferObjectsFromChannels(normalized, channelNames))
+  );
 }

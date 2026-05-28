@@ -128,27 +128,12 @@ export function createSavableScene(
     }
   }
 
-  if (!rawScene.spans) {
-    return nextScene;
-  }
-
-  nextScene.spans = {};
-  for (const [spanName, rawSpan] of Object.entries(rawScene.spans)) {
-    const draftSpan = draftScene.spans[spanName];
-    if (!draftSpan) {
-      nextScene.spans[spanName] = structuredClone(rawSpan);
-      continue;
-    }
-
-    nextScene.spans[spanName] = {
-      ...structuredClone(rawSpan),
-      type: draftSpan.type,
-      point1: draftSpan.point1,
-      point2: draftSpan.point2,
-      showLabel: draftSpan.showLabel,
-      visual: draftSpan.visual ? structuredClone(draftSpan.visual) : undefined,
-    };
-  }
+  nextScene.spans = Object.fromEntries(
+    Object.entries(draftScene.spans).map(([spanName, draftSpan]) => [
+      spanName,
+      structuredClone(draftSpan),
+    ])
+  );
 
   return nextScene;
 }

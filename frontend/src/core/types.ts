@@ -75,6 +75,8 @@ export interface SceneSpan {
 export interface SceneObject {
   type: ObjectType;
   rotationFrame?: string;
+  showBasis?: boolean;
+  showLabel?: boolean;
   visual?: Record<string, SceneVisual>;
 }
 

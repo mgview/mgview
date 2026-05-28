@@ -29,6 +29,9 @@ function makeVisualTags(
   if (visualName === 'basis' && !rawVisual) {
     tags.push('default basis');
   }
+  if (visualName === 'point' && !rawVisual) {
+    tags.push('default point marker');
+  }
   if (rawVisual && !hasOwn(rawVisual, 'position')) {
     tags.push('default position');
   }
@@ -219,7 +222,7 @@ export function collectSceneDiagnostics(
   for (const [objectName, sceneObject] of Object.entries(scene.objects)) {
     const rawVisuals = rawObjects[objectName]?.visual ?? {};
     for (const visualName of Object.keys(sceneObject.visual ?? {})) {
-      if (!rawVisuals[visualName] && (visualName === 'label' || visualName === 'basis')) {
+      if (!rawVisuals[visualName] && (visualName === 'label' || visualName === 'basis' || visualName === 'point')) {
         autoVisuals.push(`${objectName}.${visualName}`);
       }
     }
@@ -227,7 +230,7 @@ export function collectSceneDiagnostics(
   if (autoVisuals.length > 0) {
     diagnostics.push({
       severity: 'info',
-      message: `Added ${autoVisuals.length} default label/basis visual(s).`,
+      message: `Added ${autoVisuals.length} default label/basis/marker visual(s).`,
     });
   }
 

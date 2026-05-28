@@ -532,6 +532,18 @@ input[inputmode="decimal"] {
   letter-spacing: 0.08em;
 }
 
+.object-group-title-row {
+  align-items: center;
+}
+
+.object-group-title-row .visual-toolbar-actions {
+  gap: 6px;
+}
+
+.span-editor-header {
+  margin-bottom: 12px;
+}
+
 .hero {
   margin-bottom: 20px;
   padding: 24px;
@@ -1336,6 +1348,10 @@ input[inputmode="decimal"] {
   background: transparent;
   padding: 0.52rem 0.35rem 0.52rem 0;
   text-align: left;
+}
+
+.numeric-input-shell-no-prefix input {
+  padding-left: 0.68rem;
 }
 
 .numeric-input-grip {

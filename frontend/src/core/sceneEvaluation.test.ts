@@ -306,7 +306,8 @@ test('scene evaluation keeps the newtonian frame renderable without explicit sim
     data: {},
   });
 
-  assert.equal(evaluation.objects.N.visuals.length, 3);
+  assert.equal(evaluation.objects.N.visuals.length, 1);
+  assert.equal(evaluation.objects.N.visuals[0]?.name, 'marker');
 });
 
 test('scene evaluation resolves cable spans from sceneOrigin point data', () => {

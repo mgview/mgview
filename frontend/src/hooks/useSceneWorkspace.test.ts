@@ -39,3 +39,42 @@ test('createNewSceneTemplate derives a scene name and starts without simulation 
   assert.equal(template.sceneOrigin, 'No');
   assert.deepEqual(template.cameraUp, [0, 0, 1]);
 });
+
+test('createSavableScene preserves added spans and drops removed spans from the draft scene', () => {
+  const rawScene = {
+    newtonianFrame: 'N',
+    sceneOrigin: 'No',
+    objects: {
+      N: { type: 'frame', visual: {} },
+      Ao: { type: 'point', visual: {} },
+      Bo: { type: 'point', visual: {} },
+    },
+    spans: {
+      old_span: {
+        type: 'cable',
+        point1: 'Ao',
+        point2: 'Bo',
+        visual: {
+          wire: { material: { name: 'BLUE' }, thickness: 1 },
+        },
+      },
+    },
+  };
+
+  const draftScene = createSceneDocument(rawScene);
+  delete draftScene.spans.old_span;
+  draftScene.spans.new_span = {
+    type: 'cable',
+    point1: 'Ao',
+    point2: 'Bo',
+    showLabel: true,
+    visual: {
+      wire: { visible: true, material: { name: 'RED' }, thickness: 2 },
+    },
+  };
+
+  const savableScene = createSavableScene(rawScene, draftScene);
+
+  assert.equal(savableScene.spans?.old_span, undefined);
+  assert.deepEqual(savableScene.spans?.new_span, draftScene.spans.new_span);
+});

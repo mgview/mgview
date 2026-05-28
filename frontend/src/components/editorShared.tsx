@@ -298,7 +298,7 @@ export function NumericInput({
   return (
     <div
       ref={shellRef}
-      className={`numeric-input-shell ${isDragging ? 'numeric-input-shell-dragging' : ''} ${className ?? ''}`.trim()}
+      className={`numeric-input-shell ${prefixLabel ? 'numeric-input-shell-with-prefix' : 'numeric-input-shell-no-prefix'} ${isDragging ? 'numeric-input-shell-dragging' : ''} ${className ?? ''}`.trim()}
       onPointerDown={(event) => {
         if (event.button !== 0) {
           return;
