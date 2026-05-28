@@ -6,6 +6,7 @@ interface OverlayPanelProps {
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
+  size?: 'default' | 'medium' | 'narrow';
   onClose: () => void;
 }
 
@@ -14,6 +15,7 @@ export default function OverlayPanel({
   subtitle,
   actions,
   children,
+  size = 'default',
   onClose,
 }: OverlayPanelProps) {
   useEffect(() => {
@@ -32,7 +34,7 @@ export default function OverlayPanel({
 
   return (
     <div className="overlay-backdrop" role="dialog" aria-modal="true">
-      <div className="overlay-card">
+      <div className={`overlay-card ${size === 'medium' ? 'overlay-card-medium' : ''} ${size === 'narrow' ? 'overlay-card-narrow' : ''}`}>
         <div className="overlay-header">
           <div>
             <h2>{title}</h2>

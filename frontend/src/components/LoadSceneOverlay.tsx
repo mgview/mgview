@@ -12,12 +12,13 @@ interface LoadSceneOverlayProps {
   errorMessage: string | null;
   groupedSamples: Array<[string, SampleShortcut[]]>;
   loading: boolean;
-  mode: 'load' | 'create';
+  mode: 'load' | 'create' | 'saveAs';
   onBrowse: (path: string) => void;
   onClose: () => void;
   onCreateScenePath: (path: string) => void;
   onOpenScenePath: (path: string) => void;
   onOpenSelectedScene: () => void;
+  onSaveScenePath: (path: string) => void;
   sampleBrowserExpanded: boolean;
   sceneInput: string;
   setSampleBrowserExpanded: (updater: (current: boolean) => boolean) => void;
@@ -41,40 +42,50 @@ export default function LoadSceneOverlay({
   onCreateScenePath,
   onOpenScenePath,
   onOpenSelectedScene,
+  onSaveScenePath,
   sampleBrowserExpanded,
   sceneInput,
   setSampleBrowserExpanded,
   setSceneInput,
 }: LoadSceneOverlayProps) {
   const isCreateMode = mode === 'create';
+  const isSaveAsMode = mode === 'saveAs';
+
+  const handleSelectSceneEntry = (path: string) => {
+    if (isCreateMode || isSaveAsMode) {
+      const pathParts = path.replace(/\\/g, '/').split('/');
+      setSceneInput(pathParts[pathParts.length - 1] ?? path);
+      return;
+    }
+
+    setSceneInput(path);
+  };
 
   return (
     <OverlayPanel
-      title={isCreateMode ? 'Create Scene' : 'Load Scene'}
-      subtitle={
-        isCreateMode
-          ? 'Choose a new JSON path, browse nearby files for context, and create a fresh scene from the default template.'
-          : undefined
-      }
+      title={isCreateMode ? 'Create Scene' : isSaveAsMode ? 'Save Scene As' : 'Load Scene'}
+      size="narrow"
       onClose={onClose}
     >
       <div className="overlay-layout">
         <LoadScenePathPanel
-          actionLabel={isCreateMode ? 'Create' : 'Load'}
-          helperText={
-            isCreateMode
-              ? 'Create a new scene JSON at the typed path. Existing files are not overwritten.'
-              : 'Load an existing JSON scene file through the local API.'
-          }
+          actionLabel={isCreateMode ? 'Create' : isSaveAsMode ? 'Save As' : 'Load'}
+          hideSectionTitle
+          inputLabel={isCreateMode || isSaveAsMode ? 'Filename' : undefined}
           loading={loading}
           onSubmit={() => {
             if (isCreateMode) {
               onCreateScenePath(sceneInput);
               return;
             }
+            if (isSaveAsMode) {
+              onSaveScenePath(sceneInput);
+              return;
+            }
             onOpenSelectedScene();
           }}
           onSceneInputChange={setSceneInput}
+          placeholder={isCreateMode || isSaveAsMode ? 'new_scene.json' : 'path/to/scene.json'}
           sceneInput={sceneInput}
         />
 
@@ -84,29 +95,34 @@ export default function LoadSceneOverlay({
           browserListing={browserListing}
           browserError={browserError}
           browserLoading={browserLoading}
+          compact
           filterEntry={(entry) => entry.type === 'directory' || isJsonPath(entry.name)}
+          hideTitle
           sceneInput={sceneInput}
           title="Scene Browser"
+          unlabeledBreadcrumbs
           onBrowse={onBrowse}
           onOpenFile={
-            isCreateMode
+            isCreateMode || isSaveAsMode
               ? undefined
               : (path) => {
                   setSceneInput(path);
                   onOpenScenePath(path);
                 }
           }
-          onSelectFile={setSceneInput}
+          onSelectFile={handleSelectSceneEntry}
           getDirectoryPath={getDirectoryPath}
         />
 
-        <SampleShortcutPanel
-          groupedSamples={groupedSamples}
-          sampleBrowserExpanded={sampleBrowserExpanded}
-          sceneInput={sceneInput}
-          setSampleBrowserExpanded={setSampleBrowserExpanded}
-          setSceneInput={setSceneInput}
-        />
+        {!isSaveAsMode ? (
+          <SampleShortcutPanel
+            groupedSamples={groupedSamples}
+            sampleBrowserExpanded={sampleBrowserExpanded}
+            sceneInput={sceneInput}
+            setSampleBrowserExpanded={setSampleBrowserExpanded}
+            setSceneInput={setSceneInput}
+          />
+        ) : null}
       </div>
     </OverlayPanel>
   );

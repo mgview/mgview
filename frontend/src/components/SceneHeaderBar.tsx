@@ -12,6 +12,7 @@ interface SceneHeaderBarProps {
   onOpenLoadOverlay: () => void;
   onOpenDiagnostics: () => void;
   onOpenChannels: () => void;
+  onOpenSaveAsOverlay: () => void;
   onSceneNameChange: (nextName: string) => void;
   onSave: () => void;
   onRevert: () => void;
@@ -29,18 +30,42 @@ export default function SceneHeaderBar({
   onOpenLoadOverlay,
   onOpenDiagnostics,
   onOpenChannels,
+  onOpenSaveAsOverlay,
   onSceneNameChange,
   onSave,
   onRevert,
 }: SceneHeaderBarProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(sceneName ?? '');
+  const [saveMenuOpen, setSaveMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!isEditingName) {
       setNameDraft(sceneName ?? '');
     }
   }, [isEditingName, sceneName]);
+
+  useEffect(() => {
+    if (!saveMenuOpen) {
+      return;
+    }
+
+    const handleWindowPointerDown = () => {
+      setSaveMenuOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSaveMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('pointerdown', handleWindowPointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('pointerdown', handleWindowPointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [saveMenuOpen]);
 
   const commitSceneName = () => {
     onSceneNameChange(nameDraft);
@@ -84,9 +109,6 @@ export default function SceneHeaderBar({
 
         <div className="scene-header-side">
           <div className="scene-header-actions">
-            <span className={`tag ${hasLocalEdits ? 'tag-accent' : 'tag-soft'}`}>
-              {hasLocalEdits ? 'Unsaved edits' : 'Saved state'}
-            </span>
             <button type="button" className="secondary-button" onClick={onOpenCreateOverlay} disabled={loading}>
               New…
             </button>
@@ -99,9 +121,42 @@ export default function SceneHeaderBar({
             <button type="button" className="secondary-button" onClick={onOpenChannels}>
               Sim Files
             </button>
-            <button type="button" onClick={onSave} disabled={!hasLocalEdits || saving}>
-              {saving ? 'Saving…' : 'Save'}
-            </button>
+            <div
+              className="split-button"
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              <button type="button" onClick={onSave} disabled={!hasLocalEdits || saving}>
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+              <button
+                type="button"
+                className="split-button-toggle"
+                aria-label="Open save menu"
+                aria-haspopup="menu"
+                aria-expanded={saveMenuOpen}
+                disabled={saving}
+                onClick={() => setSaveMenuOpen((current) => !current)}
+              >
+                v
+              </button>
+              {saveMenuOpen ? (
+                <div className="split-button-menu" role="menu">
+                  <button
+                    type="button"
+                    className="split-button-menu-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setSaveMenuOpen(false);
+                      onOpenSaveAsOverlay();
+                    }}
+                  >
+                    Save As…
+                  </button>
+                </div>
+              ) : null}
+            </div>
             <button type="button" className="secondary-button" onClick={onRevert} disabled={!hasLocalEdits || saving}>
               Revert
             </button>

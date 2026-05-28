@@ -162,6 +162,47 @@ input[inputmode="decimal"] {
   align-items: center;
 }
 
+.split-button {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.split-button > button:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.split-button-toggle {
+  min-width: 28px;
+  padding-left: 0.42rem;
+  padding-right: 0.42rem;
+  border-left: 1px solid rgba(188, 216, 255, 0.22);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.split-button-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  min-width: 132px;
+  padding: 6px;
+  border: 1px solid rgba(159, 182, 212, 0.18);
+  border-radius: 10px;
+  background: rgba(8, 14, 24, 0.97);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+.split-button-menu-item {
+  width: 100%;
+  text-align: left;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+}
+
 .scene-header-side {
   display: grid;
   justify-items: end;
@@ -321,6 +362,14 @@ input[inputmode="decimal"] {
   box-shadow: 0 28px 60px rgba(0, 0, 0, 0.35);
 }
 
+.overlay-card-medium {
+  max-width: 940px;
+}
+
+.overlay-card-narrow {
+  max-width: 760px;
+}
+
 .overlay-header {
   display: flex;
   justify-content: space-between;
@@ -451,6 +500,10 @@ input[inputmode="decimal"] {
   gap: 8px;
 }
 
+.sim-file-channel-toggle {
+  justify-self: start;
+}
+
 .sim-file-channel-group {
   display: flex;
   flex-wrap: wrap;
@@ -524,6 +577,23 @@ input[inputmode="decimal"] {
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 12px;
   margin-top: 18px;
+}
+
+.loader-form-single {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.loader-field {
+  display: grid;
+  gap: 6px;
+}
+
+.loader-field span {
+  color: #9ab0cb;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .panel-grid {
@@ -913,6 +983,11 @@ input[inputmode="decimal"] {
   display: flex;
   gap: 8px;
   margin-left: auto;
+}
+
+.file-browser-actions-row {
+  justify-content: flex-end;
+  margin-bottom: 8px;
 }
 
 .visual-card {
@@ -1316,6 +1391,15 @@ input[inputmode="decimal"] {
 
 .file-browser-list {
   margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.file-browser-list-compact {
+  max-height: calc((2.1rem * 10) + (8px * 9));
+  overflow: auto;
+  padding-right: 2px;
 }
 
 .sample-button {
@@ -1325,6 +1409,19 @@ input[inputmode="decimal"] {
   text-align: left;
   border: 1px solid rgba(159, 182, 212, 0.14);
   background: rgba(10, 18, 32, 0.65);
+}
+
+.file-browser-entry {
+  width: 100%;
+  min-height: 2.5rem;
+  justify-content: flex-start;
+}
+
+.file-browser-entry-compact {
+  min-height: 2.1rem;
+  padding: 0.38rem 0.62rem;
+  font-size: 0.86rem;
+  border-radius: 10px;
 }
 
 .sample-button-active {

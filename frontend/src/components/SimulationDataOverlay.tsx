@@ -87,6 +87,7 @@ export default function SimulationDataOverlay({
 }: SimulationDataOverlayProps) {
   const [selectedBrowserPaths, setSelectedBrowserPaths] = useState<string[]>([]);
   const [manualEntryExpanded, setManualEntryExpanded] = useState(false);
+  const [expandedChannelFiles, setExpandedChannelFiles] = useState<string[]>([]);
   const sceneBasePath = useMemo(() => getBasePath(scenePath), [scenePath]);
   const selectedRelativeEntries = useMemo(
     () => selectedBrowserPaths.map((path) => getRelativePath(sceneBasePath, path)),
@@ -99,6 +100,7 @@ export default function SimulationDataOverlay({
   return (
     <OverlayPanel
       title="Simulation Data"
+      size="medium"
       subtitle="Manage simulation file entries and inspect the parsed channels driving inference."
       actions={
         simulationLoading ? (
@@ -182,6 +184,7 @@ export default function SimulationDataOverlay({
           browserListing={browserListing}
           browserError={browserError}
           browserLoading={browserLoading}
+          compact
           emptyStateMessage="Browse the workspace and click a file to add it as a simulation entry."
           sceneInput={simulationEntryInput || scenePath}
           selectedPaths={selectedBrowserPaths}
@@ -247,6 +250,9 @@ export default function SimulationDataOverlay({
                   const parsedFile = parsedSimulationFiles.find((entry) => entry.filePath === filePath);
                   const { directory, fileName } = splitFilePath(filePath);
                   const channelGroups = renderChannelGroups(parsedFile?.channelNames ?? []);
+                  const fileChannelNames = parsedFile?.channelNames ?? [];
+                  const showAllChannels = expandedChannelFiles.includes(filePath);
+                  const previewChannelNames = fileChannelNames.slice(0, 4);
                   return (
                     <div key={filePath} className="sim-file-channel-row">
                       <div className="sim-file-channel-file">
@@ -254,16 +260,54 @@ export default function SimulationDataOverlay({
                         <code className="sim-file-channel-name">{fileName}</code>
                       </div>
                       <div className="sim-file-channel-pills">
-                        {parsedFile && parsedFile.channelNames.length > 0 ? (
-                          channelGroups.map((channelGroup, groupIndex) => (
-                            <div key={`${filePath}:group:${groupIndex}`} className="sim-file-channel-group">
-                              {channelGroup.map((channelName) => (
-                                <span key={`${filePath}:${channelName}`} className="pill">
-                                  <code>{channelName}</code>
-                                </span>
+                        {parsedFile && fileChannelNames.length > 0 ? (
+                          showAllChannels ? (
+                            <>
+                              {channelGroups.map((channelGroup, groupIndex) => (
+                                <div key={`${filePath}:group:${groupIndex}`} className="sim-file-channel-group">
+                                  {channelGroup.map((channelName) => (
+                                    <span key={`${filePath}:${channelName}`} className="pill">
+                                      <code>{channelName}</code>
+                                    </span>
+                                  ))}
+                                </div>
                               ))}
-                            </div>
-                          ))
+                              {fileChannelNames.length > 4 ? (
+                                <button
+                                  type="button"
+                                  className="secondary-button sim-file-channel-toggle"
+                                  onClick={() =>
+                                    setExpandedChannelFiles((current) => current.filter((entry) => entry !== filePath))
+                                  }
+                                >
+                                  Show Less
+                                </button>
+                              ) : null}
+                            </>
+                          ) : (
+                            <>
+                              <div className="sim-file-channel-group">
+                                {previewChannelNames.map((channelName) => (
+                                  <span key={`${filePath}:${channelName}`} className="pill">
+                                    <code>{channelName}</code>
+                                  </span>
+                                ))}
+                                {fileChannelNames.length > 4 ? (
+                                  <button
+                                    type="button"
+                                    className="secondary-button sim-file-channel-toggle"
+                                    onClick={() =>
+                                      setExpandedChannelFiles((current) =>
+                                        current.includes(filePath) ? current : [...current, filePath]
+                                      )
+                                    }
+                                  >
+                                    +{fileChannelNames.length - 4} more
+                                  </button>
+                                ) : null}
+                              </div>
+                            </>
+                          )
                         ) : (
                           <span className="empty-state-inline">No parsed channels.</span>
                         )}

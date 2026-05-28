@@ -5,12 +5,16 @@ interface LocalFileBrowserProps {
   browserListing: FileBrowserListing | null;
   browserError: string | null;
   browserLoading: boolean;
+  compact?: boolean;
   emptyStateMessage?: string;
   filterEntry?: (entry: FileBrowserListing['entries'][number]) => boolean;
+  hideTitle?: boolean;
+  hideTitleWhenNoActions?: boolean;
   sceneInput: string;
   selectedPaths?: string[];
   title?: string;
   titleActions?: ReactNode;
+  unlabeledBreadcrumbs?: boolean;
   onBrowse: (path: string) => void;
   onOpenFile?: (path: string) => void;
   onSelectFile: (path: string, options?: { additive: boolean }) => void;
@@ -40,12 +44,16 @@ export default function LocalFileBrowser({
   browserListing,
   browserError,
   browserLoading,
+  compact = false,
   emptyStateMessage = 'Browse a scene folder to load JSON files through the local API.',
   filterEntry,
+  hideTitle = false,
+  hideTitleWhenNoActions = false,
   sceneInput,
   selectedPaths,
   title = 'Local File Browser',
   titleActions,
+  unlabeledBreadcrumbs = false,
   onBrowse,
   onOpenFile,
   onSelectFile,
@@ -54,16 +62,22 @@ export default function LocalFileBrowser({
   const currentFolderLabel = browserListing?.path || '(workspace root)';
   const breadcrumbs = buildBreadcrumbs(browserListing?.path || getDirectoryPath(sceneInput));
   const activePaths = selectedPaths ?? [sceneInput];
+  const visibleEntries = browserListing?.entries.filter((entry) => (filterEntry ? filterEntry(entry) : true)) ?? [];
+  const showHeader = !hideTitle && !(hideTitleWhenNoActions && !titleActions);
 
   return (
     <section className="panel">
-      <div className="section-label-with-actions">
-        <h2>{title}</h2>
-        {titleActions ? <div className="visual-toolbar-actions">{titleActions}</div> : null}
-      </div>
+      {showHeader ? (
+        <div className="section-label-with-actions">
+          <h2>{title}</h2>
+          {titleActions ? <div className="visual-toolbar-actions">{titleActions}</div> : null}
+        </div>
+      ) : titleActions ? (
+        <div className="visual-toolbar-actions file-browser-actions-row">{titleActions}</div>
+      ) : null}
       <div className="stacked-meta">
         <div className="meta-row">
-          <label>Current Folder</label>
+          {!unlabeledBreadcrumbs ? <label>Current Folder</label> : null}
           <div className="file-browser-breadcrumbs" aria-label={`Current folder ${currentFolderLabel}`}>
             {breadcrumbs.map((segment, index) => (
               <span key={segment.path} className="file-browser-breadcrumb-segment">
@@ -86,13 +100,13 @@ export default function LocalFileBrowser({
       {!browserError && browserLoading ? <div className="status">Browsing local files…</div> : null}
 
       {browserListing ? (
-        <div className="sample-list file-browser-list">
-          {browserListing.entries.filter((entry) => (filterEntry ? filterEntry(entry) : true)).map((entry) => {
+        <div className={`file-browser-list ${compact ? 'file-browser-list-compact' : ''}`}>
+          {visibleEntries.length > 0 ? visibleEntries.map((entry) => {
             return (
               <button
                 key={`${entry.type}:${entry.path}`}
                 type="button"
-                className={`sample-button ${activePaths.includes(entry.path) ? 'sample-button-active' : ''}`}
+                className={`sample-button file-browser-entry ${compact ? 'file-browser-entry-compact' : ''} ${activePaths.includes(entry.path) ? 'sample-button-active' : ''}`}
                 onClick={(event) => {
                   if (entry.type === 'directory') {
                     onBrowse(entry.path);
@@ -112,7 +126,7 @@ export default function LocalFileBrowser({
                 <span>{entry.type === 'directory' ? `${entry.name}/` : entry.name}</span>
               </button>
             );
-          })}
+          }) : <div className="empty-state">No matching files in this folder.</div>}
         </div>
       ) : (
         <div className="empty-state">{emptyStateMessage}</div>

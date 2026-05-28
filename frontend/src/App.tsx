@@ -75,7 +75,12 @@ type CameraDraftPreview = {
   cameraUp: [number, number, number];
 };
 
-type SceneOverlayMode = 'load' | 'create';
+type SceneOverlayMode = 'load' | 'create' | 'saveAs';
+
+function getFileName(filePath: string): string {
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  return normalizedPath.split('/').pop() ?? normalizedPath;
+}
 
 export default function App() {
   const workspace = useSceneWorkspace(getScenePathFromUrl());
@@ -93,13 +98,13 @@ export default function App() {
     browserError,
     browserListing,
     browserLoading,
-    browseSceneInputDirectory,
     draftScene,
     error,
     handleBrowse,
     handleCreateScene,
     handleLoad,
     handleRevertDraft,
+    handleSaveSceneAs,
     handleSaveScene,
     hasLocalEdits,
     channelNames,
@@ -247,17 +252,28 @@ export default function App() {
     setError(null);
     setSceneOverlayMode('load');
     setLoadOverlayOpen(true);
-    void browseSceneInputDirectory();
+    void handleBrowse(loaded ? getDirectoryPath(loaded.scenePath) : getDirectoryPath(sceneInput));
   };
 
   const openCreateOverlay = () => {
     setError(null);
     setSceneOverlayMode('create');
     const defaultDirectory = loaded ? getBasePath(loaded.scenePath).replace(/\/$/, '') : getDirectoryPath(sceneInput);
-    const nextPath = defaultDirectory && defaultDirectory !== '.' ? `${defaultDirectory}/new_scene.json` : 'new_scene.json';
-    setSceneInput(nextPath);
+    setSceneInput('new_scene.json');
     setLoadOverlayOpen(true);
     void handleBrowse(defaultDirectory || '.');
+  };
+
+  const openSaveAsOverlay = () => {
+    if (!loaded) {
+      return;
+    }
+
+    setError(null);
+    setSceneOverlayMode('saveAs');
+    setSceneInput(getFileName(loaded.scenePath));
+    setLoadOverlayOpen(true);
+    void handleBrowse(getDirectoryPath(loaded.scenePath));
   };
 
   const handleOpenSelectedScene = () => {
@@ -283,8 +299,31 @@ export default function App() {
   };
 
   const handleCreateScenePath = (path: string) => {
-    void handleCreateScene(path).then((didCreate) => {
+    const currentFolder = browserListing?.path || '.';
+    const trimmedPath = path.trim();
+    const combinedPath =
+      currentFolder && currentFolder !== '.'
+        ? `${currentFolder.replace(/\/+$/g, '')}/${trimmedPath}`
+        : trimmedPath;
+
+    void handleCreateScene(combinedPath).then((didCreate) => {
       if (didCreate) {
+        setLoadOverlayOpen(false);
+        setEditorMode('visual');
+      }
+    });
+  };
+
+  const handleSaveScenePath = (path: string) => {
+    const currentFolder = browserListing?.path || '.';
+    const trimmedPath = path.trim();
+    const combinedPath =
+      currentFolder && currentFolder !== '.'
+        ? `${currentFolder.replace(/\/+$/g, '')}/${trimmedPath}`
+        : trimmedPath;
+
+    void handleSaveSceneAs(combinedPath).then((didSave) => {
+      if (didSave) {
         setLoadOverlayOpen(false);
         setEditorMode('visual');
       }
@@ -327,6 +366,7 @@ export default function App() {
             void handleBrowse(getBasePath(loaded.scenePath));
           }
         }}
+        onOpenSaveAsOverlay={openSaveAsOverlay}
         onSceneNameChange={(nextName) => {
           updateDraftScene((scene) => {
             scene.name = nextName;
@@ -497,6 +537,7 @@ export default function App() {
           onCreateScenePath={handleCreateScenePath}
           onOpenScenePath={handleOpenScenePath}
           onOpenSelectedScene={handleOpenSelectedScene}
+          onSaveScenePath={handleSaveScenePath}
           sampleBrowserExpanded={sampleBrowserExpanded}
           sceneInput={sceneInput}
           setSampleBrowserExpanded={setSampleBrowserExpanded}

@@ -384,6 +384,40 @@ export function useSceneWorkspace(initialScenePath: string) {
     }
   };
 
+  const handleSaveSceneAs = async (scenePath: string) => {
+    const trimmedPath = scenePath.trim();
+    if (trimmedPath.length === 0) {
+      setError('Choose a JSON path for Save As.');
+      return false;
+    }
+
+    if (!trimmedPath.toLowerCase().endsWith('.json')) {
+      setError('Save As paths must end in .json.');
+      return false;
+    }
+
+    if (!loaded || !draftScene) {
+      setError('Load a scene before using Save As.');
+      return false;
+    }
+
+    setSaving(true);
+    setError(null);
+    setSaveMessage(null);
+
+    try {
+      await createSceneJson(trimmedPath, createSavableScene(loaded.rawScene, draftScene));
+      const nextLoaded = await loadSceneData(trimmedPath);
+      commitLoadedScene(nextLoaded, `Saved scene as ${trimmedPath}`);
+      return true;
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Unknown Save As error');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSaveScene = async () => {
     if (!loaded || !draftScene) {
       return;
@@ -496,6 +530,7 @@ export function useSceneWorkspace(initialScenePath: string) {
     handleCreateScene,
     handleLoad,
     handleRevertDraft,
+    handleSaveSceneAs,
     handleSaveScene,
     hasLocalEdits,
     channelNames,
