@@ -7,7 +7,7 @@ function ensureTrailingSlash(value: string): string {
 
 /** URL prefix for workspace-root paths (mgview/samples/…, mgview/assets/…). */
 export function getPublicBaseUrl(): string {
-  const configured = import.meta.env.VITE_MGVIEW_PUBLIC_BASE;
+  const configured = import.meta.env?.VITE_MGVIEW_PUBLIC_BASE;
   if (configured !== undefined && configured !== '') {
     return ensureTrailingSlash(configured);
   }

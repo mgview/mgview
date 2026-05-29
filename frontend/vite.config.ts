@@ -81,8 +81,7 @@ function legacySamplesPlugin(): Plugin {
 }
 
 function staticHostingFlagPlugin(): Plugin {
-  const flagPattern = /import\.meta\.env\.VITE_MGVIEW_STATIC\s*===\s*['"]true['"]/g;
-  const definePattern = /__MGVIEW_STATIC_HOSTING__\s*\|\|\s*import\.meta\.env\.VITE_MGVIEW_STATIC\s*===\s*['"]true['"]/g;
+  const flagPattern = /import\.meta\.env\?\.VITE_MGVIEW_STATIC\s*===\s*['"]true['"]/g;
 
   return {
     name: 'static-hosting-flag',
@@ -93,14 +92,10 @@ function staticHostingFlagPlugin(): Plugin {
       }
 
       if (isStaticHostingBuild) {
-        return code
-          .replace(definePattern, 'true')
-          .replace(flagPattern, 'true');
+        return code.replace(flagPattern, 'true');
       }
 
-      return code
-        .replace(definePattern, 'false')
-        .replace(flagPattern, 'false');
+      return code.replace(flagPattern, 'false');
     },
   };
 }
