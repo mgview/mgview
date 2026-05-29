@@ -2,24 +2,18 @@ name: Deploy GitHub Pages
 
 on:
   push:
-    branches: [master, modern_app]
+  pull_request:
   workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -37,8 +31,21 @@ jobs:
           npm run build:site
 
       - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/master'
         with:
           path: build/gh-pages
 
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - uses: actions/deploy-pages@v4
         id: deployment
