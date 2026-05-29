@@ -10,7 +10,7 @@ const PROJECT_ROOT = path.resolve(__dirname, '../..');
 const MGVIEW_ROOT = path.resolve(__dirname, '..');
 const MODERN_DIST_DIR = path.resolve(__dirname, '../frontend/dist');
 const VITE_BUNDLED_DIR = 'bundled'; // sync with frontend/scripts/deployConfig.mjs → viteBundledAssetsDir
-const API_PREFIX = '/MGView/api';
+const API_PREFIX = '/mgview/api';
 
 function isWithinRoot(candidatePath) {
   return candidatePath === PROJECT_ROOT || candidatePath.indexOf(PROJECT_ROOT + path.sep) === 0;
@@ -109,58 +109,20 @@ StaticServlet.prototype.handleRequest = function(req, res) {
   }
 
   if (
-    normalizedPathname === '/MGView/modern' ||
-    normalizedPathname === '/MGView/modern/' ||
-    normalizedPathname === '/MGView/modern/simple' ||
-    normalizedPathname === '/MGView/modern/simple/'
-  ) {
-    const redirectPath =
-      normalizedPathname.indexOf('/simple') >= 0 ? '/MGView/simple' : '/MGView/';
-    return this.sendRedirect_(req, res, redirectPath + req.url.search);
-  }
-
-  if (normalizedPathname.indexOf('/MGView/modern/assets/') === 0) {
-    return this.sendRedirect_(
-      req,
-      res,
-      '/MGView/' + VITE_BUNDLED_DIR + '/' + normalizedPathname.substring('/MGView/modern/assets/'.length) + req.url.search
-    );
-  }
-
-  if (normalizedPathname.indexOf('/MGView/modern/' + VITE_BUNDLED_DIR + '/') === 0) {
-    return this.sendRedirect_(
-      req,
-      res,
-      '/MGView/' + VITE_BUNDLED_DIR + '/' + normalizedPathname.substring(('/MGView/modern/' + VITE_BUNDLED_DIR + '/').length) + req.url.search
-    );
-  }
-
-  const legacyRedirectMap = {
-    '/MGView/index.html': '/MGView/',
-    '/MGView/Examples.html': '/MGView/legacy/Examples.html',
-    '/MGView/MGView.html': '/MGView/legacy/MGView.html',
-    '/MGView/Documentation.html': '/MGView/legacy/Documentation.html',
-    '/MGView/bootstrap_test.html': '/MGView/legacy/bootstrap_test.html',
-  };
-  if (legacyRedirectMap[normalizedPathname]) {
-    return this.sendRedirect_(req, res, legacyRedirectMap[normalizedPathname] + req.url.search);
-  }
-
-  if (
-    normalizedPathname === '/MGView' ||
-    normalizedPathname === '/MGView/' ||
-    normalizedPathname === '/MGView/simple' ||
-    normalizedPathname === '/MGView/simple/'
+    normalizedPathname === '/mgview' ||
+    normalizedPathname === '/mgview/' ||
+    normalizedPathname === '/mgview/simple' ||
+    normalizedPathname === '/mgview/simple/'
   ) {
     return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
 
   // Vite bundles only — repo-root assets/ (textures, etc.) uses normal path resolution below.
-  if (normalizedPathname.indexOf('/MGView/' + VITE_BUNDLED_DIR + '/') === 0) {
+  if (normalizedPathname.indexOf('/mgview/' + VITE_BUNDLED_DIR + '/') === 0) {
     return this.sendFile_(
       req,
       res,
-      path.join(MODERN_DIST_DIR, normalizedPathname.substring('/MGView/'.length))
+      path.join(MODERN_DIST_DIR, normalizedPathname.substring('/mgview/'.length))
     );
   }
 

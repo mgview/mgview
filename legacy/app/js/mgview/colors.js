@@ -42,39 +42,39 @@ SV_MATERIALS['SHINY_BLUE']    = new THREE.MeshPhongMaterial( { ambient :0x0000FF
     // TODO This is horrible. But, I wanted to play with textures.
     // TODO refactor this, make it so people can select pre-defined textures from the GUI, etc.
 
-    var checkerBoardTexture = THREE.ImageUtils.loadTexture( "app/textures/checkerboard.jpg" );
+    var checkerBoardTexture = THREE.ImageUtils.loadTexture( "../assets/textures/checkerboard.jpg" );
     checkerBoardTexture.wrapS = checkerBoardTexture.wrapT = THREE.RepeatWrapping;
     checkerBoardTexture.anisotropy = 4;
 
-    var metalTexture = THREE.ImageUtils.loadTexture( "app/textures/metal.jpg" );
+    var metalTexture = THREE.ImageUtils.loadTexture( "../assets/textures/metal.jpg" );
     metalTexture.wrapS = metalTexture.wrapT = THREE.RepeatWrapping;
     metalTexture.repeat.set(2,2);
     metalTexture.anisotropy = 4;
 
-    var moonTexture = THREE.ImageUtils.loadTexture( "app/textures/planets/moon_1024.jpg" );
+    var moonTexture = THREE.ImageUtils.loadTexture( "../assets/textures/planets/moon_1024.jpg" );
     moonTexture.wrapS = moonTexture.wrapT = THREE.RepeatWrapping;
     moonTexture.anisotropy = 4;
 
-    var earthTexture = THREE.ImageUtils.loadTexture( "app/textures/planets/earth_atmos_2048.jpg" );
+    var earthTexture = THREE.ImageUtils.loadTexture( "../assets/textures/planets/earth_atmos_2048.jpg" );
     earthTexture.wrapS = earthTexture.wrapT = THREE.RepeatWrapping;
     earthTexture.anisotropy = 4;
 
-    var grassTexture = THREE.ImageUtils.loadTexture( "app/textures/terrain/grasslight-big.jpg" );
+    var grassTexture = THREE.ImageUtils.loadTexture( "../assets/textures/terrain/grasslight-big.jpg" );
     grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
     grassTexture.repeat.set(1,1);
     grassTexture.anisotropy = 4;
 
-    var dirtTexture = THREE.ImageUtils.loadTexture( "app/textures/terrain/backgrounddetailed6.jpg" );
+    var dirtTexture = THREE.ImageUtils.loadTexture( "../assets/textures/terrain/backgrounddetailed6.jpg" );
     dirtTexture.wrapS = dirtTexture.wrapT = THREE.RepeatWrapping;
     dirtTexture.repeat.set(1,1);
     dirtTexture.anisotropy = 4;
 
-    var waterTexture = THREE.ImageUtils.loadTexture( "app/textures/water.jpg" );
+    var waterTexture = THREE.ImageUtils.loadTexture( "../assets/textures/water.jpg" );
     waterTexture.wrapS = waterTexture.wrapT = THREE.RepeatWrapping;
     waterTexture.repeat.set(1,1);
     waterTexture.anisotropy = 4;
 
-    var lavaTexture = THREE.ImageUtils.loadTexture( "app/textures/lavatile.jpg" );
+    var lavaTexture = THREE.ImageUtils.loadTexture( "../assets/textures/lavatile.jpg" );
     lavaTexture.repeat.set( 4, 2 );
     lavaTexture.wrapS = lavaTexture.wrapT = THREE.RepeatWrapping;
     lavaTexture.anisotropy = 4;

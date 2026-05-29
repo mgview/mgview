@@ -1,7 +1,7 @@
 import type { SceneConfig } from '../core/types.ts';
 import type { FileBrowserListing } from './localFilesTypes.ts';
 
-const API_PREFIX = '/MGView/api';
+const API_PREFIX = '/mgview/api';
 
 function getApiUrl(endpoint: string, filePath?: string): string {
   const url = new URL(`${API_PREFIX}/${endpoint}`, window.location.origin);

@@ -5,7 +5,7 @@ function ensureTrailingSlash(value: string): string {
   return value.endsWith('/') ? value : `${value}/`;
 }
 
-/** URL prefix for workspace-root paths (MGView/samples/…, MGView/assets/…). */
+/** URL prefix for workspace-root paths (mgview/samples/…, mgview/assets/…). */
 export function getPublicBaseUrl(): string {
   const configured = import.meta.env.VITE_MGVIEW_PUBLIC_BASE;
   if (configured !== undefined && configured !== '') {

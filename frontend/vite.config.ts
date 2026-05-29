@@ -15,7 +15,7 @@ const isStaticHostingBuild = process.env.VITE_MGVIEW_STATIC === 'true';
 function legacySamplesPlugin(): Plugin {
   const configDir = path.dirname(fileURLToPath(import.meta.url));
   const samplesRoot = path.resolve(configDir, '../samples');
-  const appDirName = process.env.VITE_MGVIEW_APP_DIR ?? 'MGView';
+  const appDirName = process.env.VITE_MGVIEW_APP_DIR ?? 'mgview';
   const samplesUrlPrefix =
     appDirName.length > 0 ? `/${appDirName}/samples/` : '/samples/';
 

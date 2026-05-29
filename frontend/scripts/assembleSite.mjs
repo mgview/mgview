@@ -1,5 +1,5 @@
 /**
- * Assemble the GitHub Pages site under build/gh-pages/ (or build/gh-pages-workspace/MGView/).
+ * Assemble the GitHub Pages site under build/gh-pages/ (or build/gh-pages-workspace/mgview/).
  *
  * Layout (deployed to https://mgview.github.io/mgview/):
  *   bundled/                ← Vite hashed JS/CSS (build.assetsDir)
