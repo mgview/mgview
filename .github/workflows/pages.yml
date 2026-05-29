@@ -3,7 +3,6 @@ name: Deploy GitHub Pages
 on:
   push:
     branches: [master]
-  pull_request:
   workflow_dispatch:
 
 concurrency:
@@ -32,13 +31,11 @@ jobs:
           npm run build:site
 
       - uses: actions/upload-pages-artifact@v3
-        if: github.ref == 'refs/heads/master'
         with:
           path: build/gh-pages
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       contents: read
