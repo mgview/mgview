@@ -2,6 +2,8 @@
 
 This repo is **source-only**. Built output lives under `build/` (gitignored) and is produced on demand.
 
+Modern app handoff and status: [mgview-in-place-modernization.md](mgview-in-place-modernization.md).
+
 ## Three outputs
 
 | Output | Command | Used for |

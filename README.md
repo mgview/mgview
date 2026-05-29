@@ -11,6 +11,8 @@ Current local runtime requirement:
 
 Build and deploy details for developers: see [BUILD.md](BUILD.md).
 
+Modern app handoff and status: [mgview-in-place-modernization.md](mgview-in-place-modernization.md).
+
 To demo the software online without installing anything,
 [click here](http://mgview.github.io/mgview/).
 
