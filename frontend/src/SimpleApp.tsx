@@ -2,12 +2,12 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { loadSceneJson, loadTextFile } from './api/localFiles.ts';
 import { expandSimulationFiles } from './core/expandSimulationFiles.ts';
 import { getBasePath } from './core/pathUtils.ts';
+import { DEFAULT_SCENE_PATH } from './core/workspacePaths.ts';
 import { parseSimulationText } from './core/parseSimulationText.ts';
 import { createSceneDocument } from './core/sceneDocument.ts';
 import { buildTimeline, getFrameAtTime } from './core/timeline.ts';
 import type { NormalizedSceneConfig, SceneConfig, Timeline } from './core/types.ts';
 
-const DEFAULT_SCENE_PATH = 'samples/particle_pendulum/particle_pendulum.json';
 const PREVIEW_CHANNEL_COUNT = 10;
 
 interface LoadedSceneData {

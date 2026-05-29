@@ -39,7 +39,7 @@ test('renderable scene includes line span renderables', () => {
       ],
     },
     null,
-    'samples/example.json'
+    'MGView/samples/example.json'
   );
 
   assert.equal(renderRoot.children.length, 1);

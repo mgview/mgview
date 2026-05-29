@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { isStaticHosting } from './api/localFiles.ts';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.tsx';
 import InspectorDrawer from './components/InspectorDrawer.tsx';
 import LoadSceneOverlay from './components/LoadSceneOverlay.tsx';
@@ -14,21 +15,21 @@ import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace
 import { useSceneSelectionEditor } from './hooks/useSceneSelectionEditor.ts';
 import { useSceneSpanEditor } from './hooks/useSceneSpanEditor.ts';
 import { useWorkspaceShell } from './hooks/useWorkspaceShell.ts';
+import { bundledSamplePath, DEFAULT_SCENE_PATH } from './core/workspacePaths.ts';
 
-const DEFAULT_SCENE_PATH = 'samples/particle_pendulum/particle_pendulum.json';
 const SAMPLE_SCENES = [
-  { group: 'Basics', label: 'Particle Pendulum', path: 'samples/particle_pendulum/particle_pendulum.json' },
-  { group: 'Basics', label: 'Default Template', path: 'samples/default.json' },
-  { group: 'Mechanisms', label: 'Ball In Tube', path: 'samples/ball_in_tube/ball_in_tube.json' },
-  { group: 'Mechanisms', label: 'Particle In Slot', path: 'samples/particle_in_slot/slot.json' },
-  { group: 'Vehicles', label: 'Tricycle', path: 'samples/tricycle/tricycle.json' },
-  { group: 'Cameras', label: 'SkyCam Fixed', path: 'samples/skycam/SkyCamFixed.json' },
-  { group: 'Robots', label: 'RCM Homogeneous', path: 'samples/rcm_robot/ME328_RCMRobot_Homogeneous.json' },
-  { group: 'Robots', label: 'RCM Palpating', path: 'samples/rcm_robot/ME328_RCMRobot_Palpating.json' },
-  { group: 'Robots', label: 'RCM Circle 10cm', path: 'samples/rcm_robot/ME328_RCMRobot_Circle_Depth10cm.json' },
-  { group: 'Robots', label: 'RCM Circle 20cm', path: 'samples/rcm_robot/ME328_RCMRobot_Circle_Depth20cm.json' },
-  { group: 'Meshes', label: 'Wooden Phantom', path: 'samples/wooden_phantom/wooden_phantom.json' },
-  { group: 'Meshes', label: 'Wooden Phantom GUI', path: 'samples/wooden_phantom/wooden_phantom_gui.json' },
+  { group: 'Basics', label: 'Particle Pendulum', path: bundledSamplePath('particle_pendulum/particle_pendulum.json') },
+  { group: 'Basics', label: 'Default Template', path: bundledSamplePath('default.json') },
+  { group: 'Mechanisms', label: 'Ball In Tube', path: bundledSamplePath('ball_in_tube/ball_in_tube.json') },
+  { group: 'Mechanisms', label: 'Particle In Slot', path: bundledSamplePath('particle_in_slot/slot.json') },
+  { group: 'Vehicles', label: 'Tricycle', path: bundledSamplePath('tricycle/tricycle.json') },
+  { group: 'Cameras', label: 'SkyCam Fixed', path: bundledSamplePath('skycam/SkyCamFixed.json') },
+  { group: 'Robots', label: 'RCM Homogeneous', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Homogeneous.json') },
+  { group: 'Robots', label: 'RCM Palpating', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Palpating.json') },
+  { group: 'Robots', label: 'RCM Circle 10cm', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Circle_Depth10cm.json') },
+  { group: 'Robots', label: 'RCM Circle 20cm', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Circle_Depth20cm.json') },
+  { group: 'Meshes', label: 'Wooden Phantom', path: bundledSamplePath('wooden_phantom/wooden_phantom.json') },
+  { group: 'Meshes', label: 'Wooden Phantom GUI', path: bundledSamplePath('wooden_phantom/wooden_phantom_gui.json') },
 ] as const;
 
 function getScenePathFromUrl(): string {
@@ -319,6 +320,11 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {isStaticHosting ? (
+        <div className="status scene-header-status">
+          Online demo: bundled samples only. Save downloads a JSON file — run MGView locally to edit files on disk.
+        </div>
+      ) : null}
       <SceneHeaderBar
         scenePath={loaded?.scenePath ?? null}
         sceneName={activeScene?.name ?? loaded?.scene.name ?? null}

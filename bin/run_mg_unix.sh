@@ -4,7 +4,7 @@ source "$BIN_DIR/colors.sh"
 
 PORT=8000
 MGVIEW_PARENT_DIR=$( cd "$BIN_DIR/../.." && pwd )
-MGVIEW_URL="http://localhost:${PORT}/MGView/Examples.html"
+MGVIEW_URL="http://localhost:${PORT}/MGView/modern/"
 SERVER_CMD=()
 
 if command -v node >/dev/null 2>&1; then

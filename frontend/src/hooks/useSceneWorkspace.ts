@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  canPersistScenesToServer,
   createSceneJson,
+  isStaticHosting,
   listLocalFiles,
   loadSceneJson,
   loadTextFile,
@@ -377,6 +379,10 @@ export function useSceneWorkspace(initialScenePath: string) {
 
     try {
       await createSceneJson(trimmedPath, createNewSceneTemplate(trimmedPath));
+      if (isStaticHosting) {
+        setSaveMessage(`Downloaded ${trimmedPath}. Load it locally after placing the file in your project.`);
+        return true;
+      }
       const nextLoaded = await loadSceneData(trimmedPath);
       commitLoadedScene(nextLoaded, `Created ${trimmedPath}`);
       return true;
@@ -411,6 +417,10 @@ export function useSceneWorkspace(initialScenePath: string) {
 
     try {
       await createSceneJson(trimmedPath, createSavableScene(loaded.rawScene, draftScene));
+      if (isStaticHosting) {
+        setSaveMessage(`Downloaded ${trimmedPath} (online demo cannot write to the server)`);
+        return true;
+      }
       const nextLoaded = await loadSceneData(trimmedPath);
       commitLoadedScene(nextLoaded, `Saved scene as ${trimmedPath}`);
       return true;
@@ -432,18 +442,22 @@ export function useSceneWorkspace(initialScenePath: string) {
 
     try {
       await saveSceneJson(loaded.scenePath, createSavableScene(loaded.rawScene, draftScene));
-      const nextLoaded = await loadSceneData(loaded.scenePath);
-      setLoaded(nextLoaded);
-      setSimulationState({
-        simulationFiles: nextLoaded.simulationFiles,
-        timeline: nextLoaded.timeline,
-        channelNames: nextLoaded.channelNames,
-        parsedSimulationFiles: nextLoaded.parsedSimulationFiles,
-        fileErrors: nextLoaded.fileErrors,
-      });
-      resetDraftScene(cloneScene(nextLoaded.scene));
-      updateSelectionFromLoadedScene(nextLoaded);
-      setSaveMessage(`Saved changes to ${loaded.scenePath}`);
+      if (canPersistScenesToServer) {
+        const nextLoaded = await loadSceneData(loaded.scenePath);
+        setLoaded(nextLoaded);
+        setSimulationState({
+          simulationFiles: nextLoaded.simulationFiles,
+          timeline: nextLoaded.timeline,
+          channelNames: nextLoaded.channelNames,
+          parsedSimulationFiles: nextLoaded.parsedSimulationFiles,
+          fileErrors: nextLoaded.fileErrors,
+        });
+        resetDraftScene(cloneScene(nextLoaded.scene));
+        updateSelectionFromLoadedScene(nextLoaded);
+        setSaveMessage(`Saved changes to ${loaded.scenePath}`);
+      } else {
+        setSaveMessage(`Downloaded ${loaded.scenePath} (online demo cannot write to the server)`);
+      }
       void handleBrowse(getDirectoryPath(loaded.scenePath));
     } catch (saveError) {
       setSaveMessage(saveError instanceof Error ? saveError.message : 'Unknown save error');

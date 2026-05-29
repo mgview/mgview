@@ -3,19 +3,25 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { generateStaticManifest } from './scripts/generateStaticManifest.mjs';
+
+const isStaticHostingBuild = process.env.VITE_MGVIEW_STATIC === 'true';
 
 function legacySamplesPlugin(): Plugin {
   const configDir = path.dirname(fileURLToPath(import.meta.url));
   const samplesRoot = path.resolve(configDir, '../samples');
+  const appDirName = process.env.VITE_MGVIEW_APP_DIR ?? 'MGView';
+  const samplesUrlPrefix =
+    appDirName.length > 0 ? `/${appDirName}/samples/` : '/samples/';
 
   const serveSamples = async (req: { url?: string }, res: { statusCode: number; setHeader: (name: string, value: string) => void; end: (body?: string | Buffer) => void; }) => {
     const url = req.url ?? '';
-    if (!url.startsWith('/samples/')) {
+    if (!url.startsWith(samplesUrlPrefix)) {
       return false;
     }
 
     try {
-      const relativePath = decodeURIComponent(url.slice('/samples/'.length));
+      const relativePath = decodeURIComponent(url.slice(samplesUrlPrefix.length));
       const filePath = path.resolve(samplesRoot, relativePath);
 
       if (!filePath.startsWith(samplesRoot)) {
@@ -69,9 +75,27 @@ function legacySamplesPlugin(): Plugin {
   };
 }
 
+function staticHostingManifestPlugin(): Plugin {
+  return {
+    name: 'static-hosting-manifest',
+    async generateBundle() {
+      if (!isStaticHostingBuild) {
+        return;
+      }
+
+      const manifest = await generateStaticManifest();
+      this.emitFile({
+        type: 'asset',
+        fileName: 'static-file-manifest.json',
+        source: `${JSON.stringify(manifest, null, 2)}\n`,
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  base: './',
-  plugins: [react(), legacySamplesPlugin()],
+  base: process.env.VITE_MGVIEW_BASE ?? './',
+  plugins: [react(), legacySamplesPlugin(), staticHostingManifestPlugin()],
   build: {
     chunkSizeWarningLimit: 550,
     rollupOptions: {

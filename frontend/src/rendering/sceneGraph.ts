@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { getServerRootPrefix } from '../api/localFiles.ts';
+import { resolveAppAssetUrl, resolvePublicAssetUrl } from '../api/localFiles.ts';
 import type { SceneEvaluation } from '../core/sceneEvaluation.ts';
 import { getBasePath, normalizePathSeparators } from '../core/pathUtils.ts';
 import { createSpanMesh, createVisualMesh } from './meshFactory.ts';
@@ -33,10 +33,10 @@ export function buildRenderableScene(
     resolveSceneAssetUrl(assetPath: string) {
       const normalizedAssetPath = normalizePathSeparators(assetPath).replace(/^\/+/, '');
       if (normalizedAssetPath.startsWith('app/')) {
-        return new URL(`${getServerRootPrefix()}${normalizedAssetPath}`, window.location.origin).toString();
+        return resolveAppAssetUrl(normalizedAssetPath);
       }
 
-      const baseUrl = new URL(`${getServerRootPrefix()}${normalizePathSeparators(sceneBasePath)}`, window.location.origin);
+      const baseUrl = resolvePublicAssetUrl(normalizePathSeparators(sceneBasePath));
       return new URL(normalizedAssetPath, baseUrl).toString();
     },
   };

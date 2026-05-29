@@ -12,7 +12,7 @@ import {
   normalizeMaterialName,
   parseCssColorString,
 } from '../core/materialPresets.ts';
-import { getServerRootPrefix } from '../api/localFiles.ts';
+import { resolveAppAssetUrl } from '../api/localFiles.ts';
 import { NumericInput } from './editorShared.tsx';
 
 interface MaterialPickerProps {
@@ -57,7 +57,7 @@ function buildMaterialLabel(materialName: string): string {
 
 function texturePreviewUrl(path: string): string {
   const normalizedPath = path.replace(/^\/+/, '');
-  return `${getServerRootPrefix()}${normalizedPath}`;
+  return resolveAppAssetUrl(normalizedPath);
 }
 
 export default function MaterialPicker({

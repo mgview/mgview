@@ -372,18 +372,7 @@ StaticServlet.prototype.resolveApiPath_ = function(requestedPath, options) {
     ? requestedPath
     : String(requestedPath || '').replace(/\\/g, '/');
   const relativePath = normalizedInput.replace(/^\/+/, '');
-  let basePath = settings.fromUrlPath ? PROJECT_ROOT : MGVIEW_ROOT;
-
-  if (!settings.fromUrlPath && relativePath !== '' && !relativePath.startsWith('.')) {
-    const mgviewCandidate = path.resolve(MGVIEW_ROOT, relativePath);
-    const workspaceCandidate = path.resolve(PROJECT_ROOT, relativePath);
-
-    if (!fs.existsSync(mgviewCandidate) && fs.existsSync(workspaceCandidate)) {
-      basePath = PROJECT_ROOT;
-    }
-  }
-
-  const resolvedPath = path.resolve(basePath, relativePath || '.');
+  const resolvedPath = path.resolve(PROJECT_ROOT, relativePath || '.');
 
   if (!isWithinRoot(resolvedPath)) {
     return null;
@@ -402,8 +391,7 @@ StaticServlet.prototype.resolveApiPath_ = function(requestedPath, options) {
 };
 
 StaticServlet.prototype.normalizeRelativePath_ = function(filePath) {
-  const basePath = isWithinRoot(filePath) && filePath.indexOf(MGVIEW_ROOT) === 0 ? MGVIEW_ROOT : PROJECT_ROOT;
-  const relativePath = path.relative(basePath, filePath).split(path.sep).join('/');
+  const relativePath = path.relative(PROJECT_ROOT, filePath).split(path.sep).join('/');
   return relativePath === '' ? '' : relativePath;
 };
 
