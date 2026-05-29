@@ -1,38 +1,39 @@
 @echo off
 setlocal enableextensions
 
-set MGPATH=C:\MotionGenesis
-set MGVIEWPATH=%MGPATH%\MGView
-set MGVIEWBINPATH=%MGPATH%\MGView\bin
+set "MGVIEWBINPATH=%~dp0"
+if "%MGVIEWBINPATH:~-1%"=="\" set "MGVIEWBINPATH=%MGVIEWBINPATH:~0,-1%"
+for %%I in ("%MGVIEWBINPATH%\..") do set "MGVIEWPATH=%%~fI"
+for %%I in ("%MGVIEWPATH%\..") do set "MGPATH=%%~fI"
 
-for /f "tokens=*" %%a in (
-'type %MGVIEWPATH%\VERSION'
-) do ( 
-set MGViewVersion=%%a
-)
+set /p MGViewVersion=<"%MGVIEWBINPATH%\VERSION"
 
 echo.
 echo    ---------------------- Starting MGView %MGViewVersion% ----------------------
 echo.
 echo    Hit Ctrl + C at any time to quit.
-echo    MGView tabs in Chrome will stop working when you close this window.
+echo    MGView browser tabs will stop working when you close this window.
 echo.
 echo    -------------------------------------------------------------------
 
-timeout 5
+timeout /t 1 /nobreak >nul
 
-IF NOT EXIST %MGVIEWBINPATH%\ChromePath.txt call %MGVIEWBINPATH%\FindChromePath.bat
-
-for /f "tokens=*" %%a in (
-'type %MGVIEWBINPATH%\ChromePath.txt'
-) do ( 
-set CHROMEPATH=%%a
+where node >nul 2>nul
+if errorlevel 1 (
+  echo.
+  echo    ERROR: Node.js was not found on this computer.
+  echo.
+  echo    Install the official Node.js LTS release from:
+  echo    https://nodejs.org/en/download
+  echo.
+  echo    After installing Node.js, close this window and run MGView again.
+  echo.
+  pause
+  exit /b 1
 )
 
-echo CHROMEPATH=%CHROMEPATH%
-call %CHROMEPATH% --visit-urls "localhost:8000/MGView/Examples.html"
+start "" "http://localhost:8000/MGView/Examples.html"
 
-%MGVIEWBINPATH%\node.exe %MGVIEWBINPATH%\server.js 
+node "%MGVIEWBINPATH%\server.js"
 
 endlocal
-

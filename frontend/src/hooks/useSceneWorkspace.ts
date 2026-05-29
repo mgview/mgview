@@ -1,0 +1,592 @@
+import { useEffect, useMemo, useState } from 'react';
+import {
+  canPersistScenesToServer,
+  createSceneJson,
+  listLocalFiles,
+  loadSceneJson,
+  loadTextFile,
+  saveSceneJson,
+  type FileBrowserListing,
+} from '../api/localFiles.ts';
+import { expandSimulationFiles } from '../core/expandSimulationFiles.ts';
+import { getBasePath } from '../core/pathUtils.ts';
+import { parseSimulationText } from '../core/parseSimulationText.ts';
+import { createSceneDocument } from '../core/sceneDocument.ts';
+import { buildObjectInspections, collectSceneDiagnostics } from '../core/sceneInspector.ts';
+import { buildTimeline } from '../core/timeline.ts';
+import { useUndoRedo } from './useUndoRedo.ts';
+import type {
+  NormalizedSceneConfig,
+  ParsedSimulationFile,
+  SceneConfig,
+  SceneDiagnostic,
+  SceneObjectInspection,
+  SimulationTable,
+  Timeline,
+} from '../core/types.ts';
+
+export interface LoadedSceneData {
+  rawScene: SceneConfig;
+  scenePath: string;
+  scene: NormalizedSceneConfig;
+  simulationFiles: string[];
+  timeline: Timeline;
+  channelNames: string[];
+  parsedSimulationFiles: ParsedSimulationFile[];
+  diagnostics: SceneDiagnostic[];
+  objectInspections: SceneObjectInspection[];
+  fileErrors: string[];
+}
+
+interface SimulationWorkspaceState {
+  simulationFiles: string[];
+  timeline: Timeline;
+  channelNames: string[];
+  parsedSimulationFiles: ParsedSimulationFile[];
+  fileErrors: string[];
+}
+
+interface LoadSceneOptions {
+  force?: boolean;
+  successMessage?: string;
+  actionLabel?: string;
+}
+
+export interface WorkspaceNotifications {
+  showSuccess: (message: string) => void;
+  showError: (message: string) => void;
+}
+
+function cloneScene(scene: NormalizedSceneConfig): NormalizedSceneConfig {
+  return structuredClone(scene);
+}
+
+function sceneSnapshotsEqual(
+  left: NormalizedSceneConfig | null,
+  right: NormalizedSceneConfig | null
+): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+export function getDirectoryPath(filePath: string): string {
+  const basePath = getBasePath(filePath).replace(/\/$/, '');
+  return basePath || '.';
+}
+
+function getFileStem(filePath: string): string {
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  const fileName = normalizedPath.split('/').pop() ?? normalizedPath;
+  return fileName.replace(/\.json$/i, '') || 'new_scene';
+}
+
+export function createNewSceneTemplate(scenePath: string): SceneConfig {
+  const sceneName = getFileStem(scenePath);
+  return {
+    name: sceneName,
+    simulationData: [],
+    newtonianFrame: 'N',
+    sceneOrigin: 'No',
+    showAxes: false,
+    workspaceSize: 1,
+    cameraParentFrame: 'N',
+    cameraUp: [0, 0, 1],
+    cameraEye: [3, 3, 3],
+    cameraFocus: [0, 0, 0],
+    speedFactor: 1,
+  };
+}
+
+export function createSavableScene(
+  rawScene: SceneConfig,
+  draftScene: NormalizedSceneConfig
+): SceneConfig {
+  const nextScene = structuredClone(rawScene);
+
+  nextScene.name = draftScene.name;
+  nextScene.simulationData = [...draftScene.simulationData];
+  nextScene.newtonianFrame = draftScene.newtonianFrame;
+  nextScene.sceneOrigin = draftScene.sceneOrigin;
+  nextScene.backgroundColor = draftScene.backgroundColor;
+  nextScene.showAxes = draftScene.showAxes;
+  nextScene.workspaceSize = draftScene.workspaceSize;
+  nextScene.cameraParentFrame = draftScene.cameraParentFrame;
+  nextScene.cameraUp = draftScene.cameraUp
+    ? ([...draftScene.cameraUp] as [number, number, number])
+    : undefined;
+  nextScene.cameraEye = draftScene.cameraEye
+    ? ([...draftScene.cameraEye] as [number, number, number])
+    : undefined;
+  nextScene.cameraFocus = draftScene.cameraFocus
+    ? ([...draftScene.cameraFocus] as [number, number, number])
+    : undefined;
+  nextScene.speedFactor = draftScene.speedFactor;
+
+  nextScene.objects = {};
+  for (const [objectName, draftObject] of Object.entries(draftScene.objects)) {
+    const rawObject = rawScene.objects?.[objectName];
+    nextScene.objects[objectName] = {
+      ...(rawObject ? structuredClone(rawObject) : {}),
+      type: draftObject.type,
+      rotationFrame: draftObject.rotationFrame,
+      visual: draftObject.visual ? structuredClone(draftObject.visual) : undefined,
+    };
+  }
+
+  if (rawScene.objects) {
+    for (const [objectName, rawObject] of Object.entries(rawScene.objects)) {
+      if (nextScene.objects[objectName]) {
+        continue;
+      }
+
+      nextScene.objects[objectName] = structuredClone(rawObject);
+    }
+  }
+
+  nextScene.spans = Object.fromEntries(
+    Object.entries(draftScene.spans).map(([spanName, draftSpan]) => [
+      spanName,
+      structuredClone(draftSpan),
+    ])
+  );
+
+  return nextScene;
+}
+
+async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
+  const rawScene = await loadSceneJson(scenePath);
+  const simulationState = await loadSimulationWorkspaceState(rawScene, scenePath);
+  const channelNames = simulationState.channelNames;
+  const scene = createSceneDocument(rawScene, channelNames);
+  const diagnostics = collectSceneDiagnostics(
+    rawScene,
+    scene,
+    simulationState.simulationFiles,
+    channelNames,
+    simulationState.fileErrors
+  );
+  const objectInspections = buildObjectInspections(rawScene, scene, channelNames);
+
+  return {
+    rawScene,
+    scenePath,
+    scene,
+    simulationFiles: simulationState.simulationFiles,
+    timeline: simulationState.timeline,
+    channelNames,
+    parsedSimulationFiles: simulationState.parsedSimulationFiles,
+    diagnostics,
+    objectInspections,
+    fileErrors: simulationState.fileErrors,
+  };
+}
+
+async function loadSimulationWorkspaceState(
+  scene: SceneConfig,
+  scenePath: string
+): Promise<SimulationWorkspaceState> {
+  const basePath = getBasePath(scenePath);
+  const simulationFiles = expandSimulationFiles(scene.simulationData ?? [], basePath);
+  const tableResults = await Promise.allSettled(
+    simulationFiles.map(async (filePath) => parseSimulationText(await loadTextFile(filePath), filePath))
+  );
+  const tables: SimulationTable[] = [];
+  const parsedSimulationFiles: ParsedSimulationFile[] = [];
+  const fileErrors: string[] = [];
+
+  for (const [index, result] of tableResults.entries()) {
+    if (result.status === 'fulfilled') {
+      tables.push(result.value);
+      parsedSimulationFiles.push({
+        filePath: simulationFiles[index],
+        channelNames: result.value.channelNames,
+      });
+      continue;
+    }
+
+    const reason = result.reason instanceof Error ? result.reason.message : 'Unknown load error';
+    fileErrors.push(`Could not parse simulation file ${simulationFiles[index]}: ${reason}`);
+  }
+
+  return {
+    simulationFiles,
+    timeline: buildTimeline(tables),
+    channelNames: [...new Set(tables.flatMap((table) => table.channelNames))],
+    parsedSimulationFiles,
+    fileErrors,
+  };
+}
+
+export function useSceneWorkspace(initialScenePath: string, notifications?: WorkspaceNotifications) {
+  const [sceneInput, setSceneInput] = useState(initialScenePath);
+  const [loaded, setLoaded] = useState<LoadedSceneData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [browserListing, setBrowserListing] = useState<FileBrowserListing | null>(null);
+  const [browserLoading, setBrowserLoading] = useState(false);
+  const [browserError, setBrowserError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [selectedObjectName, setSelectedObjectName] = useState<string | null>(null);
+  const [selectedVisualName, setSelectedVisualName] = useState<string | null>(null);
+  const [simulationState, setSimulationState] = useState<SimulationWorkspaceState | null>(null);
+  const [simulationLoading, setSimulationLoading] = useState(false);
+  const {
+    snapshot: draftScene,
+    set: pushDraftScene,
+    replaceCurrent: replaceDraftScene,
+    reset: resetDraftScene,
+    undo: undoDraftScene,
+    redo: redoDraftScene,
+    canUndo: canUndoDraftScene,
+    canRedo: canRedoDraftScene,
+  } = useUndoRedo<NormalizedSceneConfig | null>(null, {
+    isEqual: sceneSnapshotsEqual,
+  });
+
+  const authoredScene = useMemo(() => {
+    if (!loaded) {
+      return null;
+    }
+
+    return draftScene ? createSavableScene(loaded.rawScene, draftScene) : loaded.rawScene;
+  }, [draftScene, loaded]);
+  const activeScene = draftScene ?? loaded?.scene ?? null;
+  const simulationFiles = simulationState?.simulationFiles ?? loaded?.simulationFiles ?? [];
+  const timeline = simulationState?.timeline ?? loaded?.timeline ?? buildTimeline([]);
+  const channelNames = simulationState?.channelNames ?? loaded?.channelNames ?? [];
+  const parsedSimulationFiles =
+    simulationState?.parsedSimulationFiles ?? loaded?.parsedSimulationFiles ?? [];
+  const fileErrors = simulationState?.fileErrors ?? loaded?.fileErrors ?? [];
+  const diagnostics = useMemo(() => {
+    if (!authoredScene || !activeScene) {
+      return loaded?.diagnostics ?? [];
+    }
+
+    return collectSceneDiagnostics(authoredScene, activeScene, simulationFiles, channelNames, fileErrors);
+  }, [activeScene, authoredScene, channelNames, fileErrors, loaded?.diagnostics, simulationFiles]);
+  const objectInspections = useMemo(() => {
+    if (!authoredScene || !activeScene) {
+      return loaded?.objectInspections ?? [];
+    }
+
+    return buildObjectInspections(authoredScene, activeScene, channelNames);
+  }, [activeScene, authoredScene, channelNames, loaded?.objectInspections]);
+  const hasLocalEdits = useMemo(
+    () =>
+      loaded !== null &&
+      draftScene !== null &&
+      JSON.stringify(draftScene) !== JSON.stringify(loaded.scene),
+    [draftScene, loaded]
+  );
+  const showWorkspaceShell = loaded !== null || loading;
+
+  const reportError = (message: string) => {
+    setError(message);
+    notifications?.showError(message);
+  };
+
+  const reportSuccess = (message: string) => {
+    notifications?.showSuccess(message);
+  };
+
+  const confirmDiscardLocalEdits = (nextScenePath: string, actionLabel: string): boolean => {
+    if (!loaded || !draftScene || !hasLocalEdits) {
+      return true;
+    }
+
+    return window.confirm(
+      `${actionLabel} will discard unsaved local edits for ${loaded.scenePath}.\n\nContinue to ${nextScenePath}?`
+    );
+  };
+
+  const updateSelectionFromLoadedScene = (nextLoaded: LoadedSceneData) => {
+    setSelectedObjectName(nextLoaded.objectInspections[0]?.name ?? null);
+    setSelectedVisualName(nextLoaded.objectInspections[0]?.visuals[0]?.name ?? null);
+  };
+
+  const handleBrowse = async (nextPath: string) => {
+    setBrowserLoading(true);
+    setBrowserError(null);
+
+    try {
+      setBrowserListing(await listLocalFiles(nextPath));
+    } catch (browseError) {
+      setBrowserError(browseError instanceof Error ? browseError.message : 'Unknown browse error');
+    } finally {
+      setBrowserLoading(false);
+    }
+  };
+
+  const browseSceneInputDirectory = () => handleBrowse(getDirectoryPath(sceneInput));
+  const simulationDataKey = useMemo(() => {
+    if (!loaded || !draftScene) {
+      return null;
+    }
+
+    return `${loaded.scenePath}::${JSON.stringify(draftScene.simulationData)}`;
+  }, [draftScene?.simulationData, loaded?.scenePath]);
+
+  const commitLoadedScene = (nextLoaded: LoadedSceneData, successMessage?: string) => {
+    setLoaded(nextLoaded);
+    setSimulationState({
+      simulationFiles: nextLoaded.simulationFiles,
+      timeline: nextLoaded.timeline,
+      channelNames: nextLoaded.channelNames,
+      parsedSimulationFiles: nextLoaded.parsedSimulationFiles,
+      fileErrors: nextLoaded.fileErrors,
+    });
+    setSceneInput(nextLoaded.scenePath);
+    resetDraftScene(cloneScene(nextLoaded.scene));
+    updateSelectionFromLoadedScene(nextLoaded);
+    const url = new URL(window.location.href);
+    url.searchParams.set('scene', nextLoaded.scenePath);
+    window.history.replaceState({}, '', url);
+    if (successMessage) {
+      reportSuccess(successMessage);
+    }
+    void handleBrowse(getDirectoryPath(nextLoaded.scenePath));
+  };
+
+  const handleLoad = async (scenePath: string, options?: LoadSceneOptions) => {
+    const settings = options ?? {};
+    if (
+      !settings.force &&
+      !confirmDiscardLocalEdits(scenePath, settings.actionLabel ?? 'Loading another scene')
+    ) {
+      return false;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const nextLoaded = await loadSceneData(scenePath);
+      commitLoadedScene(nextLoaded, settings.successMessage);
+      return true;
+    } catch (loadError) {
+      reportError(loadError instanceof Error ? loadError.message : 'Unknown load error');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateScene = async (scenePath: string) => {
+    const trimmedPath = scenePath.trim();
+    if (!canPersistScenesToServer) {
+      return false;
+    }
+
+    if (trimmedPath.length === 0) {
+      reportError('Choose a JSON path for the new scene.');
+      return false;
+    }
+
+    if (!trimmedPath.toLowerCase().endsWith('.json')) {
+      reportError('New scene paths must end in .json.');
+      return false;
+    }
+
+    if (!confirmDiscardLocalEdits(trimmedPath, 'Creating a new scene')) {
+      return false;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await createSceneJson(trimmedPath, createNewSceneTemplate(trimmedPath));
+      const nextLoaded = await loadSceneData(trimmedPath);
+      commitLoadedScene(nextLoaded, `Created ${trimmedPath}`);
+      return true;
+    } catch (createError) {
+      reportError(createError instanceof Error ? createError.message : 'Unknown create error');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveSceneAs = async (scenePath: string) => {
+    const trimmedPath = scenePath.trim();
+    if (!canPersistScenesToServer) {
+      return false;
+    }
+
+    if (trimmedPath.length === 0) {
+      reportError('Choose a JSON path for Save As.');
+      return false;
+    }
+
+    if (!trimmedPath.toLowerCase().endsWith('.json')) {
+      reportError('Save As paths must end in .json.');
+      return false;
+    }
+
+    if (!loaded || !draftScene) {
+      reportError('Load a scene before using Save As.');
+      return false;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      await createSceneJson(trimmedPath, createSavableScene(loaded.rawScene, draftScene));
+      const nextLoaded = await loadSceneData(trimmedPath);
+      commitLoadedScene(nextLoaded, `Saved scene as ${trimmedPath}`);
+      return true;
+    } catch (saveError) {
+      reportError(saveError instanceof Error ? saveError.message : 'Unknown Save As error');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveScene = async () => {
+    if (!canPersistScenesToServer || !loaded || !draftScene) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      await saveSceneJson(loaded.scenePath, createSavableScene(loaded.rawScene, draftScene));
+      const nextLoaded = await loadSceneData(loaded.scenePath);
+      setLoaded(nextLoaded);
+      setSimulationState({
+        simulationFiles: nextLoaded.simulationFiles,
+        timeline: nextLoaded.timeline,
+        channelNames: nextLoaded.channelNames,
+        parsedSimulationFiles: nextLoaded.parsedSimulationFiles,
+        fileErrors: nextLoaded.fileErrors,
+      });
+      resetDraftScene(cloneScene(nextLoaded.scene));
+      updateSelectionFromLoadedScene(nextLoaded);
+      reportSuccess(`Saved changes to ${loaded.scenePath}`);
+      void handleBrowse(getDirectoryPath(loaded.scenePath));
+    } catch (saveError) {
+      reportError(saveError instanceof Error ? saveError.message : 'Unknown save error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRevertDraft = () => {
+    if (!loaded || !hasLocalEdits) {
+      return false;
+    }
+
+    if (!window.confirm(`Discard unsaved local edits for ${loaded.scenePath}?`)) {
+      return false;
+    }
+
+    resetDraftScene(cloneScene(loaded.scene));
+    reportSuccess(`Reverted local edits for ${loaded.scenePath}`);
+    updateSelectionFromLoadedScene(loaded);
+    return true;
+  };
+
+  const updateDraftScene = (updater: (scene: NormalizedSceneConfig) => void) => {
+    if (!draftScene) {
+      return false;
+    }
+
+    const nextDraft = cloneScene(draftScene);
+    updater(nextDraft);
+    return pushDraftScene(nextDraft);
+  };
+
+  const updateDraftScenePreview = (updater: (scene: NormalizedSceneConfig) => void) => {
+    if (!draftScene) {
+      return false;
+    }
+
+    const nextDraft = cloneScene(draftScene);
+    updater(nextDraft);
+    return replaceDraftScene(nextDraft);
+  };
+
+  useEffect(() => {
+    void handleLoad(initialScenePath, { force: true });
+  }, [initialScenePath]);
+
+  useEffect(() => {
+    void browseSceneInputDirectory();
+  }, []);
+
+  useEffect(() => {
+    if (!loaded || !draftScene || simulationDataKey === null) {
+      return;
+    }
+
+    let cancelled = false;
+    setSimulationLoading(true);
+
+    void loadSimulationWorkspaceState(draftScene, loaded.scenePath)
+      .then((nextSimulationState) => {
+        if (cancelled) {
+          return;
+        }
+
+        setSimulationState(nextSimulationState);
+        const inferredScene = createSceneDocument(draftScene, nextSimulationState.channelNames);
+        void replaceDraftScene(inferredScene);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setSimulationLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [draftScene, loaded?.scenePath, replaceDraftScene, simulationDataKey]);
+
+  const handleUndo = () => undoDraftScene();
+  const handleRedo = () => redoDraftScene();
+
+  return {
+    activeScene,
+    browserError,
+    browserListing,
+    browserLoading,
+    browseSceneInputDirectory,
+    draftScene,
+    error,
+    handleBrowse,
+    handleCreateScene,
+    handleLoad,
+    handleRevertDraft,
+    handleSaveSceneAs,
+    handleSaveScene,
+    handleRedo,
+    handleUndo,
+    hasLocalEdits,
+    channelNames,
+    diagnostics,
+    fileErrors,
+    loaded,
+    loading,
+    objectInspections,
+    parsedSimulationFiles,
+    saving,
+    canRedoDraftScene,
+    canUndoDraftScene,
+    sceneInput,
+    selectedObjectName,
+    selectedVisualName,
+    setError,
+    setSceneInput,
+    setSelectedObjectName,
+    setSelectedVisualName,
+    showWorkspaceShell,
+    simulationFiles,
+    simulationLoading,
+    timeline,
+    updateDraftScene,
+    updateDraftScenePreview,
+  };
+}
