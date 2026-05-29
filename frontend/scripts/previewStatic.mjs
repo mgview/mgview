@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { cp, mkdir } from 'node:fs/promises';
+import { cp, readdir, rm } from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,7 +9,6 @@ const frontendDir = path.resolve(scriptDir, '..');
 const repoRoot = path.resolve(frontendDir, '..');
 const workspaceRoot = path.resolve(repoRoot, '..');
 const distDir = path.join(frontendDir, 'dist-pages');
-const modernDir = path.join(repoRoot, 'modern');
 
 const useRepoRootLayout = process.argv.includes('--repo');
 const STATIC_PORT = Number(process.env.MGVIEW_STATIC_PORT || 8001);
@@ -26,9 +25,18 @@ function isPortAvailable(port) {
   });
 }
 
-async function copyDistToModern() {
-  await mkdir(modernDir, { recursive: true });
-  await cp(distDir, modernDir, { recursive: true, force: true });
+async function copyDistToRepoRoot() {
+  const entries = await readdir(distDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const sourcePath = path.join(distDir, entry.name);
+    const targetPath = path.join(repoRoot, entry.name);
+    if (entry.isDirectory()) {
+      await rm(targetPath, { recursive: true, force: true });
+      await cp(sourcePath, targetPath, { recursive: true });
+    } else {
+      await cp(sourcePath, targetPath, { force: true });
+    }
+  }
 }
 
 async function main() {
@@ -55,16 +63,18 @@ async function main() {
     });
   });
 
-  await copyDistToModern();
+  await copyDistToRepoRoot();
 
   const serveRoot = useRepoRootLayout ? repoRoot : workspaceRoot;
   const url = useRepoRootLayout
-    ? `http://localhost:${STATIC_PORT}/modern/`
-    : `http://localhost:${STATIC_PORT}/MGView/modern/`;
+    ? `http://localhost:${STATIC_PORT}/`
+    : `http://localhost:${STATIC_PORT}/MGView/`;
 
   console.log(`\nStatic demo on port ${STATIC_PORT} (Node server uses ${NODE_SERVER_PORT})`);
   console.log(`Serving ${serveRoot}`);
   console.log(`Open ${url}\n`);
+  console.log('Built index.html and assets/ were copied to the repo root for this preview.');
+  console.log('Legacy app: add /legacy/ to the URL above.\n');
 
   const server = spawn('python3', ['-m', 'http.server', String(STATIC_PORT)], {
     cwd: serveRoot,

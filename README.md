@@ -12,7 +12,10 @@ Current local runtime requirement:
 To demo the software online without installing anything,
 [click here](http://mgview.github.io/mgview/).
 
+The legacy jQuery app remains available at
+[mgview.github.io/mgview/legacy/](http://mgview.github.io/mgview/legacy/).
+
 To download and install to your own computer, follow the
-[instructions here](http://mgview.github.io/mgview/Documentation.html).
+[instructions here](http://mgview.github.io/mgview/legacy/Documentation.html).
 
 Please report bugs and feature requests on the [issue tracker](https://github.com/mgview/mgview/issues).

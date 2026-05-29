@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:pages": "VITE_MGVIEW_STATIC=true VITE_MGVIEW_PUBLIC_BASE=/ VITE_MGVIEW_BASE=/MGView/modern/ vite build --outDir dist-pages",
-    "build:pages:local": "VITE_MGVIEW_STATIC=true VITE_MGVIEW_APP_DIR= VITE_MGVIEW_PUBLIC_BASE=/ VITE_MGVIEW_BASE=/modern/ vite build --outDir dist-pages",
+    "build:pages": "VITE_MGVIEW_STATIC=true VITE_MGVIEW_PUBLIC_BASE=/ VITE_MGVIEW_BASE=/MGView/ vite build --outDir dist-pages",
+    "build:pages:local": "VITE_MGVIEW_STATIC=true VITE_MGVIEW_APP_DIR= VITE_MGVIEW_PUBLIC_BASE=/ VITE_MGVIEW_BASE=/ vite build --outDir dist-pages",
     "preview": "vite preview",
     "preview:static": "node scripts/previewStatic.mjs --workspace",
     "preview:static:repo": "node scripts/previewStatic.mjs --repo",

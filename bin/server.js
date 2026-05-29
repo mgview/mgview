@@ -110,17 +110,40 @@ StaticServlet.prototype.handleRequest = function(req, res) {
   if (
     normalizedPathname === '/MGView/modern' ||
     normalizedPathname === '/MGView/modern/' ||
-    normalizedPathname === '/MGView/modern/simple'
+    normalizedPathname === '/MGView/modern/simple' ||
+    normalizedPathname === '/MGView/modern/simple/'
   ) {
-    return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
+    const redirectPath =
+      normalizedPathname.indexOf('/simple') >= 0 ? '/MGView/simple' : '/MGView/';
+    return this.sendRedirect_(req, res, redirectPath + req.url.search);
   }
 
   if (normalizedPathname.indexOf('/MGView/modern/assets/') === 0) {
-    return this.sendFile_(
+    return this.sendRedirect_(
       req,
       res,
-      path.join(MODERN_DIST_DIR, normalizedPathname.substring('/MGView/modern/'.length))
+      '/MGView/assets/' + normalizedPathname.substring('/MGView/modern/assets/'.length) + req.url.search
     );
+  }
+
+  const legacyRedirectMap = {
+    '/MGView/index.html': '/MGView/',
+    '/MGView/Examples.html': '/MGView/legacy/Examples.html',
+    '/MGView/MGView.html': '/MGView/legacy/MGView.html',
+    '/MGView/Documentation.html': '/MGView/legacy/Documentation.html',
+    '/MGView/bootstrap_test.html': '/MGView/legacy/bootstrap_test.html',
+  };
+  if (legacyRedirectMap[normalizedPathname]) {
+    return this.sendRedirect_(req, res, legacyRedirectMap[normalizedPathname] + req.url.search);
+  }
+
+  if (
+    normalizedPathname === '/MGView' ||
+    normalizedPathname === '/MGView/' ||
+    normalizedPathname === '/MGView/simple' ||
+    normalizedPathname === '/MGView/simple/'
+  ) {
+    return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
 
   if (normalizedPathname.indexOf('/MGView/assets/') === 0) {

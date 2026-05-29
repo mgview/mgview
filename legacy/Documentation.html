@@ -170,7 +170,7 @@
           </li>
           <li>
             If a browser tab does not open automatically, manually open
-            <code>http://localhost:8000/MGView/Examples.html</code>.
+            <code>http://localhost:8000/MGView/legacy/Examples.html</code>.
           </li>
         </ol>
       </li>
@@ -194,7 +194,7 @@
           </li>
           <li>
             If a browser tab does not open automatically, manually open
-            <code>http://localhost:8000/MGView/Examples.html</code>.
+            <code>http://localhost:8000/MGView/legacy/Examples.html</code>.
           </li>
         </ol>
       </li>
@@ -240,7 +240,7 @@
             called "myFileName.1", "myFileName.2", etc.
         </li>
         <li>
-            See the <a href="samples/" target="_blank">samples</a> in
+            See the <a href="../samples/" target="_blank">samples</a> in
             in your <code>MotionGenesis/MGView/samples</code> folder if you have trouble.
         </li>
     </ol>
@@ -248,7 +248,7 @@
     <h3>Creating the JSON file for MGView</h3>
     Visualizer files use the <a href="http://en.wikipedia.org/wiki/JSON" target="_blank">JSON</a> format.
     <ol>
-        <li>Copy the file <a href="samples/default.json" target="_blank">default.json</a> into
+        <li>Copy the file <a href="../samples/default.json" target="_blank">default.json</a> into
             the folder that contains your motion data files.
             </li>
         <li>Rename "default.json" to "myFileName.json"</li>
@@ -264,7 +264,7 @@
         <font size="-1"><b>Note:</b>
             If the HTTP Server is already running and you want to just open a new MGView tab in Chrome,
             <br/>you can type: &nbsp;
-            <b><font face="courier" >localhost:8000/MGView/MGView.html</font></b>
+            <b><font face="courier" >localhost:8000/MGView/legacy/MGView.html</font></b>
             in the Chrome address bar.
             </font>
         </li>
@@ -386,13 +386,13 @@
         <li>
             An object of type "point" can be told to use the rotation matrix of another frame for the purposes of drawing any attached geometry.
             Simply add a "rotationFrame" property to the object, as shown in the
-            <a href="samples/particle_pendulum/particle_pendulum.json" target="_blank">particle pendulum example</a>
+            <a href="../samples/particle_pendulum/particle_pendulum.json" target="_blank">particle pendulum example</a>
             on object Q (near the bottom).
         </li>
         <li>
             A line between two points can be drawn by adding one or more "span" properties.
             See the example at the bottom of the
-            <a href="samples/fourbar/fourbar_constraint_stabilization.json" target="_blank">fourbar example</a>.
+            <a href="../samples/fourbar/fourbar_constraint_stabilization.json" target="_blank">fourbar example</a>.
         </li>
         <li>
             There are some pre-defined material colors available. They are BLACK, WHITE, SILVER, GRAY, RED, WHITE, BLUE.

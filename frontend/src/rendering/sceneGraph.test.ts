@@ -6,7 +6,7 @@ import { buildRenderableScene } from './sceneGraph.ts';
 test('renderable scene includes line span renderables', () => {
   globalThis.window = {
     location: {
-      pathname: '/MGView/modern/',
+      pathname: '/MGView/',
       origin: 'http://localhost:8000',
     },
   } as Window & typeof globalThis;
