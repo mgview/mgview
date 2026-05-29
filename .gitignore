@@ -1,7 +1,7 @@
 frontend/node_modules/
 frontend/dist/
 frontend/dist-pages/
-/assets/
+build/
+/modern/assets/
 /index.html
 /static-file-manifest.json
-/modern/assets/

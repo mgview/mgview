@@ -5,6 +5,7 @@ export {
   getPublicBaseUrl,
   getServerRootPrefix,
   resolveAppAssetUrl,
+  resolveBundledAssetUrl,
   resolvePublicAssetUrl,
 } from './assetPaths.ts';
 export { canPersistScenesToServer, isStaticHosting } from './runtimeMode.ts';

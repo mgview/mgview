@@ -12,7 +12,7 @@ import {
   normalizeMaterialName,
   parseCssColorString,
 } from '../core/materialPresets.ts';
-import { resolveAppAssetUrl } from '../api/localFiles.ts';
+import { resolveBundledAssetUrl } from '../api/localFiles.ts';
 import { NumericInput } from './editorShared.tsx';
 
 interface MaterialPickerProps {
@@ -57,7 +57,7 @@ function buildMaterialLabel(materialName: string): string {
 
 function texturePreviewUrl(path: string): string {
   const normalizedPath = path.replace(/^\/+/, '');
-  return resolveAppAssetUrl(normalizedPath);
+  return resolveBundledAssetUrl(normalizedPath);
 }
 
 export default function MaterialPicker({

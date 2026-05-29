@@ -5,13 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "node --experimental-strip-types --test src/core/*.test.ts src/rendering/*.test.ts src/hooks/*.test.ts",
     "build": "vite build",
-    "build:pages": "VITE_MGVIEW_STATIC=true VITE_MGVIEW_PUBLIC_BASE=/ VITE_MGVIEW_BASE=/MGView/ vite build --outDir dist-pages",
-    "build:pages:local": "VITE_MGVIEW_STATIC=true VITE_MGVIEW_APP_DIR= VITE_MGVIEW_PUBLIC_BASE=/ VITE_MGVIEW_BASE=/ vite build --outDir dist-pages",
-    "preview": "vite preview",
-    "preview:static": "node scripts/previewStatic.mjs --workspace",
-    "preview:static:repo": "node scripts/previewStatic.mjs --repo",
-    "test": "node --experimental-strip-types --test src/core/*.test.ts src/rendering/*.test.ts src/hooks/*.test.ts"
+    "build:static:github": "VITE_MGVIEW_STATIC=true VITE_MGVIEW_APP_DIR= VITE_MGVIEW_PUBLIC_BASE=/mgview/ VITE_MGVIEW_BASE=/mgview/ vite build --outDir dist-pages",
+    "build:static:workspace": "VITE_MGVIEW_STATIC=true VITE_MGVIEW_APP_DIR=MGView VITE_MGVIEW_PUBLIC_BASE=/ VITE_MGVIEW_BASE=/MGView/ vite build --outDir dist-pages",
+    "assemble:site": "node scripts/assembleSite.mjs",
+    "assemble:site:workspace": "node scripts/assembleSite.mjs --workspace",
+    "assemble:release": "node scripts/assembleRelease.mjs",
+    "build:site": "npm run build:static:github && npm run assemble:site",
+    "build:site:workspace": "npm run build:static:workspace && npm run assemble:site:workspace",
+    "build:release": "npm run build && npm run assemble:release",
+    "preview:site": "node scripts/previewSite.mjs",
+    "preview:site:workspace": "node scripts/previewSite.mjs --workspace",
+    "deploy:pages": "npm run build:site && node scripts/deployPages.mjs",
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",

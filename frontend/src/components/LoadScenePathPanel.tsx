@@ -4,6 +4,7 @@ interface LoadScenePathPanelProps {
   helperText?: string;
   hideSectionTitle?: boolean;
   loading: boolean;
+  submitDisabled?: boolean;
   onSubmit: () => void;
   onSceneInputChange: (value: string) => void;
   placeholder?: string;
@@ -20,6 +21,7 @@ export default function LoadScenePathPanel({
   helperText,
   hideSectionTitle = false,
   loading,
+  submitDisabled = false,
   onSubmit,
   onSceneInputChange,
   placeholder,
@@ -46,7 +48,7 @@ export default function LoadScenePathPanel({
             placeholder={placeholder}
           />
         </label>
-        <button type="submit" disabled={loading || !isJsonPath(sceneInput)}>
+        <button type="submit" disabled={loading || submitDisabled || !isJsonPath(sceneInput)}>
           {actionLabel}
         </button>
       </form>

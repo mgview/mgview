@@ -9,6 +9,8 @@ Current local runtime requirement:
 - Install the official Node.js LTS release before running MGView locally.
 - Download Node.js from <https://nodejs.org/en/download>.
 
+Build and deploy details for developers: see [BUILD.md](BUILD.md).
+
 To demo the software online without installing anything,
 [click here](http://mgview.github.io/mgview/).
 

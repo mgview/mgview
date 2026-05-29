@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 import { getBasePath } from '../core/pathUtils.ts';
 import type { NormalizedSceneConfig } from '../core/types.ts';
 import type { LoadedSceneData } from './useSceneWorkspace.ts';
@@ -123,6 +124,10 @@ export function useWorkspaceShell({
   };
 
   const openCreateOverlay = () => {
+    if (!canPersistScenesToServer) {
+      return;
+    }
+
     setError(null);
     setSceneOverlayMode('create');
     const defaultDirectory = loaded ? getBasePath(loaded.scenePath).replace(/\/$/, '') : getDirectoryPath(sceneInput);
@@ -132,7 +137,7 @@ export function useWorkspaceShell({
   };
 
   const openSaveAsOverlay = () => {
-    if (!loaded) {
+    if (!canPersistScenesToServer || !loaded) {
       return;
     }
 

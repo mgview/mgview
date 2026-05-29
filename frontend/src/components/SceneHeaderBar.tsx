@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 
 interface SceneHeaderBarProps {
   scenePath: string | null;
@@ -8,8 +9,7 @@ interface SceneHeaderBarProps {
   saving: boolean;
   canUndo: boolean;
   canRedo: boolean;
-  statusMessage: string | null;
-  errorMessage: string | null;
+  diagnosticsWarningCount: number;
   onOpenCreateOverlay: () => void;
   onOpenLoadOverlay: () => void;
   onOpenDiagnostics: () => void;
@@ -30,8 +30,7 @@ export default function SceneHeaderBar({
   saving,
   canUndo,
   canRedo,
-  statusMessage,
-  errorMessage,
+  diagnosticsWarningCount,
   onOpenCreateOverlay,
   onOpenLoadOverlay,
   onOpenDiagnostics,
@@ -47,6 +46,12 @@ export default function SceneHeaderBar({
   const [nameDraft, setNameDraft] = useState(sceneName ?? '');
   const [loadMenuOpen, setLoadMenuOpen] = useState(false);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
+  const saveDisabled = !canPersistScenesToServer || !hasLocalEdits || saving;
+  const saveTitle = !canPersistScenesToServer
+    ? 'Save is not available in the online demo'
+    : !hasLocalEdits
+      ? 'No unsaved changes'
+      : 'Save';
 
   useEffect(() => {
     if (!isEditingName) {
@@ -112,7 +117,12 @@ export default function SceneHeaderBar({
               className="scene-header-title-button"
               onClick={() => setIsEditingName(true)}
             >
-              {sceneName ?? 'MGView Workspace'}
+              <span className="scene-header-title-text">{sceneName ?? 'MGView Workspace'}</span>
+              {hasLocalEdits ? (
+                <span className="scene-header-unsaved" title="Unsaved changes" aria-label="Unsaved changes">
+                  •
+                </span>
+              ) : null}
             </button>
           )}
           <code className="scene-header-code">{scenePath ?? '(none loaded)'}</code>
@@ -165,7 +175,7 @@ export default function SceneHeaderBar({
               }}
             >
               <button type="button" onClick={onOpenLoadOverlay} disabled={loading}>
-                Load…
+                {loading ? 'Loading…' : 'Load…'}
               </button>
               <button
                 type="button"
@@ -208,6 +218,8 @@ export default function SceneHeaderBar({
                     type="button"
                     className="split-button-menu-item"
                     role="menuitem"
+                    disabled={!canPersistScenesToServer}
+                    title={!canPersistScenesToServer ? 'Not available in the online demo' : undefined}
                     onClick={() => {
                       setLoadMenuOpen(false);
                       onOpenCreateOverlay();
@@ -218,8 +230,17 @@ export default function SceneHeaderBar({
                 </div>
               ) : null}
             </div>
-            <button type="button" className="secondary-button" onClick={onOpenDiagnostics}>
+            <button
+              type="button"
+              className="secondary-button scene-header-diagnostics-button"
+              onClick={onOpenDiagnostics}
+            >
               Diagnostics
+              {diagnosticsWarningCount > 0 ? (
+                <span className="scene-header-badge" aria-label={`${diagnosticsWarningCount} warnings`}>
+                  {diagnosticsWarningCount}
+                </span>
+              ) : null}
             </button>
             <button type="button" className="secondary-button" onClick={onOpenChannels}>
               Sim Files
@@ -230,7 +251,12 @@ export default function SceneHeaderBar({
                 event.stopPropagation();
               }}
             >
-              <button type="button" onClick={onSave} disabled={!hasLocalEdits || saving}>
+              <button
+                type="button"
+                onClick={onSave}
+                disabled={saveDisabled}
+                title={saveTitle}
+              >
                 {saving ? 'Saving…' : 'Save'}
               </button>
               <button
@@ -239,7 +265,8 @@ export default function SceneHeaderBar({
                 aria-label="Open save menu"
                 aria-haspopup="menu"
                 aria-expanded={saveMenuOpen}
-                disabled={saving}
+                disabled={saving || !canPersistScenesToServer}
+                title={!canPersistScenesToServer ? 'Save is not available in the online demo' : undefined}
                 onClick={() => {
                   setLoadMenuOpen(false);
                   setSaveMenuOpen((current) => !current);
@@ -273,10 +300,6 @@ export default function SceneHeaderBar({
               ) : null}
             </div>
           </div>
-
-          {statusMessage ? <div className={`status scene-header-status ${statusMessage.startsWith('Saved ') ? 'success' : ''}`}>{statusMessage}</div> : null}
-          {errorMessage ? <div className="status error scene-header-status">{errorMessage}</div> : null}
-          {!errorMessage && loading ? <div className="status scene-header-status">Loading scene, simulation files, and diagnostics…</div> : null}
         </div>
       </div>
     </section>

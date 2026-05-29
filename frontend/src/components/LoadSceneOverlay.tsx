@@ -1,11 +1,14 @@
 import type { FileBrowserListing } from '../api/localFiles.ts';
+import { isStaticHosting } from '../api/runtimeMode.ts';
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
 import LoadScenePathPanel from './LoadScenePathPanel.tsx';
+import SampleSceneGallery from './SampleSceneGallery.tsx';
 import SampleShortcutPanel, { type SampleShortcut } from './SampleShortcutPanel.tsx';
 
 interface LoadSceneOverlayProps {
+  canPersistScenes: boolean;
   browserError: string | null;
   browserListing: FileBrowserListing | null;
   browserLoading: boolean;
@@ -30,6 +33,7 @@ function isJsonPath(filePath: string): boolean {
 }
 
 export default function LoadSceneOverlay({
+  canPersistScenes,
   browserError,
   browserListing,
   browserLoading,
@@ -50,6 +54,7 @@ export default function LoadSceneOverlay({
 }: LoadSceneOverlayProps) {
   const isCreateMode = mode === 'create';
   const isSaveAsMode = mode === 'saveAs';
+  const persistActionDisabled = (isCreateMode || isSaveAsMode) && !canPersistScenes;
 
   const handleSelectSceneEntry = (path: string) => {
     if (isCreateMode || isSaveAsMode) {
@@ -64,7 +69,7 @@ export default function LoadSceneOverlay({
   return (
     <OverlayPanel
       title={isCreateMode ? 'Create Scene' : isSaveAsMode ? 'Save Scene As' : 'Load Scene'}
-      size="narrow"
+      size={isStaticHosting && !isCreateMode && !isSaveAsMode ? 'medium' : 'narrow'}
       onClose={onClose}
     >
       <div className="overlay-layout">
@@ -73,6 +78,7 @@ export default function LoadSceneOverlay({
           hideSectionTitle
           inputLabel={isCreateMode || isSaveAsMode ? 'Filename' : undefined}
           loading={loading}
+          submitDisabled={persistActionDisabled}
           onSubmit={() => {
             if (isCreateMode) {
               onCreateScenePath(sceneInput);
@@ -91,38 +97,54 @@ export default function LoadSceneOverlay({
 
         {errorMessage ? <div className="status error">{errorMessage}</div> : null}
 
-        <LocalFileBrowser
-          browserListing={browserListing}
-          browserError={browserError}
-          browserLoading={browserLoading}
-          compact
-          filterEntry={(entry) => entry.type === 'directory' || isJsonPath(entry.name)}
-          hideTitle
-          sceneInput={sceneInput}
-          title="Scene Browser"
-          unlabeledBreadcrumbs
-          onBrowse={onBrowse}
-          onOpenFile={
-            isCreateMode || isSaveAsMode
-              ? undefined
-              : (path) => {
-                  setSceneInput(path);
-                  onOpenScenePath(path);
-                }
-          }
-          onSelectFile={handleSelectSceneEntry}
-          getDirectoryPath={getDirectoryPath}
-        />
-
-        {!isSaveAsMode ? (
-          <SampleShortcutPanel
+        {isStaticHosting && !isCreateMode && !isSaveAsMode ? (
+          <SampleSceneGallery
             groupedSamples={groupedSamples}
-            sampleBrowserExpanded={sampleBrowserExpanded}
             sceneInput={sceneInput}
-            setSampleBrowserExpanded={setSampleBrowserExpanded}
-            setSceneInput={setSceneInput}
+            onOpenScene={onOpenScenePath}
+            onSelectScene={setSceneInput}
           />
-        ) : null}
+        ) : (
+          <>
+            <LocalFileBrowser
+              browserListing={browserListing}
+              browserError={browserError}
+              browserLoading={browserLoading}
+              compact
+              emptyStateMessage={
+                isStaticHosting
+                  ? 'Use the example scenes below, or enter a bundled sample path above.'
+                  : undefined
+              }
+              filterEntry={(entry) => entry.type === 'directory' || isJsonPath(entry.name)}
+              hideTitle
+              sceneInput={sceneInput}
+              title="Scene Browser"
+              unlabeledBreadcrumbs
+              onBrowse={onBrowse}
+              onOpenFile={
+                isCreateMode || isSaveAsMode
+                  ? undefined
+                  : (path) => {
+                      setSceneInput(path);
+                      onOpenScenePath(path);
+                    }
+              }
+              onSelectFile={handleSelectSceneEntry}
+              getDirectoryPath={getDirectoryPath}
+            />
+
+            {!isSaveAsMode ? (
+              <SampleShortcutPanel
+                groupedSamples={groupedSamples}
+                sampleBrowserExpanded={sampleBrowserExpanded}
+                sceneInput={sceneInput}
+                setSampleBrowserExpanded={setSampleBrowserExpanded}
+                setSceneInput={setSceneInput}
+              />
+            ) : null}
+          </>
+        )}
       </div>
     </OverlayPanel>
   );

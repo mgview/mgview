@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { resolveAppAssetUrl, resolvePublicAssetUrl } from '../api/localFiles.ts';
+import { resolveBundledAssetUrl, resolvePublicAssetUrl } from '../api/localFiles.ts';
 import type { SceneEvaluation } from '../core/sceneEvaluation.ts';
 import { getBasePath, normalizePathSeparators } from '../core/pathUtils.ts';
 import { createSpanMesh, createVisualMesh } from './meshFactory.ts';
@@ -32,8 +32,8 @@ export function buildRenderableScene(
   const assetContext = {
     resolveSceneAssetUrl(assetPath: string) {
       const normalizedAssetPath = normalizePathSeparators(assetPath).replace(/^\/+/, '');
-      if (normalizedAssetPath.startsWith('app/')) {
-        return resolveAppAssetUrl(normalizedAssetPath);
+      if (normalizedAssetPath.startsWith('assets/')) {
+        return resolveBundledAssetUrl(normalizedAssetPath);
       }
 
       const baseUrl = resolvePublicAssetUrl(normalizePathSeparators(sceneBasePath));

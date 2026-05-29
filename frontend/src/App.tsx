@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from 'react';
-import { isStaticHosting } from './api/localFiles.ts';
+import { useCallback, useEffect, useMemo } from 'react';
+import { canPersistScenesToServer } from './api/runtimeMode.ts';
+import DemoNotice from './components/DemoNotice.tsx';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.tsx';
 import InspectorDrawer from './components/InspectorDrawer.tsx';
 import LoadSceneOverlay from './components/LoadSceneOverlay.tsx';
@@ -8,12 +9,14 @@ import PlaybackStrip from './components/PlaybackStrip.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import SimulationDataOverlay from './components/SimulationDataOverlay.tsx';
+import ToastStack from './components/ToastStack.tsx';
 import { getFrameAtTime } from './core/timeline.ts';
 import { useInspectorSelectionState } from './hooks/useInspectorSelectionState.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
 import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
 import { useSceneSelectionEditor } from './hooks/useSceneSelectionEditor.ts';
 import { useSceneSpanEditor } from './hooks/useSceneSpanEditor.ts';
+import { useToasts } from './hooks/useToasts.ts';
 import { useWorkspaceShell } from './hooks/useWorkspaceShell.ts';
 import { bundledSamplePath, DEFAULT_SCENE_PATH } from './core/workspacePaths.ts';
 
@@ -48,7 +51,8 @@ function sampleGroups() {
 }
 
 export default function App() {
-  const workspace = useSceneWorkspace(getScenePathFromUrl());
+  const { toasts, dismiss, dismissErrors, showSuccess, showError } = useToasts();
+  const workspace = useSceneWorkspace(getScenePathFromUrl(), { showSuccess, showError });
   const {
     activeScene,
     browserError,
@@ -72,7 +76,6 @@ export default function App() {
     loading,
     objectInspections,
     parsedSimulationFiles,
-    saveMessage,
     saving,
     canRedoDraftScene,
     canUndoDraftScene,
@@ -90,6 +93,33 @@ export default function App() {
     updateDraftScene,
     updateDraftScenePreview,
   } = workspace;
+
+  const setWorkspaceError = useCallback(
+    (message: string | null) => {
+      setError(message);
+      if (message === null) {
+        dismissErrors();
+      }
+    },
+    [dismissErrors, setError]
+  );
+
+  const handleDismissToast = useCallback(
+    (id: string) => {
+      const toast = toasts.find((entry) => entry.id === id);
+      dismiss(id);
+      if (toast?.kind === 'error') {
+        setError(null);
+      }
+    },
+    [dismiss, setError, toasts]
+  );
+
+  const diagnosticsWarningCount = useMemo(
+    () => diagnostics.filter((diagnostic) => diagnostic.severity === 'warning').length,
+    [diagnostics]
+  );
+
   const shell = useWorkspaceShell({
     activeScene,
     browserPath: browserListing?.path,
@@ -99,7 +129,7 @@ export default function App() {
     handleSaveSceneAs,
     loaded,
     sceneInput,
-    setError,
+    setError: setWorkspaceError,
     setSceneInput,
     updateDraftScene,
     updateDraftScenePreview,
@@ -249,7 +279,13 @@ export default function App() {
 
       if (hasModifier && event.key.toLowerCase() === 's') {
         event.preventDefault();
-        if (!shell.loadOverlayOpen && !loading && !saving && hasLocalEdits) {
+        if (
+          canPersistScenesToServer &&
+          !shell.loadOverlayOpen &&
+          !loading &&
+          !saving &&
+          hasLocalEdits
+        ) {
           void handleSaveScene();
         }
         return;
@@ -320,11 +356,8 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      {isStaticHosting ? (
-        <div className="status scene-header-status">
-          Online demo: bundled samples only. Save downloads a JSON file — run MGView locally to edit files on disk.
-        </div>
-      ) : null}
+      <DemoNotice />
+      <ToastStack toasts={toasts} onDismiss={handleDismissToast} />
       <SceneHeaderBar
         scenePath={loaded?.scenePath ?? null}
         sceneName={activeScene?.name ?? loaded?.scene.name ?? null}
@@ -333,8 +366,7 @@ export default function App() {
         saving={saving}
         canRedo={canRedoDraftScene}
         canUndo={canUndoDraftScene}
-        statusMessage={saveMessage}
-        errorMessage={error}
+        diagnosticsWarningCount={diagnosticsWarningCount}
         onOpenCreateOverlay={shell.openCreateOverlay}
         onOpenLoadOverlay={shell.openLoadOverlay}
         onOpenDiagnostics={shell.openDiagnostics}
@@ -504,6 +536,7 @@ export default function App() {
 
       {shell.loadOverlayOpen ? (
         <LoadSceneOverlay
+          canPersistScenes={canPersistScenesToServer}
           browserError={browserError}
           browserListing={browserListing}
           browserLoading={browserLoading}

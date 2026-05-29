@@ -129,6 +129,9 @@ input[inputmode="decimal"] {
 }
 
 .scene-header-title-button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
   padding: 0;
   border: 0;
   background: transparent;
@@ -211,15 +214,121 @@ input[inputmode="decimal"] {
 }
 
 .scene-header-side {
-  display: grid;
-  justify-items: end;
-  gap: 4px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
-.scene-header-status {
-  margin-top: 0;
-  font-size: 0.78rem;
-  text-align: right;
+.scene-header-unsaved {
+  color: #ffce8d;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.scene-header-diagnostics-button {
+  position: relative;
+}
+
+.scene-header-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  margin-left: 0.4rem;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  background: rgba(255, 157, 157, 0.22);
+  color: #ffbfbf;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.demo-notice {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(720px, calc(100vw - 24px));
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(255, 206, 141, 0.28);
+  border-radius: 12px;
+  background: rgba(12, 18, 30, 0.94);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.demo-notice p {
+  margin: 0;
+  flex: 1;
+  font-size: 0.86rem;
+  color: #ffce8d;
+}
+
+.demo-notice-dismiss {
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: rgba(255, 206, 141, 0.12);
+  color: #ffce8d;
+}
+
+.toast-stack {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  display: grid;
+  gap: 8px;
+  width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0.72rem 0.82rem;
+  border-radius: 10px;
+  border: 1px solid rgba(159, 182, 212, 0.18);
+  background: rgba(8, 14, 24, 0.96);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+  pointer-events: auto;
+}
+
+.toast-success {
+  border-color: rgba(152, 224, 168, 0.28);
+  color: #98e0a8;
+}
+
+.toast-error {
+  border-color: rgba(255, 157, 157, 0.32);
+  color: #ffbfbf;
+}
+
+.toast-message {
+  flex: 1;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.toast-dismiss {
+  flex: 0 0 auto;
+  min-width: 1.6rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.toast-dismiss:hover {
+  opacity: 1;
 }
 
 .workspace-shell {
@@ -1517,6 +1626,81 @@ input[inputmode="decimal"] {
 .sample-button-active {
   background: #3a6bb5;
   border-color: rgba(188, 216, 255, 0.4);
+}
+
+.sample-gallery-panel .panel-subtitle {
+  margin: 0.35rem 0 0;
+}
+
+.sample-gallery-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.sample-gallery-group-title {
+  margin-bottom: 10px;
+  color: #8db2e3;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sample-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 10px;
+}
+
+.sample-tile {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(159, 182, 212, 0.14);
+  border-radius: 12px;
+  background: rgba(10, 18, 32, 0.72);
+  text-align: left;
+}
+
+.sample-tile:hover {
+  border-color: rgba(188, 216, 255, 0.28);
+}
+
+.sample-tile-active {
+  border-color: rgba(188, 216, 255, 0.42);
+  box-shadow: 0 0 0 1px rgba(141, 178, 227, 0.18);
+}
+
+.sample-tile-thumb {
+  display: grid;
+  place-items: center;
+  min-height: 72px;
+  border-radius: 8px;
+}
+
+.sample-tile-initial {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: rgba(237, 243, 255, 0.92);
+}
+
+.sample-tile-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sample-tile-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #edf3ff;
+}
+
+.sample-tile-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  color: #8ea3be;
 }
 
 .property-block {

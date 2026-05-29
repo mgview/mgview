@@ -5,7 +5,12 @@ import { fileURLToPath } from 'node:url';
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '../..');
 const workspaceRoot = path.resolve(repoRoot, '..');
-const appDirName = (process.env.MGVIEW_APP_DIR || path.basename(repoRoot)).replace(/^\/+|\/+$/g, '');
+const configuredAppDir = process.env.VITE_MGVIEW_APP_DIR ?? process.env.MGVIEW_APP_DIR;
+const appDirName = (configuredAppDir !== undefined ? configuredAppDir : path.basename(repoRoot)).replace(
+  /^\/+|\/+$/g,
+  ''
+);
+const isStaticSiteManifest = process.env.VITE_MGVIEW_STATIC === 'true';
 const samplesRoot = path.join(repoRoot, 'samples');
 
 async function listDirectoryEntries(directoryPath) {
@@ -86,9 +91,28 @@ export async function generateStaticManifest() {
   }
 
   if (appDirName.length === 0) {
-    await addShallowListing(listings, '.', repoRoot, null);
+    if (isStaticSiteManifest) {
+      listings['.'] = {
+        path: '.',
+        parentPath: null,
+        entries: [
+          { name: 'samples', path: 'samples', type: 'directory' },
+          { name: 'assets', path: 'assets', type: 'directory' },
+        ],
+      };
+    } else {
+      await addShallowListing(listings, '.', repoRoot, null);
+    }
   } else {
-    await addShallowListing(listings, '.', workspaceRoot, null);
+    if (isStaticSiteManifest) {
+      listings['.'] = {
+        path: '.',
+        parentPath: null,
+        entries: [{ name: appDirName, path: appDirName, type: 'directory' }],
+      };
+    } else {
+      await addShallowListing(listings, '.', workspaceRoot, null);
+    }
     await addShallowListing(listings, appDirName, repoRoot, '.');
   }
 

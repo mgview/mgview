@@ -4,7 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { generateStaticManifest } from './scripts/generateStaticManifest.mjs';
+import { viteBundledAssetsDir } from './scripts/deployConfig.mjs';
 
+// Build modes — see BUILD.md at repo root:
+//   npm run build                  → frontend/dist/     (local Node server)
+//   npm run build:static:github    → frontend/dist-pages/ (GitHub Pages, base /mgview/)
+//   npm run build:static:workspace → frontend/dist-pages/ (workspace static preview)
 const isStaticHostingBuild = process.env.VITE_MGVIEW_STATIC === 'true';
 
 function legacySamplesPlugin(): Plugin {
@@ -97,6 +102,8 @@ export default defineConfig({
   base: process.env.VITE_MGVIEW_BASE ?? './',
   plugins: [react(), legacySamplesPlugin(), staticHostingManifestPlugin()],
   build: {
+    // Separate from repo-root assets/ (textures, etc.) — see deployConfig.mjs viteBundledAssetsDir
+    assetsDir: viteBundledAssetsDir,
     chunkSizeWarningLimit: 550,
     rollupOptions: {
       output: {

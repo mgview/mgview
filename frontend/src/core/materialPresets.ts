@@ -34,7 +34,7 @@ export const LEGACY_TEXTURE_PRESETS: Record<
   }
 > = {
   CHECKERBOARD: {
-    path: 'app/textures/checkerboard.jpg',
+    path: 'assets/textures/checkerboard.jpg',
     color: '#ffffff',
     roughness: 0.85,
     metalness: 0.05,
@@ -42,7 +42,7 @@ export const LEGACY_TEXTURE_PRESETS: Record<
       'linear-gradient(45deg, #f8fafc 25%, #0f172a 25%, #0f172a 50%, #f8fafc 50%, #f8fafc 75%, #0f172a 75%) 0 0 / 16px 16px',
   },
   METAL: {
-    path: 'app/textures/metal.jpg',
+    path: 'assets/textures/metal.jpg',
     repeat: [2, 2],
     color: '#ffffff',
     roughness: 0.35,
@@ -50,35 +50,35 @@ export const LEGACY_TEXTURE_PRESETS: Record<
     previewBackground: 'linear-gradient(135deg, #d4dbe5 0%, #8d99aa 45%, #eef2f7 100%)',
   },
   DIRT: {
-    path: 'app/textures/terrain/backgrounddetailed6.jpg',
+    path: 'assets/textures/terrain/backgrounddetailed6.jpg',
     color: '#ffffff',
     roughness: 0.95,
     metalness: 0.02,
     previewBackground: 'linear-gradient(135deg, #5b4634 0%, #8b6a4c 52%, #3f2f25 100%)',
   },
   FOIL: {
-    path: 'app/textures/water.jpg',
+    path: 'assets/textures/water.jpg',
     color: '#ccccaa',
     roughness: 0.28,
     metalness: 0.7,
     previewBackground: 'linear-gradient(135deg, #ece7c7 0%, #9db4c7 40%, #f4efcf 100%)',
   },
   WATER: {
-    path: 'app/textures/water.jpg',
+    path: 'assets/textures/water.jpg',
     color: '#3333aa',
     roughness: 0.12,
     metalness: 0.15,
     previewBackground: 'linear-gradient(135deg, #254f99 0%, #63b3ff 50%, #173b77 100%)',
   },
   GRASS: {
-    path: 'app/textures/terrain/grasslight-big.jpg',
+    path: 'assets/textures/terrain/grasslight-big.jpg',
     color: '#ffffff',
     roughness: 1.0,
     metalness: 0.0,
     previewBackground: 'linear-gradient(135deg, #356f34 0%, #8ecf59 48%, #274e24 100%)',
   },
   LAVA: {
-    path: 'app/textures/lavatile.jpg',
+    path: 'assets/textures/lavatile.jpg',
     repeat: [4, 2],
     color: '#ffffff',
     roughness: 0.7,
@@ -86,14 +86,14 @@ export const LEGACY_TEXTURE_PRESETS: Record<
     previewBackground: 'linear-gradient(135deg, #2b0f0f 0%, #ff6a00 40%, #7a1300 100%)',
   },
   MOON: {
-    path: 'app/textures/planets/moon_1024.jpg',
+    path: 'assets/textures/planets/moon_1024.jpg',
     color: '#ffffff',
     roughness: 1.0,
     metalness: 0.0,
     previewBackground: 'linear-gradient(135deg, #a6a8af 0%, #e3e5ea 55%, #73767c 100%)',
   },
   EARTH: {
-    path: 'app/textures/planets/earth_atmos_2048.jpg',
+    path: 'assets/textures/planets/earth_atmos_2048.jpg',
     color: '#ffffff',
     roughness: 0.85,
     metalness: 0.0,

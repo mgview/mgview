@@ -9,6 +9,7 @@ const DEFAULT_PORT = 8000;
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
 const MGVIEW_ROOT = path.resolve(__dirname, '..');
 const MODERN_DIST_DIR = path.resolve(__dirname, '../frontend/dist');
+const VITE_BUNDLED_DIR = 'bundled'; // sync with frontend/scripts/deployConfig.mjs → viteBundledAssetsDir
 const API_PREFIX = '/MGView/api';
 
 function isWithinRoot(candidatePath) {
@@ -122,7 +123,15 @@ StaticServlet.prototype.handleRequest = function(req, res) {
     return this.sendRedirect_(
       req,
       res,
-      '/MGView/assets/' + normalizedPathname.substring('/MGView/modern/assets/'.length) + req.url.search
+      '/MGView/' + VITE_BUNDLED_DIR + '/' + normalizedPathname.substring('/MGView/modern/assets/'.length) + req.url.search
+    );
+  }
+
+  if (normalizedPathname.indexOf('/MGView/modern/' + VITE_BUNDLED_DIR + '/') === 0) {
+    return this.sendRedirect_(
+      req,
+      res,
+      '/MGView/' + VITE_BUNDLED_DIR + '/' + normalizedPathname.substring(('/MGView/modern/' + VITE_BUNDLED_DIR + '/').length) + req.url.search
     );
   }
 
@@ -146,8 +155,13 @@ StaticServlet.prototype.handleRequest = function(req, res) {
     return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
 
-  if (normalizedPathname.indexOf('/MGView/assets/') === 0) {
-    return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, normalizedPathname.substring('/MGView/'.length)));
+  // Vite bundles only — repo-root assets/ (textures, etc.) uses normal path resolution below.
+  if (normalizedPathname.indexOf('/MGView/' + VITE_BUNDLED_DIR + '/') === 0) {
+    return this.sendFile_(
+      req,
+      res,
+      path.join(MODERN_DIST_DIR, normalizedPathname.substring('/MGView/'.length))
+    );
   }
 
   const filePath = this.resolveRequestPath_(normalizedPathname);
