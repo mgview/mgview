@@ -30,14 +30,14 @@ All assembly logic is in `frontend/scripts/`. Shared constants: `deployConfig.mj
 | `bundled/` | Vite hashed JS/CSS (`build.assetsDir` in `vite.config.ts`) |
 | `assets/` | Repo runtime media (textures, future fonts/meshes) |
 
-These must not share a directory — the Node server routes `/MGView/bundled/` to `frontend/dist/bundled/` and serves `/MGView/assets/` from the repo via normal workspace paths.
+These must not share a directory — the Node server routes `/mgview/bundled/` to `frontend/dist/bundled/` and serves `/mgview/assets/` from the repo via normal workspace paths.
 
 **Release zip** (`build/release/mgview-<version>.zip`):
 
-- `MGView/bin/` — Node server
-- `MGView/frontend/dist/` — compiled modern app (server mode)
-- `MGView/samples/`
-- `MGView/assets/`
+- `mgview/bin/` — Node server
+- `mgview/frontend/dist/` — compiled modern app (server mode)
+- `mgview/samples/`
+- `mgview/assets/`
 - Launchers + README + LICENSE
 - **No** `legacy/`, **no** frontend source, **no** `node_modules`
 
@@ -49,7 +49,7 @@ npm install
 npm test
 npm run build          # → frontend/dist/ (required before RunMGViewMac)
 cd ..
-./RunMGViewMac         # http://localhost:8000/MGView/
+./RunMGViewMac         # http://localhost:8000/mgview/
 ```
 
 `frontend/dist/` is gitignored. Always run `npm run build` after pulling frontend changes.
@@ -66,7 +66,7 @@ npm run preview:site   # http://localhost:8001/mgview/
 Workspace layout preview (parent-folder serving):
 
 ```bash
-npm run preview:site:workspace   # http://localhost:8001/MGView/
+npm run preview:site:workspace   # http://localhost:8001/mgview/
 ```
 
 ## Deploy to GitHub Pages
@@ -74,7 +74,7 @@ npm run preview:site:workspace   # http://localhost:8001/MGView/
 ### Option A — GitHub Actions (recommended)
 
 1. In the repo on GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**
-2. Push to `master` or `modern_app` — `.github/workflows/pages.yml` builds and deploys automatically
+2. Push to `master` — `.github/workflows/pages.yml` builds and deploys automatically
 3. Or trigger manually: **Actions → Deploy GitHub Pages → Run workflow**
 
 ### Option B — Manual CLI
@@ -115,11 +115,11 @@ Or run **Actions → Release zip → Run workflow** manually.
 | Variable | Server build | GH Pages | Workspace static |
 |----------|--------------|----------|------------------|
 | `VITE_MGVIEW_STATIC` | — | `true` | `true` |
-| `VITE_MGVIEW_APP_DIR` | `MGView` (default) | `` (empty) | `MGView` |
-| `VITE_MGVIEW_BASE` | `./` | `/mgview/` | `/MGView/` |
+| `VITE_MGVIEW_APP_DIR` | `mgview` (default) | `` (empty) | `mgview` |
+| `VITE_MGVIEW_BASE` | `./` | `/mgview/` | `/mgview/` |
 | `VITE_MGVIEW_PUBLIC_BASE` | `/` | `/mgview/` | `/` |
 
-Scene paths: `MGView/samples/…` locally, `samples/…` on GitHub Pages.
+Scene paths: `mgview/samples/…` locally, `samples/…` on GitHub Pages.
 
 ## One-time cleanup (source-only repo)
 

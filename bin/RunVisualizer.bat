@@ -32,7 +32,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-start "" "http://localhost:8000/MGView/Examples.html"
+start "" "http://localhost:8000/mgview/"
 
 node "%MGVIEWBINPATH%\server.js"
 

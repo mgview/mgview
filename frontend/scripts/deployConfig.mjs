@@ -9,8 +9,8 @@ export const repoRoot = path.resolve(frontendDir, '..');
 export const GITHUB_PAGES_REPO = process.env.MGVIEW_GITHUB_REPO ?? 'mgview';
 export const githubPagesBase = `/${GITHUB_PAGES_REPO.replace(/^\/+|\/+$/g, '')}`;
 
-/** Local MotionGenesis-style layout: parent folder serves /MGView/… */
-export const workspaceAppDir = process.env.MGVIEW_APP_DIR ?? 'MGView';
+/** Local workspace layout: parent folder contains an `mgview/` app directory. */
+export const workspaceAppDir = process.env.MGVIEW_APP_DIR ?? 'mgview';
 export const workspaceBase = `/${workspaceAppDir.replace(/^\/+|\/+$/g, '')}/`;
 
 export const buildRoot = path.join(repoRoot, 'build');

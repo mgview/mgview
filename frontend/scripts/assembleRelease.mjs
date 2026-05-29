@@ -16,7 +16,7 @@ import {
 } from './deployConfig.mjs';
 import { copyTree, excludeDotfiles } from './lib/copyTree.mjs';
 
-const RELEASE_TOP_LEVEL = 'MGView';
+const RELEASE_TOP_LEVEL = 'mgview';
 
 const releaseFiles = [
   'bin',

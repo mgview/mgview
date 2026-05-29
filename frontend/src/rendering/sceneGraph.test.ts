@@ -6,7 +6,7 @@ import { buildRenderableScene } from './sceneGraph.ts';
 test('renderable scene includes line span renderables', () => {
   globalThis.window = {
     location: {
-      pathname: '/MGView/',
+      pathname: '/mgview/',
       origin: 'http://localhost:8000',
     },
   } as Window & typeof globalThis;
@@ -39,7 +39,7 @@ test('renderable scene includes line span renderables', () => {
       ],
     },
     null,
-    'MGView/samples/example.json'
+    'mgview/samples/example.json'
   );
 
   assert.equal(renderRoot.children.length, 1);

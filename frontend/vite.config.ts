@@ -15,7 +15,7 @@ const isStaticHostingBuild = process.env.VITE_MGVIEW_STATIC === 'true';
 function legacySamplesPlugin(): Plugin {
   const configDir = path.dirname(fileURLToPath(import.meta.url));
   const samplesRoot = path.resolve(configDir, '../samples');
-  const appDirName = process.env.VITE_MGVIEW_APP_DIR ?? 'MGView';
+  const appDirName = process.env.VITE_MGVIEW_APP_DIR ?? 'mgview';
   const samplesUrlPrefix =
     appDirName.length > 0 ? `/${appDirName}/samples/` : '/samples/';
 
@@ -80,6 +80,26 @@ function legacySamplesPlugin(): Plugin {
   };
 }
 
+function staticHostingFlagPlugin(): Plugin {
+  const flagPattern = /import\.meta\.env\?\.VITE_MGVIEW_STATIC\s*===\s*['"]true['"]/g;
+
+  return {
+    name: 'static-hosting-flag',
+    enforce: 'pre',
+    transform(code, id) {
+      if (!id.includes('runtimeMode.ts')) {
+        return;
+      }
+
+      if (isStaticHostingBuild) {
+        return code.replace(flagPattern, 'true');
+      }
+
+      return code.replace(flagPattern, 'false');
+    },
+  };
+}
+
 function staticHostingManifestPlugin(): Plugin {
   return {
     name: 'static-hosting-manifest',
@@ -100,7 +120,12 @@ function staticHostingManifestPlugin(): Plugin {
 
 export default defineConfig({
   base: process.env.VITE_MGVIEW_BASE ?? './',
-  plugins: [react(), legacySamplesPlugin(), staticHostingManifestPlugin()],
+  plugins: [
+    staticHostingFlagPlugin(),
+    react(),
+    legacySamplesPlugin(),
+    staticHostingManifestPlugin(),
+  ],
   build: {
     // Separate from repo-root assets/ (textures, etc.) — see deployConfig.mjs viteBundledAssetsDir
     assetsDir: viteBundledAssetsDir,

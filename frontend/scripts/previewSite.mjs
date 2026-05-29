@@ -5,9 +5,9 @@
  *   npm run preview:site
  *   → http://localhost:8001/mgview/
  *
- * Workspace layout (MotionGenesis parent folder):
+ * Workspace layout (parent folder with mgview/ app dir):
  *   npm run preview:site:workspace
- *   → http://localhost:8001/MGView/
+ *   → http://localhost:8001/mgview/
  */
 import { spawn } from 'node:child_process';
 import { createReadStream, existsSync } from 'node:fs';
@@ -26,7 +26,7 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const frontendDir = path.resolve(scriptDir, '..');
 const useWorkspaceLayout = process.argv.includes('--workspace');
 const siteRoot = useWorkspaceLayout
-  ? path.join(siteDir, '..', 'gh-pages-workspace', 'MGView')
+  ? path.join(siteDir, '..', 'gh-pages-workspace', 'mgview')
   : siteDir;
 const urlPrefix = useWorkspaceLayout ? workspaceBase.replace(/\/$/, '') : githubPagesBase;
 const STATIC_PORT = Number(process.env.MGVIEW_STATIC_PORT || 8001);
