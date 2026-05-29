@@ -80,6 +80,31 @@ function legacySamplesPlugin(): Plugin {
   };
 }
 
+function staticHostingFlagPlugin(): Plugin {
+  const flagPattern = /import\.meta\.env\.VITE_MGVIEW_STATIC\s*===\s*['"]true['"]/g;
+  const definePattern = /__MGVIEW_STATIC_HOSTING__\s*\|\|\s*import\.meta\.env\.VITE_MGVIEW_STATIC\s*===\s*['"]true['"]/g;
+
+  return {
+    name: 'static-hosting-flag',
+    enforce: 'pre',
+    transform(code, id) {
+      if (!id.includes('runtimeMode.ts')) {
+        return;
+      }
+
+      if (isStaticHostingBuild) {
+        return code
+          .replace(definePattern, 'true')
+          .replace(flagPattern, 'true');
+      }
+
+      return code
+        .replace(definePattern, 'false')
+        .replace(flagPattern, 'false');
+    },
+  };
+}
+
 function staticHostingManifestPlugin(): Plugin {
   return {
     name: 'static-hosting-manifest',
@@ -100,7 +125,12 @@ function staticHostingManifestPlugin(): Plugin {
 
 export default defineConfig({
   base: process.env.VITE_MGVIEW_BASE ?? './',
-  plugins: [react(), legacySamplesPlugin(), staticHostingManifestPlugin()],
+  plugins: [
+    staticHostingFlagPlugin(),
+    react(),
+    legacySamplesPlugin(),
+    staticHostingManifestPlugin(),
+  ],
   build: {
     // Separate from repo-root assets/ (textures, etc.) — see deployConfig.mjs viteBundledAssetsDir
     assetsDir: viteBundledAssetsDir,

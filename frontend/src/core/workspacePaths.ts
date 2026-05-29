@@ -1,5 +1,5 @@
 /** App folder name under the workspace root (parent of this repo). */
-export const APP_DIR = (import.meta.env?.VITE_MGVIEW_APP_DIR ?? 'mgview').replace(/^\/+|\/+$/g, '');
+export const APP_DIR = (import.meta.env.VITE_MGVIEW_APP_DIR ?? 'mgview').replace(/^\/+|\/+$/g, '');
 
 export function workspacePath(...segments: string[]): string {
   const parts = segments

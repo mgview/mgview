@@ -1,12 +1,8 @@
 import { useState } from 'react';
 import { isStaticHosting } from '../api/runtimeMode.ts';
 
-const DEMO_NOTICE_STORAGE_KEY = 'mgview-demo-notice-dismissed';
-
 export default function DemoNotice() {
-  const [visible, setVisible] = useState(
-    () => isStaticHosting && window.localStorage.getItem(DEMO_NOTICE_STORAGE_KEY) !== '1'
-  );
+  const [visible, setVisible] = useState(true);
 
   if (!isStaticHosting || !visible) {
     return null;
@@ -21,10 +17,7 @@ export default function DemoNotice() {
       <button
         type="button"
         className="demo-notice-dismiss"
-        onClick={() => {
-          window.localStorage.setItem(DEMO_NOTICE_STORAGE_KEY, '1');
-          setVisible(false);
-        }}
+        onClick={() => setVisible(false)}
       >
         Dismiss
       </button>
