@@ -1,4 +1,4 @@
-import type { SampleShortcut } from './SampleShortcutPanel.tsx';
+import type { SampleSceneEntry } from '../core/samplesManifest.ts';
 
 const GROUP_ACCENTS: Record<string, string> = {
   Basics: 'linear-gradient(135deg, #2a4f7a, #1a3558)',
@@ -10,8 +10,9 @@ const GROUP_ACCENTS: Record<string, string> = {
 };
 
 interface SampleSceneGalleryProps {
-  groupedSamples: Array<[string, SampleShortcut[]]>;
+  groupedSamples: Array<[string, SampleSceneEntry[]]>;
   sceneInput: string;
+  loading?: boolean;
   onOpenScene: (path: string) => void;
   onSelectScene: (path: string) => void;
 }
@@ -19,6 +20,7 @@ interface SampleSceneGalleryProps {
 export default function SampleSceneGallery({
   groupedSamples,
   sceneInput,
+  loading = false,
   onOpenScene,
   onSelectScene,
 }: SampleSceneGalleryProps) {
@@ -27,7 +29,7 @@ export default function SampleSceneGallery({
       <div className="panel-header">
         <div>
           <h2>Example Scenes</h2>
-          <p className="panel-subtitle">Pick a bundled sample to load. You can still paste a path above.</p>
+          <p className="panel-subtitle">Pick a bundled sample to load.</p>
         </div>
       </div>
 
@@ -45,6 +47,7 @@ export default function SampleSceneGallery({
                     key={sample.path}
                     type="button"
                     className={`sample-tile ${isActive ? 'sample-tile-active' : ''}`}
+                    disabled={loading}
                     onClick={() => {
                       onSelectScene(sample.path);
                       onOpenScene(sample.path);

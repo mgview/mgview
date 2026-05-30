@@ -241,6 +241,11 @@ function readPointPosition(
   sceneOrigin: string,
   pointName: string
 ): Vector3Like | null {
+  // MotionGenesis never exports P_<origin>_<origin>; the scene origin is always (0,0,0).
+  if (pointName === sceneOrigin) {
+    return vector(0, 0, 0);
+  }
+
   const escapedPointName = escapeForRegex(pointName);
   const x = readByPattern(values, new RegExp(`^P_${escapeForRegex(sceneOrigin)}_${escapedPointName}\\[1\\]$`));
   const y = readByPattern(values, new RegExp(`^P_${escapeForRegex(sceneOrigin)}_${escapedPointName}\\[2\\]$`));

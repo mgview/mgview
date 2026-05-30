@@ -4,6 +4,7 @@ import DemoNotice from './components/DemoNotice.tsx';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.tsx';
 import InspectorDrawer from './components/InspectorDrawer.tsx';
 import LoadSceneOverlay from './components/LoadSceneOverlay.tsx';
+import SamplesOverlay from './components/SamplesOverlay.tsx';
 import ObjectList from './components/ObjectList.tsx';
 import PlaybackStrip from './components/PlaybackStrip.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
@@ -18,41 +19,19 @@ import { useSceneSelectionEditor } from './hooks/useSceneSelectionEditor.ts';
 import { useSceneSpanEditor } from './hooks/useSceneSpanEditor.ts';
 import { useToasts } from './hooks/useToasts.ts';
 import { useWorkspaceShell } from './hooks/useWorkspaceShell.ts';
-import { bundledSamplePath, DEFAULT_SCENE_PATH } from './core/workspacePaths.ts';
-
-const SAMPLE_SCENES = [
-  { group: 'Basics', label: 'Particle Pendulum', path: bundledSamplePath('particle_pendulum/particle_pendulum.json') },
-  { group: 'Basics', label: 'Default Template', path: bundledSamplePath('default.json') },
-  { group: 'Mechanisms', label: 'Ball In Tube', path: bundledSamplePath('ball_in_tube/ball_in_tube.json') },
-  { group: 'Mechanisms', label: 'Particle In Slot', path: bundledSamplePath('particle_in_slot/slot.json') },
-  { group: 'Vehicles', label: 'Tricycle', path: bundledSamplePath('tricycle/tricycle.json') },
-  { group: 'Cameras', label: 'SkyCam Fixed', path: bundledSamplePath('skycam/SkyCamFixed.json') },
-  { group: 'Robots', label: 'RCM Homogeneous', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Homogeneous.json') },
-  { group: 'Robots', label: 'RCM Palpating', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Palpating.json') },
-  { group: 'Robots', label: 'RCM Circle 10cm', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Circle_Depth10cm.json') },
-  { group: 'Robots', label: 'RCM Circle 20cm', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Circle_Depth20cm.json') },
-  { group: 'Meshes', label: 'Wooden Phantom', path: bundledSamplePath('wooden_phantom/wooden_phantom.json') },
-  { group: 'Meshes', label: 'Wooden Phantom GUI', path: bundledSamplePath('wooden_phantom/wooden_phantom_gui.json') },
-] as const;
-
-function getScenePathFromUrl(): string {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('scene') ?? DEFAULT_SCENE_PATH;
-}
-
-function sampleGroups() {
-  const groups = new Map<string, Array<(typeof SAMPLE_SCENES)[number]>>();
-  for (const sample of SAMPLE_SCENES) {
-    const group = groups.get(sample.group) ?? [];
-    group.push(sample);
-    groups.set(sample.group, group);
-  }
-  return [...groups.entries()];
-}
+import { createSampleRef, getSceneBasePath, parseSceneRefFromUrl } from './core/sceneRef.ts';
+import { groupSampleScenes } from './core/samplesManifest.ts';
+import { useServerWorkspace } from './hooks/useServerWorkspace.ts';
+import WorkspacePickerOverlay from './components/WorkspacePickerOverlay.tsx';
 
 export default function App() {
   const { toasts, dismiss, dismissErrors, showSuccess, showError } = useToasts();
-  const workspace = useSceneWorkspace(getScenePathFromUrl(), { showSuccess, showError });
+  const serverWorkspace = useServerWorkspace(showSuccess, showError);
+  const initialSceneRef = useMemo(
+    () => parseSceneRefFromUrl(new URLSearchParams(window.location.search)),
+    []
+  );
+  const workspace = useSceneWorkspace(initialSceneRef, { showSuccess, showError });
   const {
     activeScene,
     browserError,
@@ -63,6 +42,7 @@ export default function App() {
     handleBrowse,
     handleCreateScene,
     handleLoad,
+    handleLoadWorkspacePath,
     handleRevertDraft,
     handleRedo,
     handleSaveSceneAs,
@@ -120,12 +100,19 @@ export default function App() {
     [diagnostics]
   );
 
+  const handleLoadSample = useCallback(
+    (path: string, options?: { actionLabel?: string }) =>
+      handleLoad(createSampleRef(path), options),
+    [handleLoad]
+  );
+
   const shell = useWorkspaceShell({
     activeScene,
     browserPath: browserListing?.path,
     handleBrowse,
     handleCreateScene,
-    handleLoad,
+    handleLoadWorkspacePath,
+    handleLoadSample,
     handleSaveSceneAs,
     loaded,
     sceneInput,
@@ -252,7 +239,12 @@ export default function App() {
           return;
         }
 
-        if (!shell.loadOverlayOpen && !shell.diagnosticsOpen && !shell.simulationOverlayOpen) {
+        if (
+          !shell.loadOverlayOpen &&
+          !shell.samplesOverlayOpen &&
+          !shell.diagnosticsOpen &&
+          !shell.simulationOverlayOpen
+        ) {
           if (selectionState.hasAnySelection) {
             event.preventDefault();
             selectionState.clearAllSelections();
@@ -295,7 +287,12 @@ export default function App() {
         return;
       }
 
-      if (shell.loadOverlayOpen || shell.diagnosticsOpen || shell.simulationOverlayOpen) {
+      if (
+        shell.loadOverlayOpen ||
+        shell.samplesOverlayOpen ||
+        shell.diagnosticsOpen ||
+        shell.simulationOverlayOpen
+      ) {
         return;
       }
 
@@ -324,6 +321,7 @@ export default function App() {
     selectionState,
     shell.diagnosticsOpen,
     shell.loadOverlayOpen,
+    shell.samplesOverlayOpen,
     shell.simulationOverlayOpen,
   ]);
 
@@ -352,7 +350,8 @@ export default function App() {
     return JSON.stringify(createSavableScene(loaded.rawScene, draftScene), null, 2);
   }, [draftScene, loaded]);
 
-  const groupedSamples = useMemo(() => sampleGroups(), []);
+  const groupedSamples = useMemo(() => groupSampleScenes(), []);
+  const rendererSceneBasePath = loaded ? getSceneBasePath(loaded.sceneRef) : '';
 
   return (
     <div className="app-shell">
@@ -361,14 +360,17 @@ export default function App() {
       <SceneHeaderBar
         scenePath={loaded?.scenePath ?? null}
         sceneName={activeScene?.name ?? loaded?.scene.name ?? null}
+        workspaceRoot={serverWorkspace.workspaceInfo?.workspaceRoot ?? null}
         hasLocalEdits={hasLocalEdits}
         loading={loading}
         saving={saving}
         canRedo={canRedoDraftScene}
         canUndo={canUndoDraftScene}
         diagnosticsWarningCount={diagnosticsWarningCount}
+        onOpenWorkspace={canPersistScenesToServer ? serverWorkspace.openPicker : undefined}
         onOpenCreateOverlay={shell.openCreateOverlay}
         onOpenLoadOverlay={shell.openLoadOverlay}
+        onOpenSamplesOverlay={shell.openSamplesOverlay}
         onOpenDiagnostics={shell.openDiagnostics}
         onOpenChannels={shell.openSimulationOverlay}
         onOpenSaveAsOverlay={shell.openSaveAsOverlay}
@@ -399,7 +401,7 @@ export default function App() {
                     layoutSizeKey={`${shell.leftRailCollapsed}`}
                     onCameraPreviewChange={shell.setCameraPreview}
                     onCameraCommit={shell.commitCameraPreview}
-                    scenePath={loaded.scenePath}
+                    scenePath={rendererSceneBasePath}
                     scene={activeScene}
                     frame={currentFrame?.frame}
                     selectedObjectName={activeSelectedObject?.name ?? null}
@@ -541,11 +543,10 @@ export default function App() {
           browserListing={browserListing}
           browserLoading={browserLoading}
           errorMessage={error}
-          groupedSamples={groupedSamples}
           loading={loading}
           mode={shell.sceneOverlayMode}
           onBrowse={(path) => {
-            void handleBrowse(path);
+            void handleBrowse(path, 'workspace');
           }}
           onClose={shell.closeLoadOverlay}
           onCreateScenePath={(path) => {
@@ -560,10 +561,19 @@ export default function App() {
           onSaveScenePath={(path) => {
             void shell.handleSaveScenePath(path);
           }}
-          sampleBrowserExpanded={shell.sampleBrowserExpanded}
           sceneInput={sceneInput}
-          setSampleBrowserExpanded={shell.setSampleBrowserExpanded}
           setSceneInput={setSceneInput}
+        />
+      ) : null}
+
+      {shell.samplesOverlayOpen ? (
+        <SamplesOverlay
+          groupedSamples={groupedSamples}
+          loading={loading}
+          onClose={shell.closeSamplesOverlay}
+          onOpenSample={(path) => {
+            void shell.handleOpenSamplePath(path);
+          }}
         />
       ) : null}
 
@@ -571,6 +581,25 @@ export default function App() {
         <DiagnosticsOverlay
           diagnostics={diagnostics}
           onClose={shell.closeDiagnostics}
+        />
+      ) : null}
+
+      {serverWorkspace.pickerOpen ? (
+        <WorkspacePickerOverlay
+          appRoot={serverWorkspace.workspaceInfo?.appRoot ?? null}
+          defaultWorkspaceRoot={serverWorkspace.workspaceInfo?.defaultWorkspaceRoot ?? null}
+          draftWorkspaceRoot={serverWorkspace.draftWorkspaceRoot}
+          errorMessage={serverWorkspace.error}
+          saving={serverWorkspace.saving}
+          workspaceInfo={serverWorkspace.workspaceInfo}
+          onApply={() => {
+            void serverWorkspace.applyWorkspaceRoot(async () => {
+              await handleBrowse('.', 'workspace');
+            });
+          }}
+          onClose={serverWorkspace.closePicker}
+          onDraftChange={serverWorkspace.setDraftWorkspaceRoot}
+          onUseDefault={serverWorkspace.useDefaultWorkspaceRoot}
         />
       ) : null}
 
@@ -585,7 +614,9 @@ export default function App() {
           onAddSimulationEntry={shell.addSimulationEntry}
           onAddSimulationEntries={shell.addSimulationEntries}
           onBrowse={(path) => {
-            void handleBrowse(path);
+            if (loaded) {
+              void handleBrowse(path, loaded.sceneRef.source === 'sample' ? 'sample' : 'workspace');
+            }
           }}
           onClose={shell.closeSimulationOverlay}
           onRemoveSimulationEntry={shell.removeSimulationEntry}

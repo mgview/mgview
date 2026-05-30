@@ -2,7 +2,10 @@
 
 This repo is **source-only**. Built output lives under `build/` (gitignored) and is produced on demand.
 
-Modern app handoff and status: [mgview-in-place-modernization.md](mgview-in-place-modernization.md).
+Handoff docs:
+
+- [mgview-in-place-modernization.md](mgview-in-place-modernization.md) — product status, run commands, gaps, **start here for new agents**
+- [mgview-scene-sources-split.md](mgview-scene-sources-split.md) — scene URLs (`?sample=` / `?scene=`), API `root=`, Samples vs Load (implemented)
 
 ## Three outputs
 
@@ -115,11 +118,11 @@ Or run **Actions → Release zip → Run workflow** manually.
 | Variable | Server build | GH Pages | Workspace static |
 |----------|--------------|----------|------------------|
 | `VITE_MGVIEW_STATIC` | — | `true` | `true` |
-| `VITE_MGVIEW_APP_DIR` | `mgview` (default) | `` (empty) | `mgview` |
-| `VITE_MGVIEW_BASE` | `./` | `/mgview/` | `/mgview/` |
+| `VITE_MGVIEW_APP_DIR` | `` (empty) | `` (empty) | `mgview` |
+| `VITE_MGVIEW_BASE` | `/mgview/` | `/mgview/` | `/mgview/` |
 | `VITE_MGVIEW_PUBLIC_BASE` | `/` | `/mgview/` | `/` |
 
-Scene paths: `mgview/samples/…` locally, `samples/…` on GitHub Pages.
+Scene URLs: `?sample=particle_pendulum/particle_pendulum.json` (bundled samples) or `?scene=my_sim/foo.json` (workspace). List/file APIs take `root=workspace|sample|app` and `path=` relative to that root (e.g. `GET /mgview/api/list?root=workspace&path=.`). Workspace API: `GET`/`POST` `/mgview/api/workspace` (config `~/.mgview/config.json`; in-memory roots sync on every API request after POST). Static HTTP: `/mgview/samples/…`, `/mgview/assets/…`. Local app URL: `http://localhost:8000/mgview/` (server redirects `/mgview` → `/mgview/`).
 
 ## One-time cleanup (source-only repo)
 

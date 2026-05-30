@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { canPersistScenesToServer } from '../api/runtimeMode.ts';
-import { getBasePath } from '../core/pathUtils.ts';
+import { getApiRoot, getSceneDirectory } from '../core/sceneRef.ts';
 import type { NormalizedSceneConfig } from '../core/types.ts';
 import type { LoadedSceneData } from './useSceneWorkspace.ts';
 import { getDirectoryPath } from './useSceneWorkspace.ts';
@@ -46,9 +46,10 @@ export type SceneOverlayMode = 'load' | 'create' | 'saveAs';
 interface UseWorkspaceShellOptions {
   activeScene: NormalizedSceneConfig | null;
   browserPath: string | null | undefined;
-  handleBrowse: (path: string) => Promise<void>;
+  handleBrowse: (path: string, root?: 'workspace' | 'sample') => Promise<void>;
   handleCreateScene: (path: string) => Promise<boolean>;
-  handleLoad: (path: string, options?: { actionLabel?: string }) => Promise<boolean>;
+  handleLoadWorkspacePath: (path: string, options?: { actionLabel?: string }) => Promise<boolean>;
+  handleLoadSample: (path: string, options?: { actionLabel?: string }) => Promise<boolean>;
   handleSaveSceneAs: (path: string) => Promise<boolean>;
   loaded: LoadedSceneData | null;
   sceneInput: string;
@@ -63,7 +64,8 @@ export function useWorkspaceShell({
   browserPath,
   handleBrowse,
   handleCreateScene,
-  handleLoad,
+  handleLoadWorkspacePath,
+  handleLoadSample,
   handleSaveSceneAs,
   loaded,
   sceneInput,
@@ -73,12 +75,12 @@ export function useWorkspaceShell({
   updateDraftScenePreview,
 }: UseWorkspaceShellOptions) {
   const [loadOverlayOpen, setLoadOverlayOpen] = useState(false);
+  const [samplesOverlayOpen, setSamplesOverlayOpen] = useState(false);
   const [sceneOverlayMode, setSceneOverlayMode] = useState<SceneOverlayMode>('load');
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [simulationOverlayOpen, setSimulationOverlayOpen] = useState(false);
   const [simulationEntryInput, setSimulationEntryInput] = useState('');
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
-  const [sampleBrowserExpanded, setSampleBrowserExpanded] = useState(false);
   const [cameraPreview, setCameraPreview] = useState<CameraDraftPreview | null>(null);
 
   useEffect(() => {
@@ -120,7 +122,12 @@ export function useWorkspaceShell({
     setError(null);
     setSceneOverlayMode('load');
     setLoadOverlayOpen(true);
-    void handleBrowse(loaded ? getDirectoryPath(loaded.scenePath) : getDirectoryPath(sceneInput));
+    void handleBrowse('.');
+  };
+
+  const openSamplesOverlay = () => {
+    setError(null);
+    setSamplesOverlayOpen(true);
   };
 
   const openCreateOverlay = () => {
@@ -130,33 +137,32 @@ export function useWorkspaceShell({
 
     setError(null);
     setSceneOverlayMode('create');
-    const defaultDirectory = loaded ? getBasePath(loaded.scenePath).replace(/\/$/, '') : getDirectoryPath(sceneInput);
     setSceneInput('new_scene.json');
     setLoadOverlayOpen(true);
-    void handleBrowse(defaultDirectory || '.');
+    void handleBrowse('.');
   };
 
   const openSaveAsOverlay = () => {
-    if (!canPersistScenesToServer || !loaded) {
+    if (!canPersistScenesToServer || !loaded || loaded.sceneRef.source !== 'workspace') {
       return;
     }
 
     setError(null);
     setSceneOverlayMode('saveAs');
-    setSceneInput(getFileName(loaded.scenePath));
+    setSceneInput(getFileName(loaded.sceneRef.path));
     setLoadOverlayOpen(true);
-    void handleBrowse(getDirectoryPath(loaded.scenePath));
+    void handleBrowse(getDirectoryPath(loaded.sceneRef.path), 'workspace');
   };
 
   const openSimulationOverlay = () => {
     setSimulationOverlayOpen(true);
     if (loaded) {
-      void handleBrowse(getBasePath(loaded.scenePath));
+      void handleBrowse(getSceneDirectory(loaded.sceneRef), getApiRoot(loaded.sceneRef));
     }
   };
 
   const handleOpenSelectedScene = async () => {
-    const didLoad = await handleLoad(sceneInput, {
+    const didLoad = await handleLoadWorkspacePath(sceneInput, {
       actionLabel: 'Loading a scene by path',
     });
     if (didLoad) {
@@ -166,11 +172,21 @@ export function useWorkspaceShell({
   };
 
   const handleOpenScenePath = async (path: string) => {
-    const didLoad = await handleLoad(path, {
+    const didLoad = await handleLoadWorkspacePath(path, {
       actionLabel: 'Loading a scene by path',
     });
     if (didLoad) {
       setLoadOverlayOpen(false);
+    }
+    return didLoad;
+  };
+
+  const handleOpenSamplePath = async (path: string) => {
+    const didLoad = await handleLoadSample(path, {
+      actionLabel: 'Loading a sample scene',
+    });
+    if (didLoad) {
+      setSamplesOverlayOpen(false);
     }
     return didLoad;
   };
@@ -293,11 +309,13 @@ export function useWorkspaceShell({
     cameraSeedKey,
     closeDiagnostics: () => setDiagnosticsOpen(false),
     closeLoadOverlay: () => setLoadOverlayOpen(false),
+    closeSamplesOverlay: () => setSamplesOverlayOpen(false),
     closeSimulationOverlay: () => setSimulationOverlayOpen(false),
     commitCameraPreview,
     diagnosticsOpen,
     handleCreateScenePath,
     handleOpenScenePath,
+    handleOpenSamplePath,
     handleOpenSelectedScene,
     handleSaveScenePath,
     leftRailCollapsed,
@@ -305,13 +323,13 @@ export function useWorkspaceShell({
     openCreateOverlay,
     openDiagnostics: () => setDiagnosticsOpen(true),
     openLoadOverlay,
+    openSamplesOverlay,
     openSaveAsOverlay,
     openSimulationOverlay,
-    sampleBrowserExpanded,
+    samplesOverlayOpen,
     sceneOverlayMode,
     setCameraPreview,
     setLeftRailCollapsed,
-    setSampleBrowserExpanded,
     setSimulationEntryInput,
     simulationEntryInput,
     simulationOverlayOpen,

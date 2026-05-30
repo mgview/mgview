@@ -1,3 +1,4 @@
+import { resolveApiFilePath, type SceneRef } from '../core/sceneRef.ts';
 import type { SceneConfig } from '../core/types.ts';
 import { resolvePublicAssetUrl } from './assetPaths.ts';
 import type { FileBrowserListing, StaticFileManifest } from './localFilesTypes.ts';
@@ -45,32 +46,40 @@ function downloadJson(scenePath: string, scene: SceneConfig): void {
   URL.revokeObjectURL(url);
 }
 
-export async function listLocalFiles(filePath: string): Promise<FileBrowserListing> {
+export async function listLocalFiles(
+  filePath: string,
+  root: 'workspace' | 'sample' | 'app' = 'workspace'
+): Promise<FileBrowserListing> {
   const manifest = await loadManifest();
   const normalizedPath = normalizeBrowserPath(filePath);
-  const listing = manifest.listings[normalizedPath];
+  const manifestKey = root === 'sample' ? `samples/${normalizedPath}` : normalizedPath;
+  const listing = manifest.listings[manifestKey];
   if (!listing) {
-    throw new Error(`Directory not found: ${normalizedPath}`);
+    throw new Error(`Directory not found: ${manifestKey}`);
   }
   return listing;
 }
 
-export async function loadSceneJson(scenePath: string): Promise<SceneConfig> {
-  const response = await fetch(resolvePublicAssetUrl(scenePath));
-  await expectOk(response, `Could not load scene file: ${scenePath}`);
+export async function loadSceneJson(sceneRef: SceneRef): Promise<SceneConfig> {
+  const response = await fetch(resolvePublicAssetUrl(resolveApiFilePath(sceneRef)));
+  await expectOk(response, `Could not load scene file: ${sceneRef.path}`);
   return (await response.json()) as SceneConfig;
 }
 
-export async function loadTextFile(filePath: string): Promise<string> {
-  const response = await fetch(resolvePublicAssetUrl(filePath));
+export async function loadTextFile(
+  filePath: string,
+  root: 'workspace' | 'sample' | 'app' = 'workspace'
+): Promise<string> {
+  const manifestPath = root === 'sample' ? `samples/${filePath}` : filePath;
+  const response = await fetch(resolvePublicAssetUrl(manifestPath));
   await expectOk(response, `Could not load file: ${filePath}`);
   return response.text();
 }
 
-export async function saveSceneJson(scenePath: string, scene: SceneConfig): Promise<void> {
-  downloadJson(scenePath, scene);
+export async function saveSceneJson(sceneRef: SceneRef, scene: SceneConfig): Promise<void> {
+  downloadJson(resolveApiFilePath(sceneRef), scene);
 }
 
-export async function createSceneJson(scenePath: string, scene: SceneConfig): Promise<void> {
-  downloadJson(scenePath, scene);
+export async function createSceneJson(sceneRef: SceneRef, scene: SceneConfig): Promise<void> {
+  downloadJson(resolveApiFilePath(sceneRef), scene);
 }

@@ -1,5 +1,8 @@
-/** App folder name under the workspace root (parent of this repo). */
-export const APP_DIR = (import.meta.env?.VITE_MGVIEW_APP_DIR ?? 'mgview').replace(/^\/+|\/+$/g, '');
+/**
+ * Optional install-folder prefix for static workspace-layout previews only.
+ * Local server + GitHub Pages use app-relative paths (`samples/...`) with no prefix.
+ */
+export const APP_DIR = (import.meta.env?.VITE_MGVIEW_APP_DIR ?? '').replace(/^\/+|\/+$/g, '');
 
 export function workspacePath(...segments: string[]): string {
   const parts = segments
@@ -10,9 +13,3 @@ export function workspacePath(...segments: string[]): string {
   }
   return [APP_DIR, ...parts].join('/');
 }
-
-export function bundledSamplePath(samplesRelative: string): string {
-  return workspacePath('samples', samplesRelative.replace(/^\/+/, ''));
-}
-
-export const DEFAULT_SCENE_PATH = bundledSamplePath('particle_pendulum/particle_pendulum.json');

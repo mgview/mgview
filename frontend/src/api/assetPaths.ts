@@ -1,28 +1,43 @@
 import { normalizePathSeparators } from '../core/pathUtils.ts';
-import { workspacePath } from '../core/workspacePaths.ts';
 
 function ensureTrailingSlash(value: string): string {
   return value.endsWith('/') ? value : `${value}/`;
 }
 
-/** URL prefix for workspace-root paths (mgview/samples/…, mgview/assets/…). */
-export function getPublicBaseUrl(): string {
+const MGVIEW_MOUNT = '/mgview/';
+
+/** Browser mount prefix for app-relative URLs (samples/, assets/, …). */
+export function getAppMountPrefix(): string {
   const configured = import.meta.env?.VITE_MGVIEW_PUBLIC_BASE;
   if (configured !== undefined && configured !== '') {
     return ensureTrailingSlash(configured);
   }
+
+  if (typeof window !== 'undefined') {
+    const { pathname } = window.location;
+    if (pathname === '/mgview' || pathname.startsWith(MGVIEW_MOUNT)) {
+      return MGVIEW_MOUNT;
+    }
+  }
+
   return '/';
+}
+
+/** @deprecated Prefer getAppMountPrefix — kept for existing imports. */
+export function getPublicBaseUrl(): string {
+  return getAppMountPrefix();
 }
 
 export function resolvePublicAssetUrl(relativePath: string): string {
   const normalizedPath = normalizePathSeparators(relativePath).replace(/^\/+/, '');
-  return new URL(normalizedPath, new URL(getPublicBaseUrl(), window.location.origin)).toString();
+  const origin =
+    typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+  return new URL(normalizedPath, new URL(getAppMountPrefix(), origin)).toString();
 }
 
 export function resolveBundledAssetUrl(relativePath: string): string {
   const normalized = relativePath.replace(/^\/+/, '');
-  const path = normalized.startsWith('assets/') ? workspacePath(normalized) : normalized;
-  return resolvePublicAssetUrl(path);
+  return resolvePublicAssetUrl(normalized);
 }
 
 /** @deprecated Use resolveBundledAssetUrl */

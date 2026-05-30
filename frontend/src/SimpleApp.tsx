@@ -1,8 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { loadSceneJson, loadTextFile } from './api/localFiles.ts';
 import { expandSimulationFiles } from './core/expandSimulationFiles.ts';
-import { getBasePath } from './core/pathUtils.ts';
-import { DEFAULT_SCENE_PATH } from './core/workspacePaths.ts';
+import { parseSceneRefFromUrl, getSceneBasePath, resolveApiFileRequest, syncSceneRefToUrl, type SceneRef } from './core/sceneRef.ts';
 import { parseSimulationText } from './core/parseSimulationText.ts';
 import { createSceneDocument } from './core/sceneDocument.ts';
 import { buildTimeline, getFrameAtTime } from './core/timeline.ts';
@@ -11,6 +10,7 @@ import type { NormalizedSceneConfig, SceneConfig, Timeline } from './core/types.
 const PREVIEW_CHANNEL_COUNT = 10;
 
 interface LoadedSceneData {
+  sceneRef: SceneRef;
   scenePath: string;
   scene: NormalizedSceneConfig;
   simulationFiles: string[];
@@ -30,19 +30,19 @@ function formatNumber(value: number): string {
   return value.toFixed(4).replace(/\.?0+$/, '');
 }
 
-function getScenePathFromUrl(): string {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('scene') ?? DEFAULT_SCENE_PATH;
+function getSceneRefFromUrl(): SceneRef {
+  return parseSceneRefFromUrl(new URLSearchParams(window.location.search));
 }
 
-async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
-  const rawScene = (await loadSceneJson(scenePath)) as SceneConfig;
-  const basePath = getBasePath(scenePath);
+async function loadSceneData(sceneRef: SceneRef): Promise<LoadedSceneData> {
+  const rawScene = (await loadSceneJson(sceneRef)) as SceneConfig;
+  const basePath = getSceneBasePath(sceneRef);
   const simulationFiles = expandSimulationFiles(rawScene.simulationData ?? [], basePath);
 
   const tables = await Promise.all(
     simulationFiles.map(async (filePath) => {
-      return parseSimulationText(await loadTextFile(filePath), filePath);
+      const request = resolveApiFileRequest(filePath);
+      return parseSimulationText(await loadTextFile(request.path, request.root), filePath);
     })
   );
 
@@ -51,7 +51,8 @@ async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
   const timeline = buildTimeline(tables);
 
   return {
-    scenePath,
+    sceneRef,
+    scenePath: sceneRef.path,
     scene,
     simulationFiles,
     timeline,
@@ -60,23 +61,23 @@ async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
 }
 
 export default function SimpleApp() {
-  const [sceneInput, setSceneInput] = useState(getScenePathFromUrl);
+  const initialSceneRef = useMemo(() => getSceneRefFromUrl(), []);
+  const [sceneInput, setSceneInput] = useState(initialSceneRef.path);
   const [loaded, setLoaded] = useState<LoadedSceneData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
 
-  async function handleLoad(scenePath: string) {
+  async function handleLoad(sceneRef: SceneRef) {
     setLoading(true);
     setError(null);
 
     try {
-      const nextLoaded = await loadSceneData(scenePath);
+      const nextLoaded = await loadSceneData(sceneRef);
       setLoaded(nextLoaded);
+      setSceneInput(nextLoaded.scenePath);
       setCurrentTime(nextLoaded.timeline.tInitial);
-      const url = new URL(window.location.href);
-      url.searchParams.set('scene', scenePath);
-      window.history.replaceState({}, '', url);
+      syncSceneRefToUrl(sceneRef);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Unknown load error');
     } finally {
@@ -85,7 +86,7 @@ export default function SimpleApp() {
   }
 
   useEffect(() => {
-    void handleLoad(sceneInput);
+    void handleLoad(initialSceneRef);
   }, []);
 
   const currentFrame = useMemo(() => {
@@ -106,7 +107,7 @@ export default function SimpleApp() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    void handleLoad(sceneInput);
+    void handleLoad({ ...initialSceneRef, path: sceneInput });
   };
 
   return (

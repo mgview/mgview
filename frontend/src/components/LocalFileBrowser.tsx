@@ -26,10 +26,20 @@ interface BreadcrumbSegment {
   path: string;
 }
 
+function isAppBundlePath(filePath: string): boolean {
+  return /^(samples|assets|bundled|legacy)(\/|$)/.test(filePath);
+}
+
+function rootBreadcrumbLabel(filePath: string): string {
+  return isAppBundlePath(filePath) ? 'app' : 'workspace';
+}
+
 function buildBreadcrumbs(currentPath: string): BreadcrumbSegment[] {
   const normalizedPath = currentPath === '.' ? '' : currentPath.replace(/\/+$/g, '');
   const pieces = normalizedPath.length > 0 ? normalizedPath.split('/') : [];
-  const breadcrumbs: BreadcrumbSegment[] = [{ label: 'root', path: '.' }];
+  const breadcrumbs: BreadcrumbSegment[] = [
+    { label: rootBreadcrumbLabel(normalizedPath), path: '.' },
+  ];
 
   let runningPath = '';
   for (const piece of pieces) {

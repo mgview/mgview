@@ -149,6 +149,25 @@ input[inputmode="decimal"] {
   font-weight: 700;
 }
 
+.scene-header-workspace-button {
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground, #8b949e);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-header-workspace-button:hover {
+  color: var(--foreground, #e6edf3);
+  text-decoration: underline;
+}
+
 .scene-header-code {
   min-width: 0;
   overflow: hidden;

@@ -4,6 +4,8 @@ import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 interface SceneHeaderBarProps {
   scenePath: string | null;
   sceneName: string | null;
+  workspaceRoot?: string | null;
+  onOpenWorkspace?: () => void;
   hasLocalEdits: boolean;
   loading: boolean;
   saving: boolean;
@@ -12,6 +14,7 @@ interface SceneHeaderBarProps {
   diagnosticsWarningCount: number;
   onOpenCreateOverlay: () => void;
   onOpenLoadOverlay: () => void;
+  onOpenSamplesOverlay: () => void;
   onOpenDiagnostics: () => void;
   onOpenChannels: () => void;
   onOpenSaveAsOverlay: () => void;
@@ -25,6 +28,8 @@ interface SceneHeaderBarProps {
 export default function SceneHeaderBar({
   scenePath,
   sceneName,
+  workspaceRoot = null,
+  onOpenWorkspace,
   hasLocalEdits,
   loading,
   saving,
@@ -33,6 +38,7 @@ export default function SceneHeaderBar({
   diagnosticsWarningCount,
   onOpenCreateOverlay,
   onOpenLoadOverlay,
+  onOpenSamplesOverlay,
   onOpenDiagnostics,
   onOpenChannels,
   onOpenSaveAsOverlay,
@@ -126,6 +132,16 @@ export default function SceneHeaderBar({
             </button>
           )}
           <code className="scene-header-code">{scenePath ?? '(none loaded)'}</code>
+          {onOpenWorkspace ? (
+            <button
+              type="button"
+              className="scene-header-workspace-button"
+              onClick={onOpenWorkspace}
+              title={workspaceRoot ?? 'Choose workspace folder'}
+            >
+              Workspace: {workspaceRoot ?? '…'}
+            </button>
+          ) : null}
         </div>
 
         <div className="scene-header-side">
@@ -167,6 +183,9 @@ export default function SceneHeaderBar({
                   strokeLinejoin="round"
                 />
               </svg>
+            </button>
+            <button type="button" className="secondary-button" onClick={onOpenSamplesOverlay} disabled={loading}>
+              Samples…
             </button>
             <div
               className="split-button"

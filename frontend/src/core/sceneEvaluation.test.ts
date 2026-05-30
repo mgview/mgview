@@ -354,3 +354,44 @@ test('scene evaluation resolves cable spans from sceneOrigin point data', () => 
     },
   ]);
 });
+
+test('scene evaluation treats sceneOrigin span endpoint as zero without sim channels', () => {
+  const scene = createSceneDocument({
+    newtonianFrame: 'N',
+    sceneOrigin: 'No',
+    spans: {
+      spring: {
+        point1: 'No',
+        point2: 'Q',
+        visual: {
+          wire1: {
+            thickness: 1,
+            material: 'WHITE',
+          },
+        },
+      },
+    },
+  });
+
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {
+      'P_No_Q[1]': 0.4,
+      'P_No_Q[2]': 0,
+      'P_No_Q[3]': 0,
+    },
+  });
+
+  assert.deepEqual(evaluation.spans, [
+    {
+      name: 'spring.wire1',
+      kind: 'line',
+      visible: true,
+      material: { name: 'WHITE', color: undefined },
+      width: 1,
+      lineStyle: 'solid',
+      start: { x: 0, y: 0, z: 0 },
+      end: { x: 0.4, y: 0, z: 0 },
+    },
+  ]);
+});

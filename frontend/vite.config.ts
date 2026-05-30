@@ -15,7 +15,7 @@ const isStaticHostingBuild = process.env.VITE_MGVIEW_STATIC === 'true';
 function legacySamplesPlugin(): Plugin {
   const configDir = path.dirname(fileURLToPath(import.meta.url));
   const samplesRoot = path.resolve(configDir, '../samples');
-  const appDirName = process.env.VITE_MGVIEW_APP_DIR ?? 'mgview';
+  const appDirName = process.env.VITE_MGVIEW_APP_DIR ?? '';
   const samplesUrlPrefix =
     appDirName.length > 0 ? `/${appDirName}/samples/` : '/samples/';
 
@@ -113,6 +113,15 @@ function staticHostingManifestPlugin(): Plugin {
         type: 'asset',
         fileName: 'static-file-manifest.json',
         source: `${JSON.stringify(manifest, null, 2)}\n`,
+      });
+
+      const frontendDir = path.dirname(fileURLToPath(import.meta.url));
+      const samplesManifestPath = path.resolve(frontendDir, '../samples-manifest.json');
+      const samplesManifestSource = await readFile(samplesManifestPath, 'utf8');
+      this.emitFile({
+        type: 'asset',
+        fileName: 'samples-manifest.json',
+        source: samplesManifestSource,
       });
     },
   };

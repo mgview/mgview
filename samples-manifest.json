@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "scenes": [
+    { "group": "Basics", "label": "Particle Pendulum", "path": "particle_pendulum/particle_pendulum.json" },
+    { "group": "Basics", "label": "Default Template", "path": "default.json" },
+    { "group": "Mechanisms", "label": "Ball In Tube", "path": "ball_in_tube/ball_in_tube.json" },
+    { "group": "Mechanisms", "label": "Particle In Slot", "path": "particle_in_slot/slot.json" },
+    { "group": "Vehicles", "label": "Tricycle", "path": "tricycle/tricycle.json" },
+    { "group": "Cameras", "label": "SkyCam Fixed", "path": "skycam/SkyCamFixed.json" },
+    { "group": "Robots", "label": "RCM Homogeneous", "path": "rcm_robot/ME328_RCMRobot_Homogeneous.json" },
+    { "group": "Robots", "label": "RCM Palpating", "path": "rcm_robot/ME328_RCMRobot_Palpating.json" },
+    { "group": "Robots", "label": "RCM Circle 10cm", "path": "rcm_robot/ME328_RCMRobot_Circle_Depth10cm.json" },
+    { "group": "Robots", "label": "RCM Circle 20cm", "path": "rcm_robot/ME328_RCMRobot_Circle_Depth20cm.json" },
+    { "group": "Meshes", "label": "Wooden Phantom", "path": "wooden_phantom/wooden_phantom.json" },
+    { "group": "Meshes", "label": "Wooden Phantom GUI", "path": "wooden_phantom/wooden_phantom_gui.json" }
+  ]
+}

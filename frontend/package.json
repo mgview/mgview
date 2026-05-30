@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test": "node --experimental-strip-types --test src/core/*.test.ts src/rendering/*.test.ts src/hooks/*.test.ts",
-    "build": "vite build",
+    "test": "node --experimental-strip-types --test src/api/*.test.ts src/core/*.test.ts src/rendering/*.test.ts src/hooks/*.test.ts && node --test ../bin/workspaceRoots.test.js",
+    "build": "VITE_MGVIEW_PUBLIC_BASE=/mgview/ VITE_MGVIEW_BASE=/mgview/ vite build",
     "build:static:github": "VITE_MGVIEW_STATIC=true VITE_MGVIEW_APP_DIR= VITE_MGVIEW_PUBLIC_BASE=/mgview/ VITE_MGVIEW_BASE=/mgview/ vite build --outDir dist-pages",
     "build:static:workspace": "VITE_MGVIEW_STATIC=true VITE_MGVIEW_APP_DIR=mgview VITE_MGVIEW_PUBLIC_BASE=/ VITE_MGVIEW_BASE=/mgview/ vite build --outDir dist-pages",
     "assemble:site": "node scripts/assembleSite.mjs",
