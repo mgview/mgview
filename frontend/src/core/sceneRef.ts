@@ -75,6 +75,17 @@ export function syncSceneRefToUrl(ref: SceneRef): void {
   window.history.replaceState({}, '', url);
 }
 
+export function clearSceneRefFromUrl(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete('sample');
+  url.searchParams.delete('scene');
+  window.history.replaceState({}, '', url);
+}
+
 export function resolveApiFilePath(ref: SceneRef): string {
   if (ref.source === 'sample') {
     return `samples/${ref.path}`;

@@ -49,13 +49,23 @@ export function useServerWorkspace(
     setPickerOpen(false);
   };
 
-  const applyWorkspaceRoot = async (onApplied?: () => void | Promise<void>) => {
+  const applyWorkspaceRoot = async (
+    beforeApply?: () => boolean | Promise<boolean>,
+    onApplied?: () => void | Promise<void>
+  ) => {
     const trimmedRoot = draftWorkspaceRoot.trim();
     if (trimmedRoot.length === 0) {
       const message = 'Enter a workspace folder path.';
       setError(message);
       showError?.(message);
       return false;
+    }
+
+    if (beforeApply) {
+      const shouldApply = await beforeApply();
+      if (!shouldApply) {
+        return false;
+      }
     }
 
     setSaving(true);

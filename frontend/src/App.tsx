@@ -41,9 +41,11 @@ export default function App() {
     browserLoading,
     draftScene,
     error,
+    confirmWorkspaceChange,
     handleBrowse,
     handleCreateScene,
     handleLoad,
+    handleWorkspaceChange,
     handleLoadWorkspacePath,
     handleRevertDraft,
     handleRedo,
@@ -589,9 +591,14 @@ export default function App() {
           saving={serverWorkspace.saving}
           workspaceInfo={serverWorkspace.workspaceInfo}
           onApply={() => {
-            void serverWorkspace.applyWorkspaceRoot(async () => {
-              await handleBrowse('.', 'workspace');
-            });
+            void serverWorkspace.applyWorkspaceRoot(
+              confirmWorkspaceChange,
+              async () => {
+                await handleWorkspaceChange(() => {
+                  shell.openLoadOverlay();
+                });
+              }
+            );
           }}
           onClose={serverWorkspace.closePicker}
           onDraftChange={serverWorkspace.setDraftWorkspaceRoot}

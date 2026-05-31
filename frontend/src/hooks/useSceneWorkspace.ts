@@ -11,6 +11,7 @@ import {
 import { expandSimulationFiles } from '../core/expandSimulationFiles.ts';
 import { getBasePath } from '../core/pathUtils.ts';
 import {
+  clearSceneRefFromUrl,
   createWorkspaceRef,
   formatSceneRef,
   getApiRoot,
@@ -353,6 +354,16 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     setSelectedVisualName(nextLoaded.objectInspections[0]?.visuals[0]?.name ?? null);
   };
 
+  const clearCurrentScene = () => {
+    setLoaded(null);
+    setSimulationState(null);
+    setSceneInput('');
+    resetDraftScene(null);
+    setSelectedObjectName(null);
+    setSelectedVisualName(null);
+    clearSceneRefFromUrl();
+  };
+
   const handleBrowse = async (nextPath: string, root: ApiRoot = 'workspace') => {
     setBrowserLoading(true);
     setBrowserError(null);
@@ -431,6 +442,46 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     }
 
     return handleLoad(createWorkspaceRef(workspacePath), options);
+  };
+
+  const confirmWorkspaceChange = async () => {
+    if (loaded?.sceneRef.source !== 'workspace') {
+      return true;
+    }
+
+    return confirmDiscardLocalEdits(loaded.scenePath, 'Changing workspace');
+  };
+
+  const handleWorkspaceChange = async (onNeedsSceneSelection?: () => void) => {
+    setError(null);
+
+    if (!loaded) {
+      await handleBrowse('.', 'workspace');
+      onNeedsSceneSelection?.();
+      return;
+    }
+
+    if (loaded.sceneRef.source === 'sample') {
+      await handleBrowse('.', 'workspace');
+      return;
+    }
+
+    const nextSceneRef = createWorkspaceRef(loaded.sceneRef.path);
+
+    setLoading(true);
+
+    try {
+      const nextLoaded = await loadSceneData(nextSceneRef);
+      commitLoadedScene(nextLoaded);
+    } catch (loadError) {
+      clearCurrentScene();
+      await handleBrowse('.', 'workspace');
+      const message = loadError instanceof Error ? loadError.message : 'Could not load scene in the new workspace';
+      reportError(`${message}. Choose a scene from the new workspace to continue.`);
+      onNeedsSceneSelection?.();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreateScene = async (scenePath: string) => {
@@ -625,6 +676,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     handleCreateScene,
     handleLoad,
     handleLoadWorkspacePath,
+    handleWorkspaceChange,
     handleRevertDraft,
     handleSaveSceneAs,
     handleSaveScene,
@@ -642,6 +694,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     canRedoDraftScene,
     canUndoDraftScene,
     sceneInput,
+    confirmWorkspaceChange,
     selectedObjectName,
     selectedVisualName,
     setError,

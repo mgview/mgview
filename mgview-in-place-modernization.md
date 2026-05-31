@@ -106,17 +106,17 @@ Do not use `npm run preview` as a substitute for the real app; it does not provi
 - Mixed inferred reference systems still warn and continue rather than offering reconciliation tools.
 - No HTTP-level integration tests for the workspace/file server routes.
 - Some legacy feature parity work remains, especially around less-common visuals and polish.
-- Workspace-switch behavior still needs a more principled no-scene/missing-scene flow.
 
-### Workspace-switch UX follow-up
+### Workspace-switch behavior
 
-- Treat workspace selection as global app context, separate from the currently loaded document.
-- Changing workspace should not automatically create or load a scene.
-- Desired behavior to implement:
-  - If a workspace scene is loaded and the same relative path exists in the new workspace, keep it loaded.
-  - If a workspace scene is loaded and that path does not exist in the new workspace, clear the current document and open the load/create flow rooted at the new workspace.
-  - If a sample scene is loaded, changing workspace should leave the sample loaded.
-  - If no scene is loaded, changing workspace should update context and then open the load/create flow rooted at the new workspace.
+- Workspace selection is treated as global app context, separate from the currently loaded document.
+- Changing workspace does not automatically create or arbitrarily load a scene.
+- Current behavior:
+  - If a workspace scene is loaded and the same relative path exists in the new workspace, the app keeps that scene loaded.
+  - If a workspace scene is loaded and that path does not exist in the new workspace, the app clears the current document, clears the scene URL state, and opens the load flow rooted at the new workspace.
+  - If a sample scene is loaded, changing workspace leaves the sample loaded and updates workspace browsing context.
+  - If no scene is loaded, changing workspace updates context and opens the load flow rooted at the new workspace.
+  - If unsaved local edits exist on a workspace scene, the app confirms before applying the workspace change.
 
 ## Practical next work
 
