@@ -403,6 +403,7 @@ export default function App() {
                     scene={activeScene}
                     frame={currentFrame?.frame}
                     selectedObjectName={activeSelectedObject?.name ?? null}
+                    showPerformanceOverlay={shell.performanceOverlayOpen}
                   />
 
                   <PlaybackStrip
@@ -579,6 +580,8 @@ export default function App() {
       {shell.diagnosticsOpen && loaded ? (
         <DiagnosticsOverlay
           diagnostics={diagnostics}
+          performanceOverlayOpen={shell.performanceOverlayOpen}
+          setPerformanceOverlayOpen={shell.setPerformanceOverlayOpen}
           onClose={shell.closeDiagnostics}
         />
       ) : null}

@@ -101,7 +101,6 @@ Do not use `npm run preview` as a substitute for the real app; it does not provi
 ## Known gaps
 
 - No plotting/chart panels yet.
-- Static hosting cannot browse or save workspace files.
 - JSON inspector is still a save preview, not a full editor.
 - Mixed inferred reference systems still warn and continue rather than offering reconciliation tools.
 - No HTTP-level integration tests for the workspace/file server routes.
@@ -121,6 +120,36 @@ Do not use `npm run preview` as a substitute for the real app; it does not provi
 ## Practical next work
 
 1. Add plotting panels for simulation channels.
-2. Tighten workspace/editor UX and keyboard interactions.
-3. Continue legacy parity audit against the modern inspector and sample set.
+2. Tighten workspace/editor UX and keyboard interactions:
+   - Add richer keyboard shortcuts beyond undo/redo/save/playback toggle:
+     - next/previous object or span selection
+     - next/previous visual selection within the active object/span
+     - create/delete shortcuts for visuals and spans
+     - direct shortcuts to open load/samples/diagnostics/sim-files surfaces
+   - Improve keyboard and focus behavior for menus, overlays, and inspector lists:
+     - arrow-key navigation in object/span lists
+     - focus handoff when opening/closing overlays and split-button menus
+     - first-class keyboard access for load/save dropdown actions
+   - Reduce pointer-only editing flows in the inspector:
+     - explicit rename affordances instead of click-selected-item-to-rename
+     - better empty/disabled states when nothing is selected
+     - clearer selection persistence when creating/deleting visuals and spans
+   - Refine workspace document flows:
+     - clearer messaging around reload vs revert vs load another scene
+     - stronger unsaved-change cues during workspace switches and scene loads
+     - smoother path-entry/browse interactions in load, save-as, and sim-file dialogs
+3. Continue legacy parity audit against the modern inspector and sample set:
+   - Walk the bundled sample set and compare rendering/behavior against legacy for:
+     - mesh, text, basis, torus, cone, grid, and span visual variants
+     - material/texture presets and appearance differences
+     - default auto-generated label/basis/marker visuals
+   - Compare editing affordances against the legacy object dialog:
+     - geometry parameter coverage
+     - rename/create/delete flows
+     - visibility/material/transform editing polish
+   - Verify less-common scene authoring cases end to end:
+     - mesh path handling and failure states
+     - text visual editing and rendering fidelity
+     - span line/cylinder/spring editing and rendering consistency
+   - Capture remaining parity gaps as explicit issues instead of leaving “polish” broad.
 4. Add integration coverage for `/mgview/api/workspace` and file/list endpoints.

@@ -5,6 +5,8 @@ import type { NormalizedSceneConfig } from '../core/types.ts';
 import type { LoadedSceneData } from './useSceneWorkspace.ts';
 import { getDirectoryPath } from './useSceneWorkspace.ts';
 
+const PERFORMANCE_OVERLAY_STORAGE_KEY = 'mgview.performanceOverlayOpen';
+
 function tupleApproximatelyEqual(
   left: [number, number, number] | undefined,
   right: [number, number, number],
@@ -32,6 +34,14 @@ function combineBrowserPath(currentFolder: string | null | undefined, path: stri
   return currentFolder && currentFolder !== '.'
     ? `${currentFolder.replace(/\/+$/g, '')}/${trimmedPath}`
     : trimmedPath;
+}
+
+function readStoredPerformanceOverlayPreference() {
+  try {
+    return window.localStorage.getItem(PERFORMANCE_OVERLAY_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
 }
 
 export type CameraDraftPreview = {
@@ -78,10 +88,19 @@ export function useWorkspaceShell({
   const [samplesOverlayOpen, setSamplesOverlayOpen] = useState(false);
   const [sceneOverlayMode, setSceneOverlayMode] = useState<SceneOverlayMode>('load');
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [performanceOverlayOpen, setPerformanceOverlayOpen] = useState(readStoredPerformanceOverlayPreference);
   const [simulationOverlayOpen, setSimulationOverlayOpen] = useState(false);
   const [simulationEntryInput, setSimulationEntryInput] = useState('');
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
   const [cameraPreview, setCameraPreview] = useState<CameraDraftPreview | null>(null);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PERFORMANCE_OVERLAY_STORAGE_KEY, String(performanceOverlayOpen));
+    } catch {
+      // Ignore storage failures so the toggle still works in restricted contexts.
+    }
+  }, [performanceOverlayOpen]);
 
   useEffect(() => {
     if (!activeScene || !cameraPreview) {
@@ -330,9 +349,11 @@ export function useWorkspaceShell({
     sceneOverlayMode,
     setCameraPreview,
     setLeftRailCollapsed,
+    setPerformanceOverlayOpen,
     setSimulationEntryInput,
     simulationEntryInput,
     simulationOverlayOpen,
+    performanceOverlayOpen,
     updateSceneVector,
     updateSceneVectorPreview,
     removeSimulationEntry,

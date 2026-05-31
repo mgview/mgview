@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -59,6 +59,7 @@ interface RendererPanelProps {
   scene: NormalizedSceneConfig;
   frame: TimelineFrame | undefined;
   selectedObjectName: string | null;
+  showPerformanceOverlay?: boolean;
 }
 
 interface SceneHandle {
@@ -76,6 +77,20 @@ interface SceneHandle {
   cameraChangeFrameId: number | null;
 }
 
+interface PerformanceOverlayStats {
+  fps: number;
+  frameTimeMs: number;
+  drawCalls: number;
+  triangles: number;
+  geometries: number;
+  textures: number;
+  pixelRatio: number;
+}
+
+function formatOverlayNumber(value: number) {
+  return Number.isFinite(value) ? value.toLocaleString() : '0';
+}
+
 export default function RendererPanel({
   cameraSeedKey,
   layoutSizeKey,
@@ -85,6 +100,7 @@ export default function RendererPanel({
   scene,
   frame,
   selectedObjectName,
+  showPerformanceOverlay = false,
 }: RendererPanelProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const handleRef = useRef<SceneHandle | null>(null);
@@ -97,9 +113,21 @@ export default function RendererPanel({
   const latestCameraCommitRef = useRef(onCameraCommit);
   const latestCameraPreviewChangeRef = useRef(onCameraPreviewChange);
   const lastEmittedCameraSeedKeyRef = useRef<string | null>(null);
+  const showPerformanceOverlayRef = useRef(showPerformanceOverlay);
+  const performanceSampleRef = useRef<{
+    lastFrameTimestamp: number | null;
+    sampleStartedAt: number | null;
+    sampleFrameCount: number;
+  }>({
+    lastFrameTimestamp: null,
+    sampleStartedAt: null,
+    sampleFrameCount: 0,
+  });
+  const [performanceStats, setPerformanceStats] = useState<PerformanceOverlayStats | null>(null);
 
   latestCameraCommitRef.current = onCameraCommit;
   latestCameraPreviewChangeRef.current = onCameraPreviewChange;
+  showPerformanceOverlayRef.current = showPerformanceOverlay;
 
   const toCameraState = (override: CameraOverride) => ({
     cameraParentFrame: override.parentFrame,
@@ -219,8 +247,41 @@ export default function RendererPanel({
     resize();
 
     const tick = () => {
+      const now = performance.now();
+      const perfState = performanceSampleRef.current;
+      if (perfState.lastFrameTimestamp === null) {
+        perfState.lastFrameTimestamp = now;
+        perfState.sampleStartedAt = now;
+        perfState.sampleFrameCount = 0;
+      }
+
+      perfState.sampleFrameCount += 1;
+      const frameTimeMs = now - perfState.lastFrameTimestamp;
+      perfState.lastFrameTimestamp = now;
+
       controls.update();
       renderer.render(world, camera);
+
+      if (showPerformanceOverlayRef.current && perfState.sampleStartedAt !== null) {
+        const sampleElapsedMs = now - perfState.sampleStartedAt;
+        if (sampleElapsedMs >= 250) {
+          setPerformanceStats({
+            fps: perfState.sampleFrameCount / (sampleElapsedMs / 1000),
+            frameTimeMs,
+            drawCalls: renderer.info.render.calls,
+            triangles: renderer.info.render.triangles,
+            geometries: renderer.info.memory.geometries,
+            textures: renderer.info.memory.textures,
+            pixelRatio: renderer.getPixelRatio(),
+          });
+          perfState.sampleStartedAt = now;
+          perfState.sampleFrameCount = 0;
+        }
+      } else {
+        perfState.sampleStartedAt = now;
+        perfState.sampleFrameCount = 0;
+      }
+
       handleRef.current!.frameId = requestAnimationFrame(tick);
     };
 
@@ -259,6 +320,12 @@ export default function RendererPanel({
       handleRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!showPerformanceOverlay) {
+      setPerformanceStats(null);
+    }
+  }, [showPerformanceOverlay]);
 
   useEffect(() => {
     const handle = handleRef.current;
@@ -362,7 +429,29 @@ export default function RendererPanel({
 
   return (
     <section className="panel renderer-panel">
-      <div className="renderer-surface" ref={hostRef} />
+      <div className="renderer-surface" ref={hostRef}>
+        {showPerformanceOverlay && performanceStats ? (
+          <div className="performance-overlay" aria-live="off">
+            <div className="performance-overlay-title">Renderer</div>
+            <div className="performance-overlay-grid">
+              <span>FPS</span>
+              <strong>{formatOverlayNumber(Math.round(performanceStats.fps))}</strong>
+              <span>Frame</span>
+              <strong>{performanceStats.frameTimeMs.toFixed(1)} ms</strong>
+              <span>Draw Calls</span>
+              <strong>{formatOverlayNumber(performanceStats.drawCalls)}</strong>
+              <span>Triangles</span>
+              <strong>{formatOverlayNumber(performanceStats.triangles)}</strong>
+              <span>Geometries</span>
+              <strong>{formatOverlayNumber(performanceStats.geometries)}</strong>
+              <span>Textures</span>
+              <strong>{formatOverlayNumber(performanceStats.textures)}</strong>
+              <span>Pixel Ratio</span>
+              <strong>{performanceStats.pixelRatio.toFixed(2)}</strong>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }
