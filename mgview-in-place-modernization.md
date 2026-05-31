@@ -1,257 +1,96 @@
 # MGView In-Place Modernization
 
-Handoff doc for the local-file MGView rewrite. Longer-term cloud direction lives in
-[`docs/mgview-modernization-plan.md`](../docs/mgview-modernization-plan.md).
+Short handoff for the current local-file React rewrite that lives beside the legacy app.
 
-## Current state (May 2026)
+## Current state
 
-| Item | State |
-|------|--------|
-| **Recently shipped** | [Scene sources split](mgview-scene-sources-split.md) and [inferred reference context](mgview-inferred-reference-context.md) |
-| **Next work** | Plotting panels; workspace/editor polish; feature parity cleanup (see [Next work](#next-work-product)) |
-| **Branch** | `master` — workspace picker, scene-sources split, server workspace sync fixes |
-| **Prior** | lowercase URL/app-dir cleanup merged in PR [#6](https://github.com/mgview/mgview/pull/6) |
-| **Live demo** | https://mgview.github.io/mgview/ (modern), https://mgview.github.io/mgview/legacy/ (legacy) |
-| **CI** | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — PRs: test + static build only |
-| **Pages deploy** | [`.github/workflows/pages.yml`](.github/workflows/pages.yml) — push to `master` or `workflow_dispatch` only |
-| **Pages settings** | Source = GitHub Actions; `github-pages` environment allows `master` only |
+- Modern app lives in [`frontend/src/App.tsx`](/Users/adam/code/mgview_project/mgview/frontend/src/App.tsx) and is the active surface for ongoing work.
+- Legacy app remains in [`legacy/`](/Users/adam/code/mgview_project/mgview/legacy) as reference and still ships on GitHub Pages under `/mgview/legacy/`.
+- Core scene/timeline/reference logic has been split out and is covered by Node-based tests in [`frontend/src/core/`](/Users/adam/code/mgview_project/mgview/frontend/src/core), [`frontend/src/rendering/`](/Users/adam/code/mgview_project/mgview/frontend/src/rendering), [`frontend/src/hooks/`](/Users/adam/code/mgview_project/mgview/frontend/src/hooks), and [`bin/workspaceRoots.test.js`](/Users/adam/code/mgview_project/mgview/bin/workspaceRoots.test.js).
+- Recent work reflected in the codebase: scene source split, inferred reference context, server-backed workspace picker, editable object/span inspectors, save/load/create flows, and static-site packaging.
 
-**After pull / new session:**
+## What the modern app does today
 
-```bash
-cd frontend && npm install && npm test && npm run build
-```
+- Loads bundled samples with `?sample=...` and workspace scenes with `?scene=...`.
+- Renders the scene with current `three` and drives transforms from simulation data at time `t`.
+- Supports local-server scene load, save, save-as, create, undo/redo, diagnostics, simulation file inspection, and URL sync.
+- Includes object, visual, scene, and span editing UI.
+- Supports static hosting for demo use, but static mode is sample-only and read-only.
 
-(`frontend/dist/` is gitignored.)
+## Runtime model
 
-**Workspace layout** (default workspace root = parent of app install; set via picker or `~/.mgview/config.json`):
+- Browser mount is always `/mgview/` regardless of the install folder name on disk.
+- Local server is [`bin/server.js`](/Users/adam/code/mgview_project/mgview/bin/server.js).
+- Two roots exist on the local server:
+  - App root: this repo/install, used for bundled `samples/` and `assets/`
+  - Workspace root: configured in `~/.mgview/config.json`, defaulting to the parent of the app install
+- Workspace config is exposed at `GET`/`POST /mgview/api/workspace`.
+- File APIs use `root=workspace|sample|app` plus a logical `path=...`.
+- Server syncs workspace roots from config on every API request, so changing the workspace does not require a restart.
 
-```text
-~/projects/             ← example WORKSPACE_ROOT
-  mgview/               ← repo clone (folder name arbitrary; browser mount stays /mgview/)
-  my_sim_folder/        ← sibling sim data — list with Load… at `.`
-```
+## URLs and surfaces
 
----
+| Surface | URL shape | Notes |
+|---|---|---|
+| Local server | `http://localhost:8000/mgview/` | Full workspace API |
+| Static preview | `http://localhost:8001/mgview/` | Mirrors GitHub Pages layout |
+| GitHub Pages | `https://mgview.github.io/mgview/` | Sample-only, no workspace API |
+| Legacy app | `/mgview/legacy/MGView.html` | Historical reference |
 
-## Direction
+Related docs:
 
-Modernize in place: keep legacy jQuery app working, build React replacement beside it.
+- [`mgview-scene-sources-split.md`](/Users/adam/code/mgview_project/mgview/mgview-scene-sources-split.md)
+- [`mgview-inferred-reference-context.md`](/Users/adam/code/mgview_project/mgview/mgview-inferred-reference-context.md)
+- [`BUILD.md`](/Users/adam/code/mgview_project/mgview/BUILD.md)
 
-- [`frontend/src/App.tsx`](frontend/src/App.tsx) — main app (local `/mgview/`, GH Pages site root)
-- [`frontend/src/SimpleApp.tsx`](frontend/src/SimpleApp.tsx) — preserved baseline at `/mgview/simple` (local) and `/simple` (GH Pages)
-- [`legacy/`](legacy/) — reference jQuery app; not the active product surface
-
-Renderer: current stable `three`; simulation-driven transforms at time `t` (not free-form pose authoring yet). `../frame_viz` is inspiration only for future authoring modes.
-
-Reference semantics: inferred from simulation channels, not authored scene-level `newtonianFrame` / `sceneOrigin`. See [`mgview-inferred-reference-context.md`](mgview-inferred-reference-context.md).
-
----
-
-## Path model
-
-One lowercase **web prefix**: **`/mgview/`** (product name in UI can still say "MGView"). That prefix is a fixed app mount in the browser — it is **not** required to equal the install folder name on disk (future workspace work will decouple them further).
-
-### Path & scene model (current)
-
-**Two filesystem roots** on the local Node server:
-
-| Root | On disk | API access |
-|------|---------|------------|
-| **App root** | MGView install (`bin/../`) | `root=sample` or `root=app`; static URLs `/mgview/samples/…`, `/mgview/assets/…` |
-| **Workspace root** | `~/.mgview/config.json` (default: parent of app) | `root=workspace` (default) |
-
-Config: `~/.mgview/config.json`. API: `GET`/`POST` `/mgview/api/workspace`. UI: header **Workspace:** → picker ([`useServerWorkspace.ts`](frontend/src/hooks/useServerWorkspace.ts)). Workspace must be **outside** the app install (invalid paths auto-reset on server start).
-
-**Server keeps roots in sync:** every `/mgview/api/*` call runs `syncWorkspaceRootsFromConfig_`; workspace POST uses `persistWorkspaceRoot_` ([`bin/server.js`](bin/server.js)). No server restart needed after changing workspace.
-
-**Scene URLs** ([`sceneRef.ts`](frontend/src/core/sceneRef.ts)) — no legacy `?scene=samples/…`:
-
-| Query | Meaning |
-|-------|---------|
-| `?sample=particle_pendulum/particle_pendulum.json` | bundled sample (path without `samples/` prefix) |
-| `?scene=my_sim_folder/scene.json` | workspace-relative scene |
-
-Gallery: [`samples-manifest.json`](samples-manifest.json) via [`samplesManifest.ts`](frontend/src/core/samplesManifest.ts). Hidden samples: omit from manifest; load via `?sample=…` if file exists.
-
-**UI:** **Load…** = workspace browser at `.` only; **Samples…** = manifest gallery ([`SamplesOverlay.tsx`](frontend/src/components/SamplesOverlay.tsx)). Details: [`mgview-scene-sources-split.md`](mgview-scene-sources-split.md).
-
-| Context | App URL | Deep link |
-|---------|---------|-----------|
-| Local Node server | `http://localhost:8000/mgview/` (use trailing slash; server redirects `/mgview` → `/mgview/`) | `?sample=…` or `?scene=…` |
-| GitHub Pages | `https://mgview.github.io/mgview/` | `?sample=…` only (no workspace API) |
-
-**List/file API:** `GET /mgview/api/list?root=workspace|sample&path=…` (see [`BUILD.md`](BUILD.md)).
-
-**Legacy app** ([`legacy/MGView.html`](legacy/MGView.html)): `path=samples/...` relative to legacy page dir. Textures: `../assets/textures/...`.
-
-**Key files:** [`sceneRef.ts`](frontend/src/core/sceneRef.ts), [`samplesManifest.ts`](frontend/src/core/samplesManifest.ts), [`workspacePaths.ts`](frontend/src/core/workspacePaths.ts), [`bin/workspaceRoots.js`](bin/workspaceRoots.js), [`bin/server.js`](bin/server.js), [`localFilesServer.ts`](frontend/src/api/localFilesServer.ts), [`useSceneWorkspace.ts`](frontend/src/hooks/useSceneWorkspace.ts), [`useServerWorkspace.ts`](frontend/src/hooks/useServerWorkspace.ts), [`assetPaths.ts`](frontend/src/api/assetPaths.ts).
-
-**Windows launch:** [`bin/RunVisualizer.bat`](bin/RunVisualizer.bat) (shortcut `RunMGViewWindows.lnk`) — opens `http://localhost:8000/mgview/`, runs `node bin/server.js`. Requires `cd frontend && npm run build` after pulls.
-
-**Legacy URLs:** `/mgview/legacy/…` works; `/MGView/…` and `/legacy/…` 301 to `/mgview/…`.
-
-### Workspace layout note
-
-The install folder name no longer has to be `mgview`; only the browser mount stays `/mgview/`. Multiple app installs can live under one workspace root; the running server always uses its own **app root** for `samples/` and `assets/`.
-
----
-
-## Run commands
-
-| Goal | Command | URL |
-|------|---------|-----|
-| Local server (full API) | `(cd frontend && npm run build) && ./RunMGViewMac` | `http://localhost:8000/mgview/` |
-| Static preview (GH layout) | `cd frontend && npm run preview:site` | `http://localhost:8001/mgview/` |
-| Static preview (custom port) | `MGVIEW_STATIC_PORT=8765 npm run preview:site` | `http://localhost:8765/mgview/` |
-| Static preview (workspace layout) | `npm run preview:site:workspace` | `http://localhost:8001/mgview/` |
-| Legacy examples | (server or static) | `.../mgview/legacy/Examples.html` |
-| Legacy viewer | | `.../mgview/legacy/MGView.html` |
-
-Do **not** use `npm run preview` (vite alone) as a stand-in — no file API.
-
-### Build outputs (do not mix)
-
-| Script | Output | Use |
-|--------|--------|-----|
-| `npm run build` | `frontend/dist/` | Local server |
-| `npm run build:site` | `build/gh-pages/` | GH Pages CI + `preview:site` |
-| `npm run build:site:workspace` | `build/gh-pages-workspace/mgview/` | `preview:site:workspace` |
-| `npm run build:release` | `build/release/mgview-*.zip` | Downloads (`mgview/` top-level) |
-
-Static shim: `VITE_MGVIEW_STATIC=true`. GH Pages + local server builds use empty `VITE_MGVIEW_APP_DIR`; only `build:static:workspace` sets `mgview` for parent-folder static preview.
-
-After moving the repo clone or seeing stale static behavior, clear generated output and Vite cache:
+## Run/build commands
 
 ```bash
 cd frontend
-rm -rf node_modules/.vite dist dist-pages ../build/gh-pages ../build/gh-pages-workspace
-npm run build:site
+npm install
+npm test
+npm run build
+cd ..
+./RunMGViewMac
 ```
 
----
+Useful variants:
 
-## Repo layout
+- `cd frontend && npm run preview:site`
+- `cd frontend && npm run build:site`
+- `cd frontend && npm run build:release`
 
-```text
-mgview/                 ← repo (APP_DIR for local server builds)
-  frontend/             ← React + Vite
-  legacy/               ← jQuery app (GH Pages optional)
-  samples/              ← shared sample scenes
-  assets/textures/      ← shared textures (modern + legacy)
-  bin/server.js
-  RunMGViewMac
-```
+Important build outputs:
 
----
+- `npm run build` -> `frontend/dist/` for the local Node server
+- `npm run build:site` -> `build/gh-pages/` for GitHub Pages
+- `npm run build:release` -> `build/release/mgview-*.zip`
 
-## Modern app — structure
+Do not use `npm run preview` as a substitute for the real app; it does not provide the MGView file API.
 
-| Area | Location |
-|------|----------|
-| Main UI | [`frontend/src/App.tsx`](frontend/src/App.tsx) (~505 lines, composition root) |
-| Hooks | [`useSceneWorkspace`](frontend/src/hooks/useSceneWorkspace.ts), [`useWorkspaceShell`](frontend/src/hooks/useWorkspaceShell.ts), [`usePlaybackController`](frontend/src/hooks/usePlaybackController.ts), selection/span editors, [`useInspectorSelectionState`](frontend/src/hooks/useInspectorSelectionState.ts) |
-| Core semantics | [`frontend/src/core/`](frontend/src/core/) — scene, timeline, inference, spans |
-| Rendering | [`frontend/src/rendering/`](frontend/src/rendering/) — Three.js, meshes, scene graph |
-| Components | [`frontend/src/components/`](frontend/src/components/) — workspace shell, overlays, editor panes |
+## Code map
 
-**Workspace UX (summary):** compact header + renderer + playback strip + collapsible right rail (object list + visual/scene/JSON panes). Overlays for load/create, diagnostics, sim files. Undo/redo, toasts, static demo notice. Save disabled on static hosting.
+- App shell: [`frontend/src/App.tsx`](/Users/adam/code/mgview_project/mgview/frontend/src/App.tsx)
+- Workspace + load/save flow: [`frontend/src/hooks/useSceneWorkspace.ts`](/Users/adam/code/mgview_project/mgview/frontend/src/hooks/useSceneWorkspace.ts)
+- Workspace picker state: [`frontend/src/hooks/useServerWorkspace.ts`](/Users/adam/code/mgview_project/mgview/frontend/src/hooks/useServerWorkspace.ts)
+- URL/path model: [`frontend/src/core/sceneRef.ts`](/Users/adam/code/mgview_project/mgview/frontend/src/core/sceneRef.ts), [`frontend/src/core/workspacePaths.ts`](/Users/adam/code/mgview_project/mgview/frontend/src/core/workspacePaths.ts)
+- Scene model + diagnostics: [`frontend/src/core/sceneDocument.ts`](/Users/adam/code/mgview_project/mgview/frontend/src/core/sceneDocument.ts), [`frontend/src/core/sceneInspector.ts`](/Users/adam/code/mgview_project/mgview/frontend/src/core/sceneInspector.ts)
+- Rendering: [`frontend/src/rendering/sceneGraph.ts`](/Users/adam/code/mgview_project/mgview/frontend/src/rendering/sceneGraph.ts), [`frontend/src/rendering/meshFactory.ts`](/Users/adam/code/mgview_project/mgview/frontend/src/rendering/meshFactory.ts)
+- Local file API client: [`frontend/src/api/localFilesServer.ts`](/Users/adam/code/mgview_project/mgview/frontend/src/api/localFilesServer.ts)
+- Static-mode file client: [`frontend/src/api/localFilesStatic.ts`](/Users/adam/code/mgview_project/mgview/frontend/src/api/localFilesStatic.ts)
 
-**Capabilities:** load/save/create scenes via API; sim file browse/edit; inferred reference context; span editing (line/cylinder/spring); material presets with textures; modern geometry types; URL scene sync; unsaved guards.
+## Known gaps
 
-Tests: `cd frontend && npm test` (core, rendering, hooks). Tests run in Node directly — use `import.meta.env?.…` when reading Vite env vars (see [`runtimeMode.ts`](frontend/src/api/runtimeMode.ts), [`workspacePaths.ts`](frontend/src/core/workspacePaths.ts), [`assetPaths.ts`](frontend/src/api/assetPaths.ts)).
+- No plotting/chart panels yet.
+- Static hosting cannot browse or save workspace files.
+- JSON inspector is still a save preview, not a full editor.
+- Mixed inferred reference systems still warn and continue rather than offering reconciliation tools.
+- No HTTP-level integration tests for the workspace/file server routes.
+- Some legacy feature parity work remains, especially around less-common visuals and polish.
 
----
+## Practical next work
 
-## Static / GH Pages
-
-- **Deploy:** push to `master` → [`pages.yml`](.github/workflows/pages.yml) builds, uploads artifact, deploys `build/gh-pages/`
-- **PR checks:** [`ci.yml`](.github/workflows/ci.yml) runs the same test + `build:site` without touching Pages
-- **Static demo:** bundled samples only; **Samples…** gallery (not Load browser); no workspace file API
-- **Demo banner:** [`DemoNotice.tsx`](frontend/src/components/DemoNotice.tsx) — shown on every page load on static hosting; Dismiss hides it until reload (not persisted)
-- **Static file API:** [`localFilesStatic.ts`](frontend/src/api/localFilesStatic.ts) + manifest from [`generateStaticManifest.mjs`](frontend/scripts/generateStaticManifest.mjs)
-- **Build-time static flag:** [`staticHostingFlagPlugin`](frontend/vite.config.ts) folds `isStaticHosting` in [`runtimeMode.ts`](frontend/src/api/runtimeMode.ts) to `true`/`false` for static vs server bundles (Vite env inlining alone was unreliable for that module)
-
----
-
-## Known issues / gaps
-
-- **Static hosting:** no workspace tree; samples via **Samples…** / `?sample=` only.
-- **JSON tab:** preview + copy only, not a real editor.
-- **Mixed reference systems:** warn-and-continue only; no transform-tree or reconciliation workflow yet.
-- **Span line width:** not geometric in WebGL lines; cylinders/springs are.
-- **Objects without sim anchors:** hidden by design for now.
-- **No integration tests** for workspace POST + list/file API (unit tests only in `workspaceRoots.test.js`).
-
----
-
-## Next work (product)
-
-1. **Plotting panels** — docked charts for sim channels (time series / parametric).
-2. Legacy feature audit vs modern inspector; expand [`samples-manifest.json`](samples-manifest.json).
-3. Workspace / editor polish, including keyboard shortcut cleanup and sim-data UX refinement.
-4. Optional: integration tests for `/mgview/api/workspace` and `root=` list/file.
-5. Optional: stricter handling for conflicting inferred reference systems if partial rendering becomes too misleading.
-
-**P2+ (later):** arrow/damper spans, user lighting, video record, named camera poses, real JSON editor, validation in `core/`, richer spring rendering.
-
-Span direction (unchanged): endpoints `point1`/`point2`; visuals `line` | `cylinder` | simple `spring` with documented width/color params; arrows/dampers deferred.
-
----
-
-## Test coverage gaps (living list)
-
-While the app is still changing quickly, we are **not** aiming for full coverage yet. Use this section to note gaps worth closing later; add rows as you find them.
-
-**What runs today:** `cd frontend && npm test` — `core/`, `rendering/`, `hooks/`, `api/assetPaths.test.ts`, plus `bin/workspaceRoots.test.js` (path resolution only).
-
-| Area | Has tests? | Gap / notes |
-|------|------------|-------------|
-| **Asset URLs / textures** | Partial — [`assetPaths.test.ts`](frontend/src/api/assetPaths.test.ts) checks `/mgview/` mount + one texture path | No build-time `VITE_MGVIEW_PUBLIC_BASE`; no HTTP 200 against `bin/server.js`; GH Pages / `preview:site:workspace` bases |
-| **Workspace two-root paths** | Partial — [`workspaceRoots.test.js`](bin/workspaceRoots.test.js) | No HTTP integration tests; config must stay **outside** app install |
-| **SceneRef / dual URL** | Yes — [`sceneRef.ts`](frontend/src/core/sceneRef.ts), tests | |
-| **samples-manifest.json** | Yes — [`samplesManifest.ts`](frontend/src/core/samplesManifest.ts), gallery, GH Pages copy | Thumbnail field reserved |
-| **Workspace UI** | Manual only | [`useServerWorkspace.ts`](frontend/src/hooks/useServerWorkspace.ts), picker; server `persistWorkspaceRoot_` / `syncWorkspaceRootsFromConfig_` |
-| **Static hosting** | No | [`localFilesStatic.ts`](frontend/src/api/localFilesStatic.ts), manifest generation, demo-only load flows |
-| **Server static routes** | No | `/mgview/samples/`, `/mgview/assets/`, `/mgview/bundled/` mapping in [`bin/server.js`](bin/server.js) |
-| **App shell / overlays** | No | Load/create/save overlays, keyboard shortcuts in [`App.tsx`](frontend/src/App.tsx), playback + inspector integration |
-| **Rendering / Three.js** | Partial — unit tests on scene graph / meshes | No visual/regression tests; texture load failures in [`meshFactory.ts`](frontend/src/rendering/meshFactory.ts) |
-
-*Remove or shrink rows here once a gap is covered; link new test files in the “Has tests?” column when you add them.*
-
----
-
-## Frontend workflow
-
-For any modern frontend change, finish with:
-
-```bash
-cd frontend && npm test && npm run build
-```
-
-The local Node server serves the built app from `frontend/dist/`, so `npm run build` is required before reloading `http://localhost:8000/mgview/`.
-
----
-
-## Verification
-
-```bash
-cd frontend && npm test && npm run build
-node --test bin/workspaceRoots.test.js
-./RunMGViewMac   # http://localhost:8000/mgview/
-```
-
-**Scene sources:** `?sample=particle_pendulum/particle_pendulum.json`, `?scene=<workspace-relative>.json`; **Samples…** vs **Load…**; workspace list at `.` shows siblings of repo, not `samples/`.
-
-**Workspace:** change path in picker → Load tree updates without restarting Node. Config at `~/.mgview/config.json`.
-
-Rerun after frontend/renderer changes. Static parity: `npm run preview:site`.
-
----
-
-## Notes for future work
-
-1. Read this file plus any focused handoff doc for the area you are touching, especially [`mgview-scene-sources-split.md`](mgview-scene-sources-split.md) and [`mgview-inferred-reference-context.md`](mgview-inferred-reference-context.md).
-2. Run `git status` before editing; the repo may contain unrelated local sample or workspace files.
-3. Local server serves the built app from `frontend/dist/` — run `npm run build` after frontend changes and open **`/mgview/`** with a trailing slash.
-4. Windows launch still goes through [`bin/RunVisualizer.bat`](bin/RunVisualizer.bat) after `npm run build`.
+1. Add plotting panels for simulation channels.
+2. Tighten workspace/editor UX and keyboard interactions.
+3. Continue legacy parity audit against the modern inspector and sample set.
+4. Add integration coverage for `/mgview/api/workspace` and file/list endpoints.
