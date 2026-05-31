@@ -75,6 +75,7 @@ Do not use `npm run preview` as the real app — no MGView file API.
 - [`mgview-ui-stack.md`](mgview-ui-stack.md) — UI stack reference
 - [`mgview-scene-sources-split.md`](mgview-scene-sources-split.md) — `?sample=` / `?scene=`, Samples vs Load
 - [`mgview-inferred-reference-context.md`](mgview-inferred-reference-context.md) — origin/frame inference
+- [`mgview-plotting-scope.md`](mgview-plotting-scope.md) — plotting panels (draft)
 
 ## Known gaps
 
