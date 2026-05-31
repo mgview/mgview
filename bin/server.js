@@ -46,6 +46,18 @@ function createServlet(Class) {
   return servlet.handleRequest.bind(servlet);
 }
 
+function timestampedMessage(message) {
+  return '[' + new Date().toISOString() + '] ' + message;
+}
+
+function logInfo(message) {
+  console.log(timestampedMessage(message));
+}
+
+function logError(message) {
+  console.error(timestampedMessage(message));
+}
+
 function HttpServer(handlers) {
   this.handlers = handlers;
   this.server = http.createServer(this.handleRequest_.bind(this));
@@ -55,11 +67,11 @@ HttpServer.prototype.start = function(port) {
   const self = this;
   this.port = port;
   this.server.on('error', function(error) {
-    console.error('Failed to start MGView server on port ' + self.port + ':');
-    console.error(error.message);
+    logError('Failed to start MGView server on port ' + self.port + ':');
+    logError(error.message);
   });
   this.server.listen(port, function() {
-    console.log('Http Server running at http://localhost:' + port + '/');
+    logInfo('Http Server running at http://localhost:' + port + '/');
   });
 };
 
@@ -72,7 +84,7 @@ HttpServer.prototype.handleRequest_ = function(req, res) {
   if (req.headers['user-agent']) {
     logEntry += ' ' + req.headers['user-agent'];
   }
-  console.log(logEntry);
+  logInfo(logEntry);
 
   req.url = this.parseUrl_(req.url);
 
@@ -521,8 +533,8 @@ StaticServlet.prototype.sendJson_ = function(res, statusCode, value) {
 
 StaticServlet.prototype.sendError_ = function(req, res, error) {
   if (res.headersSent) {
-    console.log('Stream error after headers sent');
-    console.log(util.inspect(error));
+    logInfo('Stream error after headers sent');
+    logInfo(util.inspect(error));
     if (!res.destroyed) {
       res.end();
     }
@@ -537,8 +549,8 @@ StaticServlet.prototype.sendError_ = function(req, res, error) {
   res.write('<h1>Internal Server Error</h1>');
   res.write('<pre>' + escapeHtml(util.inspect(error)) + '</pre>');
   res.end();
-  console.log('500 Internal Server Error');
-  console.log(util.inspect(error));
+  logInfo('500 Internal Server Error');
+  logInfo(util.inspect(error));
 };
 
 StaticServlet.prototype.sendMissing_ = function(req, res, filePath) {
@@ -555,7 +567,7 @@ StaticServlet.prototype.sendMissing_ = function(req, res, filePath) {
       ' was not found on this server.</p>'
   );
   res.end();
-  console.log('404 Not Found: ' + relativePath);
+  logInfo('404 Not Found: ' + relativePath);
 };
 
 StaticServlet.prototype.sendForbidden_ = function(req, res, filePath) {
@@ -572,7 +584,7 @@ StaticServlet.prototype.sendForbidden_ = function(req, res, filePath) {
       ' on this server.</p>'
   );
   res.end();
-  console.log('403 Forbidden: ' + relativePath);
+  logInfo('403 Forbidden: ' + relativePath);
 };
 
 StaticServlet.prototype.sendRedirect_ = function(req, res, redirectUrl) {
@@ -585,7 +597,7 @@ StaticServlet.prototype.sendRedirect_ = function(req, res, redirectUrl) {
   res.write('<h1>Moved Permanently</h1>');
   res.write('<p>The document has moved <a href="' + redirectUrl + '">here</a>.</p>');
   res.end();
-  console.log('301 Moved Permanently: ' + redirectUrl);
+  logInfo('301 Moved Permanently: ' + redirectUrl);
 };
 
 StaticServlet.prototype.sendFile_ = function(req, res, filePath) {

@@ -372,6 +372,8 @@ test('scene evaluation resolves cable spans from sceneOrigin point data', () => 
   assert.deepEqual(evaluation.spans, [
     {
       name: 'cable1.wire1',
+      spanName: 'cable1',
+      visualName: 'wire1',
       kind: 'line',
       visible: true,
       material: { name: 'BLACK', color: undefined },
@@ -413,6 +415,8 @@ test('scene evaluation treats sceneOrigin span endpoint as zero without sim chan
   assert.deepEqual(evaluation.spans, [
     {
       name: 'spring.wire1',
+      spanName: 'spring',
+      visualName: 'wire1',
       kind: 'line',
       visible: true,
       material: { name: 'WHITE', color: undefined },

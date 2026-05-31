@@ -269,6 +269,8 @@ function normalizeSpanVisual(
 
   const base = {
     name: `${spanName}.${visualName}`,
+    spanName,
+    visualName,
     visible: visual.visible !== false,
     start,
     end,

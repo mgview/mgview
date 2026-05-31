@@ -12,7 +12,8 @@ import {
   toCanonicalCameraFromOverride,
   type CameraOverride,
 } from '../rendering/coordinateConvention.ts';
-import { buildRenderableScene } from '../rendering/sceneGraph.ts';
+import { pickRenderEntity } from '../rendering/raycastSelection.ts';
+import { RenderGraphManager } from '../rendering/renderGraph.ts';
 
 const DEFAULT_BACKGROUND_COLOR = '#e0f0ff';
 
@@ -59,6 +60,10 @@ interface RendererPanelProps {
   scene: NormalizedSceneConfig;
   frame: TimelineFrame | undefined;
   selectedObjectName: string | null;
+  selectedSpanName?: string | null;
+  onSelectObject?: (objectName: string, visualName: string | null) => void;
+  onSelectSpan?: (spanName: string, visualName: string | null) => void;
+  onClearSelection?: () => void;
   showPerformanceOverlay?: boolean;
 }
 
@@ -71,6 +76,8 @@ interface SceneHandle {
   sceneLight: THREE.PointLight;
   worldAxes: THREE.Group;
   sceneRoot: THREE.Group;
+  renderGraph: RenderGraphManager;
+  raycaster: THREE.Raycaster;
   resizeObserver: ResizeObserver;
   resize: () => void;
   frameId: number | null;
@@ -87,45 +94,6 @@ interface PerformanceOverlayStats {
   pixelRatio: number;
 }
 
-function disposeMaterial(material: THREE.Material) {
-  if ('map' in material && material.map instanceof THREE.Texture && material.map instanceof THREE.CanvasTexture) {
-    material.map.dispose();
-  }
-  material.dispose();
-}
-
-function disposeObject3D(root: THREE.Object3D) {
-  root.traverse((child) => {
-    const asyncDispose = child.userData?.disposeAsyncContents;
-    if (typeof asyncDispose === 'function') {
-      asyncDispose();
-    }
-
-    if (child instanceof THREE.Mesh || child instanceof THREE.Line || child instanceof THREE.LineSegments) {
-      child.geometry?.dispose();
-
-      if (Array.isArray(child.material)) {
-        for (const material of child.material) {
-          disposeMaterial(material);
-        }
-      } else if (child.material) {
-        disposeMaterial(child.material);
-      }
-    }
-  });
-}
-
-function replaceSceneRootContent(sceneRoot: THREE.Group, nextRoot?: THREE.Object3D) {
-  for (const child of [...sceneRoot.children]) {
-    disposeObject3D(child);
-    sceneRoot.remove(child);
-  }
-
-  if (nextRoot) {
-    sceneRoot.add(nextRoot);
-  }
-}
-
 function formatOverlayNumber(value: number) {
   return Number.isFinite(value) ? value.toLocaleString() : '0';
 }
@@ -139,6 +107,10 @@ export default function RendererPanel({
   scene,
   frame,
   selectedObjectName,
+  selectedSpanName = null,
+  onSelectObject,
+  onSelectSpan,
+  onClearSelection,
   showPerformanceOverlay = false,
 }: RendererPanelProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -270,6 +242,9 @@ export default function RendererPanel({
       Math.max(scene.workspaceSize / 100, 0.001)
     );
     const sceneRoot = new THREE.Group();
+    const renderGraph = new RenderGraphManager(sceneRoot, scenePath);
+    const raycaster = new THREE.Raycaster();
+    raycaster.params.Line.threshold = 0.08;
     world.add(worldAxes, sceneRoot);
 
     const resize = () => {
@@ -333,6 +308,8 @@ export default function RendererPanel({
       sceneLight,
       worldAxes,
       sceneRoot,
+      renderGraph,
+      raycaster,
       resizeObserver,
       resize,
       frameId: requestAnimationFrame(tick),
@@ -354,7 +331,7 @@ export default function RendererPanel({
       handle.resizeObserver.disconnect();
       handle.controls.dispose();
       handle.renderer.dispose();
-      replaceSceneRootContent(handle.sceneRoot);
+      handle.renderGraph.dispose();
       handle.renderer.domElement.remove();
       handleRef.current = null;
     };
@@ -462,11 +439,48 @@ export default function RendererPanel({
       return;
     }
 
-    replaceSceneRootContent(
-      handle.sceneRoot,
-      buildRenderableScene(evaluateScene(scene, frame), selectedObjectName, scenePath)
-    );
-  }, [frame, scene, scenePath, selectedObjectName]);
+    handle.renderGraph.setScenePath(scenePath);
+    handle.renderGraph.update(evaluateScene(scene, frame), {
+      objectName: selectedObjectName,
+      spanName: selectedSpanName,
+    });
+  }, [frame, scene, scenePath, selectedObjectName, selectedSpanName]);
+
+  useEffect(() => {
+    const handle = handleRef.current;
+    if (!handle) {
+      return;
+    }
+
+    const canvas = handle.renderer.domElement;
+    const handleClick = (event: MouseEvent) => {
+      const entityRef = pickRenderEntity(event, canvas, handle.camera, handle.raycaster, handle.sceneRoot);
+      if (!entityRef) {
+        onClearSelection?.();
+        return;
+      }
+
+      switch (entityRef.kind) {
+        case 'visual':
+          onSelectObject?.(entityRef.objectName, entityRef.visualName);
+          return;
+        case 'object':
+          onSelectObject?.(entityRef.objectName, Object.keys(scene.objects[entityRef.objectName]?.visual ?? {})[0] ?? null);
+          return;
+        case 'span-visual':
+          onSelectSpan?.(entityRef.spanName, entityRef.visualName);
+          return;
+        case 'span':
+          onSelectSpan?.(entityRef.spanName, Object.keys(scene.spans[entityRef.spanName]?.visual ?? {})[0] ?? null);
+          return;
+      }
+    };
+
+    canvas.addEventListener('click', handleClick);
+    return () => {
+      canvas.removeEventListener('click', handleClick);
+    };
+  }, [onClearSelection, onSelectObject, onSelectSpan, scene]);
 
   return (
     <section className="panel renderer-panel">

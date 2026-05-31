@@ -286,6 +286,8 @@ export interface RenderBasisVisual extends RenderVisualBase {
 
 export interface RenderLineSpan {
   name: string;
+  spanName: string;
+  visualName: string;
   kind: 'line';
   visible: boolean;
   material: RenderMaterial;
@@ -297,6 +299,8 @@ export interface RenderLineSpan {
 
 export interface RenderCylinderSpan {
   name: string;
+  spanName: string;
+  visualName: string;
   kind: 'cylinder';
   visible: boolean;
   material: RenderMaterial;
@@ -309,6 +313,8 @@ export interface RenderCylinderSpan {
 
 export interface RenderSpringSpan {
   name: string;
+  spanName: string;
+  visualName: string;
   kind: 'spring';
   visible: boolean;
   material: RenderMaterial;

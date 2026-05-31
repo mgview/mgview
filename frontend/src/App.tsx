@@ -399,10 +399,18 @@ export default function App() {
                     layoutSizeKey={`${shell.leftRailCollapsed}`}
                     onCameraPreviewChange={shell.setCameraPreview}
                     onCameraCommit={shell.commitCameraPreview}
+                    onClearSelection={selectionState.clearAllSelections}
+                    onSelectObject={(objectName, visualName) => {
+                      selectionState.selectObjectForEditor(objectName, visualName, selectObject);
+                    }}
+                    onSelectSpan={(spanName, visualName) => {
+                      selectionState.selectSpanForEditor(spanName, visualName, selectSpanOnly);
+                    }}
                     scenePath={rendererSceneBasePath}
                     scene={activeScene}
                     frame={currentFrame?.frame}
                     selectedObjectName={activeSelectedObject?.name ?? null}
+                    selectedSpanName={selectedSpanResolvedName}
                     showPerformanceOverlay={shell.performanceOverlayOpen}
                   />
 

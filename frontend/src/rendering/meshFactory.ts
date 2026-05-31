@@ -181,12 +181,15 @@ function createTextCanvas(text: string, color: string) {
   return canvas;
 }
 
-function createTextVisual(visual: Extract<RenderVisual, { type: 'text' }>) {
-  const color = visual.material.color
-    ? `rgba(${Math.round(visual.material.color.r * 255)}, ${Math.round(visual.material.color.g * 255)}, ${Math.round(
-        visual.material.color.b * 255
-      )}, ${visual.material.color.a ?? 1})`
-    : `#${colorFromName(visual.material.name).getHexString()}`;
+function createTextVisual(visual: Extract<RenderVisual, { type: 'text' }>, highlightSelection: boolean | undefined) {
+  const selectionColor = new THREE.Color('#2e7dd7');
+  const color = highlightSelection
+    ? '#2e7dd7'
+    : visual.material.color
+      ? `rgba(${Math.round(visual.material.color.r * 255)}, ${Math.round(visual.material.color.g * 255)}, ${Math.round(
+          visual.material.color.b * 255
+        )}, ${visual.material.color.a ?? 1})`
+      : `#${colorFromName(visual.material.name).getHexString()}`;
   const canvas = createTextCanvas(visual.text, color);
   if (!canvas) {
     return null;
@@ -415,7 +418,7 @@ export function createVisualMesh(visual: RenderVisual, context: RenderAssetConte
       return buildMeshVisual(visual, context);
     case 'text':
       material.dispose();
-      return createTextVisual(visual);
+      return createTextVisual(visual, context.highlightSelection);
     case 'basis':
       material.dispose();
       return createBasis(visual.scale);
@@ -455,12 +458,12 @@ function createSpanSegment(
   return mesh;
 }
 
-function createLineSpan(span: Extract<RenderSpan, { kind: 'line' }>) {
+function createLineSpan(span: Extract<RenderSpan, { kind: 'line' }>, highlightSelection: boolean | undefined) {
   const geometry = new THREE.BufferGeometry().setFromPoints([
     toThreeVector(span.start),
     toThreeVector(span.end),
   ]);
-  const color = colorFromMaterial(span.material);
+  const color = highlightSelection ? new THREE.Color('#2e7dd7') : colorFromMaterial(span.material);
   const opacity = getOpacity(span.material);
   const material =
     span.lineStyle === 'dashed'
@@ -547,7 +550,7 @@ function createSpringSpan(span: Extract<RenderSpan, { kind: 'spring' }>, context
 export function createSpanMesh(span: RenderSpan, context: RenderAssetContext) {
   switch (span.kind) {
     case 'line':
-      return createLineSpan(span);
+      return createLineSpan(span, context.highlightSelection);
     case 'cylinder':
       return createCylinderSpan(span, context);
     case 'spring':
