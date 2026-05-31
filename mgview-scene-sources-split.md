@@ -142,7 +142,6 @@ After changing workspace in the UI, list/file should update **without** restarti
 - [x] `SceneHeaderBar.tsx` — Load / Samples buttons
 - [x] `useWorkspaceShell.ts` — `samplesOverlayOpen`, browse `.` on load
 - [x] `LoadSceneOverlay.tsx`, `SamplesOverlay.tsx`
-- [x] `SimpleApp.tsx` — `SceneRef` + URL sync
 - [x] `SampleShortcutPanel` removed
 
 ### Docs

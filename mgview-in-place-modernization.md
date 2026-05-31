@@ -53,6 +53,7 @@ Short handoff for the current local-file React rewrite that lives beside the leg
 
 Related docs:
 
+- [`mgview-ui-library-migration.md`](/Users/adam/code/mgview_project/mgview/mgview-ui-library-migration.md) — scope for moving off custom CSS to a standard UI library (design refresh)
 - [`mgview-scene-sources-split.md`](/Users/adam/code/mgview_project/mgview/mgview-scene-sources-split.md)
 - [`mgview-inferred-reference-context.md`](/Users/adam/code/mgview_project/mgview/mgview-inferred-reference-context.md)
 - [`BUILD.md`](/Users/adam/code/mgview_project/mgview/BUILD.md)
