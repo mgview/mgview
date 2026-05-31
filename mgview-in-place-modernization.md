@@ -7,7 +7,7 @@ Short handoff for the current local-file React rewrite that lives beside the leg
 - Modern app lives in [`frontend/src/App.tsx`](/Users/adam/code/mgview_project/mgview/frontend/src/App.tsx) and is the active surface for ongoing work.
 - Legacy app remains in [`legacy/`](/Users/adam/code/mgview_project/mgview/legacy) as reference and still ships on GitHub Pages under `/mgview/legacy/`.
 - Core scene/timeline/reference logic has been split out and is covered by Node-based tests in [`frontend/src/core/`](/Users/adam/code/mgview_project/mgview/frontend/src/core), [`frontend/src/rendering/`](/Users/adam/code/mgview_project/mgview/frontend/src/rendering), [`frontend/src/hooks/`](/Users/adam/code/mgview_project/mgview/frontend/src/hooks), and [`bin/workspaceRoots.test.js`](/Users/adam/code/mgview_project/mgview/bin/workspaceRoots.test.js).
-- Recent work reflected in the codebase: scene source split, inferred reference context, server-backed workspace picker, editable object/span inspectors, save/load/create flows, release zip packaging, and in-app build metadata.
+- Recent work reflected in the codebase: scene source split, inferred reference context, server-backed workspace picker, editable object/span inspectors, save/load/create flows, release zip packaging, in-app build metadata, and a simplified branded header with workspace actions moved under `Load`.
 
 ## What the modern app does today
 
@@ -17,6 +17,19 @@ Short handoff for the current local-file React rewrite that lives beside the leg
 - Includes object, visual, scene, and span editing UI.
 - Includes an About panel showing app version, build date, timestamp, and commit.
 - Supports static hosting for demo use, but static mode is sample-only and read-only.
+
+## Current shell/header direction
+
+- Upper-left header branding is now `MGView` with a compact `?` About trigger.
+- The main header no longer shows the workspace root path persistently.
+- The main scene identity shown in the header is the loaded scene path, with unsaved-change state.
+- `Samples…` remains a top-level action because it is app/demo content rather than workspace content.
+- `Load…` remains the primary workspace/document entry point, with related actions grouped in its dropdown:
+  - `Reload`
+  - `New…`
+  - `Change Workspace…`
+  - `Sim Files…`
+- Scene `name` is no longer treated as primary header content; path is the more useful top-level identifier.
 
 ## Runtime model
 
@@ -93,6 +106,17 @@ Do not use `npm run preview` as a substitute for the real app; it does not provi
 - Mixed inferred reference systems still warn and continue rather than offering reconciliation tools.
 - No HTTP-level integration tests for the workspace/file server routes.
 - Some legacy feature parity work remains, especially around less-common visuals and polish.
+- Workspace-switch behavior still needs a more principled no-scene/missing-scene flow.
+
+### Workspace-switch UX follow-up
+
+- Treat workspace selection as global app context, separate from the currently loaded document.
+- Changing workspace should not automatically create or load a scene.
+- Desired behavior to implement:
+  - If a workspace scene is loaded and the same relative path exists in the new workspace, keep it loaded.
+  - If a workspace scene is loaded and that path does not exist in the new workspace, clear the current document and open the load/create flow rooted at the new workspace.
+  - If a sample scene is loaded, changing workspace should leave the sample loaded.
+  - If no scene is loaded, changing workspace should update context and then open the load/create flow rooted at the new workspace.
 
 ## Practical next work
 

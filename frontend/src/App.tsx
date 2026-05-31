@@ -361,8 +361,6 @@ export default function App() {
       <ToastStack toasts={toasts} onDismiss={handleDismissToast} />
       <SceneHeaderBar
         scenePath={loaded?.scenePath ?? null}
-        sceneName={activeScene?.name ?? loaded?.scene.name ?? null}
-        workspaceRoot={serverWorkspace.workspaceInfo?.workspaceRoot ?? null}
         hasLocalEdits={hasLocalEdits}
         loading={loading}
         saving={saving}
@@ -377,11 +375,6 @@ export default function App() {
         onOpenDiagnostics={shell.openDiagnostics}
         onOpenChannels={shell.openSimulationOverlay}
         onOpenSaveAsOverlay={shell.openSaveAsOverlay}
-        onSceneNameChange={(nextName) => {
-          updateDraftScene((scene) => {
-            scene.name = nextName;
-          });
-        }}
         onRedo={handleRedo}
         onSave={() => void handleSaveScene()}
         onRevert={() => {

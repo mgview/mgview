@@ -119,57 +119,58 @@ input[inputmode="decimal"] {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .scene-header-main {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  align-items: center;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
-.scene-header-title-button {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.35rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
+.scene-header-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.scene-header-brand {
   color: #edf3ff;
   font-size: 1.48rem;
   font-weight: 700;
-  text-align: left;
-}
-
-.scene-header-title-input {
-  width: 100%;
-  max-width: 28rem;
-  padding: 0.22rem 0.42rem;
-  font-size: 1.48rem;
-  font-weight: 700;
-}
-
-.scene-header-workspace-button {
-  border: none;
-  background: transparent;
-  color: var(--muted-foreground, #8b949e);
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-  text-align: left;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
-.scene-header-workspace-button:hover {
-  color: var(--foreground, #e6edf3);
-  text-decoration: underline;
+.scene-header-about-button {
+  display: inline-grid;
+  place-items: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(188, 216, 255, 0.22);
+  background: rgba(18, 28, 45, 0.88);
+  color: #a9bfdc;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.scene-header-about-button:hover {
+  color: #edf3ff;
+  border-color: rgba(188, 216, 255, 0.34);
+  background: rgba(24, 37, 58, 0.96);
 }
 
 .scene-header-code {
   min-width: 0;
+  flex: 1 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -242,6 +243,7 @@ input[inputmode="decimal"] {
   color: #ffce8d;
   font-size: 1.6rem;
   line-height: 1;
+  flex: 0 0 auto;
 }
 
 .scene-header-diagnostics-button {
@@ -1796,10 +1798,21 @@ input[inputmode="decimal"] {
 }
 
 @media (max-width: 900px) {
-  .scene-header-row,
-  .scene-header-main {
+  .scene-header-row {
     display: grid;
     align-items: start;
+  }
+
+  .scene-header-main,
+  .scene-header-brand-row {
+    display: grid;
+    align-items: start;
+    gap: 6px;
+  }
+
+  .scene-header-about-button {
+    width: 1.6rem;
+    height: 1.6rem;
   }
 
   .workspace-shell,

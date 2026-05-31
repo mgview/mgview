@@ -3,8 +3,6 @@ import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 
 interface SceneHeaderBarProps {
   scenePath: string | null;
-  sceneName: string | null;
-  workspaceRoot?: string | null;
   onOpenWorkspace?: () => void;
   onOpenAbout: () => void;
   hasLocalEdits: boolean;
@@ -19,7 +17,6 @@ interface SceneHeaderBarProps {
   onOpenDiagnostics: () => void;
   onOpenChannels: () => void;
   onOpenSaveAsOverlay: () => void;
-  onSceneNameChange: (nextName: string) => void;
   onRedo: () => void;
   onSave: () => void;
   onRevert: () => void;
@@ -28,8 +25,6 @@ interface SceneHeaderBarProps {
 
 export default function SceneHeaderBar({
   scenePath,
-  sceneName,
-  workspaceRoot = null,
   onOpenWorkspace,
   onOpenAbout,
   hasLocalEdits,
@@ -44,14 +39,11 @@ export default function SceneHeaderBar({
   onOpenDiagnostics,
   onOpenChannels,
   onOpenSaveAsOverlay,
-  onSceneNameChange,
   onRedo,
   onSave,
   onRevert,
   onUndo,
 }: SceneHeaderBarProps) {
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [nameDraft, setNameDraft] = useState(sceneName ?? '');
   const [loadMenuOpen, setLoadMenuOpen] = useState(false);
   const [saveMenuOpen, setSaveMenuOpen] = useState(false);
   const saveDisabled = !canPersistScenesToServer || !hasLocalEdits || saving;
@@ -60,12 +52,6 @@ export default function SceneHeaderBar({
     : !hasLocalEdits
       ? 'No unsaved changes'
       : 'Save';
-
-  useEffect(() => {
-    if (!isEditingName) {
-      setNameDraft(sceneName ?? '');
-    }
-  }, [isEditingName, sceneName]);
 
   useEffect(() => {
     if (!loadMenuOpen && !saveMenuOpen) {
@@ -91,59 +77,33 @@ export default function SceneHeaderBar({
     };
   }, [loadMenuOpen, saveMenuOpen]);
 
-  const commitSceneName = () => {
-    onSceneNameChange(nameDraft);
-    setIsEditingName(false);
-  };
-
   return (
     <section className="scene-header">
       <div className="scene-header-row">
         <div className="scene-header-main">
-          {isEditingName ? (
-            <input
-              className="scene-header-title-input"
-              type="text"
-              autoFocus
-              value={nameDraft}
-              onChange={(event) => setNameDraft(event.target.value)}
-              onBlur={commitSceneName}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  commitSceneName();
-                }
-                if (event.key === 'Escape') {
-                  setNameDraft(sceneName ?? '');
-                  setIsEditingName(false);
-                }
-              }}
-            />
-          ) : (
+          <div className="scene-header-brand-row">
+            <span className="scene-header-brand">MGView</span>
             <button
               type="button"
-              className="scene-header-title-button"
-              onClick={() => setIsEditingName(true)}
+              className="scene-header-about-button"
+              onClick={onOpenAbout}
+              aria-label="About MGView"
+              title="About MGView"
             >
-              <span className="scene-header-title-text">{sceneName ?? 'MGView Workspace'}</span>
-              {hasLocalEdits ? (
-                <span className="scene-header-unsaved" title="Unsaved changes" aria-label="Unsaved changes">
-                  •
-                </span>
-              ) : null}
+              ?
             </button>
-          )}
-          <code className="scene-header-code">{scenePath ?? '(none loaded)'}</code>
-          {onOpenWorkspace ? (
-            <button
-              type="button"
-              className="scene-header-workspace-button"
-              onClick={onOpenWorkspace}
-              title={workspaceRoot ?? 'Choose workspace folder'}
+            <code
+              className="scene-header-code"
+              title={scenePath ?? 'No scene loaded'}
             >
-              Workspace: {workspaceRoot ?? '…'}
-            </button>
-          ) : null}
+              {scenePath ?? '(none loaded)'}
+            </code>
+            {hasLocalEdits ? (
+              <span className="scene-header-unsaved" title="Unsaved changes" aria-label="Unsaved changes">
+                •
+              </span>
+            ) : null}
+          </div>
         </div>
 
         <div className="scene-header-side">
@@ -248,6 +208,30 @@ export default function SceneHeaderBar({
                   >
                     New…
                   </button>
+                  {onOpenWorkspace ? (
+                    <button
+                      type="button"
+                      className="split-button-menu-item"
+                      role="menuitem"
+                      onClick={() => {
+                        setLoadMenuOpen(false);
+                        onOpenWorkspace();
+                      }}
+                    >
+                      Change Workspace…
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="split-button-menu-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setLoadMenuOpen(false);
+                      onOpenChannels();
+                    }}
+                  >
+                    Sim Files…
+                  </button>
                 </div>
               ) : null}
             </div>
@@ -262,12 +246,6 @@ export default function SceneHeaderBar({
                   {diagnosticsWarningCount}
                 </span>
               ) : null}
-            </button>
-            <button type="button" className="secondary-button" onClick={onOpenChannels}>
-              Sim Files
-            </button>
-            <button type="button" className="secondary-button" onClick={onOpenAbout}>
-              About
             </button>
             <div
               className="split-button"
