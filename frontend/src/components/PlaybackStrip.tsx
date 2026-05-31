@@ -40,19 +40,50 @@ export default function PlaybackStrip({
       <div className="playback-primary">
         <button
           type="button"
-          className="secondary-button playback-icon-button"
+          className="icon-button"
           onClick={onTogglePlay}
           aria-label={isPlaying ? 'Pause playback' : 'Start playback'}
+          title={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? '||' : '>'}
+          {isPlaying ? (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M8 7v10M16 7v10"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9 7l9 5-9 5V7z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
         </button>
         <button
           type="button"
-          className="secondary-button playback-icon-button"
+          className="icon-button"
           onClick={onReset}
           aria-label="Reset playback to start"
+          title="Reset to start"
         >
-          {'<<'}
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M6 6v12M15 7l-9 5 9 5V7z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
         <div className="playback-readout">
           <code>{formatTime(currentTime)} / {formatTime(tFinal)}</code>

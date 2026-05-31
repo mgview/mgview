@@ -488,13 +488,6 @@ input[inputmode="decimal"] {
   text-align: center;
 }
 
-.playback-icon-button {
-  min-width: 34px;
-  text-align: center;
-  padding-left: 0;
-  padding-right: 0;
-}
-
 .playback-readout {
   color: #8ea3be;
   font-size: 0.72rem;
