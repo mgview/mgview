@@ -217,6 +217,18 @@ While the app is still changing quickly, we are **not** aiming for full coverage
 
 ---
 
+## Frontend workflow
+
+For any modern frontend change, finish with:
+
+```bash
+cd frontend && npm test && npm run build
+```
+
+The local Node server serves the built app from `frontend/dist/`, so `npm run build` is required before reloading `http://localhost:8000/mgview/`.
+
+---
+
 ## Verification
 
 ```bash

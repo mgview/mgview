@@ -16,6 +16,10 @@ function vector(x = 0, y = 0, z = 0): Vector3Like {
 
 export const DEFAULT_POINT_MARKER_WORKSPACE_FRACTION = 0.05;
 
+function isValidObjectName(name: string): boolean {
+  return name.trim().length > 0;
+}
+
 function cloneVisual(visual: SceneVisual): SceneVisual {
   return {
     ...visual,
@@ -68,7 +72,9 @@ function cloneObject(sceneObject: SceneObject): SceneObject {
 function addEmptyDefaults(scene: SceneConfig): NormalizedSceneConfig {
   const newtonianFrame = scene.newtonianFrame ?? 'N';
   const objects = Object.fromEntries(
-    Object.entries(scene.objects ?? {}).map(([name, sceneObject]) => [name, cloneObject(sceneObject)])
+    Object.entries(scene.objects ?? {})
+      .filter(([name]) => isValidObjectName(name))
+      .map(([name, sceneObject]) => [name, cloneObject(sceneObject)])
   );
   const spans = Object.fromEntries(
     Object.entries(scene.spans ?? {}).map(([name, span]) => [name, cloneSpan(span)])

@@ -78,3 +78,23 @@ test('createSavableScene preserves added spans and drops removed spans from the 
   assert.equal(savableScene.spans?.old_span, undefined);
   assert.deepEqual(savableScene.spans?.new_span, draftScene.spans.new_span);
 });
+
+test('createSavableScene drops objects with blank names', () => {
+  const rawScene = {
+    newtonianFrame: 'N',
+    sceneOrigin: 'No',
+    objects: {
+      N: { type: 'frame', visual: {} },
+      '': { type: 'frame', visual: {} },
+    },
+  };
+
+  const draftScene = createSceneDocument(rawScene);
+  draftScene.objects['   '] = { type: 'point', visual: {} };
+
+  const savableScene = createSavableScene(rawScene, draftScene);
+
+  assert.equal(savableScene.objects?.N?.type, 'frame');
+  assert.equal(savableScene.objects?.[''], undefined);
+  assert.equal(savableScene.objects?.['   '], undefined);
+});

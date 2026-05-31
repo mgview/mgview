@@ -69,6 +69,10 @@ export interface WorkspaceNotifications {
   showError: (message: string) => void;
 }
 
+function isValidObjectName(name: string): boolean {
+  return name.trim().length > 0;
+}
+
 function cloneScene(scene: NormalizedSceneConfig): NormalizedSceneConfig {
   return structuredClone(scene);
 }
@@ -135,6 +139,10 @@ export function createSavableScene(
 
   nextScene.objects = {};
   for (const [objectName, draftObject] of Object.entries(draftScene.objects)) {
+    if (!isValidObjectName(objectName)) {
+      continue;
+    }
+
     const rawObject = rawScene.objects?.[objectName];
     nextScene.objects[objectName] = {
       ...(rawObject ? structuredClone(rawObject) : {}),
@@ -146,6 +154,10 @@ export function createSavableScene(
 
   if (rawScene.objects) {
     for (const [objectName, rawObject] of Object.entries(rawScene.objects)) {
+      if (!isValidObjectName(objectName)) {
+        continue;
+      }
+
       if (nextScene.objects[objectName]) {
         continue;
       }

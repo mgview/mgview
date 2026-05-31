@@ -106,6 +106,22 @@ test('scene normalization does not auto-add defaults when authored visuals alrea
   assert.deepEqual(Object.keys(document.objects.P.visual ?? {}), ['dot']);
 });
 
+test('scene normalization drops authored objects with blank names', () => {
+  const document = createSceneDocument({
+    newtonianFrame: 'N',
+    sceneOrigin: 'No',
+    objects: {
+      N: { type: 'frame', visual: {} },
+      '': { type: 'frame', visual: {} },
+      '   ': { type: 'point', visual: {} },
+    },
+  });
+
+  assert.equal(document.objects.N.type, 'frame');
+  assert.equal(document.objects[''], undefined);
+  assert.equal(document.objects['   '], undefined);
+});
+
 test('channel inference promotes frames and adds missing points', async () => {
   const scene = await readSceneFixture('default.json');
   const document = createSceneDocument(scene, [
