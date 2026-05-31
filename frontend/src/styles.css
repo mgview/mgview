@@ -1652,10 +1652,6 @@ input[inputmode="decimal"] {
   border-color: rgba(188, 216, 255, 0.4);
 }
 
-.sample-gallery-panel .panel-subtitle {
-  margin: 0.35rem 0 0;
-}
-
 .sample-gallery-groups {
   display: grid;
   gap: 18px;

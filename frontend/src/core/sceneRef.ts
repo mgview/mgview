@@ -8,8 +8,6 @@ export type ApiRoot = 'workspace' | 'sample';
 
 export const DEFAULT_SAMPLE_SCENE_PATH = 'particle_pendulum/particle_pendulum.json';
 
-const WORKSPACE_FORBIDDEN_PREFIXES = ['samples/', 'assets/', 'bundled/', 'legacy/', 'mgview/'];
-
 export function createSampleRef(path: string): SceneRef {
   return { source: 'sample', path: normalizeRefPath(path) };
 }
@@ -105,13 +103,7 @@ export function sceneRefsEqual(left: SceneRef, right: SceneRef): boolean {
 
 export function isForbiddenWorkspacePath(scenePath: string): boolean {
   const normalized = normalizeRefPath(scenePath);
-  if (normalized.split('/').some((segment) => segment === '..')) {
-    return true;
-  }
-
-  return WORKSPACE_FORBIDDEN_PREFIXES.some(
-    (prefix) => normalized === prefix.slice(0, -1) || normalized.startsWith(prefix)
-  );
+  return normalized.split('/').some((segment) => segment === '..');
 }
 
 export function workspacePathFromInput(scenePath: string): string | null {

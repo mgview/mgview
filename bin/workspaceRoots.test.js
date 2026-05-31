@@ -31,8 +31,10 @@ test('usesAppRoot identifies bundled app URL paths', () => {
   assert.equal(usesAppRoot('.'), false);
 });
 
-test('isForbiddenWorkspacePath rejects app-relative prefixes', () => {
-  assert.equal(isForbiddenWorkspacePath('samples/foo.json'), true);
+test('isForbiddenWorkspacePath only rejects parent traversal', () => {
+  assert.equal(isForbiddenWorkspacePath('samples/foo.json'), false);
+  assert.equal(isForbiddenWorkspacePath('mgview/samples/foo.json'), false);
+  assert.equal(isForbiddenWorkspacePath('../escape.json'), true);
   assert.equal(isForbiddenWorkspacePath('my_sim_folder/run.1'), false);
 });
 
@@ -54,10 +56,10 @@ test('resolveLogicalPathForRoot maps workspace API paths to workspace root', () 
   assert.equal(simPath, path.resolve(workspaceRoot, 'my_sim_folder/run.1'));
 });
 
-test('resolveLogicalPathForRoot rejects samples/ prefix under workspace root', () => {
+test('resolveLogicalPathForRoot allows workspace paths under samples/ when rooted in workspace', () => {
   assert.equal(
     resolveLogicalPathForRoot('workspace', 'samples/default.json', appRoot, workspaceRoot),
-    null
+    path.resolve(workspaceRoot, 'samples/default.json')
   );
 });
 

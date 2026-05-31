@@ -25,15 +25,7 @@ export default function SampleSceneGallery({
   onSelectScene,
 }: SampleSceneGalleryProps) {
   return (
-    <section className="panel sample-gallery-panel">
-      <div className="panel-header">
-        <div>
-          <h2>Example Scenes</h2>
-          <p className="panel-subtitle">Pick a bundled sample to load.</p>
-        </div>
-      </div>
-
-      <div className="sample-gallery-groups">
+    <div className="sample-gallery-groups">
         {groupedSamples.map(([groupName, samples]) => (
           <div key={groupName} className="sample-gallery-group">
             <div className="sample-gallery-group-title">{groupName}</div>
@@ -66,7 +58,6 @@ export default function SampleSceneGallery({
             </div>
           </div>
         ))}
-      </div>
-    </section>
+    </div>
   );
 }

@@ -1,10 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Timeline } from '../core/types.ts';
 
-export function usePlaybackController(timeline: Timeline | null, playbackSpeed: number) {
+export function getPlaybackResetKey(timeline: Timeline | null, resetIdentity: string | null): string {
+  if (!timeline) {
+    return resetIdentity ?? 'no-timeline';
+  }
+
+  return [
+    resetIdentity ?? 'anonymous-scene',
+    timeline.tInitial,
+    timeline.tFinal,
+    timeline.tStep,
+  ].join('::');
+}
+
+export function usePlaybackController(
+  timeline: Timeline | null,
+  playbackSpeed: number,
+  resetIdentity: string | null = null
+) {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const currentTimeRef = useRef(0);
+  const playbackResetKey = getPlaybackResetKey(timeline, resetIdentity);
 
   useEffect(() => {
     currentTimeRef.current = currentTime;
@@ -16,7 +34,7 @@ export function usePlaybackController(timeline: Timeline | null, playbackSpeed: 
       currentTimeRef.current = timeline.tInitial;
       setCurrentTime(timeline.tInitial);
     }
-  }, [timeline?.tInitial, timeline?.tFinal, timeline?.tStep]);
+  }, [playbackResetKey, timeline]);
 
   useEffect(() => {
     if (!isPlaying || !timeline) {

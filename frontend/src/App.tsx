@@ -123,7 +123,7 @@ export default function App() {
   });
 
   const playbackSpeed = activeScene?.speedFactor ?? loaded?.scene.speedFactor ?? 1;
-  const playback = usePlaybackController(loaded ? timeline : null, playbackSpeed);
+  const playback = usePlaybackController(loaded ? timeline : null, playbackSpeed, loaded?.scenePath ?? null);
 
   const currentFrame = useMemo(() => {
     if (!loaded) {

@@ -53,8 +53,9 @@ test('getSceneBasePath resolves simulation directories', () => {
   assert.equal(getSceneBasePath(createWorkspaceRef('my_sim/scene.json')), 'my_sim/');
 });
 
-test('workspacePathFromInput rejects app-relative prefixes', () => {
-  assert.equal(workspacePathFromInput('samples/foo.json'), null);
+test('workspacePathFromInput allows any workspace-relative path except parent traversal', () => {
+  assert.equal(workspacePathFromInput('samples/foo.json'), 'samples/foo.json');
+  assert.equal(workspacePathFromInput('mgview/samples/foo.json'), 'mgview/samples/foo.json');
   assert.equal(workspacePathFromInput('../escape.json'), null);
   assert.equal(workspacePathFromInput('my_sim/foo.json'), 'my_sim/foo.json');
 });

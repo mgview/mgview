@@ -3,8 +3,6 @@ const os = require('os');
 const path = require('path');
 
 const URL_APP_PREFIXES = ['samples/', 'assets/', 'bundled/', 'legacy/'];
-const WORKSPACE_FORBIDDEN_PREFIXES = ['samples/', 'assets/', 'bundled/', 'legacy/'];
-
 function isWithinRoot(candidatePath, rootPath) {
   const normalizedRoot = path.resolve(rootPath);
   const normalizedCandidate = path.resolve(candidatePath);
@@ -39,13 +37,7 @@ function isForbiddenWorkspacePath(logicalPath) {
     return false;
   }
 
-  if (hasParentTraversal(logicalPath)) {
-    return true;
-  }
-
-  return WORKSPACE_FORBIDDEN_PREFIXES.some(
-    (prefix) => logicalPath === prefix.slice(0, -1) || logicalPath.startsWith(prefix)
-  );
+  return hasParentTraversal(logicalPath);
 }
 
 function parseApiRoot(rootParam) {
@@ -254,7 +246,6 @@ function createWorkspaceRoots(appRoot, configuredWorkspaceRoot) {
 
 module.exports = {
   URL_APP_PREFIXES,
-  WORKSPACE_FORBIDDEN_PREFIXES,
   createWorkspaceRoots,
   getConfigPath,
   getDefaultWorkspaceRoot,

@@ -3,12 +3,12 @@
 Handoff doc for the local-file MGView rewrite. Longer-term cloud direction lives in
 [`docs/mgview-modernization-plan.md`](../docs/mgview-modernization-plan.md).
 
-## Resume here (May 2026)
+## Current state (May 2026)
 
 | Item | State |
 |------|--------|
-| **Next implementation** | Plotting panels; manifest thumbnails; workspace/editor polish (see [Next work](#next-work-product)) |
-| **Recently shipped** | [Scene sources split](mgview-scene-sources-split.md) — `?sample=` / `?scene=`, API `root=`, Samples/Load UX, `samples-manifest.json` |
+| **Recently shipped** | [Scene sources split](mgview-scene-sources-split.md) and [inferred reference context](mgview-inferred-reference-context.md) |
+| **Next work** | Plotting panels; workspace/editor polish; feature parity cleanup (see [Next work](#next-work-product)) |
 | **Branch** | `master` — workspace picker, scene-sources split, server workspace sync fixes |
 | **Prior** | lowercase URL/app-dir cleanup merged in PR [#6](https://github.com/mgview/mgview/pull/6) |
 | **Live demo** | https://mgview.github.io/mgview/ (modern), https://mgview.github.io/mgview/legacy/ (legacy) |
@@ -43,6 +43,8 @@ Modernize in place: keep legacy jQuery app working, build React replacement besi
 - [`legacy/`](legacy/) — reference jQuery app; not the active product surface
 
 Renderer: current stable `three`; simulation-driven transforms at time `t` (not free-form pose authoring yet). `../frame_viz` is inspiration only for future authoring modes.
+
+Reference semantics: inferred from simulation channels, not authored scene-level `newtonianFrame` / `sceneOrigin`. See [`mgview-inferred-reference-context.md`](mgview-inferred-reference-context.md).
 
 ---
 
@@ -155,7 +157,7 @@ mgview/                 ← repo (APP_DIR for local server builds)
 
 **Workspace UX (summary):** compact header + renderer + playback strip + collapsible right rail (object list + visual/scene/JSON panes). Overlays for load/create, diagnostics, sim files. Undo/redo, toasts, static demo notice. Save disabled on static hosting.
 
-**Capabilities:** load/save/create scenes via API; sim file browse/edit; span editing (line/cylinder/spring); material presets with textures; modern geometry types; URL scene sync; unsaved guards.
+**Capabilities:** load/save/create scenes via API; sim file browse/edit; inferred reference context; span editing (line/cylinder/spring); material presets with textures; modern geometry types; URL scene sync; unsaved guards.
 
 Tests: `cd frontend && npm test` (core, rendering, hooks). Tests run in Node directly — use `import.meta.env?.…` when reading Vite env vars (see [`runtimeMode.ts`](frontend/src/api/runtimeMode.ts), [`workspacePaths.ts`](frontend/src/core/workspacePaths.ts), [`assetPaths.ts`](frontend/src/api/assetPaths.ts)).
 
@@ -176,6 +178,7 @@ Tests: `cd frontend && npm test` (core, rendering, hooks). Tests run in Node dir
 
 - **Static hosting:** no workspace tree; samples via **Samples…** / `?sample=` only.
 - **JSON tab:** preview + copy only, not a real editor.
+- **Mixed reference systems:** warn-and-continue only; no transform-tree or reconciliation workflow yet.
 - **Span line width:** not geometric in WebGL lines; cylinders/springs are.
 - **Objects without sim anchors:** hidden by design for now.
 - **No integration tests** for workspace POST + list/file API (unit tests only in `workspaceRoots.test.js`).
@@ -186,8 +189,9 @@ Tests: `cd frontend && npm test` (core, rendering, hooks). Tests run in Node dir
 
 1. **Plotting panels** — docked charts for sim channels (time series / parametric).
 2. Legacy feature audit vs modern inspector; expand [`samples-manifest.json`](samples-manifest.json).
-3. Workspace / editor polish (keyboard shortcuts out of `App.tsx`; manifest thumbnails when ready).
+3. Workspace / editor polish, including keyboard shortcut cleanup and sim-data UX refinement.
 4. Optional: integration tests for `/mgview/api/workspace` and `root=` list/file.
+5. Optional: stricter handling for conflicting inferred reference systems if partial rendering becomes too misleading.
 
 **P2+ (later):** arrow/damper spans, user lighting, video record, named camera poses, real JSON editor, validation in `core/`, richer spring rendering.
 
@@ -245,10 +249,9 @@ Rerun after frontend/renderer changes. Static parity: `npm run preview:site`.
 
 ---
 
-## Handoff notes for a new agent
+## Notes for future work
 
-1. Read this file + [`mgview-scene-sources-split.md`](mgview-scene-sources-split.md) (implemented; checklist is done).
-2. Uncommitted work may span scene-sources split, workspace server fixes, and `VITE_MGVIEW_BASE=/mgview/` — run `git status` / `git diff`.
-3. **Do not** pass `{ showSuccess, showError }` as one object into hooks whose `useCallback` deps include it — causes infinite `GET /api/workspace` (see scene-sources-split post-fixes table).
-4. Local server serves built app from `frontend/dist/` — run `npm run build` after frontend changes; open **`/mgview/`** (trailing slash).
-5. Windows: [`bin/RunVisualizer.bat`](bin/RunVisualizer.bat) after `npm run build`.
+1. Read this file plus any focused handoff doc for the area you are touching, especially [`mgview-scene-sources-split.md`](mgview-scene-sources-split.md) and [`mgview-inferred-reference-context.md`](mgview-inferred-reference-context.md).
+2. Run `git status` before editing; the repo may contain unrelated local sample or workspace files.
+3. Local server serves the built app from `frontend/dist/` — run `npm run build` after frontend changes and open **`/mgview/`** with a trailing slash.
+4. Windows launch still goes through [`bin/RunVisualizer.bat`](bin/RunVisualizer.bat) after `npm run build`.

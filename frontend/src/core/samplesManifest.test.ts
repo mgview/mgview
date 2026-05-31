@@ -16,6 +16,6 @@ test('getDefaultSampleSceneRef uses particle pendulum when present', () => {
 
 test('groupSampleScenes preserves manifest groups', () => {
   const grouped = groupSampleScenes();
-  assert.ok(grouped.some(([groupName]) => groupName === 'Basics'));
+  assert.ok(grouped.some(([groupName]) => groupName === 'Motion Genesis Examples'));
   assert.ok(grouped.some(([, entries]) => entries.some((entry) => entry.label === 'Particle Pendulum')));
 });
