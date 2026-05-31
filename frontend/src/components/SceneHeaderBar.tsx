@@ -6,6 +6,7 @@ interface SceneHeaderBarProps {
   sceneName: string | null;
   workspaceRoot?: string | null;
   onOpenWorkspace?: () => void;
+  onOpenAbout: () => void;
   hasLocalEdits: boolean;
   loading: boolean;
   saving: boolean;
@@ -30,6 +31,7 @@ export default function SceneHeaderBar({
   sceneName,
   workspaceRoot = null,
   onOpenWorkspace,
+  onOpenAbout,
   hasLocalEdits,
   loading,
   saving,
@@ -263,6 +265,9 @@ export default function SceneHeaderBar({
             </button>
             <button type="button" className="secondary-button" onClick={onOpenChannels}>
               Sim Files
+            </button>
+            <button type="button" className="secondary-button" onClick={onOpenAbout}>
+              About
             </button>
             <div
               className="split-button"

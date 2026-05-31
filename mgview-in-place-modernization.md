@@ -7,7 +7,7 @@ Short handoff for the current local-file React rewrite that lives beside the leg
 - Modern app lives in [`frontend/src/App.tsx`](/Users/adam/code/mgview_project/mgview/frontend/src/App.tsx) and is the active surface for ongoing work.
 - Legacy app remains in [`legacy/`](/Users/adam/code/mgview_project/mgview/legacy) as reference and still ships on GitHub Pages under `/mgview/legacy/`.
 - Core scene/timeline/reference logic has been split out and is covered by Node-based tests in [`frontend/src/core/`](/Users/adam/code/mgview_project/mgview/frontend/src/core), [`frontend/src/rendering/`](/Users/adam/code/mgview_project/mgview/frontend/src/rendering), [`frontend/src/hooks/`](/Users/adam/code/mgview_project/mgview/frontend/src/hooks), and [`bin/workspaceRoots.test.js`](/Users/adam/code/mgview_project/mgview/bin/workspaceRoots.test.js).
-- Recent work reflected in the codebase: scene source split, inferred reference context, server-backed workspace picker, editable object/span inspectors, save/load/create flows, and static-site packaging.
+- Recent work reflected in the codebase: scene source split, inferred reference context, server-backed workspace picker, editable object/span inspectors, save/load/create flows, release zip packaging, and in-app build metadata.
 
 ## What the modern app does today
 
@@ -15,6 +15,7 @@ Short handoff for the current local-file React rewrite that lives beside the leg
 - Renders the scene with current `three` and drives transforms from simulation data at time `t`.
 - Supports local-server scene load, save, save-as, create, undo/redo, diagnostics, simulation file inspection, and URL sync.
 - Includes object, visual, scene, and span editing UI.
+- Includes an About panel showing app version, build date, timestamp, and commit.
 - Supports static hosting for demo use, but static mode is sample-only and read-only.
 
 ## Runtime model
@@ -65,6 +66,11 @@ Important build outputs:
 - `npm run build` -> `frontend/dist/` for the local Node server
 - `npm run build:site` -> `build/gh-pages/` for GitHub Pages
 - `npm run build:release` -> `build/release/mgview-*.zip`
+
+Versioning:
+
+- Canonical app version lives in [`frontend/package.json`](/Users/adam/code/mgview_project/mgview/frontend/package.json).
+- `npm run build` regenerates `bin/VERSION` and the app's generated build metadata before bundling.
 
 Do not use `npm run preview` as a substitute for the real app; it does not provide the MGView file API.
 

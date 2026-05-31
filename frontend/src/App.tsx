@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import AboutOverlay from './components/AboutOverlay.tsx';
 import { canPersistScenesToServer } from './api/runtimeMode.ts';
 import DemoNotice from './components/DemoNotice.tsx';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.tsx';
@@ -25,6 +26,7 @@ import { useServerWorkspace } from './hooks/useServerWorkspace.ts';
 import WorkspacePickerOverlay from './components/WorkspacePickerOverlay.tsx';
 
 export default function App() {
+  const [aboutOpen, setAboutOpen] = useState(false);
   const { toasts, dismiss, dismissErrors, showSuccess, showError } = useToasts();
   const serverWorkspace = useServerWorkspace(showSuccess, showError);
   const initialSceneRef = useMemo(
@@ -367,6 +369,7 @@ export default function App() {
         canRedo={canRedoDraftScene}
         canUndo={canUndoDraftScene}
         diagnosticsWarningCount={diagnosticsWarningCount}
+        onOpenAbout={() => setAboutOpen(true)}
         onOpenWorkspace={canPersistScenesToServer ? serverWorkspace.openPicker : undefined}
         onOpenCreateOverlay={shell.openCreateOverlay}
         onOpenLoadOverlay={shell.openLoadOverlay}
@@ -629,6 +632,8 @@ export default function App() {
           setSimulationEntryInput={shell.setSimulationEntryInput}
         />
       ) : null}
+
+      {aboutOpen ? <AboutOverlay onClose={() => setAboutOpen(false)} /> : null}
     </div>
   );
 }

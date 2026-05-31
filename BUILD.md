@@ -97,10 +97,10 @@ After switching to Actions, you can delete the old `gh-pages` branch once the fi
 cd frontend
 npm test
 npm run build:release
-# → build/release/mgview-0.2.10.zip
+# → build/release/mgview-0.3.0.zip
 ```
 
-Version is read from `bin/VERSION`. Override with `MGVIEW_RELEASE_VERSION=0.3.0 npm run build:release`.
+Version is read from [`frontend/package.json`](/Users/adam/code/mgview_project/mgview/frontend/package.json). The build also regenerates `bin/VERSION` for the launcher banner. Override with `MGVIEW_RELEASE_VERSION=0.3.1 npm run build:release`.
 
 ### Attach to a GitHub Release
 

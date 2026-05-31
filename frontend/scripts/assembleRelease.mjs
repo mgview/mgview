@@ -10,6 +10,7 @@ import { cp, mkdir, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import {
   distServerDir,
+  frontendDir,
   releaseDir,
   repoRoot,
   runtimeAssetsDir,
@@ -28,13 +29,14 @@ const releaseFiles = [
 ];
 
 async function readVersion() {
-  const versionFile = path.join(repoRoot, 'bin', 'VERSION');
-  const raw = await readFile(versionFile, 'utf8');
-  const match = raw.match(/(\d+\.\d+\.\d+)/);
-  if (!match) {
-    throw new Error(`Could not parse semver from ${versionFile}`);
+  const packageJsonPath = path.join(frontendDir, 'package.json');
+  const raw = await readFile(packageJsonPath, 'utf8');
+  const packageJson = JSON.parse(raw);
+  const version = String(packageJson.version ?? '').trim();
+  if (!version) {
+    throw new Error(`Could not read version from ${packageJsonPath}`);
   }
-  return match[1];
+  return version;
 }
 
 async function zipDirectory(stagingRoot, zipPath) {

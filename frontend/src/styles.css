@@ -521,6 +521,34 @@ input[inputmode="decimal"] {
   color: #8db2e3;
 }
 
+.about-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.about-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 0.78rem 0.92rem;
+  border: 1px solid rgba(159, 182, 212, 0.14);
+  border-radius: 10px;
+  background: rgba(12, 19, 32, 0.62);
+}
+
+.about-label {
+  color: #8ea3be;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.about-row code {
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
 .overlay-layout {
   display: grid;
   gap: 10px;
