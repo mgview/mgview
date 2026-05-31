@@ -25,7 +25,9 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { size?: 'default' | 'medium' | 'narrow' }
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    size?: 'default' | 'medium' | 'narrow' | 'compact';
+  }
 >(({ className, children, size = 'default', ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
@@ -36,6 +38,7 @@ const DialogContent = React.forwardRef<
         'max-h-[calc(100vh-20px)] overflow-auto rounded-md',
         size === 'medium' && 'max-w-[940px]',
         size === 'narrow' && 'max-w-[760px]',
+        size === 'compact' && 'max-w-[508px]',
         size === 'default' && 'max-w-[1320px]',
         className
       )}

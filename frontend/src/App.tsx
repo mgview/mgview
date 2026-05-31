@@ -399,6 +399,7 @@ export default function App() {
                     selectedObjectName={activeSelectedObject?.name ?? null}
                     selectedSpanName={selectedSpanResolvedName}
                     showPerformanceOverlay={shell.performanceOverlayOpen}
+                    onHidePerformanceOverlay={() => shell.setPerformanceOverlayOpen(false)}
                   />
 
                   <PlaybackStrip

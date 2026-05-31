@@ -5,6 +5,7 @@ This repo is **source-only**. Built output lives under `build/` (gitignored) and
 Handoff docs:
 
 - [mgview-in-place-modernization.md](mgview-in-place-modernization.md) — product status, run commands, gaps, **start here for new agents**
+- [mgview-ui-stack.md](mgview-ui-stack.md) — UI stack (Tailwind, shadcn, themes)
 - [mgview-scene-sources-split.md](mgview-scene-sources-split.md) — scene URLs (`?sample=` / `?scene=`), API `root=`, Samples vs Load (implemented)
 
 ## Three outputs

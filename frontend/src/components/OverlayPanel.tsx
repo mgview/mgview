@@ -14,7 +14,7 @@ interface OverlayPanelProps {
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
-  size?: 'default' | 'medium' | 'narrow';
+  size?: 'default' | 'medium' | 'narrow' | 'compact';
   onClose: () => void;
 }
 

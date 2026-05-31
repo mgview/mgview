@@ -146,7 +146,7 @@ After changing workspace in the UI, list/file should update **without** restarti
 
 ### Docs
 
-- [x] `mgview-in-place-modernization.md`, `BUILD.md`
+- [x] `mgview-in-place-modernization.md`, `mgview-ui-stack.md`, `BUILD.md`
 
 ---
 

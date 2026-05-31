@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -14,6 +15,7 @@ import {
 } from '../rendering/coordinateConvention.ts';
 import { pickRenderEntity } from '../rendering/raycastSelection.ts';
 import { RenderGraphManager } from '../rendering/renderGraph.ts';
+import { Button } from './ui/button.tsx';
 
 const DEFAULT_BACKGROUND_COLOR = '#e0f0ff';
 
@@ -65,6 +67,7 @@ interface RendererPanelProps {
   onSelectSpan?: (spanName: string, visualName: string | null) => void;
   onClearSelection?: () => void;
   showPerformanceOverlay?: boolean;
+  onHidePerformanceOverlay?: () => void;
 }
 
 interface SceneHandle {
@@ -112,6 +115,7 @@ export default function RendererPanel({
   onSelectSpan,
   onClearSelection,
   showPerformanceOverlay = false,
+  onHidePerformanceOverlay,
 }: RendererPanelProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const handleRef = useRef<SceneHandle | null>(null);
@@ -490,8 +494,25 @@ export default function RendererPanel({
             className="pointer-events-none absolute right-2.5 top-2.5 z-[2] min-w-[168px] rounded-md border border-border bg-popover/90 p-2 shadow-lg backdrop-blur-sm"
             aria-live="off"
           >
-            <div className="mb-1 text-[0.66rem] font-bold uppercase tracking-wider text-muted-foreground">
-              Renderer
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="text-[0.66rem] font-bold uppercase tracking-wider text-muted-foreground">
+                Renderer
+              </span>
+              {onHidePerformanceOverlay ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="pointer-events-auto h-5 w-5 shrink-0 opacity-70 hover:opacity-100"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onHidePerformanceOverlay();
+                  }}
+                  aria-label="Hide renderer stats overlay"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              ) : null}
             </div>
             <div className="grid grid-cols-[auto_auto] items-baseline gap-x-3 gap-y-0.5">
               <span className="text-[0.7rem] text-muted-foreground">FPS</span>

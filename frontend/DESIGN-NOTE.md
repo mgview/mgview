@@ -1,5 +1,7 @@
 # MGView UI Design Note
 
+See also [`mgview-ui-stack.md`](../mgview-ui-stack.md) for stack and file map.
+
 ## Typography
 - **UI:** IBM Plex Sans (400–700) — compact, neutral engineering sans
 - **Data/code:** IBM Plex Mono for paths, JSON preview, numeric fields, performance HUD
