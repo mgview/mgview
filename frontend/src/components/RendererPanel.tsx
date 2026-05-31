@@ -87,6 +87,45 @@ interface PerformanceOverlayStats {
   pixelRatio: number;
 }
 
+function disposeMaterial(material: THREE.Material) {
+  if ('map' in material && material.map instanceof THREE.Texture && material.map instanceof THREE.CanvasTexture) {
+    material.map.dispose();
+  }
+  material.dispose();
+}
+
+function disposeObject3D(root: THREE.Object3D) {
+  root.traverse((child) => {
+    const asyncDispose = child.userData?.disposeAsyncContents;
+    if (typeof asyncDispose === 'function') {
+      asyncDispose();
+    }
+
+    if (child instanceof THREE.Mesh || child instanceof THREE.Line || child instanceof THREE.LineSegments) {
+      child.geometry?.dispose();
+
+      if (Array.isArray(child.material)) {
+        for (const material of child.material) {
+          disposeMaterial(material);
+        }
+      } else if (child.material) {
+        disposeMaterial(child.material);
+      }
+    }
+  });
+}
+
+function replaceSceneRootContent(sceneRoot: THREE.Group, nextRoot?: THREE.Object3D) {
+  for (const child of [...sceneRoot.children]) {
+    disposeObject3D(child);
+    sceneRoot.remove(child);
+  }
+
+  if (nextRoot) {
+    sceneRoot.add(nextRoot);
+  }
+}
+
 function formatOverlayNumber(value: number) {
   return Number.isFinite(value) ? value.toLocaleString() : '0';
 }
@@ -315,7 +354,7 @@ export default function RendererPanel({
       handle.resizeObserver.disconnect();
       handle.controls.dispose();
       handle.renderer.dispose();
-      handle.sceneRoot.clear();
+      replaceSceneRootContent(handle.sceneRoot);
       handle.renderer.domElement.remove();
       handleRef.current = null;
     };
@@ -423,8 +462,10 @@ export default function RendererPanel({
       return;
     }
 
-    handle.sceneRoot.clear();
-    handle.sceneRoot.add(buildRenderableScene(evaluateScene(scene, frame), selectedObjectName, scenePath));
+    replaceSceneRootContent(
+      handle.sceneRoot,
+      buildRenderableScene(evaluateScene(scene, frame), selectedObjectName, scenePath)
+    );
   }, [frame, scene, scenePath, selectedObjectName]);
 
   return (

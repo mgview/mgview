@@ -17,6 +17,13 @@ export interface RenderAssetContext {
   resolveSceneAssetUrl: (assetPath: string) => string;
 }
 
+interface DisposableAsyncContainer extends THREE.Group {
+  userData: THREE.Group['userData'] & {
+    disposeAsyncContents?: () => void;
+    disposed?: boolean;
+  };
+}
+
 const objLoader = new OBJLoader();
 const stlLoader = new STLLoader();
 const textureLoader = new THREE.TextureLoader();
@@ -288,9 +295,14 @@ function loadStl(url: string): Promise<THREE.BufferGeometry> {
 function buildMeshVisual(visual: Extract<RenderVisual, { type: 'mesh' }>, context: RenderAssetContext) {
   const assetUrl = context.resolveSceneAssetUrl(visual.path);
   const material = createMaterial(visual.material, context);
-  const container = new THREE.Group();
+  const container: DisposableAsyncContainer = new THREE.Group();
 
   container.userData.kind = 'mesh-container';
+  container.userData.disposed = false;
+  container.userData.disposeAsyncContents = () => {
+    container.userData.disposed = true;
+    material.dispose();
+  };
   if (context.highlightSelection) {
     applySelectionHighlight(material);
   }
@@ -299,6 +311,10 @@ function buildMeshVisual(visual: Extract<RenderVisual, { type: 'mesh' }>, contex
   if (extension === 'obj') {
     void loadObj(assetUrl)
       .then((template) => {
+        if (container.userData.disposed) {
+          material.dispose();
+          return;
+        }
         const object = template.clone(true);
         object.scale.setScalar(visual.scale);
         applyMaterialToObject(object, material);
@@ -313,6 +329,10 @@ function buildMeshVisual(visual: Extract<RenderVisual, { type: 'mesh' }>, contex
   if (extension === 'stl') {
     void loadStl(assetUrl)
       .then((geometry) => {
+        if (container.userData.disposed) {
+          material.dispose();
+          return;
+        }
         const mesh = new THREE.Mesh(geometry.clone(), material);
         mesh.scale.setScalar(visual.scale);
         mesh.castShadow = true;
