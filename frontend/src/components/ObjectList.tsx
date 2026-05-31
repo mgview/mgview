@@ -49,6 +49,7 @@ export default function ObjectList({
                   key={entry.name}
                   type="button"
                   className={`inspector-item ${selectedObjectName === entry.name ? 'inspector-item-active' : ''}`}
+                  title={entry.name}
                   onClick={() => onSelectObject(entry.name, entry.visuals[0]?.name ?? null)}
                 >
                   <span className="inspector-item-top">
@@ -82,6 +83,7 @@ export default function ObjectList({
                   key={entry.name}
                   type="button"
                   className={`inspector-item ${selectedSpanName === entry.name ? 'inspector-item-active' : ''}`}
+                  title={entry.name}
                   onClick={() => onSelectSpan(entry.name, entry.visualNames[0] ?? null)}
                 >
                   <span className="inspector-item-top">

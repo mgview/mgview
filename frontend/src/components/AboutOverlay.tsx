@@ -7,12 +7,7 @@ interface AboutOverlayProps {
 
 export default function AboutOverlay({ onClose }: AboutOverlayProps) {
   return (
-    <OverlayPanel
-      title="About MGView"
-      subtitle="Build information for this installed copy."
-      size="narrow"
-      onClose={onClose}
-    >
+    <OverlayPanel title="About MGView" size="narrow" onClose={onClose}>
       <div className="about-grid">
         <div className="about-row">
           <span className="about-label">Version</span>

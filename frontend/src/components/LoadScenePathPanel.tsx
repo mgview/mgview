@@ -17,7 +17,7 @@ function isJsonPath(filePath: string): boolean {
 
 export default function LoadScenePathPanel({
   actionLabel,
-  inputLabel = 'Scene Path',
+  inputLabel,
   helperText,
   hideSectionTitle = false,
   loading,
@@ -28,8 +28,8 @@ export default function LoadScenePathPanel({
   sceneInput,
 }: LoadScenePathPanelProps) {
   return (
-    <section className="panel">
-      {!hideSectionTitle ? <h2>Scene</h2> : null}
+    <div className="overlay-section">
+      {!hideSectionTitle ? <h3 className="overlay-section-title">Scene</h3> : null}
       {helperText ? <p className="panel-subtitle">{helperText}</p> : null}
       <form
         className="loader-form loader-form-single"
@@ -52,6 +52,6 @@ export default function LoadScenePathPanel({
           {actionLabel}
         </button>
       </form>
-    </section>
+    </div>
   );
 }

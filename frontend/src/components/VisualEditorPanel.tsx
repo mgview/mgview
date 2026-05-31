@@ -165,87 +165,82 @@ export default function VisualEditorPanel({
   return (
     <>
       {selectedObject ? (
-        <div className="stacked-meta">
-          <div className="meta-row">
-            <div className="section-label-with-actions">
-              <label>Geometries</label>
-              <div className="visual-toolbar-actions">
+        <div className="editor-panel-header">
+          <span className="editor-panel-header-label">Geometries</span>
+          <div className="inline-tags">
+            {selectedObject.visuals.map((visual) =>
+              renamingVisualName === visual.name ? (
+                <input
+                  key={visual.name}
+                  className="tag-input"
+                  type="text"
+                  autoFocus
+                  value={renameText}
+                  onChange={(event) => setRenameText(event.target.value)}
+                  onBlur={commitRename}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      commitRename();
+                    }
+                    if (event.key === 'Escape') {
+                      setRenamingVisualName(null);
+                      setRenameText('');
+                    }
+                  }}
+                />
+              ) : (
                 <button
+                  key={visual.name}
                   type="button"
-                  className="icon-button"
-                  aria-label="Add geometry"
-                  title="Add geometry"
-                  onClick={() => createVisual('sphere')}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className="icon-button"
-                  aria-label="Delete geometry"
-                  title="Delete geometry"
-                  disabled={!selectedVisual}
+                  className={`tag-button ${selectedVisual?.name === visual.name ? 'tag-button-active' : ''}`}
+                  title={visual.name}
                   onClick={() => {
-                    void deleteSelectedVisual();
+                    if (selectedVisual?.name === visual.name) {
+                      beginRename(visual.name);
+                    } else {
+                      setSelectedVisualName(visual.name);
+                    }
                   }}
                 >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M4 7h16M9 7V5h6v2M8 7l1 12h6l1-12M10 11v5M14 11v5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  {visual.name}
                 </button>
-              </div>
-            </div>
-            <div className="visual-toolbar">
-              <div className="inline-tags">
-                {selectedObject.visuals.map((visual) =>
-                  renamingVisualName === visual.name ? (
-                    <input
-                      key={visual.name}
-                      className="tag-input"
-                      type="text"
-                      autoFocus
-                      value={renameText}
-                      onChange={(event) => setRenameText(event.target.value)}
-                      onBlur={commitRename}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          commitRename();
-                        }
-                        if (event.key === 'Escape') {
-                          setRenamingVisualName(null);
-                          setRenameText('');
-                        }
-                      }}
-                    />
-                  ) : (
-                    <button
-                      key={visual.name}
-                      type="button"
-                      className={`tag-button ${selectedVisual?.name === visual.name ? 'tag-button-active' : ''}`}
-                      onClick={() => {
-                        if (selectedVisual?.name === visual.name) {
-                          beginRename(visual.name);
-                        } else {
-                          setSelectedVisualName(visual.name);
-                        }
-                      }}
-                    >
-                      {visual.name}
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
+              )
+            )}
+          </div>
+          <div className="visual-toolbar-actions">
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Add geometry"
+              title="Add geometry"
+              onClick={() => createVisual('sphere')}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Delete geometry"
+              title="Delete geometry"
+              disabled={!selectedVisual}
+              onClick={() => {
+                void deleteSelectedVisual();
+              }}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M4 7h16M9 7V5h6v2M8 7l1 12h6l1-12M10 11v5M14 11v5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
           </div>
         </div>
       ) : null}

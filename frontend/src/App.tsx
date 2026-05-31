@@ -556,6 +556,7 @@ export default function App() {
           onOpenSelectedScene={() => {
             void shell.handleOpenSelectedScene();
           }}
+          onOpenWorkspace={canPersistScenesToServer ? serverWorkspace.openPicker : undefined}
           onSaveScenePath={(path) => {
             void shell.handleSaveScenePath(path);
           }}

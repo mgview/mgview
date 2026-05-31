@@ -208,19 +208,6 @@ export default function SceneHeaderBar({
                   >
                     New…
                   </button>
-                  {onOpenWorkspace ? (
-                    <button
-                      type="button"
-                      className="split-button-menu-item"
-                      role="menuitem"
-                      onClick={() => {
-                        setLoadMenuOpen(false);
-                        onOpenWorkspace();
-                      }}
-                    >
-                      Change Workspace…
-                    </button>
-                  ) : null}
                   <button
                     type="button"
                     className="split-button-menu-item"

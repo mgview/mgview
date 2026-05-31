@@ -24,11 +24,11 @@ Short handoff for the current local-file React rewrite that lives beside the leg
 - The main header no longer shows the workspace root path persistently.
 - The main scene identity shown in the header is the loaded scene path, with unsaved-change state.
 - `Samples…` remains a top-level action because it is app/demo content rather than workspace content.
-- `Load…` remains the primary workspace/document entry point, with related actions grouped in its dropdown:
+- `Load…` remains the primary workspace/document entry point, with related actions grouped between its dropdown and modal:
   - `Reload`
   - `New…`
-  - `Change Workspace…`
   - `Sim Files…`
+- `Change Workspace…` now lives inside the `Load` and `New` modal flows rather than in the persistent header menu.
 - Scene `name` is no longer treated as primary header content; path is the more useful top-level identifier.
 
 ## Runtime model

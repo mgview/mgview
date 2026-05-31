@@ -105,37 +105,28 @@ export default function SimulationDataOverlay({
     <OverlayPanel
       title="Simulation Data"
       size="medium"
-      subtitle="Manage simulation file entries and inspect the parsed channels driving inference."
       actions={
         simulationLoading ? (
           <span className="tag tag-soft">Refreshing…</span>
-        ) : (
-          <span className="tag tag-soft">Auto-refresh on</span>
-        )
+        ) : null
       }
       onClose={onClose}
     >
       <div className="overlay-layout">
-        <section className="panel">
-          <h2>Simulation Entries</h2>
-          <div className="stacked-meta">
-            <div className="meta-row">
-              <label>Current Entries</label>
-              <div className="sim-entry-list">
-                {simulationEntries.length > 0 ? (
-                  simulationEntries.map((entry) => (
-                    <span key={entry} className="sim-entry-chip">
-                      <code>{entry}</code>
-                      <button type="button" className="icon-button subtle-icon-button" onClick={() => onRemoveSimulationEntry(entry)}>
-                        x
-                      </button>
-                    </span>
-                  ))
-                ) : (
-                  <span className="empty-state-inline">No simulationData entries yet.</span>
-                )}
-              </div>
-            </div>
+        <div className="overlay-section">
+          <div className="sim-entry-list">
+            {simulationEntries.length > 0 ? (
+              simulationEntries.map((entry) => (
+                <span key={entry} className="sim-entry-chip">
+                  <code>{entry}</code>
+                  <button type="button" className="icon-button subtle-icon-button" onClick={() => onRemoveSimulationEntry(entry)}>
+                    x
+                  </button>
+                </span>
+              ))
+            ) : (
+              <span className="empty-state-inline">No simulation entries.</span>
+            )}
           </div>
 
           <div className="sim-entry-manual-toggle">
@@ -144,13 +135,12 @@ export default function SimulationDataOverlay({
               className="secondary-button"
               onClick={() => setManualEntryExpanded((current) => !current)}
             >
-              {manualEntryExpanded ? 'Hide Manual Path Entry' : 'Advanced Path Entry…'}
+              {manualEntryExpanded ? 'Hide path entry' : 'Enter path…'}
             </button>
           </div>
 
           {manualEntryExpanded ? (
-            <div className="meta-row sim-entry-manual-panel">
-              <label>Add Entry By Path</label>
+            <div className="sim-entry-manual-panel">
               <div className="sim-entry-controls">
                 <input
                   type="text"
@@ -171,7 +161,6 @@ export default function SimulationDataOverlay({
                   Add
                 </button>
               </div>
-              <p className="panel-subtitle">Use this for manual ranges or paths the browser view does not already expose.</p>
             </div>
           ) : null}
 
@@ -182,17 +171,20 @@ export default function SimulationDataOverlay({
               ))}
             </div>
           ) : null}
-        </section>
+        </div>
+
+        <hr className="overlay-section-divider" />
 
         <LocalFileBrowser
           browserListing={browserListing}
           browserError={browserError}
           browserLoading={browserLoading}
           compact
-          emptyStateMessage="Browse the workspace and click a file to add it as a simulation entry."
+          flat
+          emptyStateMessage="Select files to add as simulation entries."
           sceneInput={simulationEntryInput || scenePath}
           selectedPaths={selectedBrowserPaths}
-          title="Simulation File Browser"
+          title="Browse"
           titleActions={
             <>
               <button
@@ -202,7 +194,7 @@ export default function SimulationDataOverlay({
                 onClick={clearBrowserSelection}
                 aria-label="Clear selected simulation files"
               >
-                x
+                Clear
               </button>
               <button
                 type="button"
@@ -213,7 +205,7 @@ export default function SimulationDataOverlay({
                   clearBrowserSelection();
                 }}
               >
-                {selectedRelativeEntries.length > 1 ? `Add Selected (${selectedRelativeEntries.length})` : 'Add Selected'}
+                {selectedRelativeEntries.length > 1 ? `Add (${selectedRelativeEntries.length})` : 'Add'}
               </button>
             </>
           }
@@ -233,30 +225,31 @@ export default function SimulationDataOverlay({
           getDirectoryPath={getDirectoryPath}
         />
 
-        <section className="panel">
-          <h2>Channel Inspector</h2>
-          <div className="meta-list">
-            <div>
-              <label>Expanded Files</label>
-              <strong>{expandedFiles.length}</strong>
-            </div>
-            <div>
-              <label>Channels</label>
-              <strong>{channelNames.length}</strong>
-            </div>
-            <div>
-              <label>Canonical Origin</label>
-              <strong>{canonicalOrigin ?? 'Not inferred'}</strong>
-            </div>
-            <div>
-              <label>Canonical Frame</label>
-              <strong>{canonicalFrame ?? 'Not inferred'}</strong>
-            </div>
-          </div>
+        {expandedFiles.length > 0 ? (
+          <>
+            <hr className="overlay-section-divider" />
 
-          <div className="stacked-meta">
-            <div className="meta-row">
-              <label>Files And Channels</label>
+            <div className="overlay-section">
+              <h3 className="overlay-section-title">Channels</h3>
+              <div className="meta-list">
+                <div>
+                  <label>Files</label>
+                  <strong>{expandedFiles.length}</strong>
+                </div>
+                <div>
+                  <label>Channels</label>
+                  <strong>{channelNames.length}</strong>
+                </div>
+                <div>
+                  <label>Origin</label>
+                  <strong>{canonicalOrigin ?? '—'}</strong>
+                </div>
+                <div>
+                  <label>Frame</label>
+                  <strong>{canonicalFrame ?? '—'}</strong>
+                </div>
+              </div>
+
               <div className="sim-file-channel-list">
                 {expandedFiles.map((filePath) => {
                   const parsedFile = parsedSimulationFiles.find((entry) => entry.filePath === filePath);
@@ -312,7 +305,7 @@ export default function SimulationDataOverlay({
                                     setExpandedChannelFiles((current) => current.filter((entry) => entry !== filePath))
                                   }
                                 >
-                                  Show Less
+                                  Less
                                 </button>
                               ) : null}
                             </>
@@ -334,14 +327,14 @@ export default function SimulationDataOverlay({
                                       )
                                     }
                                   >
-                                    +{fileChannelNames.length - 4} more
+                                    +{fileChannelNames.length - 4}
                                   </button>
                                 ) : null}
                               </div>
                             </>
                           )
                         ) : (
-                          <span className="empty-state-inline">No parsed channels.</span>
+                          <span className="empty-state-inline">No channels.</span>
                         )}
                       </div>
                     </div>
@@ -349,8 +342,8 @@ export default function SimulationDataOverlay({
                 })}
               </div>
             </div>
-          </div>
-        </section>
+          </>
+        ) : null}
       </div>
     </OverlayPanel>
   );

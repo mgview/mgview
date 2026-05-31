@@ -25,18 +25,22 @@ export default function SavePreviewPanel({ savePreview }: SavePreviewPanelProps)
     }
   };
 
+  const copyLabel =
+    copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy';
+
   return (
     <section className="save-preview-panel">
-      <div className="save-preview-toolbar">
+      <div className="json-preview-shell">
         <button
           type="button"
-          className="secondary-button"
+          className="secondary-button json-preview-copy"
           onClick={handleCopy}
+          aria-label="Copy JSON to clipboard"
         >
-          {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy Failed' : 'Copy JSON'}
+          {copyLabel}
         </button>
+        <pre className="json-preview">{savePreview}</pre>
       </div>
-      <pre className="json-preview">{savePreview}</pre>
     </section>
   );
 }

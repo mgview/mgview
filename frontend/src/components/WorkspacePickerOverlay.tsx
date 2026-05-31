@@ -27,57 +27,60 @@ export default function WorkspacePickerOverlay({
   onUseDefault,
 }: WorkspacePickerOverlayProps) {
   return (
-    <OverlayPanel
-      title="Open Workspace"
-      subtitle="Simulation data is read from the workspace root. Bundled samples and assets stay with this MGView install."
-      size="narrow"
-      onClose={onClose}
-    >
+    <OverlayPanel title="Open Workspace" size="narrow" onClose={onClose}>
       <div className="overlay-layout">
-        <section className="panel">
-          <div className="stacked-meta">
-            <div className="meta-row">
-              <label htmlFor="workspace-root-input">Workspace folder</label>
-              <input
-                id="workspace-root-input"
-                type="text"
-                value={draftWorkspaceRoot}
-                onChange={(event) => onDraftChange(event.target.value)}
-                placeholder="/path/to/MotionGenesis"
-                spellCheck={false}
-              />
+        <div className="overlay-section">
+          <form
+            className="loader-form loader-form-single"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onApply();
+            }}
+          >
+            <input
+              id="workspace-root-input"
+              type="text"
+              value={draftWorkspaceRoot}
+              onChange={(event) => onDraftChange(event.target.value)}
+              placeholder="/path/to/MotionGenesis"
+              spellCheck={false}
+              aria-label="Workspace folder"
+            />
+            <button type="submit" disabled={saving}>
+              {saving ? 'Applying…' : 'Apply'}
+            </button>
+          </form>
+
+          {workspaceInfo || appRoot || defaultWorkspaceRoot ? (
+            <div className="workspace-hint">
+              {workspaceInfo ? (
+                <div>
+                  Current: <code>{workspaceInfo.workspaceRoot}</code>
+                </div>
+              ) : null}
+              {appRoot ? (
+                <div>
+                  App: <code>{appRoot}</code>
+                </div>
+              ) : null}
+              {defaultWorkspaceRoot ? (
+                <div>
+                  Default: <code>{defaultWorkspaceRoot}</code>
+                </div>
+              ) : null}
             </div>
-            {workspaceInfo ? (
-              <div className="meta-row">
-                <label>Current</label>
-                <code>{workspaceInfo.workspaceRoot}</code>
-              </div>
-            ) : null}
-            {appRoot ? (
-              <div className="meta-row">
-                <label>App install</label>
-                <code>{appRoot}</code>
-              </div>
-            ) : null}
-            {defaultWorkspaceRoot ? (
-              <div className="meta-row">
-                <label>Default</label>
-                <code>{defaultWorkspaceRoot}</code>
-              </div>
-            ) : null}
-          </div>
+          ) : null}
 
           {errorMessage ? <div className="status error">{errorMessage}</div> : null}
 
-          <div className="visual-toolbar-actions">
-            <button type="button" className="secondary-button" onClick={onUseDefault} disabled={!defaultWorkspaceRoot}>
-              Use default
-            </button>
-            <button type="button" onClick={onApply} disabled={saving}>
-              {saving ? 'Applying…' : 'Apply'}
-            </button>
-          </div>
-        </section>
+          {defaultWorkspaceRoot ? (
+            <div className="visual-toolbar-actions">
+              <button type="button" className="secondary-button" onClick={onUseDefault}>
+                Use default
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </OverlayPanel>
   );

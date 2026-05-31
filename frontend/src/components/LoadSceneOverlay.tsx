@@ -17,6 +17,7 @@ interface LoadSceneOverlayProps {
   onCreateScenePath: (path: string) => void;
   onOpenScenePath: (path: string) => void;
   onOpenSelectedScene: () => void;
+  onOpenWorkspace?: () => void;
   onSaveScenePath: (path: string) => void;
   sceneInput: string;
   setSceneInput: (value: string) => void;
@@ -39,6 +40,7 @@ export default function LoadSceneOverlay({
   onCreateScenePath,
   onOpenScenePath,
   onOpenSelectedScene,
+  onOpenWorkspace,
   onSaveScenePath,
   sceneInput,
   setSceneInput,
@@ -64,10 +66,19 @@ export default function LoadSceneOverlay({
       onClose={onClose}
     >
       <div className="overlay-layout">
+        {canPersistScenes && !isSaveAsMode && onOpenWorkspace ? (
+          <section className="panel">
+            <div className="visual-toolbar-actions">
+              <button type="button" className="secondary-button" onClick={onOpenWorkspace}>
+                Change Workspace…
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         <LoadScenePathPanel
           actionLabel={isCreateMode ? 'Create' : isSaveAsMode ? 'Save As' : 'Load'}
           hideSectionTitle
-          inputLabel={isCreateMode || isSaveAsMode ? 'Filename' : undefined}
           loading={loading}
           submitDisabled={persistActionDisabled}
           onSubmit={() => {
@@ -88,16 +99,17 @@ export default function LoadSceneOverlay({
 
         {errorMessage ? <div className="status error">{errorMessage}</div> : null}
 
+        <hr className="overlay-section-divider" />
+
         <LocalFileBrowser
           browserListing={browserListing}
           browserError={browserError}
           browserLoading={browserLoading}
           compact
+          flat
           filterEntry={(entry) => entry.type === 'directory' || isJsonPath(entry.name)}
           hideTitle
           sceneInput={sceneInput}
-          title="Scene Browser"
-          unlabeledBreadcrumbs
           onBrowse={onBrowse}
           onOpenFile={
             isCreateMode || isSaveAsMode

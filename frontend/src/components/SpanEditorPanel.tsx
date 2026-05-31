@@ -256,89 +256,86 @@ export default function SpanEditorPanel({
           </div>
 
           <div className="visual-card">
-            <div className="stacked-meta">
-              <div className="meta-row">
-                <div className="section-label-with-actions">
-                  <label>Span Visuals</label>
-                  <div className="visual-toolbar-actions">
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label="Add span visual"
-                      title="Add span visual"
-                      onClick={() => createSpanVisual()}
-                    >
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label="Delete span visual"
-                      title="Delete span visual"
-                      disabled={!selectedSpanVisualName}
-                      onClick={() => {
-                        void deleteSelectedSpanVisual();
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M4 7h16M9 7V5h6v2M8 7l1 12h6l1-12M10 11v5M14 11v5"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div className="inline-tags">
-                  {Object.keys(liveSelectedSpan.visual ?? {}).length > 0 ? (
-                    Object.keys(liveSelectedSpan.visual ?? {}).map((visualName) => (
-                      renamingSpanVisualName === visualName ? (
-                        <input
-                          key={visualName}
-                          className="tag-input"
-                          type="text"
-                          autoFocus
-                          value={spanVisualNameDraft}
-                          onChange={(event) => setSpanVisualNameDraft(event.target.value)}
-                          onBlur={commitSpanVisualRename}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              event.preventDefault();
-                              commitSpanVisualRename();
-                            }
-                            if (event.key === 'Escape') {
-                              setRenamingSpanVisualName(null);
-                              setSpanVisualNameDraft('');
-                            }
-                          }}
-                        />
-                      ) : (
-                        <button
-                          key={visualName}
-                          type="button"
-                          className={`tag-button ${selectedSpanVisualName === visualName ? 'tag-button-active' : ''}`}
-                          onClick={() => {
-                            if (selectedSpanVisualName === visualName) {
-                              beginSpanVisualRename(visualName);
-                            } else {
-                              selectSpan(selectedSpanName, visualName);
-                            }
-                          }}
-                        >
-                          {visualName}
-                        </button>
-                      )
-                    ))
-                  ) : (
-                    <span className="empty-state-inline">No span visuals yet.</span>
-                  )}
-                </div>
+            <div className="editor-panel-header">
+              <span className="editor-panel-header-label">Span Visuals</span>
+              <div className="inline-tags">
+                {Object.keys(liveSelectedSpan.visual ?? {}).length > 0 ? (
+                  Object.keys(liveSelectedSpan.visual ?? {}).map((visualName) =>
+                    renamingSpanVisualName === visualName ? (
+                      <input
+                        key={visualName}
+                        className="tag-input"
+                        type="text"
+                        autoFocus
+                        value={spanVisualNameDraft}
+                        onChange={(event) => setSpanVisualNameDraft(event.target.value)}
+                        onBlur={commitSpanVisualRename}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            commitSpanVisualRename();
+                          }
+                          if (event.key === 'Escape') {
+                            setRenamingSpanVisualName(null);
+                            setSpanVisualNameDraft('');
+                          }
+                        }}
+                      />
+                    ) : (
+                      <button
+                        key={visualName}
+                        type="button"
+                        className={`tag-button ${selectedSpanVisualName === visualName ? 'tag-button-active' : ''}`}
+                        title={visualName}
+                        onClick={() => {
+                          if (selectedSpanVisualName === visualName) {
+                            beginSpanVisualRename(visualName);
+                          } else {
+                            selectSpan(selectedSpanName, visualName);
+                          }
+                        }}
+                      >
+                        {visualName}
+                      </button>
+                    )
+                  )
+                ) : (
+                  <span className="empty-state-inline">No span visuals yet.</span>
+                )}
+              </div>
+              <div className="visual-toolbar-actions">
+                <button
+                  type="button"
+                  className="icon-button"
+                  aria-label="Add span visual"
+                  title="Add span visual"
+                  onClick={() => createSpanVisual()}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="icon-button"
+                  aria-label="Delete span visual"
+                  title="Delete span visual"
+                  disabled={!selectedSpanVisualName}
+                  onClick={() => {
+                    void deleteSelectedSpanVisual();
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M4 7h16M9 7V5h6v2M8 7l1 12h6l1-12M10 11v5M14 11v5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
 

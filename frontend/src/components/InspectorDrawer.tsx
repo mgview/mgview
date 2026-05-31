@@ -150,54 +150,56 @@ export default function InspectorDrawer({
         </button>
       </div>
 
-      {editorMode === 'scene' ? (
-        <SceneSettingsPanel
-          activeScene={activeScene}
-          cameraPreview={cameraPreview}
-          clearCameraPreview={clearCameraPreview}
-          objectNames={activeScene ? Object.keys(activeScene.objects) : []}
-          updateDraftScene={updateDraftScene}
-          updateDraftScenePreview={updateDraftScenePreview}
-          updateSceneVector={updateSceneVector}
-          updateSceneVectorPreview={updateSceneVectorPreview}
-        />
-      ) : editorMode === 'json' ? (
-        <JsonEditorPanel
-          savePreview={savePreview}
-        />
-      ) : selectedSpanName ? (
-        <SpanEditorPanel
-          activeScene={activeScene}
-          channelNames={channelNames}
-          createSpanVisual={createSpanVisual}
-          deleteSelectedSpan={deleteSelectedSpan}
-          deleteSelectedSpanVisual={deleteSelectedSpanVisual}
-          liveSelectedSpan={liveSelectedSpan}
-          liveSelectedSpanVisual={liveSelectedSpanVisual}
-          renameSpan={renameSpan}
-          renameSpanVisual={renameSpanVisual}
-          selectedSpanName={selectedSpanName}
-          selectedSpanVisualName={selectedSpanVisualName}
-          selectSpan={selectSpan}
-          updateSelectedSpan={updateSelectedSpan}
-          updateSelectedSpanVisual={updateSelectedSpanVisual}
-          updateSelectedSpanVisualPreview={updateSelectedSpanVisualPreview}
-        />
-      ) : (
-        <VisualEditorPanel
-          liveSelectedVisual={liveSelectedVisual}
-          selectedObject={selectedObject}
-          selectedVisual={selectedVisual}
-          updateSelectedObject={updateSelectedObject}
-          createVisual={createVisual}
-          renameVisual={renameVisual}
-          deleteSelectedVisual={deleteSelectedVisual}
-          changeSelectedVisualType={changeSelectedVisualType}
-          setSelectedVisualName={setSelectedVisualName}
-          updateSelectedVisual={updateSelectedVisual}
-          updateSelectedVisualPreview={updateSelectedVisualPreview}
-        />
-      )}
+      <div className="drawer-body">
+        {editorMode === 'scene' ? (
+          <SceneSettingsPanel
+            activeScene={activeScene}
+            cameraPreview={cameraPreview}
+            clearCameraPreview={clearCameraPreview}
+            objectNames={activeScene ? Object.keys(activeScene.objects) : []}
+            updateDraftScene={updateDraftScene}
+            updateDraftScenePreview={updateDraftScenePreview}
+            updateSceneVector={updateSceneVector}
+            updateSceneVectorPreview={updateSceneVectorPreview}
+          />
+        ) : editorMode === 'json' ? (
+          <JsonEditorPanel
+            savePreview={savePreview}
+          />
+        ) : selectedSpanName ? (
+          <SpanEditorPanel
+            activeScene={activeScene}
+            channelNames={channelNames}
+            createSpanVisual={createSpanVisual}
+            deleteSelectedSpan={deleteSelectedSpan}
+            deleteSelectedSpanVisual={deleteSelectedSpanVisual}
+            liveSelectedSpan={liveSelectedSpan}
+            liveSelectedSpanVisual={liveSelectedSpanVisual}
+            renameSpan={renameSpan}
+            renameSpanVisual={renameSpanVisual}
+            selectedSpanName={selectedSpanName}
+            selectedSpanVisualName={selectedSpanVisualName}
+            selectSpan={selectSpan}
+            updateSelectedSpan={updateSelectedSpan}
+            updateSelectedSpanVisual={updateSelectedSpanVisual}
+            updateSelectedSpanVisualPreview={updateSelectedSpanVisualPreview}
+          />
+        ) : (
+          <VisualEditorPanel
+            liveSelectedVisual={liveSelectedVisual}
+            selectedObject={selectedObject}
+            selectedVisual={selectedVisual}
+            updateSelectedObject={updateSelectedObject}
+            createVisual={createVisual}
+            renameVisual={renameVisual}
+            deleteSelectedVisual={deleteSelectedVisual}
+            changeSelectedVisualType={changeSelectedVisualType}
+            setSelectedVisualName={setSelectedVisualName}
+            updateSelectedVisual={updateSelectedVisual}
+            updateSelectedVisualPreview={updateSelectedVisualPreview}
+          />
+        )}
+      </div>
     </section>
   );
 }

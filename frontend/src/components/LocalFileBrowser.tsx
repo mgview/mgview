@@ -8,13 +8,13 @@ interface LocalFileBrowserProps {
   compact?: boolean;
   emptyStateMessage?: string;
   filterEntry?: (entry: FileBrowserListing['entries'][number]) => boolean;
+  flat?: boolean;
   hideTitle?: boolean;
   hideTitleWhenNoActions?: boolean;
   sceneInput: string;
   selectedPaths?: string[];
   title?: string;
   titleActions?: ReactNode;
-  unlabeledBreadcrumbs?: boolean;
   onBrowse: (path: string) => void;
   onOpenFile?: (path: string) => void;
   onSelectFile: (path: string, options?: { additive: boolean }) => void;
@@ -57,13 +57,13 @@ export default function LocalFileBrowser({
   compact = false,
   emptyStateMessage = 'Browse a scene folder to load JSON files through the local API.',
   filterEntry,
+  flat = false,
   hideTitle = false,
   hideTitleWhenNoActions = false,
   sceneInput,
   selectedPaths,
   title = 'Local File Browser',
   titleActions,
-  unlabeledBreadcrumbs = false,
   onBrowse,
   onOpenFile,
   onSelectFile,
@@ -74,36 +74,33 @@ export default function LocalFileBrowser({
   const activePaths = selectedPaths ?? [sceneInput];
   const visibleEntries = browserListing?.entries.filter((entry) => (filterEntry ? filterEntry(entry) : true)) ?? [];
   const showHeader = !hideTitle && !(hideTitleWhenNoActions && !titleActions);
+  const sectionClassName = flat ? 'overlay-section' : 'panel';
+  const titleClassName = flat ? 'overlay-section-title' : undefined;
 
   return (
-    <section className="panel">
+    <section className={sectionClassName}>
       {showHeader ? (
         <div className="section-label-with-actions">
-          <h2>{title}</h2>
+          {titleClassName ? <h3 className={titleClassName}>{title}</h3> : <h2>{title}</h2>}
           {titleActions ? <div className="visual-toolbar-actions">{titleActions}</div> : null}
         </div>
       ) : titleActions ? (
         <div className="visual-toolbar-actions file-browser-actions-row">{titleActions}</div>
       ) : null}
-      <div className="stacked-meta">
-        <div className="meta-row">
-          {!unlabeledBreadcrumbs ? <label>Current Folder</label> : null}
-          <div className="file-browser-breadcrumbs" aria-label={`Current folder ${currentFolderLabel}`}>
-            {breadcrumbs.map((segment, index) => (
-              <span key={segment.path} className="file-browser-breadcrumb-segment">
-                {index > 0 ? <span className="file-browser-breadcrumb-separator">/</span> : null}
-                <button
-                  type="button"
-                  className="file-browser-breadcrumb-button"
-                  onClick={() => onBrowse(segment.path)}
-                >
-                  {segment.label}
-                </button>
-              </span>
-            ))}
-            <span className="file-browser-breadcrumb-trailing">/</span>
-          </div>
-        </div>
+      <div className="file-browser-breadcrumbs" aria-label={`Current folder ${currentFolderLabel}`}>
+        {breadcrumbs.map((segment, index) => (
+          <span key={segment.path} className="file-browser-breadcrumb-segment">
+            {index > 0 ? <span className="file-browser-breadcrumb-separator">/</span> : null}
+            <button
+              type="button"
+              className="file-browser-breadcrumb-button"
+              onClick={() => onBrowse(segment.path)}
+            >
+              {segment.label}
+            </button>
+          </span>
+        ))}
+        <span className="file-browser-breadcrumb-trailing">/</span>
       </div>
 
       {browserError ? <div className="status error">{browserError}</div> : null}
