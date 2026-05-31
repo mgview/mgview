@@ -279,10 +279,77 @@ test('scene evaluation normalizes text visuals for rendering', () => {
     visible: true,
     position: { x: 0, y: 0, z: 0 },
     rotation: { x: 0, y: 0, z: 0 },
-    material: { name: 'SILVER', color: undefined },
+    material: { name: 'BLACK', color: undefined },
     text: 'N',
     scale: 0.5,
+    textMode: '2d',
   });
+});
+
+test('scene evaluation preserves explicit 3d text mode', () => {
+  const scene = createSceneDocument({
+    newtonianFrame: 'N',
+    objects: {
+      N: {
+        type: 'frame',
+        visual: {
+          label: {
+            type: 'text',
+            text: 'N',
+            scale: 0.5,
+            text_mode: '3d',
+          },
+        },
+      },
+    },
+  });
+
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {
+      'P_No_N[1]': 0,
+      'P_No_N[2]': 0,
+      'P_No_N[3]': 0,
+    },
+  });
+
+  assert.equal(
+    evaluation.objects.N.visuals.find((visual) => visual.name === 'label')?.textMode,
+    '3d'
+  );
+});
+
+test('scene evaluation preserves explicit 2d text mode', () => {
+  const scene = createSceneDocument({
+    newtonianFrame: 'N',
+    objects: {
+      N: {
+        type: 'frame',
+        visual: {
+          label: {
+            type: 'text',
+            text: 'N',
+            scale: 0.5,
+            text_mode: '2d',
+          },
+        },
+      },
+    },
+  });
+
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {
+      'P_No_N[1]': 0,
+      'P_No_N[2]': 0,
+      'P_No_N[3]': 0,
+    },
+  });
+
+  assert.equal(
+    evaluation.objects.N.visuals.find((visual) => visual.name === 'label')?.textMode,
+    '2d'
+  );
 });
 
 test('scene evaluation skips visuals for objects with no backing simulation data', () => {

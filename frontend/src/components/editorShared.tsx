@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import type { SceneMaterial, SceneVisual, Vector3Like, VisualType } from '../core/types.ts';
+import type { SceneMaterial, SceneVisual, TextRenderMode, Vector3Like, VisualType } from '../core/types.ts';
+import { DEFAULT_TEXT_MATERIAL } from '../core/materialPresets.ts';
+import { normalizeTextRenderMode } from '../core/sceneEvaluation.ts';
 
 export const VISUAL_TYPE_OPTIONS: VisualType[] = [
   'sphere',
@@ -149,7 +151,14 @@ export function createDefaultVisual(type: VisualType, material?: SceneMaterial, 
     case 'mesh':
       return { ...shared, type, scale, path: '' };
     case 'text':
-      return { ...shared, type, scale, text: '' };
+      return {
+        ...shared,
+        type,
+        scale,
+        text: '',
+        text_mode: '2d',
+        material: { ...DEFAULT_TEXT_MATERIAL },
+      };
     case 'basis':
       return { ...shared, type, scale };
     default:
@@ -220,6 +229,10 @@ function normalizeEditableNumber(
   }
 
   return integer ? Math.round(nextValue) : roundToDecimalPlaces(nextValue, decimalPlaces);
+}
+
+export function getTextRenderMode(visual: SceneVisual): TextRenderMode {
+  return normalizeTextRenderMode(visual.text_mode);
 }
 
 export function getEditableScalarKeys(visual: SceneVisual): EditableScalarKey[] {

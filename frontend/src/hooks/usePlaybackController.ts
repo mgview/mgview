@@ -34,7 +34,9 @@ export function usePlaybackController(
       currentTimeRef.current = timeline.tInitial;
       setCurrentTime(timeline.tInitial);
     }
-  }, [playbackResetKey, timeline]);
+    // Reset only when the loaded scene or timeline bounds change, not when the
+    // timeline object is recreated with the same bounds during in-place edits.
+  }, [playbackResetKey]);
 
   useEffect(() => {
     if (!isPlaying || !timeline) {

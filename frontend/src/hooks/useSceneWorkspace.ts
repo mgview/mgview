@@ -659,7 +659,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     return () => {
       cancelled = true;
     };
-  }, [draftScene, loaded?.scenePath, replaceDraftScene, simulationDataKey]);
+  }, [simulationDataKey, loaded?.scenePath, replaceDraftScene]);
 
   const handleUndo = () => undoDraftScene();
   const handleRedo = () => redoDraftScene();

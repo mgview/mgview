@@ -1,6 +1,9 @@
 import * as THREE from 'three';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import optimerRegular from 'three/examples/fonts/optimer_regular.typeface.json' with { type: 'json' };
 
 import type { RenderMaterial, RenderSpan, RenderVisual, RgbaColor } from '../core/types.ts';
 import {
@@ -27,6 +30,7 @@ interface DisposableAsyncContainer extends THREE.Group {
 const objLoader = new OBJLoader();
 const stlLoader = new STLLoader();
 const textureLoader = new THREE.TextureLoader();
+const optimerFont = new FontLoader().parse(optimerRegular);
 
 const textureCache = new Map<string, Promise<THREE.Texture>>();
 const objCache = new Map<string, Promise<THREE.Group>>();
@@ -147,6 +151,44 @@ function finalizeMesh(mesh: THREE.Mesh) {
   return mesh;
 }
 
+const TEXT_CANVAS_FONT_SIZE = 96;
+const TEXT_CANVAS_PADDING = 24;
+const TEXT_CANVAS_HEIGHT = 160;
+
+export function measureTextGlyphHeight(
+  context: CanvasRenderingContext2D,
+  text: string,
+  fontSize = TEXT_CANVAS_FONT_SIZE
+): number {
+  context.font = `${fontSize}px Optimer, Georgia, serif`;
+  const metrics = context.measureText(text || ' ');
+  const ascent = metrics.actualBoundingBoxAscent;
+  const descent = metrics.actualBoundingBoxDescent;
+  if (
+    Number.isFinite(ascent) &&
+    Number.isFinite(descent) &&
+    (ascent > 0 || descent > 0)
+  ) {
+    return ascent + descent;
+  }
+
+  return fontSize;
+}
+
+export function computeText2dPlaneSize(
+  canvasWidth: number,
+  canvasHeight: number,
+  glyphHeight: number,
+  scale: number
+): { width: number; height: number } {
+  const safeGlyphHeight = Math.max(glyphHeight, 1e-6);
+  const planeHeight = scale * (canvasHeight / safeGlyphHeight);
+  return {
+    width: planeHeight * (canvasWidth / canvasHeight),
+    height: planeHeight,
+  };
+}
+
 function createTextCanvas(text: string, color: string) {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
@@ -154,12 +196,11 @@ function createTextCanvas(text: string, color: string) {
     return null;
   }
 
-  const fontSize = 96;
-  context.font = `${fontSize}px Optimer, Georgia, serif`;
+  context.font = `${TEXT_CANVAS_FONT_SIZE}px Optimer, Georgia, serif`;
   const metrics = context.measureText(text || ' ');
-  const padding = 24;
-  const width = Math.max(64, Math.ceil(metrics.width + padding * 2));
-  const height = 160;
+  const width = Math.max(64, Math.ceil(metrics.width + TEXT_CANVAS_PADDING * 2));
+  const height = TEXT_CANVAS_HEIGHT;
+  const glyphHeight = measureTextGlyphHeight(context, text, TEXT_CANVAS_FONT_SIZE);
 
   canvas.width = width;
   canvas.height = height;
@@ -169,7 +210,7 @@ function createTextCanvas(text: string, color: string) {
     return null;
   }
 
-  draw.font = `${fontSize}px Optimer, Georgia, serif`;
+  draw.font = `${TEXT_CANVAS_FONT_SIZE}px Optimer, Georgia, serif`;
   draw.textAlign = 'center';
   draw.textBaseline = 'middle';
   draw.fillStyle = color;
@@ -178,10 +219,15 @@ function createTextCanvas(text: string, color: string) {
   draw.strokeText(text || ' ', width / 2, height / 2);
   draw.fillText(text || ' ', width / 2, height / 2);
 
-  return canvas;
+  return { canvas, glyphHeight };
 }
 
-function createTextVisual(visual: Extract<RenderVisual, { type: 'text' }>, highlightSelection: boolean | undefined) {
+function createTextVisual2d(visual: Extract<RenderVisual, { type: 'text' }>, highlightSelection: boolean | undefined) {
+  const text = visual.text.trim();
+  if (text === '') {
+    return null;
+  }
+
   const selectionColor = new THREE.Color('#2e7dd7');
   const color = highlightSelection
     ? '#2e7dd7'
@@ -190,17 +236,18 @@ function createTextVisual(visual: Extract<RenderVisual, { type: 'text' }>, highl
           visual.material.color.b * 255
         )}, ${visual.material.color.a ?? 1})`
       : `#${colorFromName(visual.material.name).getHexString()}`;
-  const canvas = createTextCanvas(visual.text, color);
-  if (!canvas) {
+  const textCanvas = createTextCanvas(visual.text, color);
+  if (!textCanvas) {
     return null;
   }
 
+  const { canvas, glyphHeight } = textCanvas;
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
 
-  const aspect = canvas.width / canvas.height;
-  const geometry = new THREE.PlaneGeometry(visual.scale * aspect, visual.scale);
+  const planeSize = computeText2dPlaneSize(canvas.width, canvas.height, glyphHeight, visual.scale);
+  const geometry = new THREE.PlaneGeometry(planeSize.width, planeSize.height);
   const material = new THREE.MeshBasicMaterial({
     map: texture,
     transparent: true,
@@ -209,6 +256,44 @@ function createTextVisual(visual: Extract<RenderVisual, { type: 'text' }>, highl
   });
 
   return new THREE.Mesh(geometry, material);
+}
+
+function centerGeometryAtOrigin(geometry: THREE.BufferGeometry) {
+  geometry.computeBoundingBox();
+  const boundingBox = geometry.boundingBox;
+  if (!boundingBox) {
+    return;
+  }
+
+  const center = new THREE.Vector3();
+  boundingBox.getCenter(center);
+  geometry.translate(-center.x, -center.y, -center.z);
+}
+
+function createTextVisual3d(
+  visual: Extract<RenderVisual, { type: 'text' }>,
+  material: THREE.MeshPhongMaterial
+) {
+  const text = visual.text.trim();
+  if (text === '') {
+    return null;
+  }
+
+  const size = 1;
+  const geometry = new TextGeometry(text, {
+    font: optimerFont,
+    size,
+    depth: 0.1 * size,
+    curveSegments: 2,
+    bevelEnabled: true,
+    bevelThickness: 0.02 * size,
+    bevelSize: 0.05 * size,
+  });
+  centerGeometryAtOrigin(geometry);
+
+  const mesh = finalizeMesh(new THREE.Mesh(geometry, material));
+  mesh.scale.setScalar(visual.scale);
+  return mesh;
 }
 
 function createGridVisual(visual: Extract<RenderVisual, { type: 'grid' }>, highlightSelection: boolean | undefined) {
@@ -417,8 +502,17 @@ export function createVisualMesh(visual: RenderVisual, context: RenderAssetConte
     case 'mesh':
       return buildMeshVisual(visual, context);
     case 'text':
-      material.dispose();
-      return createTextVisual(visual, context.highlightSelection);
+      if (visual.textMode === '2d') {
+        material.dispose();
+        return createTextVisual2d(visual, context.highlightSelection);
+      }
+      {
+        const mesh = createTextVisual3d(visual, material);
+        if (!mesh) {
+          material.dispose();
+        }
+        return mesh;
+      }
     case 'basis':
       material.dispose();
       return createBasis(visual.scale);

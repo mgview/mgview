@@ -1,4 +1,5 @@
 import type {
+  TextRenderMode,
   NormalizedSceneConfig,
   RenderSpan,
   RenderVisual,
@@ -9,6 +10,7 @@ import type {
   TimelineFrame,
   Vector3Like,
 } from './types.ts';
+import { DEFAULT_TEXT_MATERIAL } from './materialPresets.ts';
 import { hasRenderableSimulationAnchor } from './simulationChannels.ts';
 
 export interface SceneObjectSnapshot {
@@ -53,6 +55,14 @@ function normalizeMaterialDefinition(input: SceneMaterial | undefined) {
   }
 
   return material(input?.name ?? 'SILVER', input?.color);
+}
+
+function normalizeTextMaterialDefinition(input: SceneMaterial | undefined) {
+  if (input === undefined) {
+    return material(DEFAULT_TEXT_MATERIAL.name);
+  }
+
+  return normalizeMaterialDefinition(input);
 }
 
 function fromTuple(value: [number, number, number] | undefined, fallback: Vector3Like): Vector3Like {
@@ -131,6 +141,10 @@ function readRotationMatrix(
   }
 
   return matrix as number[];
+}
+
+export function normalizeTextRenderMode(value: unknown): TextRenderMode {
+  return value === '3d' ? '3d' : '2d';
 }
 
 function normalizeRenderVisual(visualName: string, visual: SceneVisual): RenderVisual | null {
@@ -217,6 +231,8 @@ function normalizeRenderVisual(visualName: string, visual: SceneVisual): RenderV
         type: 'text',
         text: typeof visual.text === 'string' ? visual.text : '',
         scale: visual.scale ?? 1,
+        textMode: normalizeTextRenderMode(visual.text_mode),
+        material: normalizeTextMaterialDefinition(visual.material),
       };
     case 'basis':
       return {

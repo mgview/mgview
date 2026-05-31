@@ -1,4 +1,5 @@
 import { inferObjectsFromChannels } from './inferObjects.ts';
+import { DEFAULT_TEXT_MATERIAL } from './materialPresets.ts';
 import { inferSceneReferenceContext } from './simulationChannels.ts';
 import type {
   NormalizedSceneConfig,
@@ -145,7 +146,7 @@ function addDefaultBasesAndLabels(scene: NormalizedSceneConfig): NormalizedScene
         scale: size / 2,
         position: vector(size / 3, size / 8, 0),
         rotation: vector(0, 0, 0),
-        material: { name: 'SILVER' },
+        material: { ...DEFAULT_TEXT_MATERIAL },
       };
     }
 

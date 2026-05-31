@@ -9,10 +9,12 @@ import type {
 import {
   degreesToRadians,
   getEditableScalarKeys,
+  getTextRenderMode,
   NumericInput,
   radiansToDegrees,
   VISUAL_TYPE_OPTIONS,
 } from './editorShared.tsx';
+import type { TextRenderMode } from '../core/types.ts';
 import MaterialPicker from './MaterialPicker.tsx';
 
 interface VisualEditorPanelProps {
@@ -160,7 +162,11 @@ export default function VisualEditorPanel({
   const editableKeys = getEditableScalarKeys(liveSelectedVisual ?? { type: null });
   const gridKeys = ['cell_size', 'count_x', 'count_y'] as const;
   const showGridRow = gridKeys.every((key) => editableKeys.includes(key));
-  const remainingEditableKeys = editableKeys.filter((key) => !gridKeys.includes(key as (typeof gridKeys)[number]));
+  const showTextRow = selectedVisualType === 'text';
+  const remainingEditableKeys = editableKeys.filter(
+    (key) => !gridKeys.includes(key as (typeof gridKeys)[number]) && !(showTextRow && key === 'text')
+  );
+  const textRenderMode = liveSelectedVisual ? getTextRenderMode(liveSelectedVisual) : '2d';
 
   return (
     <>
@@ -567,6 +573,43 @@ export default function VisualEditorPanel({
                     />
                   </div>
                 </div>
+              ) : null}
+
+              {showTextRow ? (
+                <label className="editor-field editor-field-wide">
+                  <span>Text</span>
+                  <div className="text-input-with-mode-toggle">
+                    <input
+                      type="text"
+                      value={typeof liveSelectedVisual.text === 'string' ? liveSelectedVisual.text : ''}
+                      onChange={(event) => {
+                        updateSelectedVisual((visual) => {
+                          visual.text = event.target.value;
+                        });
+                      }}
+                    />
+                    <div className="segmented-toggle" role="radiogroup" aria-label="Text render mode">
+                      {(['2d', '3d'] as const).map((mode: TextRenderMode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          role="radio"
+                          aria-checked={textRenderMode === mode}
+                          className={`segmented-toggle-button ${
+                            textRenderMode === mode ? 'segmented-toggle-button-active' : ''
+                          }`}
+                          onClick={() => {
+                            updateSelectedVisual((visual) => {
+                              visual.text_mode = mode;
+                            });
+                          }}
+                        >
+                          {mode.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </label>
               ) : null}
 
               {remainingEditableKeys.length > 0 ? (

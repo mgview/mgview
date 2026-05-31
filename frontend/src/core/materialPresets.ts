@@ -23,6 +23,8 @@ export const LEGACY_COLOR_PRESETS: Record<string, string> = {
   PURPLE: '#9775fa',
 };
 
+export const DEFAULT_TEXT_MATERIAL: MaterialDefinition = { name: 'BLACK' };
+
 export const LEGACY_TEXTURE_PRESETS: Record<
   string,
   {

@@ -1781,6 +1781,46 @@ input[inputmode="decimal"] {
   gap: 10px;
 }
 
+.text-input-with-mode-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.text-input-with-mode-toggle input[type='text'] {
+  min-width: 0;
+}
+
+.segmented-toggle {
+  display: inline-flex;
+  border: 1px solid rgba(159, 182, 212, 0.18);
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(10, 18, 32, 0.65);
+}
+
+.segmented-toggle-button {
+  border: 0;
+  border-right: 1px solid rgba(159, 182, 212, 0.14);
+  background: transparent;
+  color: #9ab0cb;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  min-width: 2.25rem;
+}
+
+.segmented-toggle-button:last-child {
+  border-right: 0;
+}
+
+.segmented-toggle-button-active {
+  background: #3a6bb5;
+  color: #eef4ff;
+}
+
 .numeric-input-shell {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

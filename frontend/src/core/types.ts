@@ -32,6 +32,7 @@ export interface MaterialDefinition {
 export type SceneMaterial = MaterialDefinition | string;
 export type SpanVisualKind = 'line' | 'cylinder' | 'spring';
 export type SpanLineStyle = 'solid' | 'dashed';
+export type TextRenderMode = '2d' | '3d';
 
 export interface SceneVisual {
   visible?: boolean;
@@ -40,6 +41,7 @@ export interface SceneVisual {
   rotation?: Vector3Like;
   material?: SceneMaterial;
   text?: string;
+  text_mode?: TextRenderMode;
   path?: string;
   scale?: number;
   radius?: number;
@@ -277,6 +279,7 @@ export interface RenderTextVisual extends RenderVisualBase {
   type: 'text';
   text: string;
   scale: number;
+  textMode: TextRenderMode;
 }
 
 export interface RenderBasisVisual extends RenderVisualBase {
