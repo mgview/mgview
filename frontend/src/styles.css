@@ -961,6 +961,11 @@ input[inputmode="decimal"] {
   font-size: 0.88rem;
 }
 
+.pill-warning {
+  background: rgba(120, 66, 18, 0.88);
+  color: #ffe8cc;
+}
+
 .object-item {
   display: flex;
   justify-content: space-between;

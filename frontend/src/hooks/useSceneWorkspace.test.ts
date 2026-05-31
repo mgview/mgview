@@ -28,6 +28,8 @@ test('createSavableScene preserves inferred objects added through the draft scen
 
   assert.equal(savableScene.objects?.Qo?.type, 'point');
   assert.deepEqual(savableScene.objects?.Qo?.visual?.marker, draftScene.objects.Qo.visual.marker);
+  assert.equal(savableScene.newtonianFrame, undefined);
+  assert.equal(savableScene.sceneOrigin, undefined);
 });
 
 test('createNewSceneTemplate derives a scene name and starts without simulation files', () => {
@@ -35,8 +37,8 @@ test('createNewSceneTemplate derives a scene name and starts without simulation 
 
   assert.equal(template.name, 'my_scene');
   assert.deepEqual(template.simulationData, []);
-  assert.equal(template.newtonianFrame, 'N');
-  assert.equal(template.sceneOrigin, 'No');
+  assert.equal(template.newtonianFrame, undefined);
+  assert.equal(template.sceneOrigin, undefined);
   assert.deepEqual(template.cameraUp, [0, 0, 1]);
 });
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { FileBrowserListing } from '../api/localFiles.ts';
-import type { ParsedSimulationFile } from '../core/types.ts';
+import type { NormalizedSceneConfig, ParsedSimulationFile } from '../core/types.ts';
 import { getBasePath, getRelativePath } from '../core/pathUtils.ts';
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
@@ -47,6 +47,7 @@ function renderChannelGroups(channelNames: string[]) {
 }
 
 interface SimulationDataOverlayProps {
+  activeScene: NormalizedSceneConfig;
   browserError: string | null;
   browserListing: FileBrowserListing | null;
   browserLoading: boolean;
@@ -67,6 +68,7 @@ interface SimulationDataOverlayProps {
 }
 
 export default function SimulationDataOverlay({
+  activeScene,
   browserError,
   browserListing,
   browserLoading,
@@ -96,6 +98,8 @@ export default function SimulationDataOverlay({
   const clearBrowserSelection = () => {
     setSelectedBrowserPaths([]);
   };
+  const canonicalOrigin = activeScene.referenceContext.sceneOrigin.canonical;
+  const canonicalFrame = activeScene.referenceContext.newtonianFrame.canonical;
 
   return (
     <OverlayPanel
@@ -240,6 +244,14 @@ export default function SimulationDataOverlay({
               <label>Channels</label>
               <strong>{channelNames.length}</strong>
             </div>
+            <div>
+              <label>Canonical Origin</label>
+              <strong>{canonicalOrigin ?? 'Not inferred'}</strong>
+            </div>
+            <div>
+              <label>Canonical Frame</label>
+              <strong>{canonicalFrame ?? 'Not inferred'}</strong>
+            </div>
           </div>
 
           <div className="stacked-meta">
@@ -251,6 +263,10 @@ export default function SimulationDataOverlay({
                   const { directory, fileName } = splitFilePath(filePath);
                   const channelGroups = renderChannelGroups(parsedFile?.channelNames ?? []);
                   const fileChannelNames = parsedFile?.channelNames ?? [];
+                  const fileOrigin = parsedFile?.sceneOrigin.canonical ?? null;
+                  const fileFrame = parsedFile?.newtonianFrame.canonical ?? null;
+                  const originIgnored = canonicalOrigin && fileOrigin && fileOrigin !== canonicalOrigin;
+                  const frameIgnored = canonicalFrame && fileFrame && fileFrame !== canonicalFrame;
                   const showAllChannels = expandedChannelFiles.includes(filePath);
                   const previewChannelNames = fileChannelNames.slice(0, 4);
                   return (
@@ -260,6 +276,22 @@ export default function SimulationDataOverlay({
                         <code className="sim-file-channel-name">{fileName}</code>
                       </div>
                       <div className="sim-file-channel-pills">
+                        {parsedFile ? (
+                          <div className="sim-file-channel-group">
+                            <span className={`pill ${originIgnored ? 'pill-warning' : ''}`}>
+                              <code>
+                                origin {fileOrigin ?? 'n/a'}
+                                {originIgnored ? ' not used' : ''}
+                              </code>
+                            </span>
+                            <span className={`pill ${frameIgnored ? 'pill-warning' : ''}`}>
+                              <code>
+                                frame {fileFrame ?? 'n/a'}
+                                {frameIgnored ? ' not used' : ''}
+                              </code>
+                            </span>
+                          </div>
+                        ) : null}
                         {parsedFile && fileChannelNames.length > 0 ? (
                           showAllChannels ? (
                             <>

@@ -1,5 +1,6 @@
 import type {
   NormalizedSceneConfig,
+  ParsedSimulationFile,
   SceneConfig,
   SceneDiagnostic,
   SceneMaterial,
@@ -9,6 +10,7 @@ import type {
   Vector3Like,
 } from './types.ts';
 import {
+  collectBaseFrames,
   collectPositionOrigins,
   hasRenderableSimulationAnchor,
 } from './simulationChannels.ts';
@@ -191,10 +193,13 @@ export function collectSceneDiagnostics(
   scene: NormalizedSceneConfig,
   simulationFiles: string[],
   channelNames: string[],
+  parsedSimulationFiles: ParsedSimulationFile[] = [],
   fileErrors: string[] = []
 ): SceneDiagnostic[] {
   const diagnostics: SceneDiagnostic[] = [];
   const rawObjects = rawScene.objects ?? {};
+  const canonicalOrigin = scene.referenceContext.sceneOrigin.canonical;
+  const canonicalFrame = scene.referenceContext.newtonianFrame.canonical;
 
   if ((rawScene.simulationData ?? []).length === 0) {
     diagnostics.push({
@@ -245,7 +250,51 @@ export function collectSceneDiagnostics(
   if (positionOrigins.length > 1) {
     diagnostics.push({
       severity: 'warning',
-      message: `Simulation files mix multiple position origins: ${positionOrigins.join(', ')}`,
+      message: `Simulation files mix multiple position origins. Using ${canonicalOrigin ?? '(none)'} and ignoring ${positionOrigins.filter((origin) => origin !== canonicalOrigin).join(', ')}.`,
+    });
+  }
+
+  const baseFrames = collectBaseFrames(channelNames);
+  if (baseFrames.length > 1) {
+    diagnostics.push({
+      severity: 'warning',
+      message: `Simulation files mix multiple Newtonian frames. Using ${canonicalFrame ?? '(none)'} and ignoring ${baseFrames.filter((frame) => frame !== canonicalFrame).join(', ')}.`,
+    });
+  }
+
+  if (!canonicalOrigin) {
+    diagnostics.push({
+      severity: 'warning',
+      message: 'Could not infer a canonical scene origin from the loaded simulation channels.',
+    });
+  }
+
+  if (!canonicalFrame) {
+    diagnostics.push({
+      severity: 'warning',
+      message: 'Could not infer a canonical Newtonian frame from the loaded simulation channels.',
+    });
+  }
+
+  if (
+    scene.referenceContext.authoredSceneOrigin &&
+    canonicalOrigin &&
+    scene.referenceContext.authoredSceneOrigin !== canonicalOrigin
+  ) {
+    diagnostics.push({
+      severity: 'warning',
+      message: `Authored legacy sceneOrigin ${scene.referenceContext.authoredSceneOrigin} is ignored; inferred canonical origin ${canonicalOrigin} is used instead.`,
+    });
+  }
+
+  if (
+    scene.referenceContext.authoredNewtonianFrame &&
+    canonicalFrame &&
+    scene.referenceContext.authoredNewtonianFrame !== canonicalFrame
+  ) {
+    diagnostics.push({
+      severity: 'warning',
+      message: `Authored legacy newtonianFrame ${scene.referenceContext.authoredNewtonianFrame} is ignored; inferred canonical frame ${canonicalFrame} is used instead.`,
     });
   }
 
@@ -260,6 +309,25 @@ export function collectSceneDiagnostics(
       severity: 'warning',
       message: `Object(s) without backing simulation data will not render: ${missingObjects.join(', ')}`,
     });
+  }
+
+  for (const parsedSimulationFile of parsedSimulationFiles) {
+    const fileOrigin = parsedSimulationFile.sceneOrigin.canonical;
+    const fileFrame = parsedSimulationFile.newtonianFrame.canonical;
+
+    if (canonicalOrigin && fileOrigin && fileOrigin !== canonicalOrigin) {
+      diagnostics.push({
+        severity: 'warning',
+        message: `Simulation file ${parsedSimulationFile.filePath} inferred origin ${fileOrigin} is not used; canonical origin is ${canonicalOrigin}.`,
+      });
+    }
+
+    if (canonicalFrame && fileFrame && fileFrame !== canonicalFrame) {
+      diagnostics.push({
+        severity: 'warning',
+        message: `Simulation file ${parsedSimulationFile.filePath} inferred frame ${fileFrame} is not used; canonical frame is ${canonicalFrame}.`,
+      });
+    }
   }
 
   for (const fileError of fileErrors) {

@@ -36,7 +36,7 @@ function colorFromName(materialName: string | undefined): THREE.Color {
 
   const parsed = parseCssColorString(materialName);
   if (parsed) {
-    return new THREE.Color(parsed.red / 255, parsed.green / 255, parsed.blue / 255);
+    return new THREE.Color(parsed.hex);
   }
 
   const normalized = normalizeMaterialName(materialName);

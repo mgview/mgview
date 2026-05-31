@@ -1,4 +1,3 @@
-import { useId } from 'react';
 import type { NormalizedSceneConfig } from '../core/types.ts';
 import ColorPicker from './ColorPicker.tsx';
 import { NumericInput } from './editorShared.tsx';
@@ -43,14 +42,6 @@ export default function SceneSettingsPanel({
     return <div className="empty-state">Load a scene to edit scene-level settings.</div>;
   }
 
-  const newtonianFrameOptionsId = useId();
-  const sceneOriginOptionsId = useId();
-  const frameNames = Object.entries(activeScene.objects)
-    .filter(([, sceneObject]) => sceneObject.type === 'frame')
-    .map(([name]) => name);
-  const pointNames = Object.entries(activeScene.objects)
-    .filter(([, sceneObject]) => sceneObject.type === 'point')
-    .map(([name]) => name);
   const cameraParentFrame = cameraPreview?.cameraParentFrame ?? activeScene.cameraParentFrame;
   const cameraFocus = cameraPreview?.cameraFocus ?? activeScene.cameraFocus ?? [0, 0, 0];
   const cameraEye = cameraPreview?.cameraEye ?? activeScene.cameraEye ?? [0, 0, 10];
@@ -97,42 +88,6 @@ export default function SceneSettingsPanel({
               });
             }}
           />
-        </label>
-        <label className="editor-field">
-          <span>Newtonian Frame</span>
-          <input
-            type="text"
-            list={newtonianFrameOptionsId}
-            value={activeScene.newtonianFrame}
-            onChange={(event) => {
-              updateDraftScene((scene) => {
-                scene.newtonianFrame = event.target.value;
-              });
-            }}
-          />
-          <datalist id={newtonianFrameOptionsId}>
-            {frameNames.map((frameName) => (
-              <option key={frameName} value={frameName} />
-            ))}
-          </datalist>
-        </label>
-        <label className="editor-field">
-          <span>Scene Origin</span>
-          <input
-            type="text"
-            list={sceneOriginOptionsId}
-            value={activeScene.sceneOrigin}
-            onChange={(event) => {
-              updateDraftScene((scene) => {
-                scene.sceneOrigin = event.target.value;
-              });
-            }}
-          />
-          <datalist id={sceneOriginOptionsId}>
-            {pointNames.map((pointName) => (
-              <option key={pointName} value={pointName} />
-            ))}
-          </datalist>
         </label>
         <label className="editor-field">
           <span>Camera Parent Frame</span>

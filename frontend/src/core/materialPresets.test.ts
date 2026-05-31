@@ -21,6 +21,15 @@ test('parseCssColorString parses hex and rgba values into normalized output', ()
     cssText: 'rgba(12, 34, 56, 0.5)',
     hex: '#0c2238',
   });
+
+  assert.deepEqual(parseCssColorString('brown'), {
+    red: 165,
+    green: 42,
+    blue: 42,
+    alpha: 1,
+    cssText: '#a52a2a',
+    hex: '#a52a2a',
+  });
 });
 
 test('formatCssColor prefers hex for opaque colors and rgba for transparent colors', () => {

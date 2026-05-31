@@ -107,6 +107,18 @@ export interface SceneConfig {
   spans?: Record<string, SceneSpan>;
 }
 
+export interface SceneReferenceInference {
+  canonical: string | null;
+  all: string[];
+}
+
+export interface SceneReferenceContext {
+  sceneOrigin: SceneReferenceInference;
+  newtonianFrame: SceneReferenceInference;
+  authoredSceneOrigin: string | null;
+  authoredNewtonianFrame: string | null;
+}
+
 export interface NormalizedSceneConfig extends SceneConfig {
   simulationData: string[];
   newtonianFrame: string;
@@ -115,6 +127,7 @@ export interface NormalizedSceneConfig extends SceneConfig {
   showAxes: boolean;
   workspaceSize: number;
   cameraParentFrame: string;
+  referenceContext: SceneReferenceContext;
   objects: Record<string, SceneObject>;
   spans: Record<string, SceneSpan>;
 }
@@ -133,6 +146,8 @@ export interface SimulationTable {
 export interface ParsedSimulationFile {
   filePath: string;
   channelNames: string[];
+  sceneOrigin: SceneReferenceInference;
+  newtonianFrame: SceneReferenceInference;
 }
 
 export interface TimelineFrame {

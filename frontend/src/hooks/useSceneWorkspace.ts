@@ -24,6 +24,7 @@ import {
 import { parseSimulationText } from '../core/parseSimulationText.ts';
 import { createSceneDocument } from '../core/sceneDocument.ts';
 import { buildObjectInspections, collectSceneDiagnostics } from '../core/sceneInspector.ts';
+import { inferCanonicalNewtonianFrame, inferCanonicalSceneOrigin } from '../core/simulationChannels.ts';
 import { buildTimeline } from '../core/timeline.ts';
 import { useUndoRedo } from './useUndoRedo.ts';
 import type {
@@ -100,8 +101,6 @@ export function createNewSceneTemplate(scenePath: string): SceneConfig {
   return {
     name: sceneName,
     simulationData: [],
-    newtonianFrame: 'N',
-    sceneOrigin: 'No',
     showAxes: false,
     workspaceSize: 1,
     cameraParentFrame: 'N',
@@ -120,8 +119,8 @@ export function createSavableScene(
 
   nextScene.name = draftScene.name;
   nextScene.simulationData = [...draftScene.simulationData];
-  nextScene.newtonianFrame = draftScene.newtonianFrame;
-  nextScene.sceneOrigin = draftScene.sceneOrigin;
+  delete nextScene.newtonianFrame;
+  delete nextScene.sceneOrigin;
   nextScene.backgroundColor = draftScene.backgroundColor;
   nextScene.showAxes = draftScene.showAxes;
   nextScene.workspaceSize = draftScene.workspaceSize;
@@ -186,6 +185,7 @@ async function loadSceneData(sceneRef: SceneRef): Promise<LoadedSceneData> {
     scene,
     simulationState.simulationFiles,
     channelNames,
+    simulationState.parsedSimulationFiles,
     simulationState.fileErrors
   );
   const objectInspections = buildObjectInspections(rawScene, scene, channelNames);
@@ -230,6 +230,8 @@ async function loadSimulationWorkspaceState(
       parsedSimulationFiles.push({
         filePath: simulationFiles[index],
         channelNames: result.value.channelNames,
+        sceneOrigin: inferCanonicalSceneOrigin(result.value.channelNames),
+        newtonianFrame: inferCanonicalNewtonianFrame(result.value.channelNames),
       });
       continue;
     }
@@ -294,8 +296,23 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
       return loaded?.diagnostics ?? [];
     }
 
-    return collectSceneDiagnostics(authoredScene, activeScene, simulationFiles, channelNames, fileErrors);
-  }, [activeScene, authoredScene, channelNames, fileErrors, loaded?.diagnostics, simulationFiles]);
+    return collectSceneDiagnostics(
+      authoredScene,
+      activeScene,
+      simulationFiles,
+      channelNames,
+      parsedSimulationFiles,
+      fileErrors
+    );
+  }, [
+    activeScene,
+    authoredScene,
+    channelNames,
+    fileErrors,
+    loaded?.diagnostics,
+    parsedSimulationFiles,
+    simulationFiles,
+  ]);
   const objectInspections = useMemo(() => {
     if (!authoredScene || !activeScene) {
       return loaded?.objectInspections ?? [];

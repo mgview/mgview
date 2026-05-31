@@ -1,3 +1,5 @@
+import { Color } from 'three';
+
 import type { MaterialDefinition, SceneMaterial } from './types.ts';
 
 export const LEGACY_COLOR_PRESETS: Record<string, string> = {
@@ -220,6 +222,21 @@ export function parseCssColorString(value: string | undefined): ParsedCssColor |
       ...parsed,
       cssText: formatCssColor(parsed.red, parsed.green, parsed.blue, 1),
       hex: `#${toHexByte(parsed.red)}${toHexByte(parsed.green)}${toHexByte(parsed.blue)}`,
+    };
+  }
+
+  const namedColorHex = Color.NAMES[trimmed.toLowerCase()];
+  if (typeof namedColorHex === 'number') {
+    const red = (namedColorHex >> 16) & 0xff;
+    const green = (namedColorHex >> 8) & 0xff;
+    const blue = namedColorHex & 0xff;
+    return {
+      red,
+      green,
+      blue,
+      alpha: 1,
+      cssText: formatCssColor(red, green, blue, 1),
+      hex: `#${toHexByte(red)}${toHexByte(green)}${toHexByte(blue)}`,
     };
   }
 

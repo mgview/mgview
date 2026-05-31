@@ -605,6 +605,7 @@ export default function App() {
 
       {shell.simulationOverlayOpen && loaded && draftScene ? (
         <SimulationDataOverlay
+          activeScene={draftScene}
           browserError={browserError}
           browserListing={browserListing}
           browserLoading={browserLoading}

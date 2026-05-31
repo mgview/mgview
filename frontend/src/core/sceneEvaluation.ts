@@ -92,26 +92,19 @@ function multiplyMatrixVector(matrix: number[] | null, value: Vector3Like): Vect
   );
 }
 
-function readPosition(
+function readObjectPosition(
   values: Record<string, number>,
+  sceneOrigin: string,
   objectName: string
 ): Vector3Like | null {
-  const candidates = [objectName, `${objectName}o`, `${objectName}cm`].map(escapeForRegex);
-  const x = candidates
-    .map((candidate) => readByPattern(values, new RegExp(`^P_[^_]+_${candidate}\\[1\\]$`)))
-    .find((value) => typeof value === 'number');
-  const y = candidates
-    .map((candidate) => readByPattern(values, new RegExp(`^P_[^_]+_${candidate}\\[2\\]$`)))
-    .find((value) => typeof value === 'number');
-  const z = candidates
-    .map((candidate) => readByPattern(values, new RegExp(`^P_[^_]+_${candidate}\\[3\\]$`)))
-    .find((value) => typeof value === 'number');
-
-  if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') {
-    return null;
+  for (const candidate of [objectName, `${objectName}o`, `${objectName}cm`]) {
+    const position = readPointPosition(values, sceneOrigin, candidate);
+    if (position) {
+      return position;
+    }
   }
 
-  return vector(x, y, z);
+  return null;
 }
 
 function readRotationMatrix(
@@ -356,7 +349,7 @@ function evaluateObjects(
   const snapshots: Record<string, SceneObjectSnapshot> = {};
 
   for (const [objectName, sceneObject] of Object.entries(scene.objects)) {
-    const position = readPosition(values, objectName);
+    const position = readObjectPosition(values, scene.sceneOrigin, objectName);
     const rotationMatrix = readRotationMatrix(values, sceneObject.rotationFrame ?? objectName);
     const hasSimulationData =
       position !== null || rotationMatrix !== null || hasRenderableSimulationAnchor(scene, objectName, sceneObject, []);

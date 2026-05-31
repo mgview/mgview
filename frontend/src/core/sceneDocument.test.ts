@@ -56,6 +56,8 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
 
   assert.equal(document.newtonianFrame, 'N');
   assert.equal(document.sceneOrigin, 'No');
+  assert.equal(document.referenceContext.newtonianFrame.canonical, null);
+  assert.equal(document.referenceContext.sceneOrigin.canonical, null);
   assert.equal(document.backgroundColor, '#e0f0ff');
   assert.equal(document.cameraParentFrame, 'N');
   assert.ok(document.objects.N);
@@ -133,6 +135,27 @@ test('channel inference promotes frames and adds missing points', async () => {
 
   assert.equal(document.objects.Q.type, 'point');
   assert.equal(document.objects.A.type, 'frame');
+  assert.equal(document.objects.No.type, 'point');
+  assert.equal(document.newtonianFrame, 'N');
+  assert.equal(document.sceneOrigin, 'No');
+  assert.deepEqual(document.referenceContext.newtonianFrame.all, ['N']);
+  assert.deepEqual(document.referenceContext.sceneOrigin.all, ['No']);
+});
+
+test('inferred reference context overrides authored legacy values for normalization', () => {
+  const document = createSceneDocument(
+    {
+      newtonianFrame: 'Legacy',
+      sceneOrigin: 'LegacyOrigin',
+      objects: {},
+    },
+    ['P_No_Ao[1]', 'P_No_Ao[2]', 'P_No_Ao[3]', 'N_A[1,1]']
+  );
+
+  assert.equal(document.newtonianFrame, 'N');
+  assert.equal(document.sceneOrigin, 'No');
+  assert.equal(document.referenceContext.authoredNewtonianFrame, 'Legacy');
+  assert.equal(document.referenceContext.authoredSceneOrigin, 'LegacyOrigin');
 });
 
 test('scene inspector surfaces inferred objects and default visuals', async () => {
@@ -187,12 +210,27 @@ test('scene inspector warns about mixed origins and objects missing sim data', a
     document,
     ['samples/default.1', 'samples/default.2'],
     ['P_No_Q[1]', 'P_Ao_R[1]', 'P_Ao_R[2]', 'P_Ao_R[3]'],
+    [
+      {
+        filePath: 'samples/default.1',
+        channelNames: ['P_No_Q[1]'],
+        sceneOrigin: { canonical: 'No', all: ['No'] },
+        newtonianFrame: { canonical: null, all: [] },
+      },
+      {
+        filePath: 'samples/default.2',
+        channelNames: ['P_Ao_R[1]', 'P_Ao_R[2]', 'P_Ao_R[3]'],
+        sceneOrigin: { canonical: 'Ao', all: ['Ao'] },
+        newtonianFrame: { canonical: null, all: [] },
+      },
+    ],
     ['Could not parse simulation file samples/default.2: missing']
   );
 
   assert.equal(inspections.find((entry) => entry.name === 'N')?.missingSimulationData, false);
   assert.equal(inspections.find((entry) => entry.name === 'Ghost')?.missingSimulationData, true);
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('multiple position origins')));
+  assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('not used')));
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('will not render')));
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('Could not parse simulation file')));
 });

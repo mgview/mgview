@@ -1,7 +1,9 @@
 import { inferObjectsFromChannels } from './inferObjects.ts';
+import { inferSceneReferenceContext } from './simulationChannels.ts';
 import type {
   NormalizedSceneConfig,
   SceneConfig,
+  SceneReferenceContext,
   SceneObject,
   SceneSpan,
   SceneSpanVisual,
@@ -69,8 +71,22 @@ function cloneObject(sceneObject: SceneObject): SceneObject {
   };
 }
 
-function addEmptyDefaults(scene: SceneConfig): NormalizedSceneConfig {
-  const newtonianFrame = scene.newtonianFrame ?? 'N';
+function createReferenceContext(scene: SceneConfig, channelNames: string[]): SceneReferenceContext {
+  const priorReferenceContext = (scene as Partial<NormalizedSceneConfig>).referenceContext;
+  return inferSceneReferenceContext(channelNames, {
+    sceneOrigin: priorReferenceContext?.authoredSceneOrigin ?? scene.sceneOrigin,
+    newtonianFrame: priorReferenceContext?.authoredNewtonianFrame ?? scene.newtonianFrame,
+  });
+}
+
+function addEmptyDefaults(scene: SceneConfig, channelNames: string[]): NormalizedSceneConfig {
+  const referenceContext = createReferenceContext(scene, channelNames);
+  const inferredNewtonianFrame = referenceContext.newtonianFrame.canonical;
+  const inferredSceneOrigin = referenceContext.sceneOrigin.canonical;
+  const fallbackNewtonianFrame = referenceContext.authoredNewtonianFrame ?? 'N';
+  const fallbackSceneOrigin = referenceContext.authoredSceneOrigin ?? `${fallbackNewtonianFrame}o`;
+  const newtonianFrame = inferredNewtonianFrame ?? fallbackNewtonianFrame;
+  const sceneOrigin = inferredSceneOrigin ?? fallbackSceneOrigin;
   const objects = Object.fromEntries(
     Object.entries(scene.objects ?? {})
       .filter(([name]) => isValidObjectName(name))
@@ -80,8 +96,11 @@ function addEmptyDefaults(scene: SceneConfig): NormalizedSceneConfig {
     Object.entries(scene.spans ?? {}).map(([name, span]) => [name, cloneSpan(span)])
   );
 
-  if (!objects[newtonianFrame]) {
+  if (newtonianFrame && !objects[newtonianFrame]) {
     objects[newtonianFrame] = { type: 'frame', visual: {} };
+  }
+  if (sceneOrigin && !objects[sceneOrigin]) {
+    objects[sceneOrigin] = { type: 'point', visual: {} };
   }
 
   for (const sceneObject of Object.values(objects)) {
@@ -95,11 +114,12 @@ function addEmptyDefaults(scene: SceneConfig): NormalizedSceneConfig {
     ...scene,
     simulationData: [...(scene.simulationData ?? [])],
     newtonianFrame,
-    sceneOrigin: scene.sceneOrigin ?? `${newtonianFrame}o`,
+    sceneOrigin,
     backgroundColor: scene.backgroundColor ?? '#e0f0ff',
     showAxes: scene.showAxes ?? false,
     workspaceSize: scene.workspaceSize ?? 1.0,
     cameraParentFrame: scene.cameraParentFrame ?? newtonianFrame,
+    referenceContext,
     objects,
     spans,
   };
@@ -169,14 +189,21 @@ function addDefaultPositionAndRotation(scene: NormalizedSceneConfig): Normalized
 }
 
 export function normalizeScene(scene: SceneConfig): NormalizedSceneConfig {
-  return addDefaultPositionAndRotation(addDefaultBasesAndLabels(addEmptyDefaults(scene)));
+  return normalizeSceneWithChannels(scene, []);
+}
+
+export function normalizeSceneWithChannels(
+  scene: SceneConfig,
+  channelNames: string[] = []
+): NormalizedSceneConfig {
+  return addDefaultPositionAndRotation(addDefaultBasesAndLabels(addEmptyDefaults(scene, channelNames)));
 }
 
 export function createSceneDocument(
   scene: SceneConfig,
   channelNames: string[] = []
 ): NormalizedSceneConfig {
-  const normalized = normalizeScene(scene);
+  const normalized = normalizeSceneWithChannels(scene, channelNames);
   return addDefaultPositionAndRotation(
     addDefaultBasesAndLabels(inferObjectsFromChannels(normalized, channelNames))
   );
