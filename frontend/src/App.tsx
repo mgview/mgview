@@ -11,7 +11,6 @@ import PlaybackStrip from './components/PlaybackStrip.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import SimulationDataOverlay from './components/SimulationDataOverlay.tsx';
-import ToastStack from './components/ToastStack.tsx';
 import { getFrameAtTime } from './core/timeline.ts';
 import { useInspectorSelectionState } from './hooks/useInspectorSelectionState.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
@@ -27,7 +26,7 @@ import WorkspacePickerOverlay from './components/WorkspacePickerOverlay.tsx';
 
 export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
-  const { toasts, dismiss, dismissErrors, showSuccess, showError } = useToasts();
+  const { dismissErrors, showSuccess, showError } = useToasts();
   const serverWorkspace = useServerWorkspace(showSuccess, showError);
   const initialSceneRef = useMemo(
     () => parseSceneRefFromUrl(new URLSearchParams(window.location.search)),
@@ -86,17 +85,6 @@ export default function App() {
       }
     },
     [dismissErrors, setError]
-  );
-
-  const handleDismissToast = useCallback(
-    (id: string) => {
-      const toast = toasts.find((entry) => entry.id === id);
-      dismiss(id);
-      if (toast?.kind === 'error') {
-        setError(null);
-      }
-    },
-    [dismiss, setError, toasts]
   );
 
   const diagnosticsWarningCount = useMemo(
@@ -358,9 +346,8 @@ export default function App() {
   const rendererSceneBasePath = loaded ? getSceneBasePath(loaded.sceneRef) : '';
 
   return (
-    <div className="app-shell">
+    <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-2">
       <DemoNotice />
-      <ToastStack toasts={toasts} onDismiss={handleDismissToast} />
       <SceneHeaderBar
         scenePath={loaded?.scenePath ?? null}
         hasLocalEdits={hasLocalEdits}
@@ -437,13 +424,15 @@ export default function App() {
                 </>
               ) : (
                 <>
-                  <section className="panel renderer-panel loading-panel">
-                    <div className="renderer-surface renderer-loading-surface">
-                      <div className="renderer-loading-copy">Loading scene and simulation data…</div>
+                  <section className="flex min-h-0 h-full rounded-md border border-border bg-card p-1.5">
+                    <div className="renderer-surface flex items-center justify-center">
+                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Loading scene and simulation data…
+                      </div>
                     </div>
                   </section>
-                  <section className="panel playback-strip loading-panel">
-                    <div className="loading-placeholder-row loading-placeholder-row-short" />
+                  <section className="rounded-md border border-border bg-card px-2 py-1.5">
+                    <div className="h-7 w-56 animate-pulse rounded-md bg-muted" />
                   </section>
                 </>
               )}
@@ -451,7 +440,7 @@ export default function App() {
 
             <button
               type="button"
-              className="workspace-edge-handle"
+              className="self-stretch w-[18px] min-w-[18px] rounded-md border border-border bg-muted/60 p-0 text-[0.72rem] text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => shell.setLeftRailCollapsed((current) => !current)}
               aria-label={shell.leftRailCollapsed ? 'Expand editor rail' : 'Collapse editor rail'}
             >
@@ -460,8 +449,8 @@ export default function App() {
 
             {!shell.leftRailCollapsed ? (
               <div className="workspace-left-rail">
-                <div className="workspace-sidebar">
-                  <div className="workspace-pane-scroll">
+                <div className="min-h-0 min-w-0">
+                  <div className="h-full min-h-0 overflow-auto pr-0.5">
                     {loaded ? (
                       <ObjectList
                         entries={objectInspections}
@@ -479,13 +468,13 @@ export default function App() {
                         }}
                       />
                     ) : (
-                      <section className="panel loading-panel">
-                        <h2>Objects</h2>
-                        <div className="loading-placeholder-list">
-                          <div className="loading-placeholder-row" />
-                          <div className="loading-placeholder-row" />
-                          <div className="loading-placeholder-row" />
-                          <div className="loading-placeholder-row" />
+                      <section className="rounded-md border border-border bg-card p-2">
+                        <h2 className="mb-1 text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Objects</h2>
+                        <div className="grid gap-2">
+                          <div className="h-7 animate-pulse rounded-md bg-muted" />
+                          <div className="h-7 animate-pulse rounded-md bg-muted" />
+                          <div className="h-7 animate-pulse rounded-md bg-muted" />
+                          <div className="h-7 animate-pulse rounded-md bg-muted" />
                         </div>
                       </section>
                     )}
@@ -493,7 +482,7 @@ export default function App() {
                 </div>
 
                 <div className="workspace-drawer">
-                  <div className="workspace-pane-scroll">
+                  <div className="h-full min-h-0 overflow-auto pr-0.5">
                     <InspectorDrawer
                       activeScene={activeScene}
                       cameraPreview={shell.cameraPreview}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Eye, EyeOff, Plus, Trash2 } from 'lucide-react';
 import type {
   NormalizedSceneConfig,
   SceneObjectInspection,
@@ -6,6 +7,8 @@ import type {
   Vector3Like,
   VisualType,
 } from '../core/types.ts';
+import type { TextRenderMode } from '../core/types.ts';
+import { cn } from '../lib/utils.ts';
 import {
   degreesToRadians,
   getEditableScalarKeys,
@@ -14,8 +17,33 @@ import {
   radiansToDegrees,
   VISUAL_TYPE_OPTIONS,
 } from './editorShared.tsx';
-import type { TextRenderMode } from '../core/types.ts';
+import {
+  editorDivider,
+  editorFieldLabel,
+  editorGrid,
+  editorPanelHeader,
+  editorPanelHeaderLabel,
+  emptyState,
+  fieldClass,
+  fieldWideClass,
+  geometryControlRow,
+  inlineTags,
+  numericTriplet,
+  segmentedToggle,
+  segmentedToggleButton,
+  segmentedToggleButtonActive,
+  tagButton,
+  tagButtonActive,
+  tagInput,
+  textInputWithModeToggle,
+  typeSpecificGrid,
+  visualCard,
+  visualCardList,
+} from './editorLayout.ts';
 import MaterialPicker from './MaterialPicker.tsx';
+import { Button } from './ui/button.tsx';
+import { Checkbox } from './ui/checkbox.tsx';
+import { Input } from './ui/input.tsx';
 
 interface VisualEditorPanelProps {
   liveSelectedVisual?: SceneVisual;
@@ -113,6 +141,9 @@ function isIntegerKey(key: string): boolean {
   return key.startsWith('segments_') || key === 'count_x' || key === 'count_y';
 }
 
+const geometrySelectClass =
+  'h-7 w-full rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+
 export default function VisualEditorPanel({
   liveSelectedVisual,
   selectedObject,
@@ -167,18 +198,19 @@ export default function VisualEditorPanel({
     (key) => !gridKeys.includes(key as (typeof gridKeys)[number]) && !(showTextRow && key === 'text')
   );
   const textRenderMode = liveSelectedVisual ? getTextRenderMode(liveSelectedVisual) : '2d';
+  const isVisualVisible = liveSelectedVisual?.visible !== false;
 
   return (
     <>
       {selectedObject ? (
-        <div className="editor-panel-header">
-          <span className="editor-panel-header-label">Geometries</span>
-          <div className="inline-tags">
+        <div className={editorPanelHeader}>
+          <span className={editorPanelHeaderLabel}>Geometries</span>
+          <div className={inlineTags}>
             {selectedObject.visuals.map((visual) =>
               renamingVisualName === visual.name ? (
-                <input
+                <Input
                   key={visual.name}
-                  className="tag-input"
+                  className={tagInput}
                   type="text"
                   autoFocus
                   value={renameText}
@@ -199,7 +231,7 @@ export default function VisualEditorPanel({
                 <button
                   key={visual.name}
                   type="button"
-                  className={`tag-button ${selectedVisual?.name === visual.name ? 'tag-button-active' : ''}`}
+                  className={cn(tagButton, selectedVisual?.name === visual.name && tagButtonActive)}
                   title={visual.name}
                   onClick={() => {
                     if (selectedVisual?.name === visual.name) {
@@ -214,21 +246,23 @@ export default function VisualEditorPanel({
               )
             )}
           </div>
-          <div className="visual-toolbar-actions">
-            <button
+          <div className="flex shrink-0 gap-1 self-start">
+            <Button
               type="button"
-              className="icon-button"
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
               aria-label="Add geometry"
               title="Add geometry"
               onClick={() => createVisual('sphere')}
             >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-            <button
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+            <Button
               type="button"
-              className="icon-button"
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
               aria-label="Delete geometry"
               title="Delete geometry"
               disabled={!selectedVisual}
@@ -236,30 +270,21 @@ export default function VisualEditorPanel({
                 void deleteSelectedVisual();
               }}
             >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M4 7h16M9 7V5h6v2M8 7l1 12h6l1-12M10 11v5M14 11v5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
       ) : null}
 
       {selectedObject && selectedVisual && liveSelectedVisual ? (
-        <div className="visual-card-list">
-          <div className="visual-card">
-            <div className="editor-grid">
-              <div className="editor-field">
-                <span>Geometry Type</span>
-                <div className="geometry-control-row">
+        <div className={visualCardList}>
+          <div className={visualCard}>
+            <div className={editorGrid}>
+              <div className={fieldClass()}>
+                <span className={editorFieldLabel}>Geometry Type</span>
+                <div className={geometryControlRow}>
                   <select
-                    className="geometry-select"
+                    className={geometrySelectClass}
                     value={selectedVisualType}
                     onChange={(event) => changeSelectedVisualType(event.target.value as VisualType)}
                     onInput={(event) => changeSelectedVisualType((event.target as HTMLSelectElement).value as VisualType)}
@@ -270,64 +295,24 @@ export default function VisualEditorPanel({
                       </option>
                     ))}
                   </select>
-                  <button
+                  <Button
                     type="button"
-                    className={`visibility-eye-button ${liveSelectedVisual.visible !== false ? 'visibility-eye-button-active' : ''}`}
-                    aria-label={liveSelectedVisual.visible !== false ? 'Hide visual' : 'Show visual'}
-                    aria-pressed={liveSelectedVisual.visible !== false}
+                    variant="outline"
+                    size="icon"
+                    className={cn(
+                      'h-8 w-8 shrink-0',
+                      isVisualVisible && 'border-primary/30 bg-muted/70 text-foreground'
+                    )}
+                    aria-label={isVisualVisible ? 'Hide visual' : 'Show visual'}
+                    aria-pressed={isVisualVisible}
                     onClick={() => handleVisibleChange(liveSelectedVisual.visible === false)}
                   >
-                    {liveSelectedVisual.visible !== false ? (
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6-10-6-10-6Z"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" strokeWidth="1.8" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M3 3l18 18"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M10.7 5.2A11.2 11.2 0 0 1 12 5c6.2 0 10 7 10 7a17.7 17.7 0 0 1-4 4.5"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M6.2 6.3C3.7 8.1 2 12 2 12s3.8 6 10 6c1.4 0 2.6-.3 3.8-.8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M9.9 9.9A3.1 3.1 0 0 0 14 14"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    )}
-                  </button>
+                    {isVisualVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </Button>
                 </div>
               </div>
-              <label className="editor-field">
-                <span>Material</span>
+              <label className={fieldClass()}>
+                <span className={editorFieldLabel}>Material</span>
                 <MaterialPicker
                   material={liveSelectedVisual.material}
                   onMaterialPreviewChange={(nextMaterial) => {
@@ -346,11 +331,10 @@ export default function VisualEditorPanel({
                   }}
                 />
               </label>
-              <div className="editor-field editor-field-wide">
-                <span>Position (m)</span>
-                <div className="numeric-triplet">
+              <div className={fieldWideClass()}>
+                <span className={editorFieldLabel}>Position (m)</span>
+                <div className={numericTriplet}>
                   <NumericInput
-                    className="numeric-input-compact"
                     prefixLabel="x"
                     value={liveSelectedVisual.position?.x ?? 0}
                     dragStep={0.01}
@@ -366,7 +350,6 @@ export default function VisualEditorPanel({
                     }}
                   />
                   <NumericInput
-                    className="numeric-input-compact"
                     prefixLabel="y"
                     value={liveSelectedVisual.position?.y ?? 0}
                     dragStep={0.01}
@@ -382,7 +365,6 @@ export default function VisualEditorPanel({
                     }}
                   />
                   <NumericInput
-                    className="numeric-input-compact"
                     prefixLabel="z"
                     value={liveSelectedVisual.position?.z ?? 0}
                     dragStep={0.01}
@@ -399,11 +381,10 @@ export default function VisualEditorPanel({
                   />
                 </div>
               </div>
-              <div className="editor-field editor-field-wide">
-                <span>Rotation (deg)</span>
-                <div className="numeric-triplet">
+              <div className={fieldWideClass()}>
+                <span className={editorFieldLabel}>Rotation (deg)</span>
+                <div className={numericTriplet}>
                   <NumericInput
-                    className="numeric-input-compact"
                     prefixLabel="x"
                     value={radiansToDegrees(liveSelectedVisual.rotation?.x ?? 0)}
                     dragStep={0.25}
@@ -419,7 +400,6 @@ export default function VisualEditorPanel({
                     }}
                   />
                   <NumericInput
-                    className="numeric-input-compact"
                     prefixLabel="y"
                     value={radiansToDegrees(liveSelectedVisual.rotation?.y ?? 0)}
                     dragStep={0.25}
@@ -435,7 +415,6 @@ export default function VisualEditorPanel({
                     }}
                   />
                   <NumericInput
-                    className="numeric-input-compact"
                     prefixLabel="z"
                     value={radiansToDegrees(liveSelectedVisual.rotation?.z ?? 0)}
                     dragStep={0.25}
@@ -453,60 +432,57 @@ export default function VisualEditorPanel({
                 </div>
               </div>
 
-              <div className="editor-divider" aria-hidden="true" />
+              <div className={editorDivider} aria-hidden="true" />
 
               {liveSelectedVisual.size ? (
-                <div className="editor-field editor-field-wide">
-                  <span>Size</span>
-                  <div className="numeric-triplet">
-                  <NumericInput
-                    className="numeric-input-compact"
-                    prefixLabel="x"
-                    value={liveSelectedVisual.size.x}
-                    dragStep={0.01}
-                    minValue={0}
-                    onValuePreviewChange={(nextValue) => {
-                      updateSelectedVisualPreview((visual) => {
-                        visual.size = updateVectorAxis(visual.size, 'x', nextValue);
-                      });
-                    }}
-                    onValueChange={(nextValue) => {
-                      updateSelectedVisual((visual) => {
-                        visual.size = updateVectorAxis(visual.size, 'x', nextValue);
+                <div className={fieldWideClass()}>
+                  <span className={editorFieldLabel}>Size</span>
+                  <div className={numericTriplet}>
+                    <NumericInput
+                      prefixLabel="x"
+                      value={liveSelectedVisual.size.x}
+                      dragStep={0.01}
+                      minValue={0}
+                      onValuePreviewChange={(nextValue) => {
+                        updateSelectedVisualPreview((visual) => {
+                          visual.size = updateVectorAxis(visual.size, 'x', nextValue);
+                        });
+                      }}
+                      onValueChange={(nextValue) => {
+                        updateSelectedVisual((visual) => {
+                          visual.size = updateVectorAxis(visual.size, 'x', nextValue);
                         });
                       }}
                     />
-                  <NumericInput
-                    className="numeric-input-compact"
-                    prefixLabel="y"
-                    value={liveSelectedVisual.size.y}
-                    dragStep={0.01}
-                    minValue={0}
-                    onValuePreviewChange={(nextValue) => {
-                      updateSelectedVisualPreview((visual) => {
-                        visual.size = updateVectorAxis(visual.size, 'y', nextValue);
-                      });
-                    }}
-                    onValueChange={(nextValue) => {
-                      updateSelectedVisual((visual) => {
-                        visual.size = updateVectorAxis(visual.size, 'y', nextValue);
+                    <NumericInput
+                      prefixLabel="y"
+                      value={liveSelectedVisual.size.y}
+                      dragStep={0.01}
+                      minValue={0}
+                      onValuePreviewChange={(nextValue) => {
+                        updateSelectedVisualPreview((visual) => {
+                          visual.size = updateVectorAxis(visual.size, 'y', nextValue);
+                        });
+                      }}
+                      onValueChange={(nextValue) => {
+                        updateSelectedVisual((visual) => {
+                          visual.size = updateVectorAxis(visual.size, 'y', nextValue);
                         });
                       }}
                     />
-                  <NumericInput
-                    className="numeric-input-compact"
-                    prefixLabel="z"
-                    value={liveSelectedVisual.size.z}
-                    dragStep={0.01}
-                    minValue={0}
-                    onValuePreviewChange={(nextValue) => {
-                      updateSelectedVisualPreview((visual) => {
-                        visual.size = updateVectorAxis(visual.size, 'z', nextValue);
-                      });
-                    }}
-                    onValueChange={(nextValue) => {
-                      updateSelectedVisual((visual) => {
-                        visual.size = updateVectorAxis(visual.size, 'z', nextValue);
+                    <NumericInput
+                      prefixLabel="z"
+                      value={liveSelectedVisual.size.z}
+                      dragStep={0.01}
+                      minValue={0}
+                      onValuePreviewChange={(nextValue) => {
+                        updateSelectedVisualPreview((visual) => {
+                          visual.size = updateVectorAxis(visual.size, 'z', nextValue);
+                        });
+                      }}
+                      onValueChange={(nextValue) => {
+                        updateSelectedVisual((visual) => {
+                          visual.size = updateVectorAxis(visual.size, 'z', nextValue);
                         });
                       }}
                     />
@@ -515,11 +491,10 @@ export default function VisualEditorPanel({
               ) : null}
 
               {showGridRow ? (
-                <div className="editor-field editor-field-wide">
-                  <span>Grid</span>
-                  <div className="numeric-triplet">
+                <div className={fieldWideClass()}>
+                  <span className={editorFieldLabel}>Grid</span>
+                  <div className={numericTriplet}>
                     <NumericInput
-                      className="numeric-input-compact"
                       prefixLabel="cell"
                       value={typeof liveSelectedVisual.cell_size === 'number' ? liveSelectedVisual.cell_size : 0}
                       dragStep={dragStepForKey('cell_size')}
@@ -536,7 +511,6 @@ export default function VisualEditorPanel({
                       }}
                     />
                     <NumericInput
-                      className="numeric-input-compact"
                       prefixLabel="x"
                       value={typeof liveSelectedVisual.count_x === 'number' ? liveSelectedVisual.count_x : 1}
                       dragStep={dragStepForKey('count_x')}
@@ -554,7 +528,6 @@ export default function VisualEditorPanel({
                       }}
                     />
                     <NumericInput
-                      className="numeric-input-compact"
                       prefixLabel="y"
                       value={typeof liveSelectedVisual.count_y === 'number' ? liveSelectedVisual.count_y : 1}
                       dragStep={dragStepForKey('count_y')}
@@ -576,10 +549,10 @@ export default function VisualEditorPanel({
               ) : null}
 
               {showTextRow ? (
-                <label className="editor-field editor-field-wide">
-                  <span>Text</span>
-                  <div className="text-input-with-mode-toggle">
-                    <input
+                <label className={fieldWideClass()}>
+                  <span className={editorFieldLabel}>Text</span>
+                  <div className={textInputWithModeToggle}>
+                    <Input
                       type="text"
                       value={typeof liveSelectedVisual.text === 'string' ? liveSelectedVisual.text : ''}
                       onChange={(event) => {
@@ -588,16 +561,17 @@ export default function VisualEditorPanel({
                         });
                       }}
                     />
-                    <div className="segmented-toggle" role="radiogroup" aria-label="Text render mode">
+                    <div className={segmentedToggle} role="radiogroup" aria-label="Text render mode">
                       {(['2d', '3d'] as const).map((mode: TextRenderMode) => (
                         <button
                           key={mode}
                           type="button"
                           role="radio"
                           aria-checked={textRenderMode === mode}
-                          className={`segmented-toggle-button ${
-                            textRenderMode === mode ? 'segmented-toggle-button-active' : ''
-                          }`}
+                          className={cn(
+                            segmentedToggleButton,
+                            textRenderMode === mode && segmentedToggleButtonActive
+                          )}
                           onClick={() => {
                             updateSelectedVisual((visual) => {
                               visual.text_mode = mode;
@@ -613,32 +587,31 @@ export default function VisualEditorPanel({
               ) : null}
 
               {remainingEditableKeys.length > 0 ? (
-                <div className="editor-field editor-field-wide">
-                  <div className="type-specific-grid">
+                <div className={fieldWideClass()}>
+                  <div className={typeSpecificGrid}>
                     {remainingEditableKeys.map((key) => {
                       const value = liveSelectedVisual[key];
 
                       if (typeof value === 'boolean') {
                         return (
-                          <label key={key} className="editor-field editor-field-checkbox">
-                            <span>{fieldLabel(key)}</span>
-                            <input
-                              type="checkbox"
+                          <div key={key} className={fieldClass('flex items-center gap-2 content-center')}>
+                            <span className={editorFieldLabel}>{fieldLabel(key)}</span>
+                            <Checkbox
                               checked={value}
-                              onChange={(event) => {
+                              onCheckedChange={(checked) => {
                                 updateSelectedVisual((visual) => {
-                                  visual[key] = event.target.checked;
+                                  visual[key] = checked === true;
                                 });
                               }}
                             />
-                          </label>
+                          </div>
                         );
                       }
 
                       if (typeof value === 'number') {
                         return (
-                          <label key={key} className="editor-field">
-                            <span>{fieldLabel(key)}</span>
+                          <label key={key} className={fieldClass()}>
+                            <span className={editorFieldLabel}>{fieldLabel(key)}</span>
                             <NumericInput
                               value={value}
                               dragStep={dragStepForKey(key)}
@@ -661,9 +634,9 @@ export default function VisualEditorPanel({
 
                       if (typeof value === 'string') {
                         return (
-                          <label key={key} className="editor-field">
-                            <span>{fieldLabel(key)}</span>
-                            <input
+                          <label key={key} className={fieldClass()}>
+                            <span className={editorFieldLabel}>{fieldLabel(key)}</span>
+                            <Input
                               type="text"
                               value={value}
                               onChange={(event) => {
@@ -682,9 +655,9 @@ export default function VisualEditorPanel({
                 </div>
               ) : null}
 
-              <label className="editor-field editor-field-wide">
-                <span>Rotation Frame</span>
-                <input
+              <label className={fieldWideClass()}>
+                <span className={editorFieldLabel}>Rotation Frame</span>
+                <Input
                   type="text"
                   value={selectedObject.rotationFrame ?? ''}
                   placeholder="(none)"
@@ -700,7 +673,7 @@ export default function VisualEditorPanel({
           </div>
         </div>
       ) : (
-        <div className="empty-state">Select an object and visual to edit its draft scene state.</div>
+        <div className={emptyState}>Select an object and visual to edit its draft scene state.</div>
       )}
     </>
   );

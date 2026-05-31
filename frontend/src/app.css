@@ -1,0 +1,183 @@
+/* Residual custom CSS — canvas, scrubbers, swatches, workspace resize */
+
+.workspace-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14px minmax(510px, 568px);
+  gap: 6px;
+  align-items: stretch;
+  min-height: 0;
+  height: 100%;
+}
+
+.workspace-shell-left-rail-collapsed {
+  grid-template-columns: minmax(0, 1fr) 14px;
+}
+
+.workspace-left-rail {
+  display: grid;
+  grid-template-columns: minmax(112px, 136px) minmax(392px, 430px);
+  gap: 6px;
+  align-items: stretch;
+  min-height: 0;
+  min-width: 0;
+}
+
+.workspace-main {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 6px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.workspace-main > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.workspace-drawer {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+
+.renderer-surface {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--canvas-border);
+  background: var(--canvas);
+}
+
+.renderer-surface canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Numeric scrubber drag affordance */
+.numeric-input-shell {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  overflow: hidden;
+}
+
+.numeric-input-shell-with-prefix {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.numeric-input-shell-no-prefix {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.numeric-input-shell-dragging {
+  border-color: var(--ring);
+  cursor: ew-resize;
+}
+
+.numeric-input-prefix {
+  padding: 0 0.35rem;
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.numeric-input-shell input {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.28rem 0.35rem;
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+  min-width: 0;
+}
+
+.numeric-input-grip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 0.35rem;
+  cursor: ew-resize;
+  user-select: none;
+}
+
+.numeric-input-grip span {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  opacity: 0.45;
+}
+
+.numeric-input-shell-dragging .numeric-input-grip span {
+  opacity: 0.8;
+}
+
+/* Material / color picker popover positioning */
+.material-picker-shell {
+  position: relative;
+}
+
+.material-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  width: min(360px, calc(100vw - 56px));
+}
+
+.material-popover[data-open-direction='up'] {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.material-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.material-swatch-grid-textures {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.material-option-swatch-large {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+}
+
+.material-option-swatch-texture {
+  aspect-ratio: 1.6 / 1;
+}
+
+@media (max-width: 900px) {
+  .workspace-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .workspace-shell-left-rail-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace-left-rail {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(200px, 1fr);
+  }
+}

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { generateStaticManifest } from './scripts/generateStaticManifest.mjs';
@@ -131,6 +132,7 @@ export default defineConfig({
   base: process.env.VITE_MGVIEW_BASE ?? './',
   plugins: [
     staticHostingFlagPlugin(),
+    tailwindcss(),
     react(),
     legacySamplesPlugin(),
     staticHostingManifestPlugin(),

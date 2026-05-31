@@ -3,6 +3,8 @@ import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
 import LoadScenePathPanel from './LoadScenePathPanel.tsx';
+import { Button } from './ui/button.tsx';
+import { Separator } from './ui/separator.tsx';
 
 interface LoadSceneOverlayProps {
   canPersistScenes: boolean;
@@ -65,15 +67,13 @@ export default function LoadSceneOverlay({
       size="narrow"
       onClose={onClose}
     >
-      <div className="overlay-layout">
+      <div className="grid gap-2">
         {canPersistScenes && !isSaveAsMode && onOpenWorkspace ? (
-          <section className="panel">
-            <div className="visual-toolbar-actions">
-              <button type="button" className="secondary-button" onClick={onOpenWorkspace}>
-                Change Workspace…
-              </button>
-            </div>
-          </section>
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={onOpenWorkspace}>
+              Change Workspace…
+            </Button>
+          </div>
         ) : null}
 
         <LoadScenePathPanel
@@ -97,9 +97,9 @@ export default function LoadSceneOverlay({
           sceneInput={sceneInput}
         />
 
-        {errorMessage ? <div className="status error">{errorMessage}</div> : null}
+        {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
 
-        <hr className="overlay-section-divider" />
+        <Separator />
 
         <LocalFileBrowser
           browserListing={browserListing}

@@ -13,7 +13,10 @@ import {
   parseCssColorString,
 } from '../core/materialPresets.ts';
 import { resolveBundledAssetUrl } from '../api/localFiles.ts';
+import { cn } from '../lib/utils.ts';
 import { NumericInput } from './editorShared.tsx';
+import { Button } from './ui/button.tsx';
+import { Input } from './ui/input.tsx';
 
 interface MaterialPickerProps {
   material: SceneMaterial | undefined;
@@ -125,21 +128,31 @@ export default function MaterialPicker({
         event.stopPropagation();
       }}
     >
-      <button type="button" className="material-trigger" onClick={() => setPickerOpen((open) => !open)}>
+      <Button
+        type="button"
+        variant="outline"
+        className="grid h-auto min-h-[1.85rem] w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 px-1.5 py-1 text-left"
+        onClick={() => setPickerOpen((open) => !open)}
+      >
         <span
-          className="material-trigger-swatch"
+          className="size-[1.35rem] shrink-0 rounded-[0.38rem] border border-white/15 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
           aria-hidden="true"
           style={{ background: materialPreviewBackground(materialName) }}
         />
-        <span className="material-trigger-copy">
-          <strong>{buildMaterialLabel(materialName)}</strong>
-          <small>{isLegacyTextureName(materialName) ? 'texture' : 'color'}</small>
+        <span className="grid min-w-0">
+          <strong className="truncate text-[0.78rem] font-semibold leading-tight">{buildMaterialLabel(materialName)}</strong>
+          <small className="text-[0.64rem] leading-tight text-muted-foreground">
+            {isLegacyTextureName(materialName) ? 'texture' : 'color'}
+          </small>
         </span>
-      </button>
+      </Button>
 
       {pickerOpen ? (
         <div
-          className="material-popover"
+          className={cn(
+            'material-popover',
+            'grid gap-2.5 rounded-xl border border-border/50 bg-popover/95 p-2.5 shadow-lg backdrop-blur-sm'
+          )}
           role="dialog"
           aria-modal="false"
           aria-label="Material picker"
@@ -147,14 +160,14 @@ export default function MaterialPicker({
             event.stopPropagation();
           }}
         >
-          <div className="material-popover-header">
-            <strong>Material / Color</strong>
-            <button type="button" className="secondary-button material-popover-close" onClick={() => setPickerOpen(false)}>
+          <div className="flex items-center justify-between gap-2">
+            <strong className="text-[0.82rem] font-semibold uppercase tracking-wide text-primary">Material / Color</strong>
+            <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(false)}>
               Close
-            </button>
+            </Button>
           </div>
 
-          <div className="material-picker-section">
+          <div className="grid gap-2">
             <div className="material-swatch-grid">
               {Object.values(LEGACY_COLOR_PRESETS).map((cssColor) => {
                 const isActive =
@@ -162,32 +175,44 @@ export default function MaterialPicker({
                   normalizeMaterialName(materialName) === normalizeMaterialName(cssColor);
 
                 return (
-                  <button
+                  <Button
                     key={cssColor}
                     type="button"
-                    className={`material-swatch-button ${isActive ? 'material-option-active' : ''}`}
+                    variant="outline"
+                    className={cn(
+                      'block h-auto w-full p-1',
+                      isActive && 'border-primary/50 bg-accent ring-1 ring-primary/20'
+                    )}
                     title={cssColor}
                     onClick={() => applyMaterialName(cssColor)}
                   >
-                    <span className="material-option-swatch material-option-swatch-large" aria-hidden="true" style={{ background: cssColor }} />
-                  </button>
+                    <span
+                      className="material-option-swatch-large border border-white/15 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
+                      aria-hidden="true"
+                      style={{ background: cssColor }}
+                    />
+                  </Button>
                 );
               })}
             </div>
           </div>
 
-          <div className="material-picker-section">
+          <div className="grid gap-2">
             <div className="material-swatch-grid material-swatch-grid-textures">
               {Object.entries(LEGACY_TEXTURE_PRESETS).map(([name, preset]) => (
-                <button
+                <Button
                   key={name}
                   type="button"
-                  className={`material-swatch-button material-swatch-button-texture ${materialKey === name ? 'material-option-active' : ''}`}
+                  variant="outline"
+                  className={cn(
+                    'block h-auto w-full px-1 py-[0.18rem]',
+                    materialKey === name && 'border-primary/50 bg-accent ring-1 ring-primary/20'
+                  )}
                   title={name}
                   onClick={() => applyMaterialName(name)}
                 >
                   <span
-                    className="material-option-swatch material-option-swatch-large material-option-swatch-texture"
+                    className="material-option-swatch-large material-option-swatch-texture border border-white/15 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
                     aria-hidden="true"
                     style={{
                       backgroundImage: `url("${texturePreviewUrl(preset.path)}")`,
@@ -196,16 +221,17 @@ export default function MaterialPicker({
                       backgroundColor: preset.color ?? '#ffffff',
                     }}
                   />
-                </button>
+                </Button>
               ))}
             </div>
           </div>
 
-          <div className="material-picker-section material-picker-custom">
-            <div className="material-custom-controls">
+          <div className="grid gap-2 border-t border-border/50 pt-2">
+            <div className="grid grid-cols-2 items-center gap-2.5">
               <input
                 type="color"
                 aria-label="Custom color"
+                className="h-[38px] w-full rounded-lg border border-input bg-background p-1"
                 value={customHex}
                 onChange={(event) => {
                   const nextHex = event.target.value;
@@ -251,7 +277,7 @@ export default function MaterialPicker({
                 }}
               />
             </div>
-            <input
+            <Input
               type="text"
               value={customCssText}
               aria-label="Custom CSS color"

@@ -3,6 +3,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   parseCssColorString,
 } from '../core/materialPresets.ts';
+import { cn } from '../lib/utils.ts';
+import { Button } from './ui/button.tsx';
+import { Input } from './ui/input.tsx';
 
 interface ColorPickerProps {
   label?: string;
@@ -131,22 +134,30 @@ export default function ColorPicker({
         event.stopPropagation();
       }}
     >
-      <button type="button" className="material-trigger" onClick={() => setPickerOpen((open) => !open)}>
+      <Button
+        type="button"
+        variant="outline"
+        className="grid h-auto min-h-[1.85rem] w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 px-1.5 py-1 text-left"
+        onClick={() => setPickerOpen((open) => !open)}
+      >
         <span
-          className="material-trigger-swatch"
+          className="size-[1.35rem] shrink-0 rounded-[0.38rem] border border-white/15 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
           aria-hidden="true"
           style={{ background: normalizedValue }}
         />
-        <span className="material-trigger-copy">
-          <strong>{normalizedValue}</strong>
-          <small>{label}</small>
+        <span className="grid min-w-0">
+          <strong className="truncate text-[0.78rem] font-semibold leading-tight">{normalizedValue}</strong>
+          <small className="text-[0.64rem] leading-tight text-muted-foreground">{label}</small>
         </span>
-      </button>
+      </Button>
 
       {pickerOpen ? (
         <div
           ref={popoverRef}
-          className="material-popover"
+          className={cn(
+            'material-popover',
+            'grid gap-2.5 rounded-xl border border-border/50 bg-popover/95 p-2.5 shadow-lg backdrop-blur-sm'
+          )}
           data-open-direction={openUpward ? 'up' : 'down'}
           role="dialog"
           aria-modal="false"
@@ -155,39 +166,48 @@ export default function ColorPicker({
             event.stopPropagation();
           }}
         >
-          <div className="material-popover-header">
-            <strong>{popoverTitle}</strong>
-            <button type="button" className="secondary-button material-popover-close" onClick={() => setPickerOpen(false)}>
+          <div className="flex items-center justify-between gap-2">
+            <strong className="text-[0.82rem] font-semibold uppercase tracking-wide text-primary">{popoverTitle}</strong>
+            <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(false)}>
               Close
-            </button>
+            </Button>
           </div>
 
-          <div className="material-picker-section">
+          <div className="grid gap-2">
             <div className="material-swatch-grid">
               {PRESET_COLORS.map((cssColor) => {
                 const isActive = parseCssColorString(normalizedValue)?.cssText === parseCssColorString(cssColor)?.cssText;
 
                 return (
-                  <button
+                  <Button
                     key={cssColor}
                     type="button"
-                    className={`material-swatch-button ${isActive ? 'material-option-active' : ''}`}
+                    variant="outline"
+                    className={cn(
+                      'block h-auto w-full p-1',
+                      isActive && 'border-primary/50 bg-accent ring-1 ring-primary/20'
+                    )}
                     title={cssColor}
                     onClick={() => onChange(cssColor)}
                   >
-                    <span className="material-option-swatch material-option-swatch-large" aria-hidden="true" style={{ background: cssColor }} />
-                  </button>
+                    <span
+                      className="material-option-swatch-large border border-white/15 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
+                      aria-hidden="true"
+                      style={{ background: cssColor }}
+                    />
+                  </Button>
                 );
               })}
             </div>
           </div>
 
-          <div className="material-picker-section material-picker-custom">
-            <div className="material-custom-label">Custom</div>
-            <div className="material-custom-controls material-custom-controls-single">
+          <div className="grid gap-2 border-t border-border/50 pt-2">
+            <div className="text-[0.72rem] uppercase tracking-wide text-muted-foreground">Custom</div>
+            <div className="grid grid-cols-1 items-center gap-2.5">
               <input
                 type="color"
                 aria-label={label}
+                className="h-[38px] w-full rounded-lg border border-input bg-background p-1"
                 value={customHex}
                 onChange={(event) => {
                   const nextHex = event.target.value;
@@ -197,7 +217,7 @@ export default function ColorPicker({
                 }}
               />
             </div>
-            <input
+            <Input
               type="text"
               value={customCssText}
               aria-label={`${label} CSS color`}

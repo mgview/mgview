@@ -1,3 +1,7 @@
+import { Button } from './ui/button.tsx';
+import { Input } from './ui/input.tsx';
+import { Label } from './ui/label.tsx';
+
 interface LoadScenePathPanelProps {
   actionLabel: string;
   inputLabel?: string;
@@ -28,29 +32,31 @@ export default function LoadScenePathPanel({
   sceneInput,
 }: LoadScenePathPanelProps) {
   return (
-    <div className="overlay-section">
-      {!hideSectionTitle ? <h3 className="overlay-section-title">Scene</h3> : null}
-      {helperText ? <p className="panel-subtitle">{helperText}</p> : null}
+    <div className="grid gap-1.5">
+      {!hideSectionTitle ? (
+        <h3 className="text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Scene</h3>
+      ) : null}
+      {helperText ? <p className="text-xs text-muted-foreground">{helperText}</p> : null}
       <form
-        className="loader-form loader-form-single"
+        className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-1.5"
         onSubmit={(event) => {
           event.preventDefault();
           onSubmit();
         }}
       >
-        <label className="loader-field">
-          {inputLabel ? <span>{inputLabel}</span> : null}
-          <input
+        <div className="grid gap-1">
+          {inputLabel ? <Label>{inputLabel}</Label> : null}
+          <Input
             type="text"
             value={sceneInput}
             onChange={(event) => onSceneInputChange(event.target.value)}
             aria-label={inputLabel || 'Scene path'}
             placeholder={placeholder}
           />
-        </label>
-        <button type="submit" disabled={loading || submitDisabled || !isJsonPath(sceneInput)}>
+        </div>
+        <Button type="submit" size="sm" disabled={loading || submitDisabled || !isJsonPath(sceneInput)}>
           {actionLabel}
-        </button>
+        </Button>
       </form>
     </div>
   );

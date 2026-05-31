@@ -8,26 +8,26 @@ interface AboutOverlayProps {
 export default function AboutOverlay({ onClose }: AboutOverlayProps) {
   return (
     <OverlayPanel title="About MGView" size="narrow" onClose={onClose}>
-      <div className="about-grid">
-        <div className="about-row">
-          <span className="about-label">Version</span>
-          <code>{buildInfo.version}</code>
+      <dl className="divide-y divide-border overflow-hidden rounded-md border border-border">
+        <div className="flex items-center justify-between gap-3 bg-muted/30 px-2.5 py-1.5">
+          <dt className="text-[0.72rem] text-muted-foreground">Version</dt>
+          <dd><code>{buildInfo.version}</code></dd>
         </div>
-        <div className="about-row">
-          <span className="about-label">Build date</span>
-          <code>{buildInfo.buildDate}</code>
+        <div className="flex items-center justify-between gap-3 bg-muted/30 px-2.5 py-1.5">
+          <dt className="text-[0.72rem] text-muted-foreground">Build date</dt>
+          <dd><code>{buildInfo.buildDate}</code></dd>
         </div>
-        <div className="about-row">
-          <span className="about-label">Built at</span>
-          <code>{buildInfo.buildTimestamp}</code>
+        <div className="flex items-center justify-between gap-3 bg-muted/30 px-2.5 py-1.5">
+          <dt className="text-[0.72rem] text-muted-foreground">Built at</dt>
+          <dd><code>{buildInfo.buildTimestamp}</code></dd>
         </div>
         {buildInfo.commit ? (
-          <div className="about-row">
-            <span className="about-label">Commit</span>
-            <code>{buildInfo.commit}</code>
+          <div className="flex items-center justify-between gap-3 bg-muted/30 px-2.5 py-1.5">
+            <dt className="text-[0.72rem] text-muted-foreground">Commit</dt>
+            <dd><code className="break-all text-right">{buildInfo.commit}</code></dd>
           </div>
         ) : null}
-      </div>
+      </dl>
     </OverlayPanel>
   );
 }

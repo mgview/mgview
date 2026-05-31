@@ -1,5 +1,9 @@
 import type { SceneDiagnostic } from '../core/types.ts';
 import OverlayPanel from './OverlayPanel.tsx';
+import { Checkbox } from './ui/checkbox.tsx';
+import { Label } from './ui/label.tsx';
+import { Badge } from './ui/badge.tsx';
+import { cn } from '../lib/utils.ts';
 
 interface DiagnosticsOverlayProps {
   diagnostics: SceneDiagnostic[];
@@ -16,38 +20,45 @@ export default function DiagnosticsOverlay({
 }: DiagnosticsOverlayProps) {
   return (
     <OverlayPanel title="Diagnostics" size="narrow" onClose={onClose}>
-      <div className="overlay-layout">
-        <div className="overlay-section">
-          <h3 className="overlay-section-title">Performance</h3>
-          <label className="toggle-row">
-            <input
-              type="checkbox"
+      <div className="grid gap-3">
+        <div className="grid gap-1.5">
+          <h3 className="text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Performance</h3>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="perf-overlay-toggle"
               checked={performanceOverlayOpen}
-              onChange={(event) => {
-                setPerformanceOverlayOpen(event.target.checked);
-              }}
+              onCheckedChange={(checked) => setPerformanceOverlayOpen(checked === true)}
             />
-            <span>Show renderer stats overlay in the viewport</span>
-          </label>
-          <div className="overlay-help">
-            Shows FPS, frame time, draw calls, triangle count, GPU resources, and renderer pixel ratio.
+            <Label htmlFor="perf-overlay-toggle" className="normal-case tracking-normal">
+              Show renderer stats overlay in the viewport
+            </Label>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Shows FPS, frame time, draw calls, triangle count, GPU resources, and renderer pixel ratio.
+          </p>
         </div>
 
-        <div className="overlay-section">
-          <h3 className="overlay-section-title">Scene Checks</h3>
-          <div className="diagnostic-list">
+        <div className="grid gap-1.5">
+          <h3 className="text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Scene Checks</h3>
+          <div className="grid gap-1.5">
             {diagnostics.length === 0 ? (
-              <div className="diagnostic diagnostic-info">
+              <div className="rounded-sm bg-primary/10 px-2 py-1.5 text-xs text-foreground">
                 No scene warnings. Core extraction matched this sample cleanly.
               </div>
             ) : (
               diagnostics.map((diagnostic, index) => (
                 <div
                   key={`${diagnostic.severity}-${index}`}
-                  className={`diagnostic ${diagnostic.severity === 'warning' ? 'diagnostic-warning' : 'diagnostic-info'}`}
+                  className={cn(
+                    'flex gap-2 rounded-sm px-2 py-1.5 text-xs',
+                    diagnostic.severity === 'warning'
+                      ? 'bg-warning/15 text-warning-foreground'
+                      : 'bg-primary/10 text-foreground'
+                  )}
                 >
-                  <strong>{diagnostic.severity}</strong>
+                  <Badge variant={diagnostic.severity === 'warning' ? 'warning' : 'primary'} className="shrink-0 uppercase">
+                    {diagnostic.severity}
+                  </Badge>
                   <span>{diagnostic.message}</span>
                 </div>
               ))

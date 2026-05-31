@@ -1,6 +1,14 @@
-import { useEffect, useState } from 'react';
+import { Undo2, Redo2, ChevronDown, Sun, Moon } from 'lucide-react';
 import { canPersistScenesToServer } from '../api/runtimeMode.ts';
-
+import { useTheme } from './ThemeProvider.tsx';
+import { Button } from './ui/button.tsx';
+import { Badge } from './ui/badge.tsx';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu.tsx';
 interface SceneHeaderBarProps {
   scenePath: string | null;
   onOpenWorkspace?: () => void;
@@ -25,7 +33,6 @@ interface SceneHeaderBarProps {
 
 export default function SceneHeaderBar({
   scenePath,
-  onOpenWorkspace,
   onOpenAbout,
   hasLocalEdits,
   loading,
@@ -44,8 +51,7 @@ export default function SceneHeaderBar({
   onRevert,
   onUndo,
 }: SceneHeaderBarProps) {
-  const [loadMenuOpen, setLoadMenuOpen] = useState(false);
-  const [saveMenuOpen, setSaveMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
   const saveDisabled = !canPersistScenesToServer || !hasLocalEdits || saving;
   const saveTitle = !canPersistScenesToServer
     ? 'Save is not available in the online demo'
@@ -53,244 +59,148 @@ export default function SceneHeaderBar({
       ? 'No unsaved changes'
       : 'Save';
 
-  useEffect(() => {
-    if (!loadMenuOpen && !saveMenuOpen) {
-      return;
-    }
-
-    const handleWindowPointerDown = () => {
-      setLoadMenuOpen(false);
-      setSaveMenuOpen(false);
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setLoadMenuOpen(false);
-        setSaveMenuOpen(false);
-      }
-    };
-
-    window.addEventListener('pointerdown', handleWindowPointerDown);
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('pointerdown', handleWindowPointerDown);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [loadMenuOpen, saveMenuOpen]);
-
   return (
-    <section className="scene-header">
-      <div className="scene-header-row">
-        <div className="scene-header-main">
-          <div className="scene-header-brand-row">
-            <span className="scene-header-brand">MGView</span>
-            <button
-              type="button"
-              className="scene-header-about-button"
-              onClick={onOpenAbout}
-              aria-label="About MGView"
-              title="About MGView"
-            >
-              ?
-            </button>
-            <code
-              className="scene-header-code"
-              title={scenePath ?? 'No scene loaded'}
-            >
-              {scenePath ?? '(none loaded)'}
-            </code>
-            {hasLocalEdits ? (
-              <span className="scene-header-unsaved" title="Unsaved changes" aria-label="Unsaved changes">
-                •
-              </span>
-            ) : null}
-          </div>
+    <header className="mb-1.5 flex items-center justify-between gap-3 rounded-md border border-border bg-card px-2 py-1.5">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        <span className="shrink-0 text-base font-bold tracking-tight">MGView</span>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-6 w-6 shrink-0 rounded-full text-[0.7rem] font-bold"
+          onClick={onOpenAbout}
+          aria-label="About MGView"
+          title="About MGView"
+        >
+          ?
+        </Button>
+        <code
+          className="min-w-0 flex-1 truncate font-mono text-[0.72rem] text-muted-foreground"
+          title={scenePath ?? 'No scene loaded'}
+        >
+          {scenePath ?? '(none loaded)'}
+        </code>
+        {hasLocalEdits ? (
+          <span
+            className="shrink-0 text-lg leading-none text-warning"
+            title="Unsaved changes"
+            aria-label="Unsaved changes"
+          >
+            •
+          </span>
+        ) : null}
+      </div>
+
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onUndo}
+          disabled={!canUndo || loading}
+          aria-label="Undo"
+          title="Undo"
+        >
+          <Undo2 className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onRedo}
+          disabled={!canRedo || loading}
+          aria-label="Redo"
+          title="Redo"
+        >
+          <Redo2 className="h-3.5 w-3.5" />
+        </Button>
+
+        <Button type="button" variant="outline" size="sm" onClick={onOpenSamplesOverlay} disabled={loading}>
+          Samples…
+        </Button>
+
+        <div className="inline-flex">
+          <Button
+            type="button"
+            size="sm"
+            className="rounded-r-none"
+            onClick={onOpenLoadOverlay}
+            disabled={loading}
+          >
+            {loading ? 'Loading…' : 'Load…'}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" size="sm" variant="default" className="rounded-l-none border-l border-primary-foreground/20 px-1.5" disabled={loading} aria-label="Load menu">
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem disabled={!hasLocalEdits || saving} onSelect={onRevert}>
+                Reload
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!canPersistScenesToServer}
+                onSelect={onOpenCreateOverlay}
+              >
+                New…
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={onOpenChannels}>Sim Files…</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        <div className="scene-header-side">
-          <div className="scene-header-actions">
-            <button
-              type="button"
-              className="icon-button"
-              onClick={onUndo}
-              disabled={!canUndo || loading}
-              aria-label="Undo"
-              title="Undo"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M9 7H5v4M5 11a8 8 0 1 1 2.3 5.7"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="icon-button"
-              onClick={onRedo}
-              disabled={!canRedo || loading}
-              aria-label="Redo"
-              title="Redo"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M15 7h4v4M19 11a8 8 0 1 0-2.3 5.7"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            <button type="button" className="secondary-button" onClick={onOpenSamplesOverlay} disabled={loading}>
-              Samples…
-            </button>
-            <div
-              className="split-button"
-              onPointerDown={(event) => {
-                event.stopPropagation();
-              }}
-            >
-              <button type="button" onClick={onOpenLoadOverlay} disabled={loading}>
-                {loading ? 'Loading…' : 'Load…'}
-              </button>
-              <button
+        <Button type="button" variant="outline" size="sm" onClick={onOpenDiagnostics} className="relative">
+          Diagnostics
+          {diagnosticsWarningCount > 0 ? (
+            <Badge variant="destructive" className="ml-1 min-w-[1.1rem] justify-center px-1 py-0">
+              {diagnosticsWarningCount}
+            </Badge>
+          ) : null}
+        </Button>
+
+        <div className="inline-flex">
+          <Button
+            type="button"
+            size="sm"
+            className="rounded-r-none"
+            onClick={onSave}
+            disabled={saveDisabled}
+            title={saveTitle}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
                 type="button"
-                className="split-button-toggle"
-                aria-label="Open load menu"
-                aria-haspopup="menu"
-                aria-expanded={loadMenuOpen}
-                disabled={loading}
-                onClick={() => {
-                  setSaveMenuOpen(false);
-                  setLoadMenuOpen((current) => !current);
-                }}
-              >
-                <svg viewBox="0 0 12 12" aria-hidden="true">
-                  <path
-                    d="M2.25 4.5 6 7.5l3.75-3"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-              {loadMenuOpen ? (
-                <div className="split-button-menu" role="menu">
-                  <button
-                    type="button"
-                    className="split-button-menu-item"
-                    role="menuitem"
-                    disabled={!hasLocalEdits || saving}
-                    onClick={() => {
-                      setLoadMenuOpen(false);
-                      onRevert();
-                    }}
-                  >
-                    Reload
-                  </button>
-                  <button
-                    type="button"
-                    className="split-button-menu-item"
-                    role="menuitem"
-                    disabled={!canPersistScenesToServer}
-                    title={!canPersistScenesToServer ? 'Not available in the online demo' : undefined}
-                    onClick={() => {
-                      setLoadMenuOpen(false);
-                      onOpenCreateOverlay();
-                    }}
-                  >
-                    New…
-                  </button>
-                  <button
-                    type="button"
-                    className="split-button-menu-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setLoadMenuOpen(false);
-                      onOpenChannels();
-                    }}
-                  >
-                    Sim Files…
-                  </button>
-                </div>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              className="secondary-button scene-header-diagnostics-button"
-              onClick={onOpenDiagnostics}
-            >
-              Diagnostics
-              {diagnosticsWarningCount > 0 ? (
-                <span className="scene-header-badge" aria-label={`${diagnosticsWarningCount} warnings`}>
-                  {diagnosticsWarningCount}
-                </span>
-              ) : null}
-            </button>
-            <div
-              className="split-button"
-              onPointerDown={(event) => {
-                event.stopPropagation();
-              }}
-            >
-              <button
-                type="button"
-                onClick={onSave}
-                disabled={saveDisabled}
-                title={saveTitle}
-              >
-                {saving ? 'Saving…' : 'Save'}
-              </button>
-              <button
-                type="button"
-                className="split-button-toggle"
-                aria-label="Open save menu"
-                aria-haspopup="menu"
-                aria-expanded={saveMenuOpen}
+                size="sm"
+                variant="default"
+                className="rounded-l-none border-l border-primary-foreground/20 px-1.5"
                 disabled={saving || !canPersistScenesToServer}
                 title={!canPersistScenesToServer ? 'Save is not available in the online demo' : undefined}
-                onClick={() => {
-                  setLoadMenuOpen(false);
-                  setSaveMenuOpen((current) => !current);
-                }}
+                aria-label="Save menu"
               >
-                <svg viewBox="0 0 12 12" aria-hidden="true">
-                  <path
-                    d="M2.25 4.5 6 7.5l3.75-3"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-              {saveMenuOpen ? (
-                <div className="split-button-menu" role="menu">
-                  <button
-                    type="button"
-                    className="split-button-menu-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setSaveMenuOpen(false);
-                      onOpenSaveAsOverlay();
-                    }}
-                  >
-                    Save As…
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </div>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={onOpenSaveAsOverlay}>Save As…</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        >
+          {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+        </Button>
       </div>
-    </section>
+    </header>
   );
 }

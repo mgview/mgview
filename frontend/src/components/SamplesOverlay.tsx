@@ -17,15 +17,13 @@ export default function SamplesOverlay({
 }: SamplesOverlayProps) {
   return (
     <OverlayPanel title="Sample Scenes" size="medium" onClose={onClose}>
-      <div className="overlay-layout">
-        <SampleSceneGallery
-          groupedSamples={groupedSamples}
-          sceneInput=""
-          onOpenScene={onOpenSample}
-          onSelectScene={() => undefined}
-          loading={loading}
-        />
-      </div>
+      <SampleSceneGallery
+        groupedSamples={groupedSamples}
+        sceneInput=""
+        onOpenScene={onOpenSample}
+        onSelectScene={() => undefined}
+        loading={loading}
+      />
     </OverlayPanel>
   );
 }

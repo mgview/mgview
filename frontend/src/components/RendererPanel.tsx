@@ -483,26 +483,31 @@ export default function RendererPanel({
   }, [onClearSelection, onSelectObject, onSelectSpan, scene]);
 
   return (
-    <section className="panel renderer-panel">
+    <section className="flex min-h-0 h-full rounded-md border border-border bg-card p-1.5">
       <div className="renderer-surface" ref={hostRef}>
         {showPerformanceOverlay && performanceStats ? (
-          <div className="performance-overlay" aria-live="off">
-            <div className="performance-overlay-title">Renderer</div>
-            <div className="performance-overlay-grid">
-              <span>FPS</span>
-              <strong>{formatOverlayNumber(Math.round(performanceStats.fps))}</strong>
-              <span>Frame</span>
-              <strong>{performanceStats.frameTimeMs.toFixed(1)} ms</strong>
-              <span>Draw Calls</span>
-              <strong>{formatOverlayNumber(performanceStats.drawCalls)}</strong>
-              <span>Triangles</span>
-              <strong>{formatOverlayNumber(performanceStats.triangles)}</strong>
-              <span>Geometries</span>
-              <strong>{formatOverlayNumber(performanceStats.geometries)}</strong>
-              <span>Textures</span>
-              <strong>{formatOverlayNumber(performanceStats.textures)}</strong>
-              <span>Pixel Ratio</span>
-              <strong>{performanceStats.pixelRatio.toFixed(2)}</strong>
+          <div
+            className="pointer-events-none absolute right-2.5 top-2.5 z-[2] min-w-[168px] rounded-md border border-border bg-popover/90 p-2 shadow-lg backdrop-blur-sm"
+            aria-live="off"
+          >
+            <div className="mb-1 text-[0.66rem] font-bold uppercase tracking-wider text-muted-foreground">
+              Renderer
+            </div>
+            <div className="grid grid-cols-[auto_auto] items-baseline gap-x-3 gap-y-0.5">
+              <span className="text-[0.7rem] text-muted-foreground">FPS</span>
+              <strong className="justify-self-end font-mono text-[0.72rem]">{formatOverlayNumber(Math.round(performanceStats.fps))}</strong>
+              <span className="text-[0.7rem] text-muted-foreground">Frame</span>
+              <strong className="justify-self-end font-mono text-[0.72rem]">{performanceStats.frameTimeMs.toFixed(1)} ms</strong>
+              <span className="text-[0.7rem] text-muted-foreground">Draw Calls</span>
+              <strong className="justify-self-end font-mono text-[0.72rem]">{formatOverlayNumber(performanceStats.drawCalls)}</strong>
+              <span className="text-[0.7rem] text-muted-foreground">Triangles</span>
+              <strong className="justify-self-end font-mono text-[0.72rem]">{formatOverlayNumber(performanceStats.triangles)}</strong>
+              <span className="text-[0.7rem] text-muted-foreground">Geometries</span>
+              <strong className="justify-self-end font-mono text-[0.72rem]">{formatOverlayNumber(performanceStats.geometries)}</strong>
+              <span className="text-[0.7rem] text-muted-foreground">Textures</span>
+              <strong className="justify-self-end font-mono text-[0.72rem]">{formatOverlayNumber(performanceStats.textures)}</strong>
+              <span className="text-[0.7rem] text-muted-foreground">Pixel Ratio</span>
+              <strong className="justify-self-end font-mono text-[0.72rem]">{performanceStats.pixelRatio.toFixed(2)}</strong>
             </div>
           </div>
         ) : null}

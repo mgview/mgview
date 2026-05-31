@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
+import { toast as sonnerToast } from 'sonner';
 
 export type ToastKind = 'success' | 'error';
 
@@ -11,37 +12,24 @@ export interface Toast {
 const SUCCESS_TOAST_MS = 4000;
 
 export function useToasts() {
-  const [toasts, setToasts] = useState<Toast[]>([]);
-
-  const dismiss = useCallback((id: string) => {
-    setToasts((current) => current.filter((toast) => toast.id !== id));
+  const dismiss = useCallback((_id: string) => {
+    sonnerToast.dismiss(_id);
   }, []);
 
-  const showSuccess = useCallback(
-    (message: string) => {
-      const id = crypto.randomUUID();
-      setToasts((current) => [...current, { id, kind: 'success', message }]);
-      window.setTimeout(() => {
-        dismiss(id);
-      }, SUCCESS_TOAST_MS);
-    },
-    [dismiss]
-  );
+  const showSuccess = useCallback((message: string) => {
+    sonnerToast.success(message, { duration: SUCCESS_TOAST_MS });
+  }, []);
 
   const showError = useCallback((message: string) => {
-    const id = crypto.randomUUID();
-    setToasts((current) => [
-      ...current.filter((toast) => toast.kind !== 'error'),
-      { id, kind: 'error', message },
-    ]);
+    sonnerToast.error(message, { duration: Infinity });
   }, []);
 
   const dismissErrors = useCallback(() => {
-    setToasts((current) => current.filter((toast) => toast.kind !== 'error'));
+    sonnerToast.dismiss();
   }, []);
 
   return {
-    toasts,
+    toasts: [] as Toast[],
     dismiss,
     dismissErrors,
     showSuccess,

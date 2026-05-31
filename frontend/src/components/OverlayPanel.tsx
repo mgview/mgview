@@ -1,5 +1,13 @@
-import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog.tsx';
+import { Button } from './ui/button.tsx';
 
 interface OverlayPanelProps {
   title: string;
@@ -18,37 +26,23 @@ export default function OverlayPanel({
   size = 'default',
   onClose,
 }: OverlayPanelProps) {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [onClose]);
-
   return (
-    <div className="overlay-backdrop" role="dialog" aria-modal="true">
-      <div className={`overlay-card ${size === 'medium' ? 'overlay-card-medium' : ''} ${size === 'narrow' ? 'overlay-card-narrow' : ''}`}>
-        <div className="overlay-header">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent size={size} onPointerDownOutside={onClose} onEscapeKeyDown={onClose}>
+        <DialogHeader>
           <div>
-            <h2>{title}</h2>
-            {subtitle ? <p className="panel-subtitle">{subtitle}</p> : null}
+            <DialogTitle>{title}</DialogTitle>
+            {subtitle ? <DialogDescription className="mt-0.5">{subtitle}</DialogDescription> : null}
           </div>
-          <div className="inline-tags">
+          <div className="flex flex-wrap items-center gap-1.5">
             {actions}
-            <button type="button" className="secondary-button" onClick={onClose}>
+            <Button type="button" variant="outline" size="sm" onClick={onClose}>
               Close
-            </button>
+            </Button>
           </div>
-        </div>
-        <div className="overlay-body">{children}</div>
-      </div>
-    </div>
+        </DialogHeader>
+        <DialogBody>{children}</DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }
