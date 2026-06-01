@@ -185,7 +185,13 @@ export default function SceneHeaderBar({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={onOpenSaveAsOverlay}>Save As…</DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!scenePath}
+                title={!scenePath ? 'Load a scene before using Save As' : undefined}
+                onSelect={onOpenSaveAsOverlay}
+              >
+                Save As…
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

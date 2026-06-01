@@ -9,6 +9,7 @@ import type {
   SceneVisual,
   Vector3Like,
 } from './types.ts';
+import { collectPlotConfigDiagnostics } from './plotsConfig.ts';
 import {
   collectBaseFrames,
   collectPositionOrigins,
@@ -334,6 +335,13 @@ export function collectSceneDiagnostics(
     diagnostics.push({
       severity: 'warning',
       message: fileError,
+    });
+  }
+
+  for (const plotWarning of collectPlotConfigDiagnostics(scene.plots, channelNames)) {
+    diagnostics.push({
+      severity: 'warning',
+      message: plotWarning,
     });
   }
 

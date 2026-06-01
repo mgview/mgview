@@ -40,7 +40,8 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
-    "three": "^0.184.0"
+    "three": "^0.184.0",
+    "uplot": "^1.6.32"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",

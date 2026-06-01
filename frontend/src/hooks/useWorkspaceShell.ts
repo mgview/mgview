@@ -162,7 +162,12 @@ export function useWorkspaceShell({
   };
 
   const openSaveAsOverlay = () => {
-    if (!canPersistScenesToServer || !loaded || loaded.sceneRef.source !== 'workspace') {
+    if (!canPersistScenesToServer) {
+      return;
+    }
+
+    if (!loaded) {
+      setError('Load a scene before using Save As.');
       return;
     }
 
@@ -170,7 +175,10 @@ export function useWorkspaceShell({
     setSceneOverlayMode('saveAs');
     setSceneInput(getFileName(loaded.sceneRef.path));
     setLoadOverlayOpen(true);
-    void handleBrowse(getDirectoryPath(loaded.sceneRef.path), 'workspace');
+
+    const browsePath =
+      loaded.sceneRef.source === 'workspace' ? getDirectoryPath(loaded.sceneRef.path) : '.';
+    void handleBrowse(browsePath, 'workspace');
   };
 
   const openSimulationOverlay = () => {

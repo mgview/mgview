@@ -9,6 +9,7 @@
     { "group": "Wooden Phantom", "label": "Wooden Phantom", "path": "wooden_phantom/wooden_phantom.json" },
     { "group": "Other", "label": "Tricycle", "path": "tricycle/tricycle.json" },
     { "group": "Other", "label": "SkyCam Fixed", "path": "skycam/SkyCamFixed.json" },
-    { "group": "Other", "label": "Ball In Tube", "path": "ball_in_tube/ball_in_tube.json" }
+    { "group": "Other", "label": "Ball In Tube", "path": "ball_in_tube/ball_in_tube.json" },
+    { "group": "Robot Arm", "label": "Circle Step", "path": "robot_arm/circle_step/robot_arm.json" }
   ]
 }

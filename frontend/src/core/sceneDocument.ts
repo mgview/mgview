@@ -1,5 +1,6 @@
 import { inferObjectsFromChannels } from './inferObjects.ts';
 import { DEFAULT_TEXT_MATERIAL } from './materialPresets.ts';
+import { normalizePlotsConfig } from './plotsConfig.ts';
 import { inferSceneReferenceContext } from './simulationChannels.ts';
 import type {
   NormalizedSceneConfig,
@@ -121,6 +122,7 @@ function addEmptyDefaults(scene: SceneConfig, channelNames: string[]): Normalize
     workspaceSize: scene.workspaceSize ?? 1.0,
     cameraParentFrame: scene.cameraParentFrame ?? newtonianFrame,
     referenceContext,
+    plots: normalizePlotsConfig(scene.plots),
     objects,
     spans,
   };

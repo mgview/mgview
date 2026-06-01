@@ -2,12 +2,12 @@ import type { ReactNode } from 'react';
 import {
   Dialog,
   DialogBody,
+  DialogCloseButton,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from './ui/dialog.tsx';
-import { Button } from './ui/button.tsx';
 
 interface OverlayPanelProps {
   title: string;
@@ -30,16 +30,14 @@ export default function OverlayPanel({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent size={size} onPointerDownOutside={onClose} onEscapeKeyDown={onClose}>
         <DialogHeader>
-          <div>
-            <DialogTitle>{title}</DialogTitle>
-            {subtitle ? <DialogDescription className="mt-0.5">{subtitle}</DialogDescription> : null}
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+            <div>
+              <DialogTitle>{title}</DialogTitle>
+              {subtitle ? <DialogDescription className="mt-0.5">{subtitle}</DialogDescription> : null}
+            </div>
+            {actions ? <div className="flex flex-wrap items-center gap-1.5">{actions}</div> : null}
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {actions}
-            <Button type="button" variant="outline" size="sm" onClick={onClose}>
-              Close
-            </Button>
-          </div>
+          <DialogCloseButton />
         </DialogHeader>
         <DialogBody>{children}</DialogBody>
       </DialogContent>

@@ -136,6 +136,7 @@ export function createSavableScene(
     ? ([...draftScene.cameraFocus] as [number, number, number])
     : undefined;
   nextScene.speedFactor = draftScene.speedFactor;
+  nextScene.plots = structuredClone(draftScene.plots);
 
   nextScene.objects = {};
   for (const [objectName, draftObject] of Object.entries(draftScene.objects)) {

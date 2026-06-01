@@ -91,6 +91,28 @@ export interface SceneObject {
   visual?: Record<string, SceneVisual>;
 }
 
+export type PlotPanelXMode = 'time' | 'channel';
+
+export interface PlotPanelConfig {
+  title?: string;
+  channels: string[];
+  /** Default: plot Y channel(s) vs simulation time. */
+  xMode?: PlotPanelXMode;
+  /** X channel when xMode is 'channel' (phase / XY plot). */
+  xChannel?: string;
+  /** Default true — fit axes to data; Shift-drag box-zoom when zoomed. */
+  autoScale?: boolean;
+  /** Axis limits (meaning depends on autoScale and xMode; see plotAxisConfig). */
+  xMin?: number;
+  xMax?: number;
+  yMin?: number;
+  yMax?: number;
+}
+
+export interface ScenePlotsConfig {
+  panels: PlotPanelConfig[];
+}
+
 export interface SceneConfig {
   name?: string;
   simulationData?: string[];
@@ -105,6 +127,7 @@ export interface SceneConfig {
   cameraFocus?: [number, number, number];
   speedFactor?: number;
   customMaterials?: Record<string, unknown>;
+  plots?: ScenePlotsConfig;
   objects?: Record<string, SceneObject>;
   spans?: Record<string, SceneSpan>;
 }
@@ -130,6 +153,7 @@ export interface NormalizedSceneConfig extends SceneConfig {
   workspaceSize: number;
   cameraParentFrame: string;
   referenceContext: SceneReferenceContext;
+  plots: ScenePlotsConfig;
   objects: Record<string, SceneObject>;
   spans: Record<string, SceneSpan>;
 }

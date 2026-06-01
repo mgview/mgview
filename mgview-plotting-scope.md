@@ -1,222 +1,150 @@
 # MGView plotting scope
 
-**Status:** draft (iterating). Parent: [`mgview-in-place-modernization.md`](mgview-in-place-modernization.md).
+**Status:** MVP + polish (Y vs t + Y vs X). Parent: [`mgview-in-place-modernization.md`](mgview-in-place-modernization.md).
 
-Handoff for **simulation channel charts** in the modern React app. Use this doc for product and implementation planning; update in-repo rather than relying on chat history.
-
----
-
-## Context
-
-Modernization lists plotting as top “next work”: simulation channel charts. The app already has most of the data path:
-
-| Existing piece | Location |
-|----------------|----------|
-| `.1` parse (`t` + channels) | [`frontend/src/core/parseSimulationText.ts`](frontend/src/core/parseSimulationText.ts) |
-| Multi-file merge | [`frontend/src/core/timeline.ts`](frontend/src/core/timeline.ts) (`buildTimeline`) |
-| Playback + 3D frame | [`getFrameAtTime`](frontend/src/core/timeline.ts), [`PlaybackStrip`](frontend/src/components/PlaybackStrip.tsx), [`RendererPanel`](frontend/src/components/RendererPanel.tsx) |
-| Channel naming / inference | [`frontend/src/core/simulationChannels.ts`](frontend/src/core/simulationChannels.ts) |
-| Sim file management | [`SimulationDataOverlay`](frontend/src/components/SimulationDataOverlay.tsx) |
-
-Legacy MGView did **not** ship in-app 2D plots. This is a **new capability** (not legacy parity): inspect the same streams that drive the renderer while scrubbing/playing.
+Handoff for **simulation channel charts** in the modern React app. Update in-repo; do not rely on chat history.
 
 ---
 
-## User-facing goal
+## Quick handoff
 
-Let users **inspect simulation channels over time** alongside the 3D view, without exporting to MATLAB/Python first.
+Charts **render and sync with playback**. Smoke test: **Robot Arm → Circle Step** ([`robot_arm.json`](samples/robot_arm/circle_step/robot_arm.json)), `simulationData: ["robot_arm.1:6"]`.
 
-Default chart: **Y vs `t`** (shared time axis), with **multiple series** per panel when scales are compatible.
+| Mode | UI | Chart behavior |
+|------|-----|----------------|
+| **Y vs t** (default) | Gear → channel filter + checkboxes; **Y vs t / Y vs X** toggle | Multi-series vs time; drag scrubs; **Shift+drag** box-zooms time; channel chips below chart |
+| **Y vs X** | Gear → filter, Y/X dropdowns, mode toggle, **swap** (↔) | Parametric path; axis labels = channel names; custom playback dot; **1:1 aspect** (checkbox or **`1`**) |
+
+**Build / run:** `cd frontend && npm run build` — [`bin/RunVisualizer.bat`](../bin/RunVisualizer.bat) → `http://localhost:8000/mgview/`.
+
+**Smoke steps:** (1) Build. (2) Load Circle Step. (3) Torque panel (`Ta`, `Tb`, `Tcd`) — lines visible, drag scrubs, Shift+drag zooms, Reset zoom restores. (4) Add panel scrolls into view. (5) Switch to Y vs X — keeps first channel as Y, second as X. (6) Y vs X with X=`P_No_Eo[1]`, Y=`P_No_Eo[3]` → closed loop + moving dot.
 
 ---
 
-## Layout
+## Panel UI
 
-### v1 — Plots tab in the inspector drawer
+| Element | Behavior |
+|---------|----------|
+| Toolbar | **Add panel** only; hint when no sim data loaded |
+| Title | Inline editable per panel |
+| **Settings** (gear) | Channels, mode, axis options |
+| **Y vs t / Y vs X** | In settings, right of channel filter |
+| **Swap X↔Y** | Between X/Y dropdowns (Y vs X only) |
+| **Reset zoom** | Header button when time-axis zoom active (Y vs t) |
+| Remove panel | `X` in header |
+| Time axis | No bottom `"t"` label; tick values show time |
 
-Keep the existing workspace grid (object list + inspector drawer). Add **Plots** as a fourth tab in [`InspectorDrawer`](frontend/src/components/InspectorDrawer.tsx), sibling to **Editor**, **Scene Settings**, and **JSON Editor**:
+**Mode switch (Y vs t → Y vs X):** Atomic draft update in [`PlotsPanel`](frontend/src/components/PlotsPanel.tsx) — keeps `channels[0]`, sets `xMode: 'channel'`, auto-fills `xChannel` from `channels[1]` when present.
 
-```text
-┌─────────────────────────────┐  ┌──────────┬──────────────────────────┐
-│                             │  │ Objects  │ [Editor|Scene|JSON|Plots]│
-│   Three.js viewport         │  │  list    │ ┌────────────────────────┐ │
-│                             │  │          │ │ Plot panel 1           │ │
-│                             │  │          │ ├────────────────────────┤ │
-├─────────────────────────────┤  │          │ │ Plot panel 2           │ │
-│  Playback strip             │  │          │ │ … (scrollable)         │ │
-└─────────────────────────────┘  └──────────┴──────────────────────────┘
+---
+
+## Schema
+
+```typescript
+interface PlotPanelConfig {
+  title?: string;
+  channels: string[];         // Y vs t: many; Y vs X: [0] = Y
+  xMode?: 'time' | 'channel'; // default 'time'
+  xChannel?: string;          // required when xMode === 'channel'
+  autoScale?: boolean;        // default true
+  xMin?: number; xMax?: number; yMin?: number; yMax?: number; // zoom / manual limits
+}
 ```
 
-- Extend `InspectorEditorMode` (or equivalent) with `'plots'`.
-- Tab button selects plot UI; object list stays visible and usable.
-- Plot area: **scrollable stack** of one or more panels inside the drawer content region (same `min-h-0 overflow-auto` pattern as other tabs).
-- **No shell/grid changes** for v1—focus on charts, channel config, and playback sync before revisiting macro layout.
+Example Y vs X in scene JSON:
 
-Implementation sketch: `PlotsPanel.tsx` rendered from `TabsContent value="plots"`; wire `timeline`, `currentTime`, `channelNames`, and draft-scene plot config from `App.tsx` like other drawer tabs.
-
-### Later (deferred) — dedicated plot rail
-
-Previously considered: plots **replace** the entire right column (object list + drawer) so analysis gets maximum width. Revisit after v1 plots work well in the drawer—may need wider `workspace-left-rail` columns or a shell mode toggle in [`app.css`](frontend/src/app.css) / [`App.tsx`](frontend/src/App.tsx).
-
----
-
-## Persistence (scene JSON)
-
-Plot configuration is **saved with the scene**, not session-only.
-
-- Extend the scene JSON schema with a structured `plots` (name TBD) section.
-- Load: apply saved panels/channels when scene loads; tolerate missing/unknown channels (warn in diagnostics).
-- Save: include plot config in [`createSavableScene`](frontend/src/hooks/useSceneWorkspace.ts) output; migration policy for older scenes without the field (default empty → show editor rail or empty plot stack).
-- **GitHub Pages / samples:** bundled sample JSON can ship with example plot presets; read-only demo still renders saved plots when channels exist.
-
-Open schema questions (decide during implementation):
-
-- Per-panel: `channels: string[]`, optional `title`, optional `yAxis` / dual-axis mode.
-- Global vs per-panel time range override (default: full timeline).
-- Version field or implicit forward-compatible parsing.
+```json
+{
+  "title": "Eo path",
+  "xMode": "channel",
+  "xChannel": "P_No_Eo[1]",
+  "channels": ["P_No_Eo[3]"]
+}
+```
 
 ---
 
-## Functional scope
+## Key behavior
 
-### MVP
+| Topic | Decision |
+|-------|----------|
+| JSON section | `plots.panels[]` |
+| Unknown channels | Keep in config; “(missing)” in UI; warn in diagnostics |
+| Time indexing | [`getFrameIndexAtTime`](frontend/src/core/timeline.ts) / [`getFrameAtTime`](frontend/src/core/timeline.ts) |
+| Scrub | **Y vs t only:** drag without Shift on chart → `currentTime` |
+| Zoom | **Y vs t:** auto-scale on → Shift+drag time region (Y refits); off → Shift H/V zoom, right-drag pan. **Y vs X:** auto → 2D box; off → same manual gestures. Persisted in `plots.panels[]` as `autoScale`, `xMin`/`xMax`/`yMin`/`yMax` |
+| uPlot drag | Disabled (`setScale: false`); zoom is custom pointer handlers |
+| `setData` | `plot.setData(data, false)` — do not reset scales every tick |
+| Y scale (Y vs t) | Explicit min/max from all series + 5% pad |
+| XY series | One Y (`channels[0]`), X from `xChannel`; `sorted: 0` for parametric loops |
+| XY playback dot | Custom DOM marker in `plot.over` using frame index (uPlot cursor jumps on closed paths) |
+| Legend | Off; channel chips below chart instead |
 
-| Capability | Behavior |
-|------------|----------|
-| **Plots tab** | Fourth inspector tab; scrollable stack of one or more plot panels. |
-| **Channel picker** | Searchable multi-select from `channelNames`; monospace labels; empty state when no sim data. |
-| **Live cursor** | Vertical marker at `playback.currentTime` on each panel. |
-| **Scrub from plot** | Interaction on time axis updates shared `currentTime` (same as playback strip). |
-| **Zoom/pan** | X (time) zoom/pan per panel; reset to `[tInitial, tFinal]`. |
-| **Theme** | Axes/grid/series follow light/dark tokens ([`index.css`](frontend/src/index.css)). |
-| **Saved config** | Panels and channel lists round-trip in scene JSON. |
+**Y vs X data:** [`extractPlotPanelData`](frontend/src/core/plotSeries.ts) — `xValues` from `xChannel`, Y from `channels[0]`, axis labels = channel names. Drag scrubs to nearest sample; axis zoom/pan matches Y vs t (see [`plotAxisConfig.ts`](frontend/src/core/plotAxisConfig.ts)).
 
-### Selection-aware helpers (MVP-friendly)
-
-When an object/span is selected:
-
-- Quick-add bundles: `P_<origin>_<obj>[1..3]`, `N_<frame>_<obj>[i,j]` (reuse grouping from `SimulationDataOverlay`).
-- Obvious scalars (`qA`, `Ta`, …) via name overlap with selection.
-
-Optional: “Add to plot…” action writes into draft scene plot config (not only ephemeral UI).
-
-### Phase 2
-
-| Capability | Behavior |
-|------------|----------|
-| **Panel templates** | Presets in UI (“All `q*`”, “Energy”, “Selection pose”) that write into scene JSON. |
-| **Y-axis modes** | Shared vs split axis when scales differ. |
-| **Hover readout** | Crosshair + tooltip at nearest sample (match discrete timeline indexing unless interpolation is upgraded globally). |
-| **Export** | PNG per panel; optional CSV for visible series + time range. |
-| **Header units** | Parse `% (second)` / `(UNITS)` from `.1` comment lines for axis labels. |
-
-### Phase 3 (optional)
-
-- Phase plane plots (Y vs Y′ or channel vs channel).
-- Linked zoom across panels.
-- Diagnostics deep-links to missing channels referenced in plot config.
-
-### Non-goals (v1)
-
-- JSON **editor** tab (separate gap).
-- Plots inside the WebGL canvas.
-- Live streaming simulation.
-- Changing time lookup semantics in only the plot layer (stay consistent with [`getFrameAtTime`](frontend/src/core/timeline.ts) unless both 3D and plots upgrade together).
+**CSS pitfall:** Do not override uPlot `canvas` positioning under `.plot-panel-host` — breaks layered canvases. Keep `.plot-panel-host { position: relative }` and `.uplot { width: 100% }` only.
 
 ---
 
-## Technical scope
+## Layout & playback
 
-### Data layer
-
-New module e.g. [`frontend/src/core/plotSeries.ts`](frontend/src/core/plotSeries.ts):
-
-- Input: `Timeline`, `channelNames[]` per panel.
-- Output per series: `{ id, label, times, values }` built when timeline changes (not every animation frame).
-- Validation: channel exists in timeline; surface warnings via existing diagnostics pipeline.
-
-### Scene model
-
-- Types in [`frontend/src/core/types.ts`](frontend/src/core/types.ts).
-- Normalize defaults in [`sceneDocument.ts`](frontend/src/core/sceneDocument.ts).
-- Save strip/normalize in [`createSavableScene`](frontend/src/hooks/useSceneWorkspace.ts).
-
-### UI components (sketch)
-
-| Component | Role |
-|-----------|------|
-| `PlotsPanel.tsx` | Inspector tab body: scroll stack of panels, add/remove panel |
-| `PlotPanel.tsx` | One uPlot instance + channel picker + legend |
-| `PlotChannelPicker.tsx` | Filtered multi-select (`ScrollArea` / combobox) |
-| `plotTheme.ts` | CSS variables → uPlot colors |
-
-Extend [`InspectorDrawer`](frontend/src/components/InspectorDrawer.tsx) (`TabsTrigger` + `TabsContent`). Plot config lives in draft scene; `editorMode === 'plots'` only controls which tab is visible (same pattern as `visual` / `scene` / `json`).
-
-### Playback coupling
+Plots tab in [`InspectorDrawer`](frontend/src/components/InspectorDrawer.tsx). Scrollable panel stack. `currentTime` passed via **ref** from [`PlotsPanel`](frontend/src/components/PlotsPanel.tsx) to avoid re-creating uPlot every tick.
 
 ```mermaid
 flowchart LR
   PlaybackStrip --> currentTime
-  PlotsPanel -->|scrub| currentTime
+  PlotsPanel -->|scrub Y vs t| currentTime
   currentTime --> getFrameAtTime
   getFrameAtTime --> RendererPanel
-  currentTime --> PlotsPanel
+  currentTime --> PlotPanel
 ```
 
-Single `currentTime` source of truth.
+---
 
-### Performance
+## Components
 
-Target: smooth cursor updates during playback with **≥50k points per series** (downsample only if measured necessary). Sample scenes are smaller; workspace runs may be large.
+| File | Role |
+|------|------|
+| [`PlotsPanel.tsx`](frontend/src/components/PlotsPanel.tsx) | Panel stack, add/remove, scroll-on-add, mode switch |
+| [`PlotPanel.tsx`](frontend/src/components/PlotPanel.tsx) | uPlot lifecycle, scrub/zoom, XY marker, settings UI |
+| [`PlotChannelPicker.tsx`](frontend/src/components/PlotChannelPicker.tsx) | Searchable channel multi-select |
+| [`plotSeries.ts`](frontend/src/core/plotSeries.ts) | Timeline → arrays; `computePlotYBounds` |
+| [`plotTheme.ts`](frontend/src/core/plotTheme.ts) | Hex colors for canvas |
+| [`plotsConfig.ts`](frontend/src/core/plotsConfig.ts) | Normalize + diagnostics |
 
-### Tests
+Data path: [`parseSimulationText.ts`](frontend/src/core/parseSimulationText.ts) → [`timeline.ts`](frontend/src/core/timeline.ts) → [`simulationChannels.ts`](frontend/src/core/simulationChannels.ts).
 
-- Unit: `plotSeries` extraction; schema round-trip for plot config.
-- Fixture: one panel + channels from `samples/robot_arm/circle_step/robot_arm.1`.
+**Library:** [uPlot](https://github.com/szopiory/uPlot) v1.6.x — imperative mount in `useLayoutEffect`; native drag zoom off.
 
 ---
 
-## Library
+## Remaining work
 
-**[uPlot](https://github.com/szopiory/uPlot)** — chosen for v1.
+**Polish**
 
-| Criterion | Notes |
-|-----------|--------|
-| Fit | Fast multi-series **time vs value**. |
-| Bundle | Small next to Three.js. |
-| Cursor | Plugin for vertical playback line. |
-| Theme | Map `--foreground`, `--border`, `--primary` on theme change. |
-| React | Thin ref/effect wrapper (same lifecycle style as Three.js). |
+- [x] XY scrub (pointer → nearest sample → `currentTime`)
+- [x] XY shift-drag 2D zoom + reset (persisted axis fields)
+- [ ] XY marker color from series theme (currently fixed `#60a5fa`)
+- [ ] Wheel zoom (custom; uPlot v1.6 has no `wheel` option)
 
-**Tradeoff:** Imperative API; own resize/destroy lifecycle (use `ResizeObserver` on the drawer panel).
+**Phase 2**
 
-Deferred alternatives: visx (React + D3), Plotly/ECharts (heavy). Raw D3 alone is unnecessary boilerplate for standard line charts.
+- [ ] Smarter channel suggestions (selection-aware, clearable / dynamic — removed naive “Plot object” buttons)
+- [ ] Panel templates (“All `q*`”, bundles)
+- [ ] Dual Y-axis when magnitudes differ greatly
+- [ ] Hover tooltip at nearest sample
+- [ ] Export PNG / CSV
+- [ ] Axis units from `.1` comment headers
+- [ ] Time-axis label when plot expanded
 
----
-
-## Delivery phases
-
-1. **Schema + types** — `plots` in scene JSON; load/save/migrate; empty default.
-2. **Plots tab shell** — fourth `InspectorDrawer` tab; empty scroll region; `editorMode` wiring.
-3. **MVP chart** — one panel, uPlot, multi-channel, cursor + scrub, saved channels.
-4. **Multi-panel stack** — add/remove panels in JSON; selection quick-add.
-5. **Polish** — zoom, export, units from headers, keyboard/focus (coordinate with modernization item #2).
-6. **Layout (optional)** — dedicated plot rail if drawer width is insufficient.
+**Deferred:** linked zoom across panels; dedicated plot rail; downsample ≥50k points if needed.
 
 ---
 
-## Open decisions
+## Tests
 
-| Topic | Options |
-|-------|---------|
-| Unknown channels on load | Strip + warning vs keep label in UI grayed out |
-| Interpolation | Discrete frames only (match 3D) vs upgrade globally |
-| Plot section name in JSON | `plots`, `plotPanels`, `charts`, … |
-| Demo/samples | Ship example `plots` in select bundled scenes |
+```bash
+cd frontend && npm test && npm run build
+```
 
----
-
-## Changelog (doc)
-
-- **2026-05-31:** v1 layout → Plots tab in `InspectorDrawer`; uPlot locked; full right-rail layout deferred.
-- **2026-05-31:** Initial draft; persistence via scene JSON; right-rail layout (later deferred).
+[`plotSeries.test.ts`](frontend/src/core/plotSeries.test.ts) — extraction, `xMode: 'channel'`, save round-trip, `computePlotYBounds`.

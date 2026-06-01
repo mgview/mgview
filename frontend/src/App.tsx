@@ -489,6 +489,7 @@ export default function App() {
                       cameraPreview={shell.cameraPreview}
                       channelNames={channelNames}
                       clearCameraPreview={() => shell.setCameraPreview(null)}
+                      currentTime={playback.currentTime}
                       editorMode={selectionState.editorMode}
                       hasLocalEdits={hasLocalEdits}
                       liveSelectedSpan={liveSelectedSpan}
@@ -497,9 +498,12 @@ export default function App() {
                       loaded={loaded}
                       savePreview={savePreview}
                       selectedObject={activeSelectedObject}
+                      selectedObjectName={activeSelectedObject?.name ?? null}
                       selectedSpanName={selectedSpanResolvedName}
                       selectedSpanVisualName={selectedSpanVisualResolvedName}
                       selectedVisual={activeSelectedVisual}
+                      timeline={timeline}
+                      onChangeTime={playback.changeTime}
                       updateSelectedObject={updateSelectedObject}
                       createVisual={createVisual}
                       renameVisual={renameVisual}
