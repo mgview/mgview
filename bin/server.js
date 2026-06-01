@@ -204,6 +204,12 @@ StaticServlet.prototype.handleRequest = function(req, res) {
   if (normalizedPathname === '/mgview/') {
     return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
+  if (normalizedPathname === '/mgview/documentation') {
+    return this.sendRedirect_(req, res, '/mgview/documentation/' + req.url.search);
+  }
+  if (normalizedPathname === '/mgview/documentation/') {
+    return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
+  }
 
   // Vite bundles only — repo-root assets/ (textures, etc.) uses normal path resolution below.
   if (normalizedPathname.indexOf('/mgview/' + VITE_BUNDLED_DIR + '/') === 0) {

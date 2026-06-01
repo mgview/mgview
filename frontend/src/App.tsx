@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AboutOverlay from './components/AboutOverlay.tsx';
+import DocumentationPage from './components/DocumentationPage.tsx';
 import { canPersistScenesToServer } from './api/runtimeMode.ts';
 import DemoNotice from './components/DemoNotice.tsx';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.tsx';
@@ -25,8 +26,17 @@ import { createSampleRef, getSceneBasePath, parseSceneRefFromUrl } from './core/
 import { groupSampleScenes } from './core/samplesManifest.ts';
 import { useServerWorkspace } from './hooks/useServerWorkspace.ts';
 import WorkspacePickerOverlay from './components/WorkspacePickerOverlay.tsx';
+import { getCurrentAppRoute } from './core/appRoutes.ts';
 
 export default function App() {
+  if (getCurrentAppRoute() === 'documentation') {
+    return <DocumentationPage />;
+  }
+
+  return <WorkspaceApp />;
+}
+
+function WorkspaceApp() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const { dismissErrors, showSuccess, showError } = useToasts();
   const serverWorkspace = useServerWorkspace(showSuccess, showError);
