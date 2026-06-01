@@ -12,9 +12,6 @@ import { Badge } from './ui/badge.tsx';
 import { Separator } from './ui/separator.tsx';
 import { cn } from '../lib/utils.ts';
 
-const POSITION_CHANNEL = /^P_[^_]+_[^\[]+\[[123]\]$/;
-const MATRIX_CHANNEL = /^(?!P_)[^_]+_[^\[]+\[[123],[123]\]$/;
-
 function splitFilePath(filePath: string): { directory: string; fileName: string } {
   const normalized = filePath.replace(/\\/g, '/');
   const slashIndex = normalized.lastIndexOf('/');
@@ -27,20 +24,7 @@ function splitFilePath(filePath: string): { directory: string; fileName: string 
   };
 }
 
-function isPositionMatrixBundle(channelNames: string[]): boolean {
-  if (channelNames.length !== 12) return false;
-  const positionChannels = channelNames.filter((channelName) => POSITION_CHANNEL.test(channelName));
-  const matrixChannels = channelNames.filter((channelName) => MATRIX_CHANNEL.test(channelName));
-  return positionChannels.length === 3 && matrixChannels.length === 9;
-}
-
-function renderChannelGroups(channelNames: string[]) {
-  if (!isPositionMatrixBundle(channelNames)) return [channelNames];
-  return [
-    channelNames.filter((channelName) => POSITION_CHANNEL.test(channelName)),
-    channelNames.filter((channelName) => MATRIX_CHANNEL.test(channelName)),
-  ];
-}
+const PREVIEW_CHANNEL_COUNT = 5;
 
 interface SimulationDataOverlayProps {
   activeScene: NormalizedSceneConfig;
@@ -269,17 +253,16 @@ export default function SimulationDataOverlay({
                 {expandedFiles.map((filePath) => {
                   const parsedFile = parsedSimulationFiles.find((entry) => entry.filePath === filePath);
                   const { directory, fileName } = splitFilePath(filePath);
-                  const channelGroups = renderChannelGroups(parsedFile?.channelNames ?? []);
                   const fileChannelNames = parsedFile?.channelNames ?? [];
                   const fileOrigin = parsedFile?.sceneOrigin.canonical ?? null;
                   const fileFrame = parsedFile?.newtonianFrame.canonical ?? null;
                   const originIgnored = canonicalOrigin && fileOrigin && fileOrigin !== canonicalOrigin;
                   const frameIgnored = canonicalFrame && fileFrame && fileFrame !== canonicalFrame;
                   const showAllChannels = expandedChannelFiles.includes(filePath);
-                  const previewChannelNames = fileChannelNames.slice(0, 4);
+                  const previewChannelNames = fileChannelNames.slice(0, PREVIEW_CHANNEL_COUNT);
 
                   return (
-                    <div key={filePath} className="grid grid-cols-[minmax(140px,200px)_minmax(0,1fr)] gap-2 border-t border-border py-1.5 first:border-t-0 first:pt-0">
+                    <div key={filePath} className="grid grid-cols-[minmax(140px,240px)_minmax(0,1fr)] items-start gap-2 border-t border-border py-1.5 first:border-t-0 first:pt-0">
                       <div className="grid gap-0.5 break-all">
                         {directory ? <code className="text-muted-foreground">{directory}</code> : null}
                         <code className="font-semibold">{fileName}</code>
@@ -298,16 +281,14 @@ export default function SimulationDataOverlay({
                         {parsedFile && fileChannelNames.length > 0 ? (
                           showAllChannels ? (
                             <>
-                              {channelGroups.map((channelGroup, groupIndex) => (
-                                <div key={`${filePath}:group:${groupIndex}`} className="flex flex-wrap gap-1">
-                                  {channelGroup.map((channelName) => (
-                                    <Badge key={`${filePath}:${channelName}`} variant="outline" className="font-mono font-normal">
-                                      {channelName}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ))}
-                              {fileChannelNames.length > 4 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {fileChannelNames.map((channelName) => (
+                                  <Badge key={`${filePath}:${channelName}`} variant="outline" className="font-mono font-normal">
+                                    {channelName}
+                                  </Badge>
+                                ))}
+                              </div>
+                              {fileChannelNames.length > PREVIEW_CHANNEL_COUNT ? (
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -326,7 +307,7 @@ export default function SimulationDataOverlay({
                                   {channelName}
                                 </Badge>
                               ))}
-                              {fileChannelNames.length > 4 ? (
+                              {fileChannelNames.length > PREVIEW_CHANNEL_COUNT ? (
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -338,7 +319,7 @@ export default function SimulationDataOverlay({
                                     )
                                   }
                                 >
-                                  +{fileChannelNames.length - 4}
+                                  +{fileChannelNames.length - PREVIEW_CHANNEL_COUNT}
                                 </Button>
                               ) : null}
                             </div>

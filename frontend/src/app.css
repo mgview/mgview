@@ -30,7 +30,7 @@
 
 .workspace-editor-rail {
   display: grid;
-  grid-template-columns: minmax(112px, 136px) minmax(392px, 430px);
+  grid-template-columns: minmax(112px, 112px) minmax(392px, 430px);
   gap: 6px;
   align-items: stretch;
   min-height: 0;

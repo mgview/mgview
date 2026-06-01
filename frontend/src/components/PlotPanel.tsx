@@ -23,7 +23,7 @@ import { Button } from './ui/button.tsx';
 import { Input } from './ui/input.tsx';
 import { Label } from './ui/label.tsx';
 
-const PLOT_HEIGHT_DEFAULT = 220;
+const PLOT_HEIGHT_DEFAULT = 300;
 /** Total uPlot height for Y vs X (axes included; see uPlot `setSize`). */
 const PLOT_XY_DEFAULT_HEIGHT = 228;
 /** Reserved below ticks for the X channel name (`labelGap` draws inside this band). */
