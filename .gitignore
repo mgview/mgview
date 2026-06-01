@@ -6,3 +6,4 @@ build/
 /modern/assets/
 /index.html
 /static-file-manifest.json
+.DS_Store

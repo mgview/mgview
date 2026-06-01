@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createWorkspaceDirectory } from '../api/localFiles.ts';
 import { canPersistScenesToServer } from '../api/runtimeMode.ts';
+import { combineBrowserPath, validateFolderName } from '../core/workspacePaths.ts';
 import { getApiRoot, getSceneDirectory } from '../core/sceneRef.ts';
 import type { NormalizedSceneConfig } from '../core/types.ts';
 import type { LoadedSceneData } from './useSceneWorkspace.ts';
@@ -23,17 +25,6 @@ function tupleApproximatelyEqual(
 function getFileName(filePath: string): string {
   const normalizedPath = filePath.replace(/\\/g, '/');
   return normalizedPath.split('/').pop() ?? normalizedPath;
-}
-
-function combineBrowserPath(currentFolder: string | null | undefined, path: string): string {
-  const trimmedPath = path.trim();
-  if (!trimmedPath) {
-    return trimmedPath;
-  }
-
-  return currentFolder && currentFolder !== '.'
-    ? `${currentFolder.replace(/\/+$/g, '')}/${trimmedPath}`
-    : trimmedPath;
 }
 
 function readStoredPerformanceOverlayPreference() {
@@ -234,6 +225,30 @@ export function useWorkspaceShell({
     return didSave;
   };
 
+  const handleCreateFolder = async (name: string) => {
+    if (!canPersistScenesToServer) {
+      return false;
+    }
+
+    const validationError = validateFolderName(name);
+    if (validationError) {
+      setError(validationError);
+      return false;
+    }
+
+    const folderPath = combineBrowserPath(browserPath, name);
+    setError(null);
+
+    try {
+      await createWorkspaceDirectory(folderPath);
+      await handleBrowse(folderPath, 'workspace');
+      return true;
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : 'Unknown folder creation error');
+      return false;
+    }
+  };
+
   const updateSceneVector = (
     key: 'cameraUp' | 'cameraEye' | 'cameraFocus',
     index: 0 | 1 | 2,
@@ -340,6 +355,7 @@ export function useWorkspaceShell({
     closeSimulationOverlay: () => setSimulationOverlayOpen(false),
     commitCameraPreview,
     diagnosticsOpen,
+    handleCreateFolder,
     handleCreateScenePath,
     handleOpenScenePath,
     handleOpenSamplePath,

@@ -429,12 +429,13 @@ function PlotPanel({
         const height = Math.max(Math.abs(endY - startY), 1);
 
         if (isTimePlot) {
+          // Selection lives in chart.over (plot-area CSS coords), not canvas bbox space.
           chart.setSelect(
             {
               left,
-              top: chart.bbox.top,
+              top: 0,
               width,
-              height: chart.bbox.height,
+              height: chart.over.clientHeight,
             },
             false
           );

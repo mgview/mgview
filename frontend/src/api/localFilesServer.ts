@@ -106,3 +106,10 @@ export async function createSceneJson(sceneRef: SceneRef, scene: SceneConfig): P
   });
   await expectOk(response, `Could not create scene file: ${sceneRef.path}`);
 }
+
+export async function createWorkspaceDirectory(filePath: string): Promise<void> {
+  const response = await apiFetch(getApiUrl('mkdir', { root: 'workspace', path: filePath }), {
+    method: 'POST',
+  });
+  await expectOk(response, `Could not create folder: ${filePath}`);
+}

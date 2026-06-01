@@ -550,6 +550,7 @@ export default function App() {
             void handleBrowse(path, 'workspace');
           }}
           onClose={shell.closeLoadOverlay}
+          onCreateFolder={shell.handleCreateFolder}
           onCreateScenePath={(path) => {
             void shell.handleCreateScenePath(path);
           }}

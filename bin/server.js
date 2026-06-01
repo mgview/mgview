@@ -229,6 +229,9 @@ StaticServlet.prototype.handleApiRequest_ = function(req, res, pathname) {
   if (pathname === API_PREFIX + '/file' && req.method === 'POST') {
     return this.handlePostFileApi_(req, res);
   }
+  if (pathname === API_PREFIX + '/mkdir' && req.method === 'POST') {
+    return this.handlePostMkdirApi_(req, res);
+  }
 
   this.sendJson_(res, 404, {
     error: 'Not found',
@@ -344,6 +347,46 @@ StaticServlet.prototype.handlePostFileApi_ = function(req, res) {
             path: this.normalizeRelativePath_(filePath, apiRoot),
           });
         });
+      });
+    });
+  });
+};
+
+StaticServlet.prototype.handlePostMkdirApi_ = function(req, res) {
+  const requestedPath = req.url.searchParams.get('path');
+  const apiRoot = req.url.searchParams.get('root') || 'workspace';
+  if (!requestedPath) {
+    return this.sendJson_(res, 400, { error: 'Missing path.' });
+  }
+  if (apiRoot !== 'workspace') {
+    return this.sendJson_(res, 403, { error: 'Forbidden path.' });
+  }
+
+  const directoryPath = this.resolveApiPath_(requestedPath, { root: apiRoot });
+  if (!directoryPath) {
+    return this.sendJson_(res, 403, { error: 'Forbidden path.' });
+  }
+
+  const parentDirectory = path.dirname(directoryPath);
+  fs.stat(parentDirectory, (parentError, parentStat) => {
+    if (parentError) {
+      return this.sendJson_(res, 404, { error: 'Parent directory not found.' });
+    }
+    if (!parentStat.isDirectory()) {
+      return this.sendJson_(res, 400, { error: 'Parent path is not a directory.' });
+    }
+
+    fs.mkdir(directoryPath, { recursive: false }, (mkdirError) => {
+      if (mkdirError) {
+        if (mkdirError.code === 'EEXIST') {
+          return this.sendJson_(res, 409, { error: 'Folder already exists.' });
+        }
+        return this.sendJson_(res, 500, { error: 'Could not create folder.' });
+      }
+
+      this.sendJson_(res, 201, {
+        ok: true,
+        path: this.normalizeRelativePath_(directoryPath, apiRoot),
       });
     });
   });
