@@ -362,6 +362,12 @@ export default function App() {
     [updateDraftScene]
   );
 
+  const openEditorRailIfClosed = useCallback(() => {
+    if (!showEditorRail) {
+      updateSceneLayoutVisibility('showEditorRail', true);
+    }
+  }, [showEditorRail, updateSceneLayoutVisibility]);
+
   return (
     <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-2">
       <DemoNotice />
@@ -415,9 +421,11 @@ export default function App() {
                         onCameraCommit={shell.commitCameraPreview}
                         onClearSelection={selectionState.clearAllSelections}
                         onSelectObject={(objectName, visualName) => {
+                          openEditorRailIfClosed();
                           selectionState.selectObjectForEditor(objectName, visualName, selectObject);
                         }}
                         onSelectSpan={(spanName, visualName) => {
+                          openEditorRailIfClosed();
                           selectionState.selectSpanForEditor(spanName, visualName, selectSpanOnly);
                         }}
                         scenePath={rendererSceneBasePath}
