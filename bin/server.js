@@ -5,24 +5,56 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const DEFAULT_PORT = 8000;
-const PROJECT_ROOT = path.resolve(__dirname, '../..');
 const MGVIEW_ROOT = path.resolve(__dirname, '..');
+const { applyStartupWorkspace, formatServerUsage, parseServerArgs } = require('./serverCli.js');
 const MODERN_DIST_DIR = path.resolve(__dirname, '../frontend/dist');
 const VITE_BUNDLED_DIR = 'bundled'; // sync with frontend/scripts/deployConfig.mjs → viteBundledAssetsDir
 const API_PREFIX = '/mgview/api';
-
-function isWithinRoot(candidatePath) {
-  return candidatePath === PROJECT_ROOT || candidatePath.indexOf(PROJECT_ROOT + path.sep) === 0;
-}
+const workspaceRoots = require('./workspaceRoots.js');
+const {
+  createWorkspaceRoots,
+  normalizeLogicalPath,
+  parseApiRoot,
+  getDefaultWorkspaceRoot,
+  prepareWorkspaceRoot,
+  readWorkspaceConfig,
+  resolveLogicalPathForRoot,
+  resolveUrlAssetPath,
+  toLogicalPathForRoot,
+  writeWorkspaceConfig,
+} = workspaceRoots;
 
 function main(argv) {
+  let options;
+  try {
+    options = parseServerArgs(argv);
+  } catch (error) {
+    logError(error.message);
+    logError('');
+    logError(formatServerUsage());
+    process.exit(1);
+  }
+
+  if (options.help) {
+    console.log(formatServerUsage());
+    process.exit(0);
+  }
+
+  if (options.workspace) {
+    const applied = applyStartupWorkspace(options.workspace, MGVIEW_ROOT);
+    if (applied.error) {
+      logError(applied.error);
+      process.exit(1);
+    }
+    logInfo('Workspace: ' + applied.workspaceRoot);
+  }
+
   new HttpServer({
     GET: createServlet(StaticServlet),
     HEAD: createServlet(StaticServlet),
     POST: createServlet(StaticServlet),
     PUT: createServlet(StaticServlet),
-  }).start(Number(argv[2]) || DEFAULT_PORT);
+  }).start(options.port);
 }
 
 function escapeHtml(value) {
@@ -38,6 +70,18 @@ function createServlet(Class) {
   return servlet.handleRequest.bind(servlet);
 }
 
+function timestampedMessage(message) {
+  return '[' + new Date().toISOString() + '] ' + message;
+}
+
+function logInfo(message) {
+  console.log(timestampedMessage(message));
+}
+
+function logError(message) {
+  console.error(timestampedMessage(message));
+}
+
 function HttpServer(handlers) {
   this.handlers = handlers;
   this.server = http.createServer(this.handleRequest_.bind(this));
@@ -47,11 +91,11 @@ HttpServer.prototype.start = function(port) {
   const self = this;
   this.port = port;
   this.server.on('error', function(error) {
-    console.error('Failed to start MGView server on port ' + self.port + ':');
-    console.error(error.message);
+    logError('Failed to start MGView server on port ' + self.port + ':');
+    logError(error.message);
   });
   this.server.listen(port, function() {
-    console.log('Http Server running at http://localhost:' + port + '/');
+    logInfo('Http Server running at http://localhost:' + port + '/');
   });
 };
 
@@ -64,7 +108,7 @@ HttpServer.prototype.handleRequest_ = function(req, res) {
   if (req.headers['user-agent']) {
     logEntry += ' ' + req.headers['user-agent'];
   }
-  console.log(logEntry);
+  logInfo(logEntry);
 
   req.url = this.parseUrl_(req.url);
 
@@ -78,7 +122,36 @@ HttpServer.prototype.handleRequest_ = function(req, res) {
   handler.call(this, req, res);
 };
 
-function StaticServlet() {}
+function StaticServlet() {
+  this.reloadWorkspaceRoots();
+}
+
+StaticServlet.prototype.syncWorkspaceRootsFromConfig_ = function() {
+  const config = readWorkspaceConfig(MGVIEW_ROOT);
+  const roots = createWorkspaceRoots(MGVIEW_ROOT, config.workspaceRoot);
+  this.appRoot = roots.appRoot;
+  this.workspaceRoot = roots.workspaceRoot;
+  this.defaultWorkspaceRoot = roots.defaultWorkspaceRoot;
+};
+
+StaticServlet.prototype.persistWorkspaceRoot_ = function(absoluteWorkspaceRoot) {
+  const written = writeWorkspaceConfig(absoluteWorkspaceRoot, this.appRoot);
+  this.workspaceRoot = written.workspaceRoot;
+  this.defaultWorkspaceRoot = getDefaultWorkspaceRoot(this.appRoot);
+};
+
+StaticServlet.prototype.reloadWorkspaceRoots = function() {
+  this.syncWorkspaceRootsFromConfig_();
+};
+
+StaticServlet.prototype.getWorkspaceInfo_ = function() {
+  return {
+    workspaceRoot: this.workspaceRoot,
+    appRoot: this.appRoot,
+    defaultWorkspaceRoot: this.defaultWorkspaceRoot,
+    configPath: workspaceRoots.getConfigPath(),
+  };
+};
 
 StaticServlet.MimeMap = {
   txt: 'text/plain; charset=utf-8',
@@ -96,6 +169,18 @@ StaticServlet.MimeMap = {
   stl: 'model/stl',
 };
 
+StaticServlet.prototype.getLegacyMountRedirect_ = function(pathname) {
+  if (pathname === '/MGView' || pathname.indexOf('/MGView/') === 0) {
+    return '/mgview' + pathname.substring('/MGView'.length);
+  }
+
+  if (pathname === '/legacy' || pathname.indexOf('/legacy/') === 0) {
+    return '/mgview' + pathname;
+  }
+
+  return null;
+};
+
 StaticServlet.prototype.handleRequest = function(req, res) {
   const pathname = decodeURIComponent(req.url.pathname);
   const normalizedPathname = pathname.replace(/\/{2,}/g, '/');
@@ -104,16 +189,19 @@ StaticServlet.prototype.handleRequest = function(req, res) {
     return this.sendRedirect_(req, res, normalizedPathname + req.url.search);
   }
 
+  const legacyMountRedirect = this.getLegacyMountRedirect_(normalizedPathname);
+  if (legacyMountRedirect) {
+    return this.sendRedirect_(req, res, legacyMountRedirect + req.url.search);
+  }
+
   if (normalizedPathname.indexOf(API_PREFIX + '/') === 0) {
     return this.handleApiRequest_(req, res, normalizedPathname);
   }
 
-  if (
-    normalizedPathname === '/mgview' ||
-    normalizedPathname === '/mgview/' ||
-    normalizedPathname === '/mgview/simple' ||
-    normalizedPathname === '/mgview/simple/'
-  ) {
+  if (normalizedPathname === '/mgview') {
+    return this.sendRedirect_(req, res, '/mgview/' + req.url.search);
+  }
+  if (normalizedPathname === '/mgview/') {
     return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
 
@@ -143,6 +231,16 @@ StaticServlet.prototype.handleRequest = function(req, res) {
 };
 
 StaticServlet.prototype.handleApiRequest_ = function(req, res, pathname) {
+  this.syncWorkspaceRootsFromConfig_();
+
+  if (pathname === API_PREFIX + '/workspace') {
+    if (req.method === 'GET') {
+      return this.sendJson_(res, 200, this.getWorkspaceInfo_());
+    }
+    if (req.method === 'POST') {
+      return this.handlePostWorkspaceApi_(req, res);
+    }
+  }
   if (pathname === API_PREFIX + '/list' && req.method === 'GET') {
     return this.handleListApi_(req, res);
   }
@@ -155,19 +253,55 @@ StaticServlet.prototype.handleApiRequest_ = function(req, res, pathname) {
   if (pathname === API_PREFIX + '/file' && req.method === 'POST') {
     return this.handlePostFileApi_(req, res);
   }
+  if (pathname === API_PREFIX + '/mkdir' && req.method === 'POST') {
+    return this.handlePostMkdirApi_(req, res);
+  }
 
   this.sendJson_(res, 404, {
     error: 'Not found',
   });
 };
 
+StaticServlet.prototype.handlePostWorkspaceApi_ = function(req, res) {
+  const servlet = this;
+
+  servlet.readRequestBody_(req, (bodyError, body) => {
+    if (bodyError) {
+      return servlet.sendJson_(res, 500, { error: 'Could not read request body.' });
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(body);
+    } catch (parseError) {
+      return servlet.sendJson_(res, 400, { error: 'Invalid JSON body.' });
+    }
+
+    const nextWorkspaceRoot = parsed && parsed.workspaceRoot;
+    const prepared = prepareWorkspaceRoot(nextWorkspaceRoot, servlet.appRoot);
+    if (prepared.error) {
+      const status = prepared.error === 'Workspace directory not found.' ? 404 : 400;
+      return servlet.sendJson_(res, status, { error: prepared.error });
+    }
+
+    try {
+      servlet.persistWorkspaceRoot_(prepared.workspaceRoot);
+    } catch (writeError) {
+      return servlet.sendJson_(res, 500, { error: 'Could not save workspace config.' });
+    }
+
+    servlet.sendJson_(res, 200, servlet.getWorkspaceInfo_());
+  });
+};
+
 StaticServlet.prototype.handlePostFileApi_ = function(req, res) {
   const requestedPath = req.url.searchParams.get('path');
+  const apiRoot = req.url.searchParams.get('root') || 'workspace';
   if (!requestedPath) {
     return this.sendJson_(res, 400, { error: 'Missing path.' });
   }
 
-  const filePath = this.resolveApiPath_(requestedPath);
+  const filePath = this.resolveApiPath_(requestedPath, { root: apiRoot });
   if (!filePath) {
     return this.sendJson_(res, 403, { error: 'Forbidden path.' });
   }
@@ -219,7 +353,7 @@ StaticServlet.prototype.handlePostFileApi_ = function(req, res) {
 
           this.sendJson_(res, 201, {
             ok: true,
-            path: this.normalizeRelativePath_(filePath),
+            path: this.normalizeRelativePath_(filePath, apiRoot),
           });
         });
       });
@@ -227,10 +361,52 @@ StaticServlet.prototype.handlePostFileApi_ = function(req, res) {
   });
 };
 
+StaticServlet.prototype.handlePostMkdirApi_ = function(req, res) {
+  const requestedPath = req.url.searchParams.get('path');
+  const apiRoot = req.url.searchParams.get('root') || 'workspace';
+  if (!requestedPath) {
+    return this.sendJson_(res, 400, { error: 'Missing path.' });
+  }
+  if (apiRoot !== 'workspace') {
+    return this.sendJson_(res, 403, { error: 'Forbidden path.' });
+  }
+
+  const directoryPath = this.resolveApiPath_(requestedPath, { root: apiRoot });
+  if (!directoryPath) {
+    return this.sendJson_(res, 403, { error: 'Forbidden path.' });
+  }
+
+  const parentDirectory = path.dirname(directoryPath);
+  fs.stat(parentDirectory, (parentError, parentStat) => {
+    if (parentError) {
+      return this.sendJson_(res, 404, { error: 'Parent directory not found.' });
+    }
+    if (!parentStat.isDirectory()) {
+      return this.sendJson_(res, 400, { error: 'Parent path is not a directory.' });
+    }
+
+    fs.mkdir(directoryPath, { recursive: false }, (mkdirError) => {
+      if (mkdirError) {
+        if (mkdirError.code === 'EEXIST') {
+          return this.sendJson_(res, 409, { error: 'Folder already exists.' });
+        }
+        return this.sendJson_(res, 500, { error: 'Could not create folder.' });
+      }
+
+      this.sendJson_(res, 201, {
+        ok: true,
+        path: this.normalizeRelativePath_(directoryPath, apiRoot),
+      });
+    });
+  });
+};
+
 StaticServlet.prototype.handleListApi_ = function(req, res) {
   const requestedPath = req.url.searchParams.get('path') || '.';
+  const apiRoot = req.url.searchParams.get('root') || 'workspace';
   const directoryPath = this.resolveApiPath_(requestedPath, {
     allowRoot: true,
+    root: apiRoot,
   });
 
   if (!directoryPath) {
@@ -250,12 +426,13 @@ StaticServlet.prototype.handleListApi_ = function(req, res) {
         return this.sendJson_(res, 500, { error: 'Could not read directory.' });
       }
 
-      const normalizedPath = this.normalizeRelativePath_(directoryPath);
+      const listingPath = normalizeLogicalPath(requestedPath) || '.';
+      const listingBase = listingPath === '.' ? '' : listingPath;
       const visibleEntries = entries
         .filter((entry) => entry.name.charAt(0) !== '.')
         .map((entry) => ({
           name: entry.name,
-          path: path.posix.join(normalizedPath, entry.name),
+          path: listingBase ? path.posix.join(listingBase, entry.name) : entry.name,
           type: entry.isDirectory() ? 'directory' : 'file',
         }))
         .sort((left, right) => {
@@ -266,8 +443,8 @@ StaticServlet.prototype.handleListApi_ = function(req, res) {
         });
 
       this.sendJson_(res, 200, {
-        path: normalizedPath || '.',
-        parentPath: normalizedPath ? path.posix.dirname(normalizedPath) || '.' : null,
+        path: listingPath,
+        parentPath: listingPath === '.' ? null : path.posix.dirname(listingPath) || '.',
         entries: visibleEntries,
       });
     });
@@ -276,11 +453,12 @@ StaticServlet.prototype.handleListApi_ = function(req, res) {
 
 StaticServlet.prototype.handleGetFileApi_ = function(req, res) {
   const requestedPath = req.url.searchParams.get('path');
+  const apiRoot = req.url.searchParams.get('root') || 'workspace';
   if (!requestedPath) {
     return this.sendJson_(res, 400, { error: 'Missing path.' });
   }
 
-  const filePath = this.resolveApiPath_(requestedPath);
+  const filePath = this.resolveApiPath_(requestedPath, { root: apiRoot });
   if (!filePath) {
     return this.sendJson_(res, 403, { error: 'Forbidden path.' });
   }
@@ -298,11 +476,12 @@ StaticServlet.prototype.handleGetFileApi_ = function(req, res) {
 
 StaticServlet.prototype.handlePutFileApi_ = function(req, res) {
   const requestedPath = req.url.searchParams.get('path');
+  const apiRoot = req.url.searchParams.get('root') || 'workspace';
   if (!requestedPath) {
     return this.sendJson_(res, 400, { error: 'Missing path.' });
   }
 
-  const filePath = this.resolveApiPath_(requestedPath);
+  const filePath = this.resolveApiPath_(requestedPath, { root: apiRoot });
   if (!filePath) {
     return this.sendJson_(res, 403, { error: 'Forbidden path.' });
   }
@@ -339,7 +518,7 @@ StaticServlet.prototype.handlePutFileApi_ = function(req, res) {
 
         this.sendJson_(res, 200, {
           ok: true,
-          path: this.normalizeRelativePath_(filePath),
+          path: this.normalizeRelativePath_(filePath, apiRoot),
         });
       });
     });
@@ -360,7 +539,12 @@ StaticServlet.prototype.readRequestBody_ = function(req, callback) {
 };
 
 StaticServlet.prototype.resolveRequestPath_ = function(pathname) {
-  return this.resolveApiPath_(pathname, {
+  if (pathname.indexOf('/mgview/') !== 0) {
+    return null;
+  }
+
+  const relativeUrlPath = pathname.slice('/mgview/'.length);
+  return this.resolveApiPath_(relativeUrlPath, {
     fromUrlPath: true,
   });
 };
@@ -368,43 +552,38 @@ StaticServlet.prototype.resolveRequestPath_ = function(pathname) {
 StaticServlet.prototype.resolveApiPath_ = function(requestedPath, options) {
   const settings = options || {};
   const normalizedInput = settings.fromUrlPath
-    ? requestedPath
+    ? String(requestedPath || '')
     : String(requestedPath || '').replace(/\\/g, '/');
-  const relativePath = normalizedInput.replace(/^\/+/, '');
-  const resolvedPath = path.resolve(PROJECT_ROOT, relativePath || '.');
 
-  if (!isWithinRoot(resolvedPath)) {
+  if (settings.fromUrlPath) {
+    return resolveUrlAssetPath(normalizedInput, this.appRoot, this.workspaceRoot, settings);
+  }
+
+  const apiRoot = settings.root || 'workspace';
+  if (!parseApiRoot(apiRoot)) {
     return null;
   }
 
-  if (!settings.allowRoot && resolvedPath === PROJECT_ROOT && !settings.fromUrlPath) {
-    return null;
-  }
-
-  const relativeSegments = path.relative(PROJECT_ROOT, resolvedPath).split(path.sep);
-  if (relativeSegments.some((segment) => segment && segment.charAt(0) === '.')) {
-    return null;
-  }
-
-  return resolvedPath;
+  return resolveLogicalPathForRoot(apiRoot, normalizedInput, this.appRoot, this.workspaceRoot, settings);
 };
 
-StaticServlet.prototype.normalizeRelativePath_ = function(filePath) {
-  const relativePath = path.relative(PROJECT_ROOT, filePath).split(path.sep).join('/');
-  return relativePath === '' ? '' : relativePath;
+StaticServlet.prototype.normalizeRelativePath_ = function(filePath, apiRoot) {
+  const relativePath = toLogicalPathForRoot(filePath, apiRoot || 'workspace', this.appRoot, this.workspaceRoot);
+  return relativePath === null ? '' : relativePath;
 };
 
 StaticServlet.prototype.sendJson_ = function(res, statusCode, value) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
   });
   res.end(JSON.stringify(value, null, 2) + '\n');
 };
 
 StaticServlet.prototype.sendError_ = function(req, res, error) {
   if (res.headersSent) {
-    console.log('Stream error after headers sent');
-    console.log(util.inspect(error));
+    logInfo('Stream error after headers sent');
+    logInfo(util.inspect(error));
     if (!res.destroyed) {
       res.end();
     }
@@ -419,8 +598,8 @@ StaticServlet.prototype.sendError_ = function(req, res, error) {
   res.write('<h1>Internal Server Error</h1>');
   res.write('<pre>' + escapeHtml(util.inspect(error)) + '</pre>');
   res.end();
-  console.log('500 Internal Server Error');
-  console.log(util.inspect(error));
+  logInfo('500 Internal Server Error');
+  logInfo(util.inspect(error));
 };
 
 StaticServlet.prototype.sendMissing_ = function(req, res, filePath) {
@@ -437,7 +616,7 @@ StaticServlet.prototype.sendMissing_ = function(req, res, filePath) {
       ' was not found on this server.</p>'
   );
   res.end();
-  console.log('404 Not Found: ' + relativePath);
+  logInfo('404 Not Found: ' + relativePath);
 };
 
 StaticServlet.prototype.sendForbidden_ = function(req, res, filePath) {
@@ -454,7 +633,7 @@ StaticServlet.prototype.sendForbidden_ = function(req, res, filePath) {
       ' on this server.</p>'
   );
   res.end();
-  console.log('403 Forbidden: ' + relativePath);
+  logInfo('403 Forbidden: ' + relativePath);
 };
 
 StaticServlet.prototype.sendRedirect_ = function(req, res, redirectUrl) {
@@ -467,7 +646,7 @@ StaticServlet.prototype.sendRedirect_ = function(req, res, redirectUrl) {
   res.write('<h1>Moved Permanently</h1>');
   res.write('<p>The document has moved <a href="' + redirectUrl + '">here</a>.</p>');
   res.end();
-  console.log('301 Moved Permanently: ' + redirectUrl);
+  logInfo('301 Moved Permanently: ' + redirectUrl);
 };
 
 StaticServlet.prototype.sendFile_ = function(req, res, filePath) {

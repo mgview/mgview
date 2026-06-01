@@ -2,7 +2,11 @@
 
 This repo is **source-only**. Built output lives under `build/` (gitignored) and is produced on demand.
 
-Modern app handoff and status: [mgview-in-place-modernization.md](mgview-in-place-modernization.md).
+Handoff docs:
+
+- [mgview-in-place-modernization.md](mgview-in-place-modernization.md) — product status, run commands, gaps, **start here for new agents**
+- [mgview-ui-stack.md](mgview-ui-stack.md) — UI stack (Tailwind, shadcn, themes)
+- [mgview-scene-sources-split.md](mgview-scene-sources-split.md) — scene URLs (`?sample=` / `?scene=`), API `root=`, Samples vs Load (implemented)
 
 ## Three outputs
 
@@ -50,6 +54,15 @@ npm test
 npm run build          # → frontend/dist/ (required before RunMGViewMac)
 cd ..
 ./RunMGViewMac         # http://localhost:8000/mgview/
+./RunMGViewMac --port 9000 --no-open   # custom port, skip browser launch
+./RunMGViewMac --workspace ~/simulations   # workspace folder (saved in ~/.mgview/config.json)
+```
+
+On Windows, double-click `RunMGViewWindows.bat` or run it from Command Prompt (same flags; `bin\RunVisualizer.bat` is the underlying script):
+
+```bat
+RunMGViewWindows.bat --port 9000 --no-open
+RunMGViewWindows.bat --workspace C:\simulations
 ```
 
 `frontend/dist/` is gitignored. Always run `npm run build` after pulling frontend changes.
@@ -94,10 +107,10 @@ After switching to Actions, you can delete the old `gh-pages` branch once the fi
 cd frontend
 npm test
 npm run build:release
-# → build/release/mgview-0.2.10.zip
+# → build/release/mgview-0.3.0.zip
 ```
 
-Version is read from `bin/VERSION`. Override with `MGVIEW_RELEASE_VERSION=0.3.0 npm run build:release`.
+Version is read from [`frontend/package.json`](/Users/adam/code/mgview_project/mgview/frontend/package.json). The build also regenerates `bin/VERSION` for the launcher banner. Override with `MGVIEW_RELEASE_VERSION=0.3.1 npm run build:release`.
 
 ### Attach to a GitHub Release
 
@@ -115,11 +128,11 @@ Or run **Actions → Release zip → Run workflow** manually.
 | Variable | Server build | GH Pages | Workspace static |
 |----------|--------------|----------|------------------|
 | `VITE_MGVIEW_STATIC` | — | `true` | `true` |
-| `VITE_MGVIEW_APP_DIR` | `mgview` (default) | `` (empty) | `mgview` |
-| `VITE_MGVIEW_BASE` | `./` | `/mgview/` | `/mgview/` |
+| `VITE_MGVIEW_APP_DIR` | `` (empty) | `` (empty) | `mgview` |
+| `VITE_MGVIEW_BASE` | `/mgview/` | `/mgview/` | `/mgview/` |
 | `VITE_MGVIEW_PUBLIC_BASE` | `/` | `/mgview/` | `/` |
 
-Scene paths: `mgview/samples/…` locally, `samples/…` on GitHub Pages.
+Scene URLs: `?sample=particle_pendulum/particle_pendulum.json` (bundled samples) or `?scene=my_sim/foo.json` (workspace). List/file APIs take `root=workspace|sample|app` and `path=` relative to that root (e.g. `GET /mgview/api/list?root=workspace&path=.`). Workspace API: `GET`/`POST` `/mgview/api/workspace` (config `~/.mgview/config.json`; in-memory roots sync on every API request after POST). Static HTTP: `/mgview/samples/…`, `/mgview/assets/…`. Local app URL: `http://localhost:8000/mgview/` (server redirects `/mgview` → `/mgview/`).
 
 ## One-time cleanup (source-only repo)
 

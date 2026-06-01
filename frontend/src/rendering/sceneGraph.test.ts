@@ -28,6 +28,8 @@ test('renderable scene includes line span renderables', () => {
       spans: [
         {
           name: 'cable1.wire1',
+          spanName: 'cable1',
+          visualName: 'wire1',
           kind: 'line',
           visible: true,
           material: { name: 'BLACK' },
@@ -39,10 +41,16 @@ test('renderable scene includes line span renderables', () => {
       ],
     },
     null,
-    'mgview/samples/example.json'
+    'samples/example.json'
   );
 
   assert.equal(renderRoot.children.length, 1);
-  assert.equal(renderRoot.children[0].type, 'Line');
-  assert.equal(renderRoot.children[0].userData.kind, 'span-line');
+  assert.equal(renderRoot.children[0].type, 'Group');
+  assert.deepEqual(renderRoot.children[0].userData.renderEntityRef, {
+    kind: 'span-visual',
+    spanName: 'cable1',
+    visualName: 'wire1',
+  });
+  assert.equal(renderRoot.children[0].children[0]?.type, 'Line');
+  assert.equal(renderRoot.children[0].children[0]?.userData.kind, 'span-line');
 });

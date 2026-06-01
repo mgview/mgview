@@ -10,6 +10,7 @@ import { cp, mkdir, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import {
   distServerDir,
+  frontendDir,
   releaseDir,
   repoRoot,
   runtimeAssetsDir,
@@ -22,19 +23,20 @@ const releaseFiles = [
   'bin',
   'RunMGViewMac',
   'RunMGViewLinux',
-  'RunMGViewWindows.lnk',
+  'RunMGViewWindows.bat',
   'README.md',
   'LICENSE',
 ];
 
 async function readVersion() {
-  const versionFile = path.join(repoRoot, 'bin', 'VERSION');
-  const raw = await readFile(versionFile, 'utf8');
-  const match = raw.match(/(\d+\.\d+\.\d+)/);
-  if (!match) {
-    throw new Error(`Could not parse semver from ${versionFile}`);
+  const packageJsonPath = path.join(frontendDir, 'package.json');
+  const raw = await readFile(packageJsonPath, 'utf8');
+  const packageJson = JSON.parse(raw);
+  const version = String(packageJson.version ?? '').trim();
+  if (!version) {
+    throw new Error(`Could not read version from ${packageJsonPath}`);
   }
-  return match[1];
+  return version;
 }
 
 async function zipDirectory(stagingRoot, zipPath) {
@@ -66,14 +68,7 @@ async function main() {
 
   for (const entry of releaseFiles) {
     const source = path.join(repoRoot, entry);
-    try {
-      await cp(source, path.join(stagingDir, entry), { recursive: true });
-    } catch (error) {
-      if (entry.startsWith('RunMGView') && entry.endsWith('.lnk')) {
-        continue;
-      }
-      throw error;
-    }
+    await cp(source, path.join(stagingDir, entry), { recursive: true });
   }
 
   await copyTree(path.join(repoRoot, 'samples'), path.join(stagingDir, 'samples'), {

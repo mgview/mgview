@@ -1,4 +1,5 @@
 import type {
+  TextRenderMode,
   NormalizedSceneConfig,
   RenderSpan,
   RenderVisual,
@@ -9,6 +10,7 @@ import type {
   TimelineFrame,
   Vector3Like,
 } from './types.ts';
+import { DEFAULT_TEXT_MATERIAL } from './materialPresets.ts';
 import { hasRenderableSimulationAnchor } from './simulationChannels.ts';
 
 export interface SceneObjectSnapshot {
@@ -55,6 +57,14 @@ function normalizeMaterialDefinition(input: SceneMaterial | undefined) {
   return material(input?.name ?? 'SILVER', input?.color);
 }
 
+function normalizeTextMaterialDefinition(input: SceneMaterial | undefined) {
+  if (input === undefined) {
+    return material(DEFAULT_TEXT_MATERIAL.name);
+  }
+
+  return normalizeMaterialDefinition(input);
+}
+
 function fromTuple(value: [number, number, number] | undefined, fallback: Vector3Like): Vector3Like {
   return vector(value?.[0] ?? fallback.x, value?.[1] ?? fallback.y, value?.[2] ?? fallback.z);
 }
@@ -92,26 +102,19 @@ function multiplyMatrixVector(matrix: number[] | null, value: Vector3Like): Vect
   );
 }
 
-function readPosition(
+function readObjectPosition(
   values: Record<string, number>,
+  sceneOrigin: string,
   objectName: string
 ): Vector3Like | null {
-  const candidates = [objectName, `${objectName}o`, `${objectName}cm`].map(escapeForRegex);
-  const x = candidates
-    .map((candidate) => readByPattern(values, new RegExp(`^P_[^_]+_${candidate}\\[1\\]$`)))
-    .find((value) => typeof value === 'number');
-  const y = candidates
-    .map((candidate) => readByPattern(values, new RegExp(`^P_[^_]+_${candidate}\\[2\\]$`)))
-    .find((value) => typeof value === 'number');
-  const z = candidates
-    .map((candidate) => readByPattern(values, new RegExp(`^P_[^_]+_${candidate}\\[3\\]$`)))
-    .find((value) => typeof value === 'number');
-
-  if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') {
-    return null;
+  for (const candidate of [objectName, `${objectName}o`, `${objectName}cm`]) {
+    const position = readPointPosition(values, sceneOrigin, candidate);
+    if (position) {
+      return position;
+    }
   }
 
-  return vector(x, y, z);
+  return null;
 }
 
 function readRotationMatrix(
@@ -138,6 +141,10 @@ function readRotationMatrix(
   }
 
   return matrix as number[];
+}
+
+export function normalizeTextRenderMode(value: unknown): TextRenderMode {
+  return value === '3d' ? '3d' : '2d';
 }
 
 function normalizeRenderVisual(visualName: string, visual: SceneVisual): RenderVisual | null {
@@ -224,6 +231,8 @@ function normalizeRenderVisual(visualName: string, visual: SceneVisual): RenderV
         type: 'text',
         text: typeof visual.text === 'string' ? visual.text : '',
         scale: visual.scale ?? 1,
+        textMode: normalizeTextRenderMode(visual.text_mode),
+        material: normalizeTextMaterialDefinition(visual.material),
       };
     case 'basis':
       return {
@@ -241,6 +250,11 @@ function readPointPosition(
   sceneOrigin: string,
   pointName: string
 ): Vector3Like | null {
+  // MotionGenesis never exports P_<origin>_<origin>; the scene origin is always (0,0,0).
+  if (pointName === sceneOrigin) {
+    return vector(0, 0, 0);
+  }
+
   const escapedPointName = escapeForRegex(pointName);
   const x = readByPattern(values, new RegExp(`^P_${escapeForRegex(sceneOrigin)}_${escapedPointName}\\[1\\]$`));
   const y = readByPattern(values, new RegExp(`^P_${escapeForRegex(sceneOrigin)}_${escapedPointName}\\[2\\]$`));
@@ -271,6 +285,8 @@ function normalizeSpanVisual(
 
   const base = {
     name: `${spanName}.${visualName}`,
+    spanName,
+    visualName,
     visible: visual.visible !== false,
     start,
     end,
@@ -351,7 +367,7 @@ function evaluateObjects(
   const snapshots: Record<string, SceneObjectSnapshot> = {};
 
   for (const [objectName, sceneObject] of Object.entries(scene.objects)) {
-    const position = readPosition(values, objectName);
+    const position = readObjectPosition(values, scene.sceneOrigin, objectName);
     const rotationMatrix = readRotationMatrix(values, sceneObject.rotationFrame ?? objectName);
     const hasSimulationData =
       position !== null || rotationMatrix !== null || hasRenderableSimulationAnchor(scene, objectName, sceneObject, []);

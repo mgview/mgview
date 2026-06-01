@@ -10,9 +10,22 @@ import {
 } from '../api/localFiles.ts';
 import { expandSimulationFiles } from '../core/expandSimulationFiles.ts';
 import { getBasePath } from '../core/pathUtils.ts';
+import {
+  clearSceneRefFromUrl,
+  createWorkspaceRef,
+  formatSceneRef,
+  getApiRoot,
+  getSceneBasePath,
+  resolveApiFileRequest,
+  syncSceneRefToUrl,
+  workspacePathFromInput,
+  type ApiRoot,
+  type SceneRef,
+} from '../core/sceneRef.ts';
 import { parseSimulationText } from '../core/parseSimulationText.ts';
 import { createSceneDocument } from '../core/sceneDocument.ts';
 import { buildObjectInspections, collectSceneDiagnostics } from '../core/sceneInspector.ts';
+import { inferCanonicalNewtonianFrame, inferCanonicalSceneOrigin } from '../core/simulationChannels.ts';
 import { buildTimeline } from '../core/timeline.ts';
 import { useUndoRedo } from './useUndoRedo.ts';
 import type {
@@ -27,6 +40,7 @@ import type {
 
 export interface LoadedSceneData {
   rawScene: SceneConfig;
+  sceneRef: SceneRef;
   scenePath: string;
   scene: NormalizedSceneConfig;
   simulationFiles: string[];
@@ -57,6 +71,10 @@ export interface WorkspaceNotifications {
   showError: (message: string) => void;
 }
 
+function isValidObjectName(name: string): boolean {
+  return name.trim().length > 0;
+}
+
 function cloneScene(scene: NormalizedSceneConfig): NormalizedSceneConfig {
   return structuredClone(scene);
 }
@@ -84,8 +102,6 @@ export function createNewSceneTemplate(scenePath: string): SceneConfig {
   return {
     name: sceneName,
     simulationData: [],
-    newtonianFrame: 'N',
-    sceneOrigin: 'No',
     showAxes: false,
     workspaceSize: 1,
     cameraParentFrame: 'N',
@@ -104,8 +120,9 @@ export function createSavableScene(
 
   nextScene.name = draftScene.name;
   nextScene.simulationData = [...draftScene.simulationData];
-  nextScene.newtonianFrame = draftScene.newtonianFrame;
-  nextScene.sceneOrigin = draftScene.sceneOrigin;
+  nextScene.layout = structuredClone(draftScene.layout);
+  delete nextScene.newtonianFrame;
+  delete nextScene.sceneOrigin;
   nextScene.backgroundColor = draftScene.backgroundColor;
   nextScene.showAxes = draftScene.showAxes;
   nextScene.workspaceSize = draftScene.workspaceSize;
@@ -120,9 +137,14 @@ export function createSavableScene(
     ? ([...draftScene.cameraFocus] as [number, number, number])
     : undefined;
   nextScene.speedFactor = draftScene.speedFactor;
+  nextScene.plots = structuredClone(draftScene.plots);
 
   nextScene.objects = {};
   for (const [objectName, draftObject] of Object.entries(draftScene.objects)) {
+    if (!isValidObjectName(objectName)) {
+      continue;
+    }
+
     const rawObject = rawScene.objects?.[objectName];
     nextScene.objects[objectName] = {
       ...(rawObject ? structuredClone(rawObject) : {}),
@@ -134,6 +156,10 @@ export function createSavableScene(
 
   if (rawScene.objects) {
     for (const [objectName, rawObject] of Object.entries(rawScene.objects)) {
+      if (!isValidObjectName(objectName)) {
+        continue;
+      }
+
       if (nextScene.objects[objectName]) {
         continue;
       }
@@ -152,9 +178,9 @@ export function createSavableScene(
   return nextScene;
 }
 
-async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
-  const rawScene = await loadSceneJson(scenePath);
-  const simulationState = await loadSimulationWorkspaceState(rawScene, scenePath);
+async function loadSceneData(sceneRef: SceneRef): Promise<LoadedSceneData> {
+  const rawScene = await loadSceneJson(sceneRef);
+  const simulationState = await loadSimulationWorkspaceState(rawScene, sceneRef);
   const channelNames = simulationState.channelNames;
   const scene = createSceneDocument(rawScene, channelNames);
   const diagnostics = collectSceneDiagnostics(
@@ -162,13 +188,15 @@ async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
     scene,
     simulationState.simulationFiles,
     channelNames,
+    simulationState.parsedSimulationFiles,
     simulationState.fileErrors
   );
   const objectInspections = buildObjectInspections(rawScene, scene, channelNames);
 
   return {
     rawScene,
-    scenePath,
+    sceneRef,
+    scenePath: formatSceneRef(sceneRef),
     scene,
     simulationFiles: simulationState.simulationFiles,
     timeline: simulationState.timeline,
@@ -182,12 +210,18 @@ async function loadSceneData(scenePath: string): Promise<LoadedSceneData> {
 
 async function loadSimulationWorkspaceState(
   scene: SceneConfig,
-  scenePath: string
+  sceneRef: SceneRef
 ): Promise<SimulationWorkspaceState> {
-  const basePath = getBasePath(scenePath);
+  const basePath = getSceneBasePath(sceneRef);
   const simulationFiles = expandSimulationFiles(scene.simulationData ?? [], basePath);
   const tableResults = await Promise.allSettled(
-    simulationFiles.map(async (filePath) => parseSimulationText(await loadTextFile(filePath), filePath))
+    simulationFiles.map(async (filePath) => {
+      const request = resolveApiFileRequest(filePath);
+      return parseSimulationText(
+        await loadTextFile(request.path, request.root),
+        filePath
+      );
+    })
   );
   const tables: SimulationTable[] = [];
   const parsedSimulationFiles: ParsedSimulationFile[] = [];
@@ -199,6 +233,8 @@ async function loadSimulationWorkspaceState(
       parsedSimulationFiles.push({
         filePath: simulationFiles[index],
         channelNames: result.value.channelNames,
+        sceneOrigin: inferCanonicalSceneOrigin(result.value.channelNames),
+        newtonianFrame: inferCanonicalNewtonianFrame(result.value.channelNames),
       });
       continue;
     }
@@ -216,8 +252,10 @@ async function loadSimulationWorkspaceState(
   };
 }
 
-export function useSceneWorkspace(initialScenePath: string, notifications?: WorkspaceNotifications) {
-  const [sceneInput, setSceneInput] = useState(initialScenePath);
+export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: WorkspaceNotifications) {
+  const [sceneInput, setSceneInput] = useState(
+    initialSceneRef.source === 'workspace' ? initialSceneRef.path : ''
+  );
   const [loaded, setLoaded] = useState<LoadedSceneData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -261,8 +299,23 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
       return loaded?.diagnostics ?? [];
     }
 
-    return collectSceneDiagnostics(authoredScene, activeScene, simulationFiles, channelNames, fileErrors);
-  }, [activeScene, authoredScene, channelNames, fileErrors, loaded?.diagnostics, simulationFiles]);
+    return collectSceneDiagnostics(
+      authoredScene,
+      activeScene,
+      simulationFiles,
+      channelNames,
+      parsedSimulationFiles,
+      fileErrors
+    );
+  }, [
+    activeScene,
+    authoredScene,
+    channelNames,
+    fileErrors,
+    loaded?.diagnostics,
+    parsedSimulationFiles,
+    simulationFiles,
+  ]);
   const objectInspections = useMemo(() => {
     if (!authoredScene || !activeScene) {
       return loaded?.objectInspections ?? [];
@@ -288,13 +341,13 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
     notifications?.showSuccess(message);
   };
 
-  const confirmDiscardLocalEdits = (nextScenePath: string, actionLabel: string): boolean => {
+  const confirmDiscardLocalEdits = (nextSceneLabel: string, actionLabel: string): boolean => {
     if (!loaded || !draftScene || !hasLocalEdits) {
       return true;
     }
 
     return window.confirm(
-      `${actionLabel} will discard unsaved local edits for ${loaded.scenePath}.\n\nContinue to ${nextScenePath}?`
+      `${actionLabel} will discard unsaved local edits for ${loaded.scenePath}.\n\nContinue to ${nextSceneLabel}?`
     );
   };
 
@@ -303,20 +356,32 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
     setSelectedVisualName(nextLoaded.objectInspections[0]?.visuals[0]?.name ?? null);
   };
 
-  const handleBrowse = async (nextPath: string) => {
+  const clearCurrentScene = () => {
+    setLoaded(null);
+    setSimulationState(null);
+    setSceneInput('');
+    resetDraftScene(null);
+    setSelectedObjectName(null);
+    setSelectedVisualName(null);
+    clearSceneRefFromUrl();
+  };
+
+  const handleBrowse = async (nextPath: string, root: ApiRoot = 'workspace') => {
     setBrowserLoading(true);
     setBrowserError(null);
+    setBrowserListing(null);
 
     try {
-      setBrowserListing(await listLocalFiles(nextPath));
+      setBrowserListing(await listLocalFiles(nextPath, root));
     } catch (browseError) {
       setBrowserError(browseError instanceof Error ? browseError.message : 'Unknown browse error');
+      setBrowserListing(null);
     } finally {
       setBrowserLoading(false);
     }
   };
 
-  const browseSceneInputDirectory = () => handleBrowse(getDirectoryPath(sceneInput));
+  const browseSceneInputDirectory = () => handleBrowse(getDirectoryPath(sceneInput), 'workspace');
   const simulationDataKey = useMemo(() => {
     if (!loaded || !draftScene) {
       return null;
@@ -334,23 +399,24 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
       parsedSimulationFiles: nextLoaded.parsedSimulationFiles,
       fileErrors: nextLoaded.fileErrors,
     });
-    setSceneInput(nextLoaded.scenePath);
+    setSceneInput(nextLoaded.sceneRef.source === 'workspace' ? nextLoaded.sceneRef.path : '');
     resetDraftScene(cloneScene(nextLoaded.scene));
     updateSelectionFromLoadedScene(nextLoaded);
-    const url = new URL(window.location.href);
-    url.searchParams.set('scene', nextLoaded.scenePath);
-    window.history.replaceState({}, '', url);
+    syncSceneRefToUrl(nextLoaded.sceneRef);
     if (successMessage) {
       reportSuccess(successMessage);
     }
-    void handleBrowse(getDirectoryPath(nextLoaded.scenePath));
+    void handleBrowse(
+      nextLoaded.sceneRef.source === 'workspace' ? getDirectoryPath(nextLoaded.sceneRef.path) : '.',
+      getApiRoot(nextLoaded.sceneRef)
+    );
   };
 
-  const handleLoad = async (scenePath: string, options?: LoadSceneOptions) => {
+  const handleLoad = async (sceneRef: SceneRef, options?: LoadSceneOptions) => {
     const settings = options ?? {};
     if (
       !settings.force &&
-      !confirmDiscardLocalEdits(scenePath, settings.actionLabel ?? 'Loading another scene')
+      !confirmDiscardLocalEdits(formatSceneRef(sceneRef), settings.actionLabel ?? 'Loading another scene')
     ) {
       return false;
     }
@@ -359,12 +425,62 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
     setError(null);
 
     try {
-      const nextLoaded = await loadSceneData(scenePath);
+      const nextLoaded = await loadSceneData(sceneRef);
       commitLoadedScene(nextLoaded, settings.successMessage);
       return true;
     } catch (loadError) {
       reportError(loadError instanceof Error ? loadError.message : 'Unknown load error');
       return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoadWorkspacePath = async (scenePath: string, options?: LoadSceneOptions) => {
+    const workspacePath = workspacePathFromInput(scenePath);
+    if (!workspacePath) {
+      reportError('Workspace scene paths cannot use samples/, assets/, or parent traversal.');
+      return false;
+    }
+
+    return handleLoad(createWorkspaceRef(workspacePath), options);
+  };
+
+  const confirmWorkspaceChange = async () => {
+    if (loaded?.sceneRef.source !== 'workspace') {
+      return true;
+    }
+
+    return confirmDiscardLocalEdits(loaded.scenePath, 'Changing workspace');
+  };
+
+  const handleWorkspaceChange = async (onNeedsSceneSelection?: () => void) => {
+    setError(null);
+
+    if (!loaded) {
+      await handleBrowse('.', 'workspace');
+      onNeedsSceneSelection?.();
+      return;
+    }
+
+    if (loaded.sceneRef.source === 'sample') {
+      await handleBrowse('.', 'workspace');
+      return;
+    }
+
+    const nextSceneRef = createWorkspaceRef(loaded.sceneRef.path);
+
+    setLoading(true);
+
+    try {
+      const nextLoaded = await loadSceneData(nextSceneRef);
+      commitLoadedScene(nextLoaded);
+    } catch (loadError) {
+      clearCurrentScene();
+      await handleBrowse('.', 'workspace');
+      const message = loadError instanceof Error ? loadError.message : 'Could not load scene in the new workspace';
+      reportError(`${message}. Choose a scene from the new workspace to continue.`);
+      onNeedsSceneSelection?.();
     } finally {
       setLoading(false);
     }
@@ -394,8 +510,9 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
     setError(null);
 
     try {
-      await createSceneJson(trimmedPath, createNewSceneTemplate(trimmedPath));
-      const nextLoaded = await loadSceneData(trimmedPath);
+      const sceneRef = createWorkspaceRef(trimmedPath);
+      await createSceneJson(sceneRef, createNewSceneTemplate(trimmedPath));
+      const nextLoaded = await loadSceneData(sceneRef);
       commitLoadedScene(nextLoaded, `Created ${trimmedPath}`);
       return true;
     } catch (createError) {
@@ -431,8 +548,9 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
     setError(null);
 
     try {
-      await createSceneJson(trimmedPath, createSavableScene(loaded.rawScene, draftScene));
-      const nextLoaded = await loadSceneData(trimmedPath);
+      const sceneRef = createWorkspaceRef(trimmedPath);
+      await createSceneJson(sceneRef, createSavableScene(loaded.rawScene, draftScene));
+      const nextLoaded = await loadSceneData(sceneRef);
       commitLoadedScene(nextLoaded, `Saved scene as ${trimmedPath}`);
       return true;
     } catch (saveError) {
@@ -452,8 +570,8 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
     setError(null);
 
     try {
-      await saveSceneJson(loaded.scenePath, createSavableScene(loaded.rawScene, draftScene));
-      const nextLoaded = await loadSceneData(loaded.scenePath);
+      await saveSceneJson(loaded.sceneRef, createSavableScene(loaded.rawScene, draftScene));
+      const nextLoaded = await loadSceneData(loaded.sceneRef);
       setLoaded(nextLoaded);
       setSimulationState({
         simulationFiles: nextLoaded.simulationFiles,
@@ -465,7 +583,7 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
       resetDraftScene(cloneScene(nextLoaded.scene));
       updateSelectionFromLoadedScene(nextLoaded);
       reportSuccess(`Saved changes to ${loaded.scenePath}`);
-      void handleBrowse(getDirectoryPath(loaded.scenePath));
+      void handleBrowse(getDirectoryPath(loaded.sceneRef.path), 'workspace');
     } catch (saveError) {
       reportError(saveError instanceof Error ? saveError.message : 'Unknown save error');
     } finally {
@@ -509,8 +627,8 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
   };
 
   useEffect(() => {
-    void handleLoad(initialScenePath, { force: true });
-  }, [initialScenePath]);
+    void handleLoad(initialSceneRef, { force: true });
+  }, [initialSceneRef.path, initialSceneRef.source]);
 
   useEffect(() => {
     void browseSceneInputDirectory();
@@ -524,7 +642,7 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
     let cancelled = false;
     setSimulationLoading(true);
 
-    void loadSimulationWorkspaceState(draftScene, loaded.scenePath)
+    void loadSimulationWorkspaceState(draftScene, loaded.sceneRef)
       .then((nextSimulationState) => {
         if (cancelled) {
           return;
@@ -543,7 +661,7 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
     return () => {
       cancelled = true;
     };
-  }, [draftScene, loaded?.scenePath, replaceDraftScene, simulationDataKey]);
+  }, [simulationDataKey, loaded?.scenePath, replaceDraftScene]);
 
   const handleUndo = () => undoDraftScene();
   const handleRedo = () => redoDraftScene();
@@ -559,6 +677,8 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
     handleBrowse,
     handleCreateScene,
     handleLoad,
+    handleLoadWorkspacePath,
+    handleWorkspaceChange,
     handleRevertDraft,
     handleSaveSceneAs,
     handleSaveScene,
@@ -576,6 +696,7 @@ export function useSceneWorkspace(initialScenePath: string, notifications?: Work
     canRedoDraftScene,
     canUndoDraftScene,
     sceneInput,
+    confirmWorkspaceChange,
     selectedObjectName,
     selectedVisualName,
     setError,

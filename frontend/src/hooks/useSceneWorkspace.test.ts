@@ -8,6 +8,11 @@ test('createSavableScene preserves inferred objects added through the draft scen
   const rawScene = {
     newtonianFrame: 'N',
     simulationData: ['demo.1'],
+    layout: {
+      showRenderer: false,
+      showPlots: true,
+      showEditorRail: false,
+    },
     objects: {
       N: { type: 'frame', visual: {} },
     },
@@ -26,8 +31,16 @@ test('createSavableScene preserves inferred objects added through the draft scen
 
   const savableScene = createSavableScene(rawScene, draftScene);
 
+  assert.deepEqual(savableScene.layout, {
+    showRenderer: false,
+    showPlots: true,
+    showEditorRail: false,
+    focusTarget: null,
+  });
   assert.equal(savableScene.objects?.Qo?.type, 'point');
   assert.deepEqual(savableScene.objects?.Qo?.visual?.marker, draftScene.objects.Qo.visual.marker);
+  assert.equal(savableScene.newtonianFrame, undefined);
+  assert.equal(savableScene.sceneOrigin, undefined);
 });
 
 test('createNewSceneTemplate derives a scene name and starts without simulation files', () => {
@@ -35,8 +48,8 @@ test('createNewSceneTemplate derives a scene name and starts without simulation 
 
   assert.equal(template.name, 'my_scene');
   assert.deepEqual(template.simulationData, []);
-  assert.equal(template.newtonianFrame, 'N');
-  assert.equal(template.sceneOrigin, 'No');
+  assert.equal(template.newtonianFrame, undefined);
+  assert.equal(template.sceneOrigin, undefined);
   assert.deepEqual(template.cameraUp, [0, 0, 1]);
 });
 
@@ -77,4 +90,43 @@ test('createSavableScene preserves added spans and drops removed spans from the 
 
   assert.equal(savableScene.spans?.old_span, undefined);
   assert.deepEqual(savableScene.spans?.new_span, draftScene.spans.new_span);
+});
+
+test('createSavableScene drops objects with blank names', () => {
+  const rawScene = {
+    newtonianFrame: 'N',
+    sceneOrigin: 'No',
+    objects: {
+      N: { type: 'frame', visual: {} },
+      '': { type: 'frame', visual: {} },
+    },
+  };
+
+  const draftScene = createSceneDocument(rawScene);
+  draftScene.objects['   '] = { type: 'point', visual: {} };
+
+  const savableScene = createSavableScene(rawScene, draftScene);
+
+  assert.equal(savableScene.objects?.N?.type, 'frame');
+  assert.equal(savableScene.objects?.[''], undefined);
+  assert.equal(savableScene.objects?.['   '], undefined);
+});
+
+test('createSavableScene preserves generated plot panel ids', () => {
+  const rawScene = {
+    plots: {
+      panels: [
+        {
+          channels: ['demo'],
+        },
+      ],
+    },
+  };
+
+  const draftScene = createSceneDocument(rawScene);
+  const generatedId = draftScene.plots.panels[0]?.id;
+  const savableScene = createSavableScene(rawScene, draftScene);
+
+  assert.equal(typeof generatedId, 'string');
+  assert.equal(savableScene.plots?.panels[0]?.id, generatedId);
 });

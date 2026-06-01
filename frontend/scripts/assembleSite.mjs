@@ -6,7 +6,7 @@
  *   assets/textures/        ← bundled runtime media (material presets)
  *   legacy/                 ← optional historical jQuery app (not maintained)
  */
-import { access, writeFile } from 'node:fs/promises';
+import { access, copyFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -40,6 +40,10 @@ async function main() {
   await copyTree(path.join(repoRoot, 'samples'), path.join(outputDir, 'samples'), {
     exclude: excludeDotfiles,
   });
+  await copyFile(
+    path.join(repoRoot, 'samples-manifest.json'),
+    path.join(outputDir, 'samples-manifest.json')
+  );
 
   const bundledAssetsSource = path.join(repoRoot, runtimeAssetsDir);
   await assertExists(bundledAssetsSource, `${runtimeAssetsDir}/`);

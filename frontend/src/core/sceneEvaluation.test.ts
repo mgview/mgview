@@ -5,22 +5,23 @@ import { createSceneDocument } from './sceneDocument.ts';
 import { evaluateScene } from './sceneEvaluation.ts';
 
 test('scene evaluation resolves object positions and rotation-frame orientation from timeline data', () => {
-  const scene = createSceneDocument({
-    newtonianFrame: 'N',
-    sceneOrigin: 'Ao',
-    objects: {
-      A: { type: 'frame', visual: {} },
-      C1: { type: 'point', rotationFrame: 'C', visual: {} },
-      C: { type: 'frame', visual: {} },
+  const scene = createSceneDocument(
+    {
+      objects: {
+        A: { type: 'frame', visual: {} },
+        C1: { type: 'point', rotationFrame: 'C', visual: {} },
+        C: { type: 'frame', visual: {} },
+      },
     },
-  });
+    ['P_No_Ao[1]', 'P_No_Ao[2]', 'P_No_Ao[3]', 'P_No_C1[1]', 'P_No_C1[2]', 'P_No_C1[3]']
+  );
 
   const evaluation = evaluateScene(scene, {
     time: 0,
     data: {
-      'P_Ao_Ao[1]': 1,
-      'P_Ao_Ao[2]': 2,
-      'P_Ao_Ao[3]': 3,
+      'P_No_Ao[1]': 1,
+      'P_No_Ao[2]': 2,
+      'P_No_Ao[3]': 3,
       'Ref_A[1,1]': 1,
       'Ref_A[1,2]': 0,
       'Ref_A[1,3]': 0,
@@ -30,9 +31,9 @@ test('scene evaluation resolves object positions and rotation-frame orientation 
       'Ref_A[3,1]': 0,
       'Ref_A[3,2]': 0,
       'Ref_A[3,3]': 1,
-      'P_Ao_C1[1]': 4,
-      'P_Ao_C1[2]': 5,
-      'P_Ao_C1[3]': 6,
+      'P_No_C1[1]': 4,
+      'P_No_C1[2]': 5,
+      'P_No_C1[3]': 6,
       'Ref_C[1,1]': 0,
       'Ref_C[1,2]': -1,
       'Ref_C[1,3]': 0,
@@ -48,6 +49,33 @@ test('scene evaluation resolves object positions and rotation-frame orientation 
   assert.deepEqual(evaluation.objects.A.position, { x: 1, y: 2, z: 3 });
   assert.deepEqual(evaluation.objects.C1.position, { x: 4, y: 5, z: 6 });
   assert.deepEqual(evaluation.objects.C1.rotationMatrix, [0, -1, 0, 1, 0, 0, 0, 0, 1]);
+});
+
+test('scene evaluation reads object positions only from the canonical inferred origin', () => {
+  const scene = createSceneDocument(
+    {
+      sceneOrigin: 'LegacyOrigin',
+      objects: {
+        Ao: { type: 'point', visual: {} },
+      },
+    },
+    ['P_No_Ao[1]', 'P_No_Ao[2]', 'P_No_Ao[3]']
+  );
+
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {
+      'P_Ao_Ao[1]': 9,
+      'P_Ao_Ao[2]': 9,
+      'P_Ao_Ao[3]': 9,
+      'P_No_Ao[1]': 1,
+      'P_No_Ao[2]': 2,
+      'P_No_Ao[3]': 3,
+    },
+  });
+
+  assert.equal(scene.sceneOrigin, 'No');
+  assert.deepEqual(evaluation.objects.Ao.position, { x: 1, y: 2, z: 3 });
 });
 
 test('scene evaluation applies cameraParentFrame to eye, focus, and up vectors', () => {
@@ -251,10 +279,77 @@ test('scene evaluation normalizes text visuals for rendering', () => {
     visible: true,
     position: { x: 0, y: 0, z: 0 },
     rotation: { x: 0, y: 0, z: 0 },
-    material: { name: 'SILVER', color: undefined },
+    material: { name: 'BLACK', color: undefined },
     text: 'N',
     scale: 0.5,
+    textMode: '2d',
   });
+});
+
+test('scene evaluation preserves explicit 3d text mode', () => {
+  const scene = createSceneDocument({
+    newtonianFrame: 'N',
+    objects: {
+      N: {
+        type: 'frame',
+        visual: {
+          label: {
+            type: 'text',
+            text: 'N',
+            scale: 0.5,
+            text_mode: '3d',
+          },
+        },
+      },
+    },
+  });
+
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {
+      'P_No_N[1]': 0,
+      'P_No_N[2]': 0,
+      'P_No_N[3]': 0,
+    },
+  });
+
+  assert.equal(
+    evaluation.objects.N.visuals.find((visual) => visual.name === 'label')?.textMode,
+    '3d'
+  );
+});
+
+test('scene evaluation preserves explicit 2d text mode', () => {
+  const scene = createSceneDocument({
+    newtonianFrame: 'N',
+    objects: {
+      N: {
+        type: 'frame',
+        visual: {
+          label: {
+            type: 'text',
+            text: 'N',
+            scale: 0.5,
+            text_mode: '2d',
+          },
+        },
+      },
+    },
+  });
+
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {
+      'P_No_N[1]': 0,
+      'P_No_N[2]': 0,
+      'P_No_N[3]': 0,
+    },
+  });
+
+  assert.equal(
+    evaluation.objects.N.visuals.find((visual) => visual.name === 'label')?.textMode,
+    '2d'
+  );
 });
 
 test('scene evaluation skips visuals for objects with no backing simulation data', () => {
@@ -344,6 +439,8 @@ test('scene evaluation resolves cable spans from sceneOrigin point data', () => 
   assert.deepEqual(evaluation.spans, [
     {
       name: 'cable1.wire1',
+      spanName: 'cable1',
+      visualName: 'wire1',
       kind: 'line',
       visible: true,
       material: { name: 'BLACK', color: undefined },
@@ -351,6 +448,49 @@ test('scene evaluation resolves cable spans from sceneOrigin point data', () => 
       lineStyle: 'solid',
       start: { x: 1, y: 2, z: 3 },
       end: { x: 4, y: 5, z: 6 },
+    },
+  ]);
+});
+
+test('scene evaluation treats sceneOrigin span endpoint as zero without sim channels', () => {
+  const scene = createSceneDocument({
+    newtonianFrame: 'N',
+    sceneOrigin: 'No',
+    spans: {
+      spring: {
+        point1: 'No',
+        point2: 'Q',
+        visual: {
+          wire1: {
+            thickness: 1,
+            material: 'WHITE',
+          },
+        },
+      },
+    },
+  });
+
+  const evaluation = evaluateScene(scene, {
+    time: 0,
+    data: {
+      'P_No_Q[1]': 0.4,
+      'P_No_Q[2]': 0,
+      'P_No_Q[3]': 0,
+    },
+  });
+
+  assert.deepEqual(evaluation.spans, [
+    {
+      name: 'spring.wire1',
+      spanName: 'spring',
+      visualName: 'wire1',
+      kind: 'line',
+      visible: true,
+      material: { name: 'WHITE', color: undefined },
+      width: 1,
+      lineStyle: 'solid',
+      start: { x: 0, y: 0, z: 0 },
+      end: { x: 0.4, y: 0, z: 0 },
     },
   ]);
 });

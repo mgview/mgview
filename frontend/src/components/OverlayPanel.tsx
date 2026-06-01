@@ -1,12 +1,20 @@
-import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import {
+  Dialog,
+  DialogBody,
+  DialogCloseButton,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog.tsx';
 
 interface OverlayPanelProps {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
-  size?: 'default' | 'medium' | 'narrow';
+  size?: 'default' | 'medium' | 'narrow' | 'compact';
   onClose: () => void;
 }
 
@@ -18,37 +26,21 @@ export default function OverlayPanel({
   size = 'default',
   onClose,
 }: OverlayPanelProps) {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [onClose]);
-
   return (
-    <div className="overlay-backdrop" role="dialog" aria-modal="true">
-      <div className={`overlay-card ${size === 'medium' ? 'overlay-card-medium' : ''} ${size === 'narrow' ? 'overlay-card-narrow' : ''}`}>
-        <div className="overlay-header">
-          <div>
-            <h2>{title}</h2>
-            {subtitle ? <p className="panel-subtitle">{subtitle}</p> : null}
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent size={size} onPointerDownOutside={onClose} onEscapeKeyDown={onClose}>
+        <DialogHeader>
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+            <div>
+              <DialogTitle>{title}</DialogTitle>
+              {subtitle ? <DialogDescription className="mt-0.5">{subtitle}</DialogDescription> : null}
+            </div>
+            {actions ? <div className="flex flex-wrap items-center gap-1.5">{actions}</div> : null}
           </div>
-          <div className="inline-tags">
-            {actions}
-            <button type="button" className="secondary-button" onClick={onClose}>
-              Close
-            </button>
-          </div>
-        </div>
-        <div className="overlay-body">{children}</div>
-      </div>
-    </div>
+          <DialogCloseButton />
+        </DialogHeader>
+        <DialogBody>{children}</DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }

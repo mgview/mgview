@@ -1,13 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
-import SimpleApp from './SimpleApp.tsx';
-import './styles.css';
-
-const RouteApp = window.location.pathname.endsWith('/simple') ? SimpleApp : App;
+import { ThemeProvider } from './components/ThemeProvider.tsx';
+import { Toaster } from 'sonner';
+import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RouteApp />
+    <ThemeProvider>
+      <App />
+      <Toaster position="bottom-right" richColors closeButton />
+    </ThemeProvider>
   </React.StrictMode>
 );

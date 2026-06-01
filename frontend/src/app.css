@@ -1,0 +1,235 @@
+/* Residual custom CSS — canvas, scrubbers, swatches, workspace resize */
+
+.workspace-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(510px, 568px);
+  gap: 6px;
+  align-items: stretch;
+  min-height: 0;
+  height: 100%;
+}
+
+.workspace-shell-no-editor-rail {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace-visual-shell {
+  display: grid;
+  gap: 6px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.workspace-visual-shell-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace-visual-shell-dual {
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+}
+
+.workspace-editor-rail {
+  display: grid;
+  grid-template-columns: minmax(112px, 112px) minmax(392px, 430px);
+  gap: 6px;
+  align-items: stretch;
+  min-height: 0;
+  min-width: 0;
+}
+
+.workspace-panel-stack {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 6px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.workspace-panel-stack > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.workspace-content-panel {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.5rem;
+}
+
+.workspace-empty-state {
+  display: grid;
+  place-items: center;
+  gap: 0.25rem;
+  min-height: 0;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+  background: var(--card);
+  padding: 1rem;
+  text-align: center;
+}
+
+.renderer-surface {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--canvas-border);
+  background: var(--canvas);
+}
+
+.renderer-surface canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.plot-panel-host {
+  position: relative;
+  overflow: visible;
+}
+
+.plot-panel-host .uplot {
+  max-width: 100%;
+}
+
+.plot-panel-host .u-select {
+  background: color-mix(in oklab, var(--primary) 22%, transparent);
+  border: 1px solid color-mix(in oklab, var(--primary) 55%, transparent);
+  border-radius: 2px;
+}
+
+.plot-panel-host .plot-xy-marker {
+  pointer-events: none;
+  position: absolute;
+  z-index: 20;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--background) 60%, transparent);
+  background: #60a5fa;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+}
+
+/* Numeric scrubber drag affordance */
+.numeric-input-shell {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  overflow: hidden;
+}
+
+.numeric-input-shell-with-prefix {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.numeric-input-shell-no-prefix {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.numeric-input-shell-dragging {
+  border-color: var(--ring);
+  cursor: ew-resize;
+}
+
+.numeric-input-prefix {
+  padding: 0 0.35rem;
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.numeric-input-shell input {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.28rem 0.35rem;
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+  min-width: 0;
+}
+
+.numeric-input-grip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 0.35rem;
+  cursor: ew-resize;
+  user-select: none;
+}
+
+.numeric-input-grip span {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  opacity: 0.45;
+}
+
+.numeric-input-shell-dragging .numeric-input-grip span {
+  opacity: 0.8;
+}
+
+/* Material / color picker popover positioning */
+.material-picker-shell {
+  position: relative;
+}
+
+.material-popover {
+  width: min(360px, calc(100vw - 56px));
+}
+
+.material-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.material-swatch-grid-textures {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.material-option-swatch-large {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+}
+
+.material-option-swatch-texture {
+  aspect-ratio: 1.6 / 1;
+}
+
+@media (max-width: 900px) {
+  .workspace-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .workspace-visual-shell-dual {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(240px, 1fr) minmax(220px, auto);
+  }
+
+  .workspace-editor-rail {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(200px, 1fr);
+  }
+}

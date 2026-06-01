@@ -5,12 +5,14 @@ import type {
   SceneSpanVisual,
   SceneObjectInspection,
   SceneVisual,
+  Timeline,
   VisualType,
 } from '../core/types.ts';
 import JsonEditorPanel from './JsonEditorPanel.tsx';
 import SceneSettingsPanel from './SceneSettingsPanel.tsx';
 import SpanEditorPanel from './SpanEditorPanel.tsx';
 import VisualEditorPanel from './VisualEditorPanel.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs.tsx';
 
 export type InspectorEditorMode = 'visual' | 'scene' | 'json';
 
@@ -25,7 +27,6 @@ interface InspectorDrawerProps {
   channelNames: string[];
   clearCameraPreview: () => void;
   editorMode: InspectorEditorMode;
-  hasLocalEdits: boolean;
   liveSelectedVisual?: SceneVisual;
   loaded: LoadedSceneData | null;
   savePreview: string;
@@ -35,6 +36,7 @@ interface InspectorDrawerProps {
   liveSelectedSpan?: SceneSpan;
   liveSelectedSpanVisual?: SceneSpanVisual;
   selectedVisual?: SceneObjectInspection['visuals'][number];
+  selectedObjectName: string | null;
   updateSelectedObject: (updater: (sceneObject: NormalizedSceneConfig['objects'][string]) => void) => void;
   createVisual: (type: VisualType) => boolean;
   renameVisual: (currentName: string, nextName: string) => boolean;
@@ -76,7 +78,6 @@ export default function InspectorDrawer({
   channelNames,
   clearCameraPreview,
   editorMode,
-  hasLocalEdits,
   liveSelectedVisual,
   loaded,
   savePreview,
@@ -86,12 +87,12 @@ export default function InspectorDrawer({
   liveSelectedSpan,
   liveSelectedSpanVisual,
   selectedVisual,
+  selectedObjectName,
   updateSelectedObject,
   createVisual,
   renameVisual,
   deleteSelectedVisual,
   changeSelectedVisualType,
-  createSpan,
   createSpanVisual,
   deleteSelectedSpan,
   deleteSelectedSpanVisual,
@@ -112,92 +113,80 @@ export default function InspectorDrawer({
 }: InspectorDrawerProps) {
   if (!loaded) {
     return (
-      <section className="panel drawer-panel loading-panel">
-        <h2>Inspector</h2>
-        <div className="loading-placeholder-list">
-          <div className="loading-placeholder-row" />
-          <div className="loading-placeholder-row" />
-          <div className="loading-placeholder-row" />
-          <div className="loading-placeholder-row loading-placeholder-row-tall" />
+      <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] rounded-md border border-border bg-card p-2">
+        <h2 className="mb-1 text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Inspector</h2>
+        <div className="grid gap-2">
+          <div className="h-7 animate-pulse rounded-md bg-muted" />
+          <div className="h-7 animate-pulse rounded-md bg-muted" />
+          <div className="h-7 animate-pulse rounded-md bg-muted" />
+          <div className="h-44 animate-pulse rounded-md bg-muted" />
         </div>
       </section>
     );
   }
 
   return (
-    <section className="panel drawer-panel">
-      <div className="drawer-tabs">
-        <button
-          type="button"
-          className={`tag-button ${editorMode === 'visual' ? 'tag-button-active' : ''}`}
-          onClick={() => setEditorMode('visual')}
-        >
-          Editor
-        </button>
-        <button
-          type="button"
-          className={`tag-button ${editorMode === 'scene' ? 'tag-button-active' : ''}`}
-          onClick={() => setEditorMode('scene')}
-        >
-          Scene Settings
-        </button>
-        <button
-          type="button"
-          className={`tag-button ${editorMode === 'json' ? 'tag-button-active' : ''}`}
-          onClick={() => setEditorMode('json')}
-        >
-          JSON Editor
-        </button>
-      </div>
+    <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] rounded-md border border-border bg-card p-2">
+      <Tabs value={editorMode} onValueChange={(value) => setEditorMode(value as InspectorEditorMode)}>
+        <TabsList className="w-full">
+          <TabsTrigger value="visual">Editor</TabsTrigger>
+          <TabsTrigger value="scene">Scene Settings</TabsTrigger>
+          <TabsTrigger value="json">JSON Editor</TabsTrigger>
+        </TabsList>
 
-      {editorMode === 'scene' ? (
-        <SceneSettingsPanel
-          activeScene={activeScene}
-          cameraPreview={cameraPreview}
-          clearCameraPreview={clearCameraPreview}
-          objectNames={activeScene ? Object.keys(activeScene.objects) : []}
-          updateDraftScene={updateDraftScene}
-          updateDraftScenePreview={updateDraftScenePreview}
-          updateSceneVector={updateSceneVector}
-          updateSceneVectorPreview={updateSceneVectorPreview}
-        />
-      ) : editorMode === 'json' ? (
-        <JsonEditorPanel
-          savePreview={savePreview}
-        />
-      ) : selectedSpanName ? (
-        <SpanEditorPanel
-          activeScene={activeScene}
-          channelNames={channelNames}
-          createSpanVisual={createSpanVisual}
-          deleteSelectedSpan={deleteSelectedSpan}
-          deleteSelectedSpanVisual={deleteSelectedSpanVisual}
-          liveSelectedSpan={liveSelectedSpan}
-          liveSelectedSpanVisual={liveSelectedSpanVisual}
-          renameSpan={renameSpan}
-          renameSpanVisual={renameSpanVisual}
-          selectedSpanName={selectedSpanName}
-          selectedSpanVisualName={selectedSpanVisualName}
-          selectSpan={selectSpan}
-          updateSelectedSpan={updateSelectedSpan}
-          updateSelectedSpanVisual={updateSelectedSpanVisual}
-          updateSelectedSpanVisualPreview={updateSelectedSpanVisualPreview}
-        />
-      ) : (
-        <VisualEditorPanel
-          liveSelectedVisual={liveSelectedVisual}
-          selectedObject={selectedObject}
-          selectedVisual={selectedVisual}
-          updateSelectedObject={updateSelectedObject}
-          createVisual={createVisual}
-          renameVisual={renameVisual}
-          deleteSelectedVisual={deleteSelectedVisual}
-          changeSelectedVisualType={changeSelectedVisualType}
-          setSelectedVisualName={setSelectedVisualName}
-          updateSelectedVisual={updateSelectedVisual}
-          updateSelectedVisualPreview={updateSelectedVisualPreview}
-        />
-      )}
+        <TabsContent value="scene" className="min-h-0 overflow-auto">
+          <SceneSettingsPanel
+            activeScene={activeScene}
+            cameraPreview={cameraPreview}
+            clearCameraPreview={clearCameraPreview}
+            objectNames={activeScene ? Object.keys(activeScene.objects) : []}
+            updateDraftScene={updateDraftScene}
+            updateDraftScenePreview={updateDraftScenePreview}
+            updateSceneVector={updateSceneVector}
+            updateSceneVectorPreview={updateSceneVectorPreview}
+          />
+        </TabsContent>
+
+        <TabsContent value="json" className="min-h-0 overflow-auto">
+          <JsonEditorPanel savePreview={savePreview} />
+        </TabsContent>
+
+        <TabsContent value="visual" className="min-h-0 overflow-auto">
+          {selectedSpanName ? (
+            <SpanEditorPanel
+              activeScene={activeScene}
+              channelNames={channelNames}
+              createSpanVisual={createSpanVisual}
+              deleteSelectedSpan={deleteSelectedSpan}
+              deleteSelectedSpanVisual={deleteSelectedSpanVisual}
+              liveSelectedSpan={liveSelectedSpan}
+              liveSelectedSpanVisual={liveSelectedSpanVisual}
+              renameSpan={renameSpan}
+              renameSpanVisual={renameSpanVisual}
+              selectedSpanName={selectedSpanName}
+              selectedSpanVisualName={selectedSpanVisualName}
+              selectSpan={selectSpan}
+              updateSelectedSpan={updateSelectedSpan}
+              updateSelectedSpanVisual={updateSelectedSpanVisual}
+              updateSelectedSpanVisualPreview={updateSelectedSpanVisualPreview}
+            />
+          ) : (
+            <VisualEditorPanel
+              liveSelectedVisual={liveSelectedVisual}
+              selectedObject={selectedObject}
+              selectedVisual={selectedVisual}
+              updateSelectedObject={updateSelectedObject}
+              createVisual={createVisual}
+              renameVisual={renameVisual}
+              deleteSelectedVisual={deleteSelectedVisual}
+              changeSelectedVisualType={changeSelectedVisualType}
+              setSelectedVisualName={setSelectedVisualName}
+              updateSelectedVisual={updateSelectedVisual}
+              updateSelectedVisualPreview={updateSelectedVisualPreview}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }

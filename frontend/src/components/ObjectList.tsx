@@ -1,4 +1,8 @@
+import { Plus } from 'lucide-react';
 import type { SceneObjectInspection } from '../core/types.ts';
+import { Button } from './ui/button.tsx';
+import { Badge } from './ui/badge.tsx';
+import { cn } from '../lib/utils.ts';
 
 interface SpanListEntry {
   name: string;
@@ -37,60 +41,64 @@ export default function ObjectList({
   }
 
   return (
-    <section className="panel">
-      <h2>Scene</h2>
-      <div className="object-groups">
+    <section className="rounded-md border border-border bg-card p-2">
+      <h2 className="mb-1 text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Scene</h2>
+      <div className="grid gap-2">
         {[...groups.entries()].map(([groupName, groupEntries]) => (
-          <div key={groupName} className="object-group">
-            <div className="object-group-title">{groupName}</div>
-            <div className="inspector-list">
+          <div key={groupName} className="grid gap-1">
+            <div className="text-[0.72rem] font-semibold uppercase tracking-wider text-primary">{groupName}</div>
+            <div className="grid gap-0.5">
               {groupEntries.map((entry) => (
                 <button
                   key={entry.name}
                   type="button"
-                  className={`inspector-item ${selectedObjectName === entry.name ? 'inspector-item-active' : ''}`}
+                  className={cn(
+                    'flex w-full items-center justify-between gap-1 rounded-sm border border-transparent px-1.5 py-1 text-left',
+                    selectedObjectName === entry.name
+                      ? 'border-primary/40 bg-primary text-primary-foreground'
+                      : 'bg-muted/40 hover:bg-accent'
+                  )}
+                  title={entry.name}
                   onClick={() => onSelectObject(entry.name, entry.visuals[0]?.name ?? null)}
                 >
-                  <span className="inspector-item-top">
-                    <code>{entry.name}</code>
-                    {entry.missingSimulationData ? (
-                      <span className="object-list-meta">
-                        <span className="tag tag-warning">!</span>
-                      </span>
-                    ) : null}
-                  </span>
+                  <code className="min-w-0 truncate text-[0.72rem]">{entry.name}</code>
+                  {entry.missingSimulationData ? (
+                    <Badge variant="warning" className="h-4 min-w-4 justify-center px-1">!</Badge>
+                  ) : null}
                 </button>
               ))}
             </div>
           </div>
         ))}
-        <div className="object-group">
-          <div className="section-label-with-actions object-group-title-row">
-            <div className="object-group-title">Spans</div>
-            <div className="visual-toolbar-actions">
-              <button type="button" className="icon-button" aria-label="Add span" title="Add span" onClick={onCreateSpan}>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
+        <div className="grid gap-1">
+          <div className="flex items-center gap-1">
+            <div className="min-w-0 flex-1 truncate text-[0.72rem] font-semibold uppercase tracking-wider text-primary">
+              Spans
             </div>
+            <Button type="button" variant="outline" size="icon" className="h-6 w-6" aria-label="Add span" title="Add span" onClick={onCreateSpan}>
+              <Plus className="h-3 w-3" />
+            </Button>
           </div>
-          <div className="inspector-list">
+          <div className="grid gap-0.5">
             {spans.length > 0 ? (
               spans.map((entry) => (
                 <button
                   key={entry.name}
                   type="button"
-                  className={`inspector-item ${selectedSpanName === entry.name ? 'inspector-item-active' : ''}`}
+                  className={cn(
+                    'w-full rounded-sm border border-transparent px-1.5 py-1 text-left',
+                    selectedSpanName === entry.name
+                      ? 'border-primary/40 bg-primary text-primary-foreground'
+                      : 'bg-muted/40 hover:bg-accent'
+                  )}
+                  title={entry.name}
                   onClick={() => onSelectSpan(entry.name, entry.visualNames[0] ?? null)}
                 >
-                  <span className="inspector-item-top">
-                    <code>{entry.name}</code>
-                  </span>
+                  <code className="block truncate text-[0.72rem]">{entry.name}</code>
                 </button>
               ))
             ) : (
-              <div className="empty-state-inline">No spans yet.</div>
+              <p className="text-xs text-muted-foreground">No spans yet.</p>
             )}
           </div>
         </div>

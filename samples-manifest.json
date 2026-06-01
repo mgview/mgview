@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "scenes": [
+    { "group": "Motion Genesis Examples", "label": "Particle Pendulum", "path": "particle_pendulum/particle_pendulum.json" },
+    { "group": "Motion Genesis Examples", "label": "Particle In Slot", "path": "particle_in_slot/slot.json" },
+    { "group": "Motion Genesis Examples", "label": "Fourbar", "path": "fourbar/correct/fourbar.json" },
+    { "group": "Motion Genesis Examples", "label": "Disk", "path": "disk/disk.json" },
+    { "group": "Constraint Stabilization", "label": "Fourbar", "path": "fourbar/stabilize/fourbar.json" },
+    { "group": "Constraint Stabilization", "label": "Trifilar Pendulum", "path": "MGExampleAircraft/stabilize/aircraft.json" },
+    { "group": "RCM Robot", "label": "RCM Homogeneous", "path": "rcm_robot/ME328_RCMRobot_Homogeneous.json" },
+    { "group": "RCM Robot", "label": "RCM Palpating", "path": "rcm_robot/ME328_RCMRobot_Palpating.json" },
+    { "group": "RCM Robot", "label": "RCM Circle 20cm", "path": "rcm_robot/ME328_RCMRobot_Circle_Depth20cm.json" },
+    { "group": "Robot Arm", "label": "Circle Step", "path": "robot_arm/circle_step/robot_arm.json" },
+    { "group": "Wooden Phantom", "label": "Wooden Phantom", "path": "wooden_phantom/wooden_phantom.json" },
+    { "group": "Other", "label": "Tricycle", "path": "tricycle/tricycle.json" },
+    { "group": "Other", "label": "SkyCam Fixed", "path": "skycam/SkyCamFixed.json" },
+    { "group": "Other", "label": "Ball In Tube", "path": "ball_in_tube/ball_in_tube.json" }
+  ]
+}

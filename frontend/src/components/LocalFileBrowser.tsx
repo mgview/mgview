@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
+import { ChevronRight, Folder, File } from 'lucide-react';
 import type { FileBrowserListing } from '../api/localFiles.ts';
+import { Button } from './ui/button.tsx';
+import { cn } from '../lib/utils.ts';
 
 interface LocalFileBrowserProps {
   browserListing: FileBrowserListing | null;
@@ -8,16 +11,16 @@ interface LocalFileBrowserProps {
   compact?: boolean;
   emptyStateMessage?: string;
   filterEntry?: (entry: FileBrowserListing['entries'][number]) => boolean;
+  flat?: boolean;
   hideTitle?: boolean;
   hideTitleWhenNoActions?: boolean;
   sceneInput: string;
   selectedPaths?: string[];
   title?: string;
   titleActions?: ReactNode;
-  unlabeledBreadcrumbs?: boolean;
   onBrowse: (path: string) => void;
   onOpenFile?: (path: string) => void;
-  onSelectFile: (path: string, options?: { additive: boolean }) => void;
+  onSelectFile: (path: string, options?: { range?: boolean; toggle?: boolean }) => void;
   getDirectoryPath: (filePath: string) => string;
 }
 
@@ -26,10 +29,20 @@ interface BreadcrumbSegment {
   path: string;
 }
 
+function isAppBundlePath(filePath: string): boolean {
+  return /^(samples|assets|bundled|legacy)(\/|$)/.test(filePath);
+}
+
+function rootBreadcrumbLabel(filePath: string): string {
+  return isAppBundlePath(filePath) ? 'app' : 'workspace';
+}
+
 function buildBreadcrumbs(currentPath: string): BreadcrumbSegment[] {
   const normalizedPath = currentPath === '.' ? '' : currentPath.replace(/\/+$/g, '');
   const pieces = normalizedPath.length > 0 ? normalizedPath.split('/') : [];
-  const breadcrumbs: BreadcrumbSegment[] = [{ label: 'root', path: '.' }];
+  const breadcrumbs: BreadcrumbSegment[] = [
+    { label: rootBreadcrumbLabel(normalizedPath), path: '.' },
+  ];
 
   let runningPath = '';
   for (const piece of pieces) {
@@ -47,13 +60,13 @@ export default function LocalFileBrowser({
   compact = false,
   emptyStateMessage = 'Browse a scene folder to load JSON files through the local API.',
   filterEntry,
+  flat = false,
   hideTitle = false,
   hideTitleWhenNoActions = false,
   sceneInput,
   selectedPaths,
   title = 'Local File Browser',
   titleActions,
-  unlabeledBreadcrumbs = false,
   onBrowse,
   onOpenFile,
   onSelectFile,
@@ -66,47 +79,52 @@ export default function LocalFileBrowser({
   const showHeader = !hideTitle && !(hideTitleWhenNoActions && !titleActions);
 
   return (
-    <section className="panel">
+    <section className={cn('grid gap-1.5', !flat && 'rounded-md border border-border bg-card p-2')}>
       {showHeader ? (
-        <div className="section-label-with-actions">
-          <h2>{title}</h2>
-          {titleActions ? <div className="visual-toolbar-actions">{titleActions}</div> : null}
+        <div className="flex items-center gap-2">
+          <h3 className={cn('min-w-0 flex-1 truncate text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground')}>
+            {title}
+          </h3>
+          {titleActions ? <div className="flex gap-1">{titleActions}</div> : null}
         </div>
       ) : titleActions ? (
-        <div className="visual-toolbar-actions file-browser-actions-row">{titleActions}</div>
+        <div className="flex justify-end gap-1">{titleActions}</div>
       ) : null}
-      <div className="stacked-meta">
-        <div className="meta-row">
-          {!unlabeledBreadcrumbs ? <label>Current Folder</label> : null}
-          <div className="file-browser-breadcrumbs" aria-label={`Current folder ${currentFolderLabel}`}>
-            {breadcrumbs.map((segment, index) => (
-              <span key={segment.path} className="file-browser-breadcrumb-segment">
-                {index > 0 ? <span className="file-browser-breadcrumb-separator">/</span> : null}
-                <button
-                  type="button"
-                  className="file-browser-breadcrumb-button"
-                  onClick={() => onBrowse(segment.path)}
-                >
-                  {segment.label}
-                </button>
-              </span>
-            ))}
-            <span className="file-browser-breadcrumb-trailing">/</span>
-          </div>
-        </div>
-      </div>
 
-      {browserError ? <div className="status error">{browserError}</div> : null}
-      {!browserError && browserLoading ? <div className="status">Browsing local files…</div> : null}
+      <nav className="flex flex-wrap items-center gap-1 text-xs" aria-label={`Current folder ${currentFolderLabel}`}>
+        {breadcrumbs.map((segment, index) => (
+          <span key={segment.path} className="inline-flex items-center gap-1">
+            {index > 0 ? <ChevronRight className="h-3 w-3 text-muted-foreground" /> : null}
+            <button
+              type="button"
+              className="text-foreground underline decoration-border underline-offset-2 hover:text-primary"
+              onClick={() => onBrowse(segment.path)}
+            >
+              {segment.label}
+            </button>
+          </span>
+        ))}
+        <span className="text-muted-foreground">/</span>
+      </nav>
+
+      {browserError ? <p className="text-xs text-destructive">{browserError}</p> : null}
+      {!browserError && browserLoading ? <p className="text-xs text-warning">Browsing local files…</p> : null}
 
       {browserListing ? (
-        <div className={`file-browser-list ${compact ? 'file-browser-list-compact' : ''}`}>
+        <div className={cn('grid gap-0.5', compact && 'gap-px')}>
           {visibleEntries.length > 0 ? visibleEntries.map((entry) => {
+            const isActive = activePaths.includes(entry.path);
             return (
               <button
                 key={`${entry.type}:${entry.path}`}
                 type="button"
-                className={`sample-button file-browser-entry ${compact ? 'file-browser-entry-compact' : ''} ${activePaths.includes(entry.path) ? 'sample-button-active' : ''}`}
+                className={cn(
+                  'flex w-full items-center gap-1.5 rounded-sm border border-transparent px-2 py-1 text-left text-xs',
+                  compact ? 'py-0.5' : 'py-1',
+                  isActive
+                    ? 'border-primary/40 bg-primary text-primary-foreground'
+                    : 'bg-muted/40 hover:bg-accent'
+                )}
                 onClick={(event) => {
                   if (entry.type === 'directory') {
                     onBrowse(entry.path);
@@ -114,7 +132,8 @@ export default function LocalFileBrowser({
                   }
 
                   onSelectFile(entry.path, {
-                    additive: event.metaKey || event.ctrlKey || event.shiftKey,
+                    range: event.shiftKey,
+                    toggle: !event.shiftKey && (event.metaKey || event.ctrlKey),
                   });
                 }}
                 onDoubleClick={() => {
@@ -123,13 +142,18 @@ export default function LocalFileBrowser({
                   }
                 }}
               >
-                <span>{entry.type === 'directory' ? `${entry.name}/` : entry.name}</span>
+                {entry.type === 'directory' ? (
+                  <Folder className="h-3 w-3 shrink-0 opacity-70" />
+                ) : (
+                  <File className="h-3 w-3 shrink-0 opacity-70" />
+                )}
+                <span className="min-w-0 truncate">{entry.type === 'directory' ? `${entry.name}/` : entry.name}</span>
               </button>
             );
-          }) : <div className="empty-state">No matching files in this folder.</div>}
+          }) : <p className="text-xs text-muted-foreground">No matching files in this folder.</p>}
         </div>
       ) : (
-        <div className="empty-state">{emptyStateMessage}</div>
+        <p className="text-xs text-muted-foreground">{emptyStateMessage}</p>
       )}
     </section>
   );

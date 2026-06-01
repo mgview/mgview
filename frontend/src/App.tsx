@@ -1,16 +1,19 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import AboutOverlay from './components/AboutOverlay.tsx';
 import { canPersistScenesToServer } from './api/runtimeMode.ts';
 import DemoNotice from './components/DemoNotice.tsx';
 import DiagnosticsOverlay from './components/DiagnosticsOverlay.tsx';
 import InspectorDrawer from './components/InspectorDrawer.tsx';
 import LoadSceneOverlay from './components/LoadSceneOverlay.tsx';
+import SamplesOverlay from './components/SamplesOverlay.tsx';
 import ObjectList from './components/ObjectList.tsx';
 import PlaybackStrip from './components/PlaybackStrip.tsx';
+import PlotsPanel from './components/PlotsPanel.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import SimulationDataOverlay from './components/SimulationDataOverlay.tsx';
-import ToastStack from './components/ToastStack.tsx';
 import { getFrameAtTime } from './core/timeline.ts';
+import { DEFAULT_SCENE_LAYOUT } from './core/workspaceLayout.ts';
 import { useInspectorSelectionState } from './hooks/useInspectorSelectionState.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
 import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
@@ -18,41 +21,20 @@ import { useSceneSelectionEditor } from './hooks/useSceneSelectionEditor.ts';
 import { useSceneSpanEditor } from './hooks/useSceneSpanEditor.ts';
 import { useToasts } from './hooks/useToasts.ts';
 import { useWorkspaceShell } from './hooks/useWorkspaceShell.ts';
-import { bundledSamplePath, DEFAULT_SCENE_PATH } from './core/workspacePaths.ts';
-
-const SAMPLE_SCENES = [
-  { group: 'Basics', label: 'Particle Pendulum', path: bundledSamplePath('particle_pendulum/particle_pendulum.json') },
-  { group: 'Basics', label: 'Default Template', path: bundledSamplePath('default.json') },
-  { group: 'Mechanisms', label: 'Ball In Tube', path: bundledSamplePath('ball_in_tube/ball_in_tube.json') },
-  { group: 'Mechanisms', label: 'Particle In Slot', path: bundledSamplePath('particle_in_slot/slot.json') },
-  { group: 'Vehicles', label: 'Tricycle', path: bundledSamplePath('tricycle/tricycle.json') },
-  { group: 'Cameras', label: 'SkyCam Fixed', path: bundledSamplePath('skycam/SkyCamFixed.json') },
-  { group: 'Robots', label: 'RCM Homogeneous', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Homogeneous.json') },
-  { group: 'Robots', label: 'RCM Palpating', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Palpating.json') },
-  { group: 'Robots', label: 'RCM Circle 10cm', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Circle_Depth10cm.json') },
-  { group: 'Robots', label: 'RCM Circle 20cm', path: bundledSamplePath('rcm_robot/ME328_RCMRobot_Circle_Depth20cm.json') },
-  { group: 'Meshes', label: 'Wooden Phantom', path: bundledSamplePath('wooden_phantom/wooden_phantom.json') },
-  { group: 'Meshes', label: 'Wooden Phantom GUI', path: bundledSamplePath('wooden_phantom/wooden_phantom_gui.json') },
-] as const;
-
-function getScenePathFromUrl(): string {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('scene') ?? DEFAULT_SCENE_PATH;
-}
-
-function sampleGroups() {
-  const groups = new Map<string, Array<(typeof SAMPLE_SCENES)[number]>>();
-  for (const sample of SAMPLE_SCENES) {
-    const group = groups.get(sample.group) ?? [];
-    group.push(sample);
-    groups.set(sample.group, group);
-  }
-  return [...groups.entries()];
-}
+import { createSampleRef, getSceneBasePath, parseSceneRefFromUrl } from './core/sceneRef.ts';
+import { groupSampleScenes } from './core/samplesManifest.ts';
+import { useServerWorkspace } from './hooks/useServerWorkspace.ts';
+import WorkspacePickerOverlay from './components/WorkspacePickerOverlay.tsx';
 
 export default function App() {
-  const { toasts, dismiss, dismissErrors, showSuccess, showError } = useToasts();
-  const workspace = useSceneWorkspace(getScenePathFromUrl(), { showSuccess, showError });
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const { dismissErrors, showSuccess, showError } = useToasts();
+  const serverWorkspace = useServerWorkspace(showSuccess, showError);
+  const initialSceneRef = useMemo(
+    () => parseSceneRefFromUrl(new URLSearchParams(window.location.search)),
+    []
+  );
+  const workspace = useSceneWorkspace(initialSceneRef, { showSuccess, showError });
   const {
     activeScene,
     browserError,
@@ -60,9 +42,12 @@ export default function App() {
     browserLoading,
     draftScene,
     error,
+    confirmWorkspaceChange,
     handleBrowse,
     handleCreateScene,
     handleLoad,
+    handleWorkspaceChange,
+    handleLoadWorkspacePath,
     handleRevertDraft,
     handleRedo,
     handleSaveSceneAs,
@@ -104,20 +89,15 @@ export default function App() {
     [dismissErrors, setError]
   );
 
-  const handleDismissToast = useCallback(
-    (id: string) => {
-      const toast = toasts.find((entry) => entry.id === id);
-      dismiss(id);
-      if (toast?.kind === 'error') {
-        setError(null);
-      }
-    },
-    [dismiss, setError, toasts]
-  );
-
   const diagnosticsWarningCount = useMemo(
     () => diagnostics.filter((diagnostic) => diagnostic.severity === 'warning').length,
     [diagnostics]
+  );
+
+  const handleLoadSample = useCallback(
+    (path: string, options?: { actionLabel?: string }) =>
+      handleLoad(createSampleRef(path), options),
+    [handleLoad]
   );
 
   const shell = useWorkspaceShell({
@@ -125,7 +105,8 @@ export default function App() {
     browserPath: browserListing?.path,
     handleBrowse,
     handleCreateScene,
-    handleLoad,
+    handleLoadWorkspacePath,
+    handleLoadSample,
     handleSaveSceneAs,
     loaded,
     sceneInput,
@@ -136,7 +117,7 @@ export default function App() {
   });
 
   const playbackSpeed = activeScene?.speedFactor ?? loaded?.scene.speedFactor ?? 1;
-  const playback = usePlaybackController(loaded ? timeline : null, playbackSpeed);
+  const playback = usePlaybackController(loaded ? timeline : null, playbackSpeed, loaded?.scenePath ?? null);
 
   const currentFrame = useMemo(() => {
     if (!loaded) {
@@ -252,7 +233,12 @@ export default function App() {
           return;
         }
 
-        if (!shell.loadOverlayOpen && !shell.diagnosticsOpen && !shell.simulationOverlayOpen) {
+        if (
+          !shell.loadOverlayOpen &&
+          !shell.samplesOverlayOpen &&
+          !shell.diagnosticsOpen &&
+          !shell.simulationOverlayOpen
+        ) {
           if (selectionState.hasAnySelection) {
             event.preventDefault();
             selectionState.clearAllSelections();
@@ -295,7 +281,12 @@ export default function App() {
         return;
       }
 
-      if (shell.loadOverlayOpen || shell.diagnosticsOpen || shell.simulationOverlayOpen) {
+      if (
+        shell.loadOverlayOpen ||
+        shell.samplesOverlayOpen ||
+        shell.diagnosticsOpen ||
+        shell.simulationOverlayOpen
+      ) {
         return;
       }
 
@@ -324,6 +315,7 @@ export default function App() {
     selectionState,
     shell.diagnosticsOpen,
     shell.loadOverlayOpen,
+    shell.samplesOverlayOpen,
     shell.simulationOverlayOpen,
   ]);
 
@@ -352,31 +344,80 @@ export default function App() {
     return JSON.stringify(createSavableScene(loaded.rawScene, draftScene), null, 2);
   }, [draftScene, loaded]);
 
-  const groupedSamples = useMemo(() => sampleGroups(), []);
+  const groupedSamples = useMemo(() => groupSampleScenes(), []);
+  const rendererSceneBasePath = loaded ? getSceneBasePath(loaded.sceneRef) : '';
+  const sceneLayout = activeScene?.layout ?? null;
+  const showRenderer = sceneLayout?.showRenderer ?? DEFAULT_SCENE_LAYOUT.showRenderer;
+  const showPlots = sceneLayout?.showPlots ?? DEFAULT_SCENE_LAYOUT.showPlots;
+  const showEditorRail = sceneLayout?.showEditorRail ?? DEFAULT_SCENE_LAYOUT.showEditorRail;
+  const showVisualWorkspace = showRenderer || showPlots;
+  const timelineOwner = showRenderer ? 'renderer' : showPlots ? 'plots' : null;
+
+  const updateSceneLayoutVisibility = useCallback(
+    (key: 'showRenderer' | 'showPlots' | 'showEditorRail', value: boolean) => {
+      updateDraftScene((scene) => {
+        scene.layout[key] = value;
+      });
+    },
+    [updateDraftScene]
+  );
+
+  const applySceneLayoutPreset = useCallback(
+    (preset: 'showAll' | 'plotsOnly' | 'rendererOnly' | 'reset') => {
+      updateDraftScene((scene) => {
+        switch (preset) {
+          case 'showAll':
+            scene.layout.showRenderer = true;
+            scene.layout.showPlots = true;
+            scene.layout.showEditorRail = true;
+            scene.layout.focusTarget = null;
+            break;
+          case 'plotsOnly':
+            scene.layout.showRenderer = false;
+            scene.layout.showPlots = true;
+            scene.layout.showEditorRail = false;
+            scene.layout.focusTarget = null;
+            break;
+          case 'rendererOnly':
+            scene.layout.showRenderer = true;
+            scene.layout.showPlots = false;
+            scene.layout.showEditorRail = false;
+            scene.layout.focusTarget = null;
+            break;
+          case 'reset':
+            scene.layout.showRenderer = DEFAULT_SCENE_LAYOUT.showRenderer;
+            scene.layout.showPlots = DEFAULT_SCENE_LAYOUT.showPlots;
+            scene.layout.showEditorRail = DEFAULT_SCENE_LAYOUT.showEditorRail;
+            scene.layout.focusTarget = DEFAULT_SCENE_LAYOUT.focusTarget;
+            break;
+        }
+      });
+    },
+    [updateDraftScene]
+  );
 
   return (
-    <div className="app-shell">
+    <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-2">
       <DemoNotice />
-      <ToastStack toasts={toasts} onDismiss={handleDismissToast} />
       <SceneHeaderBar
         scenePath={loaded?.scenePath ?? null}
-        sceneName={activeScene?.name ?? loaded?.scene.name ?? null}
+        layout={sceneLayout}
         hasLocalEdits={hasLocalEdits}
         loading={loading}
         saving={saving}
         canRedo={canRedoDraftScene}
         canUndo={canUndoDraftScene}
         diagnosticsWarningCount={diagnosticsWarningCount}
+        onOpenAbout={() => setAboutOpen(true)}
+        onOpenWorkspace={canPersistScenesToServer ? serverWorkspace.openPicker : undefined}
         onOpenCreateOverlay={shell.openCreateOverlay}
         onOpenLoadOverlay={shell.openLoadOverlay}
+        onOpenSamplesOverlay={shell.openSamplesOverlay}
         onOpenDiagnostics={shell.openDiagnostics}
         onOpenChannels={shell.openSimulationOverlay}
+        onSetLayoutVisibility={updateSceneLayoutVisibility}
+        onApplyLayoutPreset={applySceneLayoutPreset}
         onOpenSaveAsOverlay={shell.openSaveAsOverlay}
-        onSceneNameChange={(nextName) => {
-          updateDraftScene((scene) => {
-            scene.name = nextName;
-          });
-        }}
         onRedo={handleRedo}
         onSave={() => void handleSaveScene()}
         onRevert={() => {
@@ -389,70 +430,118 @@ export default function App() {
 
       {showWorkspaceShell ? (
           <div
-            className={`workspace-shell ${shell.leftRailCollapsed ? 'workspace-shell-left-rail-collapsed' : ''}`}
+            className={`workspace-shell ${!showEditorRail ? 'workspace-shell-no-editor-rail' : ''}`}
           >
-            <div className="workspace-main">
-              {activeScene ? (
-                <>
-                  <RendererPanel
-                    cameraSeedKey={shell.cameraSeedKey}
-                    layoutSizeKey={`${shell.leftRailCollapsed}`}
-                    onCameraPreviewChange={shell.setCameraPreview}
-                    onCameraCommit={shell.commitCameraPreview}
-                    scenePath={loaded.scenePath}
-                    scene={activeScene}
-                    frame={currentFrame?.frame}
-                    selectedObjectName={activeSelectedObject?.name ?? null}
-                  />
+            {showVisualWorkspace ? (
+              <div
+                className={`workspace-visual-shell ${
+                  showRenderer && showPlots ? 'workspace-visual-shell-dual' : 'workspace-visual-shell-single'
+                }`}
+              >
+                {showRenderer ? (
+                  <div className="workspace-panel-stack">
+                    {activeScene ? (
+                      <RendererPanel
+                        cameraSeedKey={shell.cameraSeedKey}
+                        layoutSizeKey={`${showRenderer}-${showPlots}-${showEditorRail}`}
+                        onCameraPreviewChange={shell.setCameraPreview}
+                        onCameraCommit={shell.commitCameraPreview}
+                        onClearSelection={selectionState.clearAllSelections}
+                        onSelectObject={(objectName, visualName) => {
+                          selectionState.selectObjectForEditor(objectName, visualName, selectObject);
+                        }}
+                        onSelectSpan={(spanName, visualName) => {
+                          selectionState.selectSpanForEditor(spanName, visualName, selectSpanOnly);
+                        }}
+                        scenePath={rendererSceneBasePath}
+                        scene={activeScene}
+                        frame={currentFrame?.frame}
+                        selectedObjectName={activeSelectedObject?.name ?? null}
+                        selectedSpanName={selectedSpanResolvedName}
+                        showPerformanceOverlay={shell.performanceOverlayOpen}
+                        onHidePerformanceOverlay={() => shell.setPerformanceOverlayOpen(false)}
+                      />
+                    ) : (
+                      <section className="flex min-h-0 h-full rounded-md border border-border bg-card p-1.5">
+                        <div className="renderer-surface flex items-center justify-center">
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                            Loading scene and simulation data…
+                          </div>
+                        </div>
+                      </section>
+                    )}
 
-                  <PlaybackStrip
-                    isPlaying={playback.isPlaying}
-                    currentTime={playback.currentTime}
-                    tInitial={timeline.tInitial}
-                    tFinal={timeline.tFinal}
-                    tStep={timeline.tStep || 0.001}
-                    playbackSpeed={playbackSpeed}
-                    onTogglePlay={playback.togglePlay}
-                    onReset={playback.resetPlayback}
-                    onChangeTime={playback.changeTime}
-                    onChangeSpeed={(nextValue) => {
-                      if (!Number.isFinite(nextValue)) {
-                        return;
-                      }
+                    {timelineOwner === 'renderer' ? (
+                      <PlaybackStrip
+                        isPlaying={playback.isPlaying}
+                        currentTime={playback.currentTime}
+                        tInitial={timeline.tInitial}
+                        tFinal={timeline.tFinal}
+                        tStep={timeline.tStep || 0.001}
+                        playbackSpeed={playbackSpeed}
+                        onTogglePlay={playback.togglePlay}
+                        onReset={playback.resetPlayback}
+                        onChangeTime={playback.changeTime}
+                        onChangeSpeed={(nextValue) => {
+                          if (!Number.isFinite(nextValue)) {
+                            return;
+                          }
 
-                      updateDraftScene((scene) => {
-                        scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
-                      });
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  <section className="panel renderer-panel loading-panel">
-                    <div className="renderer-surface renderer-loading-surface">
-                      <div className="renderer-loading-copy">Loading scene and simulation data…</div>
-                    </div>
-                  </section>
-                  <section className="panel playback-strip loading-panel">
-                    <div className="loading-placeholder-row loading-placeholder-row-short" />
-                  </section>
-                </>
-              )}
-            </div>
+                          updateDraftScene((scene) => {
+                            scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
+                          });
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
 
-            <button
-              type="button"
-              className="workspace-edge-handle"
-              onClick={() => shell.setLeftRailCollapsed((current) => !current)}
-              aria-label={shell.leftRailCollapsed ? 'Expand editor rail' : 'Collapse editor rail'}
-            >
-              {shell.leftRailCollapsed ? '<' : '>'}
-            </button>
+                {showPlots ? (
+                  <div className="workspace-panel-stack">
+                    <section className="workspace-content-panel">
+                      <div className="h-full min-h-0">
+                        <PlotsPanel
+                          activeScene={activeScene}
+                          channelNames={channelNames}
+                          currentTime={playback.currentTime}
+                          timeline={timeline}
+                          onChangeTime={playback.changeTime}
+                          updateDraftScene={updateDraftScene}
+                        />
+                      </div>
+                    </section>
 
-            {!shell.leftRailCollapsed ? (
-              <div className="workspace-left-rail">
-                <div className="workspace-sidebar">
-                  <div className="workspace-pane-scroll">
+                    {timelineOwner === 'plots' ? (
+                      <PlaybackStrip
+                        isPlaying={playback.isPlaying}
+                        currentTime={playback.currentTime}
+                        tInitial={timeline.tInitial}
+                        tFinal={timeline.tFinal}
+                        tStep={timeline.tStep || 0.001}
+                        playbackSpeed={playbackSpeed}
+                        onTogglePlay={playback.togglePlay}
+                        onReset={playback.resetPlayback}
+                        onChangeTime={playback.changeTime}
+                        onChangeSpeed={(nextValue) => {
+                          if (!Number.isFinite(nextValue)) {
+                            return;
+                          }
+
+                          updateDraftScene((scene) => {
+                            scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
+                          });
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {showEditorRail ? (
+              <div className="workspace-editor-rail">
+                <div className="min-h-0 min-w-0">
+                  <div className="h-full min-h-0 overflow-auto pr-0.5">
                     {loaded ? (
                       <ObjectList
                         entries={objectInspections}
@@ -470,34 +559,34 @@ export default function App() {
                         }}
                       />
                     ) : (
-                      <section className="panel loading-panel">
-                        <h2>Objects</h2>
-                        <div className="loading-placeholder-list">
-                          <div className="loading-placeholder-row" />
-                          <div className="loading-placeholder-row" />
-                          <div className="loading-placeholder-row" />
-                          <div className="loading-placeholder-row" />
+                      <section className="rounded-md border border-border bg-card p-2">
+                        <h2 className="mb-1 text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Objects</h2>
+                        <div className="grid gap-2">
+                          <div className="h-7 animate-pulse rounded-md bg-muted" />
+                          <div className="h-7 animate-pulse rounded-md bg-muted" />
+                          <div className="h-7 animate-pulse rounded-md bg-muted" />
+                          <div className="h-7 animate-pulse rounded-md bg-muted" />
                         </div>
                       </section>
                     )}
                   </div>
                 </div>
 
-                <div className="workspace-drawer">
-                  <div className="workspace-pane-scroll">
+                <div className="workspace-content-panel">
+                  <div className="h-full min-h-0 overflow-auto pr-0.5">
                     <InspectorDrawer
                       activeScene={activeScene}
                       cameraPreview={shell.cameraPreview}
                       channelNames={channelNames}
                       clearCameraPreview={() => shell.setCameraPreview(null)}
                       editorMode={selectionState.editorMode}
-                      hasLocalEdits={hasLocalEdits}
                       liveSelectedSpan={liveSelectedSpan}
                       liveSelectedSpanVisual={liveSelectedSpanVisual}
                       liveSelectedVisual={activeLiveSelectedVisual}
                       loaded={loaded}
                       savePreview={savePreview}
                       selectedObject={activeSelectedObject}
+                      selectedObjectName={activeSelectedObject?.name ?? null}
                       selectedSpanName={selectedSpanResolvedName}
                       selectedSpanVisualName={selectedSpanVisualResolvedName}
                       selectedVisual={activeSelectedVisual}
@@ -531,6 +620,13 @@ export default function App() {
                 </div>
               </div>
             ) : null}
+
+            {!showVisualWorkspace && !showEditorRail ? (
+              <section className="workspace-empty-state">
+                <p className="text-sm font-medium">All workspace panels are hidden.</p>
+                <p className="text-xs text-muted-foreground">Use the Layout menu to show the 3D view, plots, or the editor rail.</p>
+              </section>
+            ) : null}
           </div>
       ) : null}
 
@@ -541,13 +637,13 @@ export default function App() {
           browserListing={browserListing}
           browserLoading={browserLoading}
           errorMessage={error}
-          groupedSamples={groupedSamples}
           loading={loading}
           mode={shell.sceneOverlayMode}
           onBrowse={(path) => {
-            void handleBrowse(path);
+            void handleBrowse(path, 'workspace');
           }}
           onClose={shell.closeLoadOverlay}
+          onCreateFolder={shell.handleCreateFolder}
           onCreateScenePath={(path) => {
             void shell.handleCreateScenePath(path);
           }}
@@ -557,25 +653,62 @@ export default function App() {
           onOpenSelectedScene={() => {
             void shell.handleOpenSelectedScene();
           }}
+          onOpenWorkspace={canPersistScenesToServer ? serverWorkspace.openPicker : undefined}
           onSaveScenePath={(path) => {
             void shell.handleSaveScenePath(path);
           }}
-          sampleBrowserExpanded={shell.sampleBrowserExpanded}
           sceneInput={sceneInput}
-          setSampleBrowserExpanded={shell.setSampleBrowserExpanded}
           setSceneInput={setSceneInput}
+        />
+      ) : null}
+
+      {shell.samplesOverlayOpen ? (
+        <SamplesOverlay
+          groupedSamples={groupedSamples}
+          loading={loading}
+          onClose={shell.closeSamplesOverlay}
+          onOpenSample={(path) => {
+            void shell.handleOpenSamplePath(path);
+          }}
         />
       ) : null}
 
       {shell.diagnosticsOpen && loaded ? (
         <DiagnosticsOverlay
           diagnostics={diagnostics}
+          performanceOverlayOpen={shell.performanceOverlayOpen}
+          setPerformanceOverlayOpen={shell.setPerformanceOverlayOpen}
           onClose={shell.closeDiagnostics}
+        />
+      ) : null}
+
+      {serverWorkspace.pickerOpen ? (
+        <WorkspacePickerOverlay
+          appRoot={serverWorkspace.workspaceInfo?.appRoot ?? null}
+          defaultWorkspaceRoot={serverWorkspace.workspaceInfo?.defaultWorkspaceRoot ?? null}
+          draftWorkspaceRoot={serverWorkspace.draftWorkspaceRoot}
+          errorMessage={serverWorkspace.error}
+          saving={serverWorkspace.saving}
+          workspaceInfo={serverWorkspace.workspaceInfo}
+          onApply={() => {
+            void serverWorkspace.applyWorkspaceRoot(
+              confirmWorkspaceChange,
+              async () => {
+                await handleWorkspaceChange(() => {
+                  shell.openLoadOverlay();
+                });
+              }
+            );
+          }}
+          onClose={serverWorkspace.closePicker}
+          onDraftChange={serverWorkspace.setDraftWorkspaceRoot}
+          onUseDefault={serverWorkspace.useDefaultWorkspaceRoot}
         />
       ) : null}
 
       {shell.simulationOverlayOpen && loaded && draftScene ? (
         <SimulationDataOverlay
+          activeScene={draftScene}
           browserError={browserError}
           browserListing={browserListing}
           browserLoading={browserLoading}
@@ -585,7 +718,9 @@ export default function App() {
           onAddSimulationEntry={shell.addSimulationEntry}
           onAddSimulationEntries={shell.addSimulationEntries}
           onBrowse={(path) => {
-            void handleBrowse(path);
+            if (loaded) {
+              void handleBrowse(path, loaded.sceneRef.source === 'sample' ? 'sample' : 'workspace');
+            }
           }}
           onClose={shell.closeSimulationOverlay}
           onRemoveSimulationEntry={shell.removeSimulationEntry}
@@ -597,6 +732,8 @@ export default function App() {
           setSimulationEntryInput={shell.setSimulationEntryInput}
         />
       ) : null}
+
+      {aboutOpen ? <AboutOverlay onClose={() => setAboutOpen(false)} /> : null}
     </div>
   );
 }

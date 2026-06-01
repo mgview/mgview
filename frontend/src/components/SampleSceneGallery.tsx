@@ -1,4 +1,5 @@
-import type { SampleShortcut } from './SampleShortcutPanel.tsx';
+import type { SampleSceneEntry } from '../core/samplesManifest.ts';
+import { cn } from '../lib/utils.ts';
 
 const GROUP_ACCENTS: Record<string, string> = {
   Basics: 'linear-gradient(135deg, #2a4f7a, #1a3558)',
@@ -10,8 +11,9 @@ const GROUP_ACCENTS: Record<string, string> = {
 };
 
 interface SampleSceneGalleryProps {
-  groupedSamples: Array<[string, SampleShortcut[]]>;
+  groupedSamples: Array<[string, SampleSceneEntry[]]>;
   sceneInput: string;
+  loading?: boolean;
   onOpenScene: (path: string) => void;
   onSelectScene: (path: string) => void;
 }
@@ -19,51 +21,51 @@ interface SampleSceneGalleryProps {
 export default function SampleSceneGallery({
   groupedSamples,
   sceneInput,
+  loading = false,
   onOpenScene,
   onSelectScene,
 }: SampleSceneGalleryProps) {
   return (
-    <section className="panel sample-gallery-panel">
-      <div className="panel-header">
-        <div>
-          <h2>Example Scenes</h2>
-          <p className="panel-subtitle">Pick a bundled sample to load. You can still paste a path above.</p>
-        </div>
-      </div>
+    <div className="grid gap-4">
+      {groupedSamples.map(([groupName, samples]) => (
+        <div key={groupName} className="grid gap-2">
+          <div className="text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">{groupName}</div>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
+            {samples.map((sample) => {
+              const isActive = sceneInput === sample.path;
+              const accent = GROUP_ACCENTS[groupName] ?? 'linear-gradient(135deg, #334155, #1e293b)';
 
-      <div className="sample-gallery-groups">
-        {groupedSamples.map(([groupName, samples]) => (
-          <div key={groupName} className="sample-gallery-group">
-            <div className="sample-gallery-group-title">{groupName}</div>
-            <div className="sample-gallery-grid">
-              {samples.map((sample) => {
-                const isActive = sceneInput === sample.path;
-                const accent = GROUP_ACCENTS[groupName] ?? 'linear-gradient(135deg, #334155, #1e293b)';
-
-                return (
-                  <button
-                    key={sample.path}
-                    type="button"
-                    className={`sample-tile ${isActive ? 'sample-tile-active' : ''}`}
-                    onClick={() => {
-                      onSelectScene(sample.path);
-                      onOpenScene(sample.path);
-                    }}
+              return (
+                <button
+                  key={sample.path}
+                  type="button"
+                  className={cn(
+                    'flex items-stretch gap-2 rounded-md border border-border bg-card p-1.5 text-left transition-colors hover:bg-accent',
+                    isActive && 'border-primary ring-1 ring-primary/30'
+                  )}
+                  disabled={loading}
+                  onClick={() => {
+                    onSelectScene(sample.path);
+                    onOpenScene(sample.path);
+                  }}
+                >
+                  <span
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm text-sm font-bold text-white"
+                    style={{ background: accent }}
+                    aria-hidden="true"
                   >
-                    <span className="sample-tile-thumb" style={{ background: accent }} aria-hidden="true">
-                      <span className="sample-tile-initial">{sample.label.charAt(0)}</span>
-                    </span>
-                    <span className="sample-tile-copy">
-                      <span className="sample-tile-label">{sample.label}</span>
-                      <code className="sample-tile-path">{sample.path}</code>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    {sample.label.charAt(0)}
+                  </span>
+                  <span className="grid min-w-0 content-center gap-0.5">
+                    <span className="truncate text-xs font-medium">{sample.label}</span>
+                    <code className="truncate text-[0.65rem] text-muted-foreground">{sample.path}</code>
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        ))}
-      </div>
-    </section>
+        </div>
+      ))}
+    </div>
   );
 }

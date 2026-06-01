@@ -32,6 +32,7 @@ export interface MaterialDefinition {
 export type SceneMaterial = MaterialDefinition | string;
 export type SpanVisualKind = 'line' | 'cylinder' | 'spring';
 export type SpanLineStyle = 'solid' | 'dashed';
+export type TextRenderMode = '2d' | '3d';
 
 export interface SceneVisual {
   visible?: boolean;
@@ -40,6 +41,7 @@ export interface SceneVisual {
   rotation?: Vector3Like;
   material?: SceneMaterial;
   text?: string;
+  text_mode?: TextRenderMode;
   path?: string;
   scale?: number;
   radius?: number;
@@ -89,9 +91,46 @@ export interface SceneObject {
   visual?: Record<string, SceneVisual>;
 }
 
+export type PlotPanelXMode = 'time' | 'channel';
+
+export interface SceneLayoutConfig {
+  showRenderer?: boolean;
+  showPlots?: boolean;
+  showEditorRail?: boolean;
+  focusTarget?: 'renderer' | 'plots' | null;
+}
+
+export interface PlotPanelConfig {
+  id?: string;
+  title?: string;
+  channels: string[];
+  /** Default: plot Y channel(s) vs simulation time. */
+  xMode?: PlotPanelXMode;
+  /** X channel when xMode is 'channel' (phase / XY plot). */
+  xChannel?: string;
+  /** Multiply Y channel samples when xMode is 'channel' (default 1). */
+  yChannelScale?: number;
+  /** Multiply X channel samples when xMode is 'channel' (default 1). */
+  xChannelScale?: number;
+  /** Default true — fit axes to data until the user zooms or pans. */
+  autoScale?: boolean;
+  /** Axis limits (meaning depends on autoScale and xMode; see plotAxisConfig). */
+  xMin?: number;
+  xMax?: number;
+  yMin?: number;
+  yMax?: number;
+}
+
+export interface ScenePlotsConfig {
+  panels: PlotPanelConfig[];
+  /** Multiplier on default plot vertical size (default 1). */
+  heightScale?: number;
+}
+
 export interface SceneConfig {
   name?: string;
   simulationData?: string[];
+  layout?: SceneLayoutConfig;
   newtonianFrame?: string;
   sceneOrigin?: string;
   backgroundColor?: string;
@@ -103,11 +142,25 @@ export interface SceneConfig {
   cameraFocus?: [number, number, number];
   speedFactor?: number;
   customMaterials?: Record<string, unknown>;
+  plots?: ScenePlotsConfig;
   objects?: Record<string, SceneObject>;
   spans?: Record<string, SceneSpan>;
 }
 
+export interface SceneReferenceInference {
+  canonical: string | null;
+  all: string[];
+}
+
+export interface SceneReferenceContext {
+  sceneOrigin: SceneReferenceInference;
+  newtonianFrame: SceneReferenceInference;
+  authoredSceneOrigin: string | null;
+  authoredNewtonianFrame: string | null;
+}
+
 export interface NormalizedSceneConfig extends SceneConfig {
+  layout: SceneLayoutConfig;
   simulationData: string[];
   newtonianFrame: string;
   sceneOrigin: string;
@@ -115,6 +168,8 @@ export interface NormalizedSceneConfig extends SceneConfig {
   showAxes: boolean;
   workspaceSize: number;
   cameraParentFrame: string;
+  referenceContext: SceneReferenceContext;
+  plots: ScenePlotsConfig;
   objects: Record<string, SceneObject>;
   spans: Record<string, SceneSpan>;
 }
@@ -133,6 +188,8 @@ export interface SimulationTable {
 export interface ParsedSimulationFile {
   filePath: string;
   channelNames: string[];
+  sceneOrigin: SceneReferenceInference;
+  newtonianFrame: SceneReferenceInference;
 }
 
 export interface TimelineFrame {
@@ -262,6 +319,7 @@ export interface RenderTextVisual extends RenderVisualBase {
   type: 'text';
   text: string;
   scale: number;
+  textMode: TextRenderMode;
 }
 
 export interface RenderBasisVisual extends RenderVisualBase {
@@ -271,6 +329,8 @@ export interface RenderBasisVisual extends RenderVisualBase {
 
 export interface RenderLineSpan {
   name: string;
+  spanName: string;
+  visualName: string;
   kind: 'line';
   visible: boolean;
   material: RenderMaterial;
@@ -282,6 +342,8 @@ export interface RenderLineSpan {
 
 export interface RenderCylinderSpan {
   name: string;
+  spanName: string;
+  visualName: string;
   kind: 'cylinder';
   visible: boolean;
   material: RenderMaterial;
@@ -294,6 +356,8 @@ export interface RenderCylinderSpan {
 
 export interface RenderSpringSpan {
   name: string;
+  spanName: string;
+  visualName: string;
   kind: 'spring';
   visible: boolean;
   material: RenderMaterial;

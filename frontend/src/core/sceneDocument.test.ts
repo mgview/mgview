@@ -56,8 +56,16 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
 
   assert.equal(document.newtonianFrame, 'N');
   assert.equal(document.sceneOrigin, 'No');
+  assert.equal(document.referenceContext.newtonianFrame.canonical, null);
+  assert.equal(document.referenceContext.sceneOrigin.canonical, null);
   assert.equal(document.backgroundColor, '#e0f0ff');
   assert.equal(document.cameraParentFrame, 'N');
+  assert.deepEqual(document.layout, {
+    showRenderer: true,
+    showPlots: false,
+    showEditorRail: true,
+    focusTarget: null,
+  });
   assert.ok(document.objects.N);
   assert.equal(document.objects.N.type, 'frame');
   assert.ok(document.objects.N.visual?.label);
@@ -70,6 +78,41 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
     document.objects.P.visual?.point?.radius,
     document.workspaceSize * DEFAULT_POINT_MARKER_WORKSPACE_FRACTION
   );
+});
+
+test('scene normalization preserves authored layout intent and assigns plot ids', () => {
+  const document = createSceneDocument({
+    layout: {
+      showRenderer: false,
+      showPlots: true,
+      showEditorRail: false,
+      focusTarget: 'plots',
+    },
+    plots: {
+      panels: [
+        {
+          channels: ['alpha', 'alpha', 'beta'],
+          xMode: 'time',
+        },
+        {
+          id: 'plot-manual',
+          channels: ['gamma'],
+          xMode: 'channel',
+          xChannel: 'delta',
+        },
+      ],
+    },
+  });
+
+  assert.equal(document.layout.showRenderer, false);
+  assert.equal(document.layout.showPlots, true);
+  assert.equal(document.layout.showEditorRail, false);
+  assert.equal(document.layout.focusTarget, 'plots');
+  assert.equal(document.plots.panels.length, 2);
+  assert.equal(typeof document.plots.panels[0].id, 'string');
+  assert.ok(document.plots.panels[0].id);
+  assert.equal(document.plots.panels[1].id, 'plot-manual');
+  assert.deepEqual(document.plots.panels[0].channels, ['alpha', 'beta']);
 });
 
 test('scene normalization does not auto-add defaults when authored visuals already exist', () => {
@@ -106,6 +149,22 @@ test('scene normalization does not auto-add defaults when authored visuals alrea
   assert.deepEqual(Object.keys(document.objects.P.visual ?? {}), ['dot']);
 });
 
+test('scene normalization drops authored objects with blank names', () => {
+  const document = createSceneDocument({
+    newtonianFrame: 'N',
+    sceneOrigin: 'No',
+    objects: {
+      N: { type: 'frame', visual: {} },
+      '': { type: 'frame', visual: {} },
+      '   ': { type: 'point', visual: {} },
+    },
+  });
+
+  assert.equal(document.objects.N.type, 'frame');
+  assert.equal(document.objects[''], undefined);
+  assert.equal(document.objects['   '], undefined);
+});
+
 test('channel inference promotes frames and adds missing points', async () => {
   const scene = await readSceneFixture('default.json');
   const document = createSceneDocument(scene, [
@@ -117,6 +176,27 @@ test('channel inference promotes frames and adds missing points', async () => {
 
   assert.equal(document.objects.Q.type, 'point');
   assert.equal(document.objects.A.type, 'frame');
+  assert.equal(document.objects.No.type, 'point');
+  assert.equal(document.newtonianFrame, 'N');
+  assert.equal(document.sceneOrigin, 'No');
+  assert.deepEqual(document.referenceContext.newtonianFrame.all, ['N']);
+  assert.deepEqual(document.referenceContext.sceneOrigin.all, ['No']);
+});
+
+test('inferred reference context overrides authored legacy values for normalization', () => {
+  const document = createSceneDocument(
+    {
+      newtonianFrame: 'Legacy',
+      sceneOrigin: 'LegacyOrigin',
+      objects: {},
+    },
+    ['P_No_Ao[1]', 'P_No_Ao[2]', 'P_No_Ao[3]', 'N_A[1,1]']
+  );
+
+  assert.equal(document.newtonianFrame, 'N');
+  assert.equal(document.sceneOrigin, 'No');
+  assert.equal(document.referenceContext.authoredNewtonianFrame, 'Legacy');
+  assert.equal(document.referenceContext.authoredSceneOrigin, 'LegacyOrigin');
 });
 
 test('scene inspector surfaces inferred objects and default visuals', async () => {
@@ -171,12 +251,27 @@ test('scene inspector warns about mixed origins and objects missing sim data', a
     document,
     ['samples/default.1', 'samples/default.2'],
     ['P_No_Q[1]', 'P_Ao_R[1]', 'P_Ao_R[2]', 'P_Ao_R[3]'],
+    [
+      {
+        filePath: 'samples/default.1',
+        channelNames: ['P_No_Q[1]'],
+        sceneOrigin: { canonical: 'No', all: ['No'] },
+        newtonianFrame: { canonical: null, all: [] },
+      },
+      {
+        filePath: 'samples/default.2',
+        channelNames: ['P_Ao_R[1]', 'P_Ao_R[2]', 'P_Ao_R[3]'],
+        sceneOrigin: { canonical: 'Ao', all: ['Ao'] },
+        newtonianFrame: { canonical: null, all: [] },
+      },
+    ],
     ['Could not parse simulation file samples/default.2: missing']
   );
 
   assert.equal(inspections.find((entry) => entry.name === 'N')?.missingSimulationData, false);
   assert.equal(inspections.find((entry) => entry.name === 'Ghost')?.missingSimulationData, true);
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('multiple position origins')));
+  assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('not used')));
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('will not render')));
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('Could not parse simulation file')));
 });

@@ -62,7 +62,27 @@ export function getFrameAtTime(timeline: Timeline, time: number): TimelineLookup
   }
 
   return {
-    frame: timeline.frames[index],
+    frame: timeline.frames[index]!,
     tFinalExceeded,
   };
+}
+
+export function getFrameIndexAtTime(timeline: Timeline, time: number): number {
+  if (timeline.frames.length === 0) {
+    return 0;
+  }
+
+  const { tInitial, tStep, frames } = timeline;
+  const safeStep = tStep === 0 ? 1 : tStep;
+  let index = Math.floor((time - tInitial) / safeStep);
+
+  if (index < 0) {
+    return 0;
+  }
+
+  if (index >= frames.length) {
+    return frames.length - 1;
+  }
+
+  return index;
 }

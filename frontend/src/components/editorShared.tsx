@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import type { SceneMaterial, SceneVisual, Vector3Like, VisualType } from '../core/types.ts';
+import type { SceneMaterial, SceneVisual, TextRenderMode, Vector3Like, VisualType } from '../core/types.ts';
+import { DEFAULT_TEXT_MATERIAL } from '../core/materialPresets.ts';
+import { normalizeTextRenderMode } from '../core/sceneEvaluation.ts';
 
 export const VISUAL_TYPE_OPTIONS: VisualType[] = [
   'sphere',
@@ -149,7 +151,14 @@ export function createDefaultVisual(type: VisualType, material?: SceneMaterial, 
     case 'mesh':
       return { ...shared, type, scale, path: '' };
     case 'text':
-      return { ...shared, type, scale, text: '' };
+      return {
+        ...shared,
+        type,
+        scale,
+        text: '',
+        text_mode: '2d',
+        material: { ...DEFAULT_TEXT_MATERIAL },
+      };
     case 'basis':
       return { ...shared, type, scale };
     default:
@@ -183,6 +192,25 @@ function formatEditableNumber(value: number, decimalPlaces: number): string {
   }
 
   return value.toFixed(decimalPlaces).replace(/\.?0+$/, '');
+}
+
+/** Returns null while the user is still typing a partial number (e.g. "0."). */
+function parseEditableNumberText(text: string): number | null {
+  const trimmed = text.trim();
+  if (trimmed === '' || trimmed === '-' || trimmed === '.' || trimmed === '-.') {
+    return null;
+  }
+
+  if (/^-?\d+\.$/.test(trimmed) || /^-\.$/.test(trimmed)) {
+    return null;
+  }
+
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+
+  return parsed;
 }
 
 function roundToDecimalPlaces(value: number, decimalPlaces: number): number {
@@ -222,6 +250,10 @@ function normalizeEditableNumber(
   return integer ? Math.round(nextValue) : roundToDecimalPlaces(nextValue, decimalPlaces);
 }
 
+export function getTextRenderMode(visual: SceneVisual): TextRenderMode {
+  return normalizeTextRenderMode(visual.text_mode);
+}
+
 export function getEditableScalarKeys(visual: SceneVisual): EditableScalarKey[] {
   const orderedKeys = EDITABLE_KEYS_BY_TYPE[visual.type ?? ''] ?? [];
 
@@ -253,6 +285,7 @@ export function NumericInput({
 }) {
   const [text, setText] = useState(formatEditableNumber(value, decimalPlaces));
   const [isDragging, setIsDragging] = useState(false);
+  const isEditingRef = useRef(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{
@@ -264,6 +297,10 @@ export function NumericInput({
   } | null>(null);
 
   useEffect(() => {
+    if (isEditingRef.current) {
+      return;
+    }
+
     setText(formatEditableNumber(value, decimalPlaces));
   }, [decimalPlaces, value]);
 
@@ -364,34 +401,42 @@ export function NumericInput({
         type="text"
         inputMode="decimal"
         value={text}
+        onFocus={() => {
+          isEditingRef.current = true;
+        }}
         onChange={(event) => {
           const nextText = event.target.value;
           setText(nextText);
 
-          if (nextText.trim() === '') {
+          const parsed = parseEditableNumberText(nextText);
+          if (parsed === null) {
             return;
           }
 
-          const nextValue = Number(nextText);
-          if (Number.isFinite(nextValue)) {
-            onValueChange(
-              normalizeEditableNumber(nextValue, {
-                minValue,
-                maxValue,
-                integer,
-                decimalPlaces,
-              })
-            );
+          const normalized = normalizeEditableNumber(parsed, {
+            minValue,
+            maxValue,
+            integer,
+            decimalPlaces,
+          });
+
+          if (onValuePreviewChange) {
+            onValuePreviewChange(normalized);
+            return;
           }
+
+          onValueChange(normalized);
         }}
         onBlur={() => {
-          const nextValue = Number(text);
-          if (text.trim() === '' || !Number.isFinite(nextValue)) {
+          isEditingRef.current = false;
+
+          const parsed = parseEditableNumberText(text);
+          if (parsed === null) {
             setText(formatEditableNumber(value, decimalPlaces));
             return;
           }
 
-          const roundedValue = normalizeEditableNumber(nextValue, {
+          const roundedValue = normalizeEditableNumber(parsed, {
             minValue,
             maxValue,
             integer,
