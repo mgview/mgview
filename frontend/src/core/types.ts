@@ -100,7 +100,11 @@ export interface PlotPanelConfig {
   xMode?: PlotPanelXMode;
   /** X channel when xMode is 'channel' (phase / XY plot). */
   xChannel?: string;
-  /** Default true — fit axes to data; Shift-drag box-zoom when zoomed. */
+  /** Multiply Y channel samples when xMode is 'channel' (default 1). */
+  yChannelScale?: number;
+  /** Multiply X channel samples when xMode is 'channel' (default 1). */
+  xChannelScale?: number;
+  /** Default true — fit axes to data until the user zooms or pans. */
   autoScale?: boolean;
   /** Axis limits (meaning depends on autoScale and xMode; see plotAxisConfig). */
   xMin?: number;

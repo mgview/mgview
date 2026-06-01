@@ -1,6 +1,6 @@
 # MGView plotting scope
 
-**Status:** MVP + axis polish (Y vs t + Y vs X, persisted zoom/pan). Parent: [`mgview-in-place-modernization.md`](mgview-in-place-modernization.md).
+**Status:** MVP + axis polish (Y vs t + Y vs X, persisted zoom/pan, latching zoom-to-fit). Parent: [`mgview-in-place-modernization.md`](mgview-in-place-modernization.md).
 
 Handoff for **simulation channel charts** in the modern React app. **Update this file in-repo** when plotting behavior changes; do not rely on chat history.
 
@@ -12,8 +12,8 @@ Charts **render and sync with playback**. Smoke test: **Robot Arm → Circle Ste
 
 | Mode | UI | Chart behavior |
 |------|-----|----------------|
-| **Y vs t** (default) | Gear → channel filter; **Y vs t / Y vs X** toggle; **Focus** (auto-scale); **Reset view** when zoomed | Multi-series vs time; drag scrubs time; **Shift+drag** box-zooms **time** (Y refits); channel chips below |
-| **Y vs X** | Gear → filter, Y/X dropdowns, mode toggle, **swap** (↔), **Focus**, **Reset view** | Parametric path; labels = channel names; playback dot; **1:1 aspect** (settings checkbox or key **`1`**); drag → nearest-sample scrub; **Shift+drag** **2D** box-zoom when auto-scale on |
+| **Y vs t** (default) | Gear → channel filter; **Y vs t / Y vs X** toggle; **Zoom to fit** | Multi-series vs time; drag scrubs time; **Shift+drag** 2D manual zoom (leaves zoom-to-fit); channel chips below |
+| **Y vs X** | Gear → filter, Y/X dropdowns + **scale** (default 1, e.g. **-1** to flip), mode toggle, **swap** (↔), **Zoom to fit**, **Square** | Parametric path; labels = channel names; playback dot; **Square** (header button or key **`1`**); drag → nearest-sample scrub; **Shift+drag** 2D manual zoom |
 
 **Build / run:** `cd frontend && npm run build` — [`bin/RunVisualizer.bat`](../bin/RunVisualizer.bat) → `http://localhost:8000/mgview/`.
 
@@ -21,11 +21,11 @@ Charts **render and sync with playback**. Smoke test: **Robot Arm → Circle Ste
 
 1. `cd frontend && npm test && npm run build`
 2. Load Circle Step.
-3. **Y vs t** torque panel (`Ta`, `Tb`, `Tcd`): lines visible; drag scrubs; **Focus** filled = auto-scale on; Shift+drag shows **highlighted** time region → zoom; **Reset view** restores; save scene → reload → zoom preserved if saved.
-4. Toggle **Focus** off (dashed/muted): Shift+drag H or V zooms one axis; right-drag (two-finger on Mac) pans; edit limits in settings; save/reload manual limits.
+3. **Y vs t** torque panel (`Ta`, `Tb`, `Tcd`): lines visible; drag scrubs; **Zoom to fit** filled = fit on; Shift+drag zooms X and Y (button dims **on press**, fit off after release); click **Zoom to fit** to restore; save scene → reload → manual limits preserved if saved.
+4. After zoom/pan, **Zoom to fit** is dashed/muted: Shift+drag zooms; right-drag (two-finger on Mac) pans; edit limits in settings; save/reload manual limits; click **Zoom to fit** to refit.
 5. Add panel → scrolls into view.
 6. Switch to **Y vs X** — keeps `channels[0]` as Y, sets `xChannel` from `channels[1]` if present; **axis fields cleared** on mode/channel change.
-7. Y vs X: `P_No_Eo[1]` vs `P_No_Eo[3]` → closed loop + dot; Shift+drag 2D region when auto-scale on.
+7. Y vs X: `P_No_Eo[1]` vs `P_No_Eo[3]` → closed loop + dot; bottom axis label visible. (**Square** control hidden until fixed — see [`mgview-plot-square-aspect.md`](mgview-plot-square-aspect.md).)
 
 ---
 
@@ -34,26 +34,36 @@ Charts **render and sync with playback**. Smoke test: **Robot Arm → Circle Ste
 | Control | Behavior |
 |---------|----------|
 | Title | Inline editable → `plots.panels[].title` |
-| **Settings** (gear) | Channels, mode, axis hints, manual limit inputs |
-| **Focus** (icon) | **Auto-scale toggle.** **On:** primary fill + ring. **Off:** dashed border + muted fill. Both plot modes. |
-| **Reset view** | Shown when view differs from full data; clears stored axis fields (`mergePlotAxisFields(panel, null)`) |
+| **Settings** (gear) | Channels, mode, axis hints; manual limit inputs when zoom-to-fit is off |
+| **Zoom to fit** (focus icon) | **Latching.** **On:** primary fill + ring — axes follow full data span ([`plotPanelZoomToFitActive`](frontend/src/core/plotAxisConfig.ts)). **Off:** dashed/muted after zoom/pan (dims **on pointer-down** for Shift+drag or right-drag pan, before commit). Click to clear stored limits and refit. No separate “reset view” control. |
+| **Square** (square icon, Y vs X only) | **Disabled in UI** (`SQUARE_ASPECT_UI_ENABLED = false`) — sizing broken; see [`mgview-plot-square-aspect.md`](mgview-plot-square-aspect.md). |
 | **X** | Remove panel |
 
-**Not persisted:** `squareAspect` (Y vs X only) — React local state in [`PlotPanel.tsx`](frontend/src/components/PlotPanel.tsx).
+**Not persisted:** square aspect — React local state in [`PlotPanel.tsx`](frontend/src/components/PlotPanel.tsx).
 
 ---
 
 ## Axis interaction (both Y vs t and Y vs X)
 
-| Auto-scale | Gesture | Effect |
-|------------|---------|--------|
-| **On** (default) | Shift + drag | **Box select** (`.u-select` styled in [`app.css`](frontend/src/app.css)). **Y vs t:** X window only; Y refits via [`computePlotYBounds`](frontend/src/core/plotSeries.ts). **Y vs X:** 2D box → both axes. |
-| **On** | Drag (no Shift) | Scrub playback: **Y vs t** → time from X; **Y vs X** → nearest sample in pixel space → `currentTime` |
-| **Off** | Shift + drag (dominant axis) | Horizontal → zoom X; vertical → zoom Y |
-| **Off** | Right-drag | Pan X and Y (context menu suppressed on plot) |
-| **Off** | Settings inputs | Edit `xMin`/`xMax`/`yMin`/`yMax` (labels: Time min/max for Y vs t) |
+There is **no hybrid auto-scale** (no box-select zoom, no “auto Y refit to visible X” while zoom-to-fit is on). A panel is either in **zoom-to-fit** or **fully manual**.
 
-uPlot built-in drag zoom stays **off** (`cursor.drag.setScale: false`). Custom handlers in `attachScrubHandlers` inside [`PlotPanel.tsx`](frontend/src/components/PlotPanel.tsx). During pan/manual zoom, limits update via local `dragLimits` and **commit to scene on pointer-up** (avoids flooding draft on every move).
+| Zoom to fit | Gesture | Effect |
+|------------|---------|--------|
+| **On** (default) | Drag (no Shift) | Scrub playback: **Y vs t** → time from X; **Y vs X** → nearest sample in pixel space → `currentTime` |
+| **On or off** | Shift + drag | Manual **X and Y** zoom (horizontal → X, vertical → Y). Header buttons dim on **pointer-down**; limits committed on **pointer-up** with `autoScale: false` + all four limits. |
+| **On or off** | Right-drag | Pan X and Y (context menu suppressed). Same latch break as Shift+drag. |
+| **Off** | Settings inputs | Edit `xMin`/`xMax`/`yMin`/`yMax` (labels: Time min/max for Y vs t); formatted display, rounded on save |
+
+uPlot built-in drag zoom stays **off** (`cursor.drag.setScale: false`); box `select` overlay is **off**. Custom handlers in `attachScrubHandlers` inside [`PlotPanel.tsx`](frontend/src/components/PlotPanel.tsx).
+
+**Pointer / limit updates (manual pan & zoom):**
+
+- While dragging, limits are applied with `chart.setScale` only (`liveDragLimitsRef`); React `plotLimits` effects are skipped until the gesture ends (`panningRef` / `manualZoomRef` guard).
+- **Commit to scene on pointer-up** (not every `pointermove`).
+- One **active pointer id** per gesture; `pointerup`, `pointercancel`, and `lostpointercapture` share teardown.
+- **Pan math** is **absolute** from press: `startPlotX/Y` + `startLimits`; pixel delta → data delta via **`chart.rect`**. Tune `PAN_DRAG_SCALE` at top of [`PlotPanel.tsx`](frontend/src/components/PlotPanel.tsx).
+- **Manual zoom** uses `MANUAL_ZOOM_SENSITIVITY`; zoom is relative to limits at **pointer-down**.
+- uPlot scales always use **`auto: false`** with explicit min/max (no uPlot auto Y after drag).
 
 ---
 
@@ -65,7 +75,9 @@ interface PlotPanelConfig {
   channels: string[];         // Y vs t: many; Y vs X: [0] = Y
   xMode?: 'time' | 'channel'; // default 'time'
   xChannel?: string;          // required when xMode === 'channel'
-  autoScale?: boolean;        // default true (omit = on)
+  yChannelScale?: number;     // Y vs X only; default 1 (omit = 1)
+  xChannelScale?: number;     // Y vs X only; default 1 (omit = 1)
+  autoScale?: boolean;        // default true (omit = on); false = manual
   xMin?: number;
   xMax?: number;
   yMin?: number;
@@ -73,16 +85,18 @@ interface PlotPanelConfig {
 }
 ```
 
+**Zoom-to-fit active** when `autoScale !== false` and **no** stored axis fields ([`plotPanelHasStoredAxisFields`](frontend/src/core/plotAxisConfig.ts)). Resolved limits = [`computeFullPlotAxisLimits`](frontend/src/core/plotAxisConfig.ts) (Y vs t: time range + padded Y; Y vs X: padded X/Y extrema).
+
 **What gets written to `scene.json`** ([`buildPersistedPlotAxisFields`](frontend/src/core/plotAxisConfig.ts)):
 
 | State | Saved fields |
 |-------|----------------|
-| Auto on, full view | *(none — defaults)* |
-| Auto on, **Y vs t** zoomed | `xMin`, `xMax` only (Y recomputed on load) |
-| Auto on, **Y vs X** zoomed | `xMin`, `xMax`, `yMin`, `yMax` |
-| Auto **off** (manual) | `autoScale: false` + all four limits |
+| Zoom-to-fit (limits match full data span) | *(none — defaults)* |
+| Manual / zoomed / panned | `autoScale: false` + `xMin`, `xMax`, `yMin`, `yMax` |
 
-**Cleared** when: channels/mode change, **Reset view**, or panel signature change (channels / xChannel / series ids) via [`PlotsPanel`](frontend/src/components/PlotsPanel.tsx) / [`PlotPanel`](frontend/src/components/PlotPanel.tsx).
+Legacy scenes may have only `xMin`/`xMax` without `autoScale: false`; those are treated as manual (stored fields present) — Y limits are **not** recomputed from visible X on load.
+
+**Cleared** when: channels/mode change, click **Zoom to fit** (`mergePlotAxisFields(..., null)`), or panel signature change (channels / xChannel / series ids).
 
 Example manual Y vs X panel:
 
@@ -100,7 +114,7 @@ Example manual Y vs X panel:
 }
 ```
 
-Normalize on load: [`plotsConfig.ts`](frontend/src/core/plotsConfig.ts) (`finitePlotLimit` for stored numbers). Round-trip: [`createSavableScene`](frontend/src/hooks/useSceneWorkspace.ts) clones `draftScene.plots`.
+Normalize on load: [`plotsConfig.ts`](frontend/src/core/plotsConfig.ts) (`finitePlotLimit`). Persist rounds via [`roundPlotAxisLimits`](frontend/src/core/plotAxisConfig.ts) / [`formatPlotAxisLimit`](frontend/src/core/plotAxisConfig.ts). Round-trip: [`createSavableScene`](frontend/src/hooks/useSceneWorkspace.ts) clones `draftScene.plots`.
 
 ---
 
@@ -113,13 +127,15 @@ Normalize on load: [`plotsConfig.ts`](frontend/src/core/plotsConfig.ts) (`finite
 | Time indexing | [`getFrameIndexAtTime`](frontend/src/core/timeline.ts) / [`getFrameAtTime`](frontend/src/core/timeline.ts) |
 | Resolved limits | [`resolvePlotAxisLimits`](frontend/src/core/plotAxisConfig.ts) + [`computeFullPlotAxisLimits`](frontend/src/core/plotAxisConfig.ts) |
 | `setData` | `plot.setData(data, false)` — scales updated in separate `setScale` effects |
-| Y padding | 5% via `computePlotYBounds` |
+| Y padding (fit mode) | 5% via `computePlotYBounds` in `computeFullPlotAxisLimits` only |
 | XY series | `sorted: 0` for non-monotonic X |
-| XY playback dot | DOM `.plot-xy-marker` in `plot.over`; fixed `#60a5fa` (TODO: series color) |
+| XY plot height | `PLOT_XY_DEFAULT_HEIGHT` (228) or square via `convergeSquarePlotSize` on `chart.rect` |
+| XY playback dot | DOM `.plot-xy-marker` in `plot.over`; `#60a5fa` (TODO: series color) |
 | Legend | Off; channel chips below chart (Y vs t only) |
 | Mode switch | [`PlotsPanel`](frontend/src/components/PlotsPanel.tsx) atomic update + `mergePlotAxisFields(..., null)` |
+| Square toggle | `setSize` in dedicated effect — **not** in uPlot mount deps |
 
-**CSS pitfall:** Do not override uPlot `canvas` positioning under `.plot-panel-host`. Selection overlay: `.plot-panel-host .u-select` in [`app.css`](frontend/src/app.css).
+**CSS pitfall:** Do not override uPlot `canvas` positioning under `.plot-panel-host`.
 
 ---
 
@@ -144,14 +160,14 @@ flowchart LR
 | File | Role |
 |------|------|
 | [`PlotsPanel.tsx`](frontend/src/components/PlotsPanel.tsx) | Panel stack; wires config + `onChangeAxisView` → draft scene |
-| [`PlotPanel.tsx`](frontend/src/components/PlotPanel.tsx) | uPlot lifecycle, pointer handlers, Focus/Reset UI, settings |
+| [`PlotPanel.tsx`](frontend/src/components/PlotPanel.tsx) | uPlot lifecycle, pointer handlers, Zoom to fit / Square header buttons, settings |
 | [`PlotChannelPicker.tsx`](frontend/src/components/PlotChannelPicker.tsx) | Searchable channel multi-select |
-| [`plotAxisConfig.ts`](frontend/src/core/plotAxisConfig.ts) | Resolve / persist / merge axis state |
+| [`plotAxisConfig.ts`](frontend/src/core/plotAxisConfig.ts) | `plotPanelZoomToFitActive`, `plotPanelHasStoredAxisFields`, resolve / persist / merge; limit formatting |
 | [`plotSeries.ts`](frontend/src/core/plotSeries.ts) | `extractPlotPanelData`, `computePlotYBounds` |
 | [`plotTheme.ts`](frontend/src/core/plotTheme.ts) | Canvas colors |
 | [`plotsConfig.ts`](frontend/src/core/plotsConfig.ts) | `normalizePlotsConfig`, diagnostics |
 
-**Library:** [uPlot](https://github.com/szopiory/uPlot) v1.6.x — mount in `useEffect`; plot **not** recreated on every scale change (scale deps removed from mount effect).
+**Library:** [uPlot](https://github.com/szopiory/uPlot) v1.6.x — mount in `useEffect`; plot **not** recreated on square-aspect or scale-only changes.
 
 ---
 
@@ -159,6 +175,7 @@ flowchart LR
 
 **Polish**
 
+- [ ] **Square aspect (Y vs X)** — broken; UI hidden. Handoff: [`mgview-plot-square-aspect.md`](mgview-plot-square-aspect.md)
 - [ ] XY marker color from series theme (currently `#60a5fa` in CSS)
 - [ ] Wheel zoom (custom; uPlot v1.6 has no `wheel` option)
 - [ ] Persist `squareAspect` in JSON (optional; currently UI-only)
@@ -186,12 +203,14 @@ cd frontend && npm test && npm run build
 | File | Covers |
 |------|--------|
 | [`plotSeries.test.ts`](frontend/src/core/plotSeries.test.ts) | Extraction, Y vs X mode, `computePlotYBounds`, axis fields round-trip via `createSavableScene` |
-| [`plotAxisConfig.test.ts`](frontend/src/core/plotAxisConfig.test.ts) | `buildPersistedPlotAxisFields`, `mergePlotAxisFields`, `resolvePlotAxisLimits`, zoom detection |
+| [`plotAxisConfig.test.ts`](frontend/src/core/plotAxisConfig.test.ts) | `plotPanelZoomToFitActive`, `buildPersistedPlotAxisFields`, `resolvePlotAxisLimits`, legacy partial fields |
 
 ---
 
 ## Agent notes (last update)
 
-- **Done:** Unified axis UX for Y vs t and Y vs X; scene JSON persistence; visible Shift+drag selection; **Focus** button with strong on/off styling (`default` + ring vs dashed `outline`).
-- **Touch carefully:** `attachScrubHandlers` uses refs (`autoScaleRef`, `commitAxisLimitsRef`) — stale closures if handlers read props without refs. `panelSignature` effect clears axis view only when signature **changes**, not on first mount.
-- **Next likely tasks:** wheel zoom, XY dot color from theme, optional `squareAspect` persistence.
+- **Done:** Binary **zoom-to-fit vs manual** (no box zoom, no partial X-only auto Y); **Zoom to fit** header latch with **optimistic button dim on pointer-down**; Shift+drag 2D manual zoom; right-drag pan from any state; click **Zoom to fit** to refit (no reset button); XY bottom axis `labelSize`/`labelGap`.
+- **Blocked:** **Square** aspect (1:1 drawable area) — UI hidden; handoff [`mgview-plot-square-aspect.md`](mgview-plot-square-aspect.md).
+- **Touch carefully:** `attachScrubHandlers` refs (`breakViewLatchesRef`, `commitAxisLimitsRef`, `liveDragLimitsRef`, `manualZoomRef`, `panningRef`, `squareAspectRef`); `zoomToFitUiOff` is UI-only until parent props update. `autoScaleRef` synced from props via `useEffect`, cleared in `breakViewLatches` during gesture — commits always call `buildPersistedPlotAxisFields(limits, fullLimits)` (full manual when differ).
+- **Pan tuning:** `PAN_DRAG_SCALE` (default `1`); divisor = `chart.rect` width/height.
+- **Next likely tasks:** fix square aspect (see handoff doc), wheel zoom, XY dot color from theme, optional `squareAspect` persistence.

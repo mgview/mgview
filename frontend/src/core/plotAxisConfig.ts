@@ -10,8 +10,80 @@ export interface PlotAxisLimits {
 
 const LIMIT_EPSILON = 1e-9;
 
+function plotLimitDecimalPlaces(abs: number): number {
+  if (abs >= 100) {
+    return 2;
+  }
+
+  if (abs >= 10) {
+    return 3;
+  }
+
+  if (abs >= 1) {
+    return 4;
+  }
+
+  return 5;
+}
+
+export function formatPlotAxisLimit(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+
+  const abs = Math.abs(value);
+  if (abs >= 1e4 || (abs > 0 && abs < 1e-4)) {
+    return value.toPrecision(6).replace(/\.?0+(?=[eE])/, '');
+  }
+
+  return value.toFixed(plotLimitDecimalPlaces(abs)).replace(/\.?0+$/, '');
+}
+
+export function roundPlotAxisLimit(value: number): number {
+  if (!Number.isFinite(value)) {
+    return value;
+  }
+
+  const abs = Math.abs(value);
+  if (abs >= 1e4 || (abs > 0 && abs < 1e-4)) {
+    return Number(value.toPrecision(6));
+  }
+
+  return Number(value.toFixed(plotLimitDecimalPlaces(abs)));
+}
+
+export function roundPlotAxisLimits(limits: PlotAxisLimits): PlotAxisLimits {
+  return {
+    xMin: roundPlotAxisLimit(limits.xMin),
+    xMax: roundPlotAxisLimit(limits.xMax),
+    yMin: roundPlotAxisLimit(limits.yMin),
+    yMax: roundPlotAxisLimit(limits.yMax),
+  };
+}
+
 export function plotPanelAutoScale(panel: Pick<PlotPanelConfig, 'autoScale'>): boolean {
   return panel.autoScale !== false;
+}
+
+export function plotPanelHasStoredAxisFields(
+  panel: Pick<PlotPanelConfig, 'xMin' | 'xMax' | 'yMin' | 'yMax'>
+): boolean {
+  return (
+    finitePlotLimit(panel.xMin) != null ||
+    finitePlotLimit(panel.xMax) != null ||
+    finitePlotLimit(panel.yMin) != null ||
+    finitePlotLimit(panel.yMax) != null
+  );
+}
+
+/** Zoom-to-fit: axes follow data; no stored axis limits and auto-scale not disabled. */
+export function plotPanelZoomToFitActive(
+  panel: Pick<PlotPanelConfig, 'autoScale' | 'xMin' | 'xMax' | 'yMin' | 'yMax'>,
+  fullLimits: PlotAxisLimits | null
+): boolean {
+  return (
+    plotPanelAutoScale(panel) && fullLimits != null && !plotPanelHasStoredAxisFields(panel)
+  );
 }
 
 export function computeFullPlotAxisLimits(
@@ -78,56 +150,22 @@ function finiteLimit(value: number | undefined): number | undefined {
 
 export function resolvePlotAxisLimits(
   panel: Pick<PlotPanelConfig, 'autoScale' | 'xMin' | 'xMax' | 'yMin' | 'yMax'>,
-  fullLimits: PlotAxisLimits | null,
-  panelData: PlotPanelData,
-  visibleSeries: PlotSeries[],
-  isTimePlot: boolean
+  fullLimits: PlotAxisLimits | null
 ): PlotAxisLimits | null {
   if (!fullLimits) {
     return null;
   }
 
-  const autoScale = plotPanelAutoScale(panel);
-  const storedXMin = finiteLimit(panel.xMin);
-  const storedXMax = finiteLimit(panel.xMax);
-  const storedYMin = finiteLimit(panel.yMin);
-  const storedYMax = finiteLimit(panel.yMax);
-
-  if (!autoScale) {
-    return {
-      xMin: storedXMin ?? fullLimits.xMin,
-      xMax: storedXMax ?? fullLimits.xMax,
-      yMin: storedYMin ?? fullLimits.yMin,
-      yMax: storedYMax ?? fullLimits.yMax,
-    };
+  if (plotPanelZoomToFitActive(panel, fullLimits)) {
+    return fullLimits;
   }
 
-  if (isTimePlot) {
-    const xMin = storedXMin ?? fullLimits.xMin;
-    const xMax = storedXMax ?? fullLimits.xMax;
-    const yBounds = computePlotYBounds(panelData.xValues, visibleSeries, xMin, xMax);
-    if (!yBounds) {
-      return fullLimits;
-    }
-
-    return { xMin, xMax, yMin: yBounds.yMin, yMax: yBounds.yMax };
-  }
-
-  if (
-    storedXMin != null &&
-    storedXMax != null &&
-    storedYMin != null &&
-    storedYMax != null
-  ) {
-    return {
-      xMin: storedXMin,
-      xMax: storedXMax,
-      yMin: storedYMin,
-      yMax: storedYMax,
-    };
-  }
-
-  return fullLimits;
+  return {
+    xMin: finiteLimit(panel.xMin) ?? fullLimits.xMin,
+    xMax: finiteLimit(panel.xMax) ?? fullLimits.xMax,
+    yMin: finiteLimit(panel.yMin) ?? fullLimits.yMin,
+    yMax: finiteLimit(panel.yMax) ?? fullLimits.yMax,
+  };
 }
 
 export function plotAxisLimitsDiffer(
@@ -145,81 +183,37 @@ export function plotAxisLimitsDiffer(
 
 export function plotAxisViewIsZoomed(
   panel: Pick<PlotPanelConfig, 'autoScale' | 'xMin' | 'xMax' | 'yMin' | 'yMax'>,
-  fullLimits: PlotAxisLimits | null,
-  isTimePlot: boolean
+  fullLimits: PlotAxisLimits | null
 ): boolean {
-  if (!fullLimits) {
+  if (!fullLimits || plotPanelZoomToFitActive(panel, fullLimits)) {
     return false;
   }
 
-  if (!plotPanelAutoScale(panel)) {
-    const limits: PlotAxisLimits = {
-      xMin: finiteLimit(panel.xMin) ?? fullLimits.xMin,
-      xMax: finiteLimit(panel.xMax) ?? fullLimits.xMax,
-      yMin: finiteLimit(panel.yMin) ?? fullLimits.yMin,
-      yMax: finiteLimit(panel.yMax) ?? fullLimits.yMax,
-    };
-    return plotAxisLimitsDiffer(limits, fullLimits);
+  const limits = resolvePlotAxisLimits(panel, fullLimits);
+  if (!limits) {
+    return false;
   }
 
-  if (isTimePlot) {
-    const xMin = finiteLimit(panel.xMin);
-    const xMax = finiteLimit(panel.xMax);
-    if (xMin == null && xMax == null) {
-      return false;
-    }
-
-    return (
-      (xMin != null && Math.abs(xMin - fullLimits.xMin) > LIMIT_EPSILON) ||
-      (xMax != null && Math.abs(xMax - fullLimits.xMax) > LIMIT_EPSILON)
-    );
-  }
-
-  return (
-    finiteLimit(panel.xMin) != null &&
-    finiteLimit(panel.xMax) != null &&
-    finiteLimit(panel.yMin) != null &&
-    finiteLimit(panel.yMax) != null
-  );
+  return plotAxisLimitsDiffer(limits, fullLimits);
 }
 
+/** Persist axis view after zoom/pan. Any deviation from full data span is fully manual (all four limits). */
 export function buildPersistedPlotAxisFields(
-  autoScale: boolean,
   limits: PlotAxisLimits,
-  fullLimits: PlotAxisLimits,
-  isTimePlot: boolean
+  fullLimits: PlotAxisLimits
 ): Pick<PlotPanelConfig, 'autoScale' | 'xMin' | 'xMax' | 'yMin' | 'yMax'> {
-  if (!autoScale) {
-    return {
-      autoScale: false,
-      xMin: limits.xMin,
-      xMax: limits.xMax,
-      yMin: limits.yMin,
-      yMax: limits.yMax,
-    };
-  }
+  const rounded = roundPlotAxisLimits(limits);
 
-  if (isTimePlot) {
-    const xZoomed =
-      Math.abs(limits.xMin - fullLimits.xMin) > LIMIT_EPSILON ||
-      Math.abs(limits.xMax - fullLimits.xMax) > LIMIT_EPSILON;
-
-    if (!xZoomed) {
-      return {};
-    }
-
-    return { xMin: limits.xMin, xMax: limits.xMax };
-  }
-
-  if (!plotAxisLimitsDiffer(limits, fullLimits)) {
+  if (!plotAxisLimitsDiffer(rounded, fullLimits)) {
     return {};
   }
 
   return {
-    xMin: limits.xMin,
-    xMax: limits.xMax,
-    yMin: limits.yMin,
-    yMax: limits.yMax,
+    autoScale: false,
+    xMin: rounded.xMin,
+    xMax: rounded.xMax,
+    yMin: rounded.yMin,
+    yMax: rounded.yMax,
   };
 }
 

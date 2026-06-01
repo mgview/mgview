@@ -24,6 +24,26 @@ export interface PlotPanelData {
   xChannelMissing?: boolean;
 }
 
+function plotChannelScaleFactor(scale: number | undefined): number {
+  return scale != null && Number.isFinite(scale) ? scale : 1;
+}
+
+function scalePlotSample(value: number | null, scale: number): number | null {
+  if (scale === 1 || value == null || !Number.isFinite(value)) {
+    return value;
+  }
+
+  return value * scale;
+}
+
+function scalePlotSamples(values: Array<number | null>, scale: number): Array<number | null> {
+  if (scale === 1) {
+    return values;
+  }
+
+  return values.map((value) => scalePlotSample(value, scale));
+}
+
 export function extractPlotSeries(
   timeline: Timeline,
   channels: string[],
@@ -61,12 +81,24 @@ export function extractPlotSeries(
 
 export function extractPlotPanelData(
   timeline: Timeline,
-  panel: Pick<PlotPanelConfig, 'channels' | 'xMode' | 'xChannel'>,
+  panel: Pick<
+    PlotPanelConfig,
+    'channels' | 'xMode' | 'xChannel' | 'yChannelScale' | 'xChannelScale'
+  >,
   availableChannelNames: readonly string[]
 ): PlotPanelData {
   const xMode = panel.xMode ?? 'time';
   const times = timeline.frames.map((frame) => frame.time);
   const bundle = extractPlotSeries(timeline, panel.channels, availableChannelNames);
+  const yScale = plotChannelScaleFactor(panel.yChannelScale);
+  const xScale = plotChannelScaleFactor(panel.xChannelScale);
+  const scaledSeries =
+    yScale === 1
+      ? bundle.series
+      : bundle.series.map((series) => ({
+          ...series,
+          values: scalePlotSamples(series.values, yScale),
+        }));
 
   if (xMode === 'channel') {
     const xChannel = panel.xChannel?.trim();
@@ -76,7 +108,7 @@ export function extractPlotPanelData(
         xLabel: 'X',
         xValues: times,
         times,
-        series: bundle.series,
+        series: scaledSeries,
         missingChannels: bundle.missingChannels,
       };
     }
@@ -88,19 +120,24 @@ export function extractPlotPanelData(
         xLabel: xChannel,
         xValues: times.map(() => null),
         times,
-        series: bundle.series,
+        series: scaledSeries,
         missingChannels: bundle.missingChannels,
         xChannel,
         xChannelMissing: true,
       };
     }
 
+    const xValues = scalePlotSamples(
+      timeline.frames.map((frame) => frame.data[xChannel] ?? null),
+      xScale
+    );
+
     return {
       xMode,
       xLabel: xChannel,
-      xValues: timeline.frames.map((frame) => frame.data[xChannel] ?? null),
+      xValues,
       times,
-      series: bundle.series,
+      series: scaledSeries,
       missingChannels: bundle.missingChannels,
       xChannel,
     };

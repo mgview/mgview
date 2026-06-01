@@ -1,16 +1,18 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
-import { ArrowLeftRight, Focus, Settings, X } from 'lucide-react';
+import { ArrowLeftRight, Focus, Settings, Square, X } from 'lucide-react';
 import {
   buildPersistedPlotAxisFields,
   computeFullPlotAxisLimits,
-  plotAxisViewIsZoomed,
+  formatPlotAxisLimit,
   plotPanelAutoScale,
+  plotPanelZoomToFitActive,
   resolvePlotAxisLimits,
+  roundPlotAxisLimits,
   type PlotAxisLimits,
 } from '../core/plotAxisConfig.ts';
-import { computePlotYBounds, type PlotPanelData } from '../core/plotSeries.ts';
+import type { PlotPanelData } from '../core/plotSeries.ts';
 import { getFrameIndexAtTime } from '../core/timeline.ts';
 import { readPlotThemeColors } from '../core/plotTheme.ts';
 import type { PlotPanelConfig, PlotPanelXMode, Timeline } from '../core/types.ts';
@@ -18,12 +20,47 @@ import { cn } from '../lib/utils.ts';
 import PlotChannelPicker from './PlotChannelPicker.tsx';
 import { useTheme } from './ThemeProvider.tsx';
 import { Button } from './ui/button.tsx';
-import { Checkbox } from './ui/checkbox.tsx';
 import { Input } from './ui/input.tsx';
 import { Label } from './ui/label.tsx';
 
 const PLOT_HEIGHT_DEFAULT = 220;
+/** Total uPlot height for Y vs X (axes included; see uPlot `setSize`). */
+const PLOT_XY_DEFAULT_HEIGHT = 228;
+/** Reserved below ticks for the X channel name (`labelGap` draws inside this band). */
+const PLOT_XY_AXIS_LABEL_SIZE = 18;
+const PLOT_XY_AXIS_LABEL_GAP = 2;
+const SQUARE_PLOT_SIZE_MAX_PASSES = 4;
+/** Square aspect UI is disabled until sizing is fixed — see mgview-plot-square-aspect.md */
+const SQUARE_ASPECT_UI_ENABLED = false;
 const MANUAL_ZOOM_SENSITIVITY = 100;
+
+/**
+ * Right-drag pan tuning (see `panDataShiftFromPixelDelta` / `applyManualPan`).
+ * Multiplies how far the axis moves per mouse pixel. Use `chart.rect` (CSS plot area) as
+ * the divisor; tweak this if pan still feels slightly off after that.
+ * - Plot lags the cursor → increase (try 1.2–1.4)
+ * - Plot runs ahead of the cursor → decrease (try 0.8–0.9)
+ */
+const PAN_DRAG_SCALE = 1;
+
+function plotAreaPointerFromClient(chart: uPlot, clientX: number, clientY: number) {
+  const rect = chart.rect;
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top,
+    width: Math.max(rect.width, 1),
+    height: Math.max(rect.height, 1),
+  };
+}
+
+function panDataShiftFromPixelDelta(
+  deltaPixels: number,
+  axisSpan: number,
+  plotAxisPixels: number,
+  scale = PAN_DRAG_SCALE
+): number {
+  return (deltaPixels / Math.max(plotAxisPixels, 1)) * axisSpan * scale;
+}
 
 function zoomAxisRange(min: number, max: number, deltaPixels: number): [number, number] {
   const factor = Math.exp(-deltaPixels / MANUAL_ZOOM_SENSITIVITY);
@@ -41,12 +78,111 @@ function isTextEditingTarget(target: EventTarget | null): boolean {
   );
 }
 
-function resolvePlotHeight(hostWidth: number, squareAspect: boolean, isTimePlot: boolean): number {
-  if (!isTimePlot && squareAspect && hostWidth > 0) {
-    return Math.round(hostWidth);
+/** Drawable plot area from uPlot layout (`bbox` / `pxRatio`). Pan uses `chart.rect`. */
+function plotAreaBboxCss(chart: uPlot): { width: number; height: number } | null {
+  const pxRatio = chart.pxRatio;
+  const width = chart.bbox.width / pxRatio;
+  const height = chart.bbox.height / pxRatio;
+  if (
+    !Number.isFinite(width) ||
+    !Number.isFinite(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    return null;
   }
 
-  return PLOT_HEIGHT_DEFAULT;
+  return { width, height };
+}
+
+/** Vertical space for axes below/above the drawable plot (ticks + X label). */
+function plotAxisChromeHeight(chart: uPlot): number {
+  const area = plotAreaBboxCss(chart);
+  if (!area) {
+    return 0;
+  }
+
+  return Math.max(0, chart.height - area.height);
+}
+
+/**
+ * Max total uPlot height for square mode: square drawable side ≈ host width minus
+ * Y-axis, plus axis chrome — never viewport-scale.
+ */
+function maxSquarePlotTotalHeight(hostWidth: number): number {
+  return Math.round(hostWidth + 64);
+}
+
+function applySquarePlotSize(chart: uPlot, hostWidth: number): void {
+  const maxHeight = maxSquarePlotTotalHeight(hostWidth);
+
+  if (chart.width !== hostWidth) {
+    chart.setSize({ width: hostWidth, height: chart.height });
+  }
+
+  for (let pass = 0; pass < SQUARE_PLOT_SIZE_MAX_PASSES; pass++) {
+    const area = plotAreaBboxCss(chart);
+    if (!area) {
+      return;
+    }
+
+    const { width: plotW, height: plotH } = area;
+    if (Math.abs(plotW - plotH) < 0.5) {
+      return;
+    }
+
+    const targetHeight = Math.min(Math.round(plotW + plotAxisChromeHeight(chart)), maxHeight);
+    if (targetHeight === chart.height) {
+      return;
+    }
+
+    chart.setSize({ width: hostWidth, height: targetHeight });
+  }
+}
+
+function applyPlotSize(
+  chart: uPlot,
+  hostWidth: number,
+  squareAspect: boolean,
+  isTimePlot: boolean
+): void {
+  if (isTimePlot) {
+    chart.setSize({ width: hostWidth, height: PLOT_HEIGHT_DEFAULT });
+    return;
+  }
+
+  if (squareAspect) {
+    applySquarePlotSize(chart, hostWidth);
+    return;
+  }
+
+  chart.setSize({ width: hostWidth, height: PLOT_XY_DEFAULT_HEIGHT });
+}
+
+function plotSizeNeedsUpdate(
+  chart: uPlot,
+  hostWidth: number,
+  squareAspect: boolean,
+  isTimePlot: boolean
+): boolean {
+  if (chart.width !== hostWidth) {
+    return true;
+  }
+
+  if (isTimePlot) {
+    return chart.height !== PLOT_HEIGHT_DEFAULT;
+  }
+
+  if (squareAspect) {
+    const area = plotAreaBboxCss(chart);
+    if (!area) {
+      return true;
+    }
+
+    return Math.abs(area.width - area.height) >= 0.5;
+  }
+
+  return chart.height !== PLOT_XY_DEFAULT_HEIGHT;
 }
 
 type PersistedPlotAxisFields = Pick<PlotPanelConfig, 'autoScale' | 'xMin' | 'xMax' | 'yMin' | 'yMax'>;
@@ -55,6 +191,8 @@ interface PlotPanelProps {
   title?: string;
   xMode: PlotPanelXMode;
   xChannel?: string;
+  yChannelScale?: number;
+  xChannelScale?: number;
   channels: string[];
   channelNames: string[];
   autoScale?: boolean;
@@ -71,6 +209,8 @@ interface PlotPanelProps {
   onChangeXMode: (xMode: PlotPanelXMode) => void;
   onChangeXChannel: (xChannel: string | undefined) => void;
   onChangeChannels: (channels: string[]) => void;
+  onChangeYChannelScale: (scale: number | undefined) => void;
+  onChangeXChannelScale: (scale: number | undefined) => void;
   onChangeAxisView: (fields: PersistedPlotAxisFields | null) => void;
   onSwapXyChannels: () => void;
   onRemove: () => void;
@@ -80,6 +220,8 @@ function PlotPanel({
   title,
   xMode,
   xChannel,
+  yChannelScale,
+  xChannelScale,
   channels,
   channelNames,
   panelData,
@@ -96,6 +238,8 @@ function PlotPanel({
   onChangeXMode,
   onChangeXChannel,
   onChangeChannels,
+  onChangeYChannelScale,
+  onChangeXChannelScale,
   onChangeAxisView,
   onSwapXyChannels,
   onRemove,
@@ -105,18 +249,25 @@ function PlotPanel({
   const xyMarkerRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<uPlot | null>(null);
   const scrubbingRef = useRef(false);
-  const zoomSelectingRef = useRef(false);
   const manualZoomRef = useRef<{
-    axis?: 'x' | 'y';
     startClientX: number;
     startClientY: number;
     startLimits: PlotAxisLimits;
   } | null>(null);
-  const panningRef = useRef<{ startClientX: number; startClientY: number; startLimits: PlotAxisLimits } | null>(null);
-  const zoomStartXRef = useRef(0);
-  const zoomStartYRef = useRef(0);
+  const panningRef = useRef<{
+    startPlotX: number;
+    startPlotY: number;
+    startLimits: PlotAxisLimits;
+  } | null>(null);
+  const liveDragLimitsRef = useRef<PlotAxisLimits | null>(null);
+  const activePointerIdRef = useRef<number | null>(null);
+  const plotLimitsRef = useRef<PlotAxisLimits | null>(null);
   const autoScaleRef = useRef(true);
+  const squareAspectRef = useRef(false);
+  /** Last host width applied; ignore ResizeObserver height-only churn from square sizing. */
+  const hostLayoutWidthRef = useRef(0);
   const plotHoveredRef = useRef(false);
+  const breakViewLatchesRef = useRef<() => void>(() => { });
   const onChangeTimeRef = useRef(onChangeTime);
   const onChangeAxisViewRef = useRef(onChangeAxisView);
   const timelineRef = useRef(timeline);
@@ -128,14 +279,23 @@ function PlotPanel({
   );
   const autoScale = plotPanelAutoScale(axisPanel);
   const [dragLimits, setDragLimits] = useState<PlotAxisLimits | null>(null);
+  const [editingLimitKey, setEditingLimitKey] = useState<keyof PlotAxisLimits | null>(null);
+  const [editingLimitDraft, setEditingLimitDraft] = useState('');
   const [showSettings, setShowSettings] = useState(channels.length === 0);
   const [squareAspect, setSquareAspect] = useState(false);
+  /** Optimistic: zoom-to-fit button dims as soon as a zoom/pan gesture starts. */
+  const [zoomToFitUiOff, setZoomToFitUiOff] = useState(false);
   const [xyChannelFilter, setXyChannelFilter] = useState('');
+  const [editingChannelScale, setEditingChannelScale] = useState<'y' | 'x' | null>(null);
+  const [editingChannelScaleDraft, setEditingChannelScaleDraft] = useState('');
 
   onChangeTimeRef.current = onChangeTime;
   onChangeAxisViewRef.current = onChangeAxisView;
   timelineRef.current = timeline;
-  autoScaleRef.current = autoScale;
+
+  useEffect(() => {
+    autoScaleRef.current = autoScale;
+  }, [autoScale]);
 
   const { tInitial, tFinal } = timeline;
 
@@ -150,12 +310,24 @@ function PlotPanel({
     [isTimePlot, panelData, timeline, visibleSeries]
   );
 
+  const zoomToFitActive = plotPanelZoomToFitActive(axisPanel, fullPlotLimits);
+  const zoomToFitUiActive = zoomToFitActive && !zoomToFitUiOff;
+
+  useEffect(() => {
+    if (zoomToFitActive) {
+      setZoomToFitUiOff(false);
+    }
+  }, [zoomToFitActive]);
+
+  squareAspectRef.current = squareAspect;
+
   const resolvedPlotLimits = useMemo(
-    () => resolvePlotAxisLimits(axisPanel, fullPlotLimits, panelData, visibleSeries, isTimePlot),
-    [axisPanel, fullPlotLimits, isTimePlot, panelData, visibleSeries]
+    () => resolvePlotAxisLimits(axisPanel, fullPlotLimits),
+    [axisPanel, fullPlotLimits]
   );
 
   const plotLimits = dragLimits ?? resolvedPlotLimits;
+  plotLimitsRef.current = plotLimits;
 
   const plotData = useMemo((): uPlot.AlignedData => {
     return [panelData.xValues, ...visibleSeries.map((series) => series.values)];
@@ -174,10 +346,10 @@ function PlotPanel({
   const hasRenderableSeries = isTimePlot
     ? visibleSeries.some((series) => !series.missing && series.times.length > 0)
     : Boolean(
-        xChannel &&
-          !panelData.xChannelMissing &&
-          visibleSeries.some((series) => !series.missing && series.times.length > 0)
-      );
+      xChannel &&
+      !panelData.xChannelMissing &&
+      visibleSeries.some((series) => !series.missing && series.times.length > 0)
+    );
 
   const yAxisLabel = !isTimePlot ? visibleSeries[0]?.label ?? 'Y' : undefined;
 
@@ -200,22 +372,30 @@ function PlotPanel({
     return { xMin, xMax, yMin, yMax };
   };
 
-  const commitAxisLimitsRef = useRef<(limits: PlotAxisLimits) => void>(() => {});
+  const commitAxisLimitsRef = useRef<(limits: PlotAxisLimits) => void>(() => { });
   commitAxisLimitsRef.current = (limits: PlotAxisLimits) => {
     if (!fullPlotLimits) {
       return;
     }
 
     setDragLimits(null);
+    liveDragLimitsRef.current = null;
     onChangeAxisViewRef.current(
-      buildPersistedPlotAxisFields(autoScale, limits, fullPlotLimits, isTimePlot)
+      buildPersistedPlotAxisFields(roundPlotAxisLimits(limits), fullPlotLimits)
     );
+    if (!isTimePlot) {
+      setSquareAspect(false);
+    }
   };
 
-  const resetPlotView = () => {
-    setDragLimits(null);
-    onChangeAxisView(null);
+  breakViewLatchesRef.current = () => {
+    setZoomToFitUiOff(true);
+    autoScaleRef.current = false;
+    if (!isTimePlot) {
+      setSquareAspect(false);
+    }
   };
+
   const trimmedXyChannelFilter = xyChannelFilter.trim().toLowerCase();
   const filteredChannelNames = useMemo(() => {
     if (!trimmedXyChannelFilter) {
@@ -225,6 +405,29 @@ function PlotPanel({
     return channelNames.filter((channelName) => channelName.toLowerCase().includes(trimmedXyChannelFilter));
   }, [channelNames, trimmedXyChannelFilter]);
   const selectedYChannel = channels[0] ?? '';
+  const resolvedYChannelScale = yChannelScale != null && Number.isFinite(yChannelScale) ? yChannelScale : 1;
+  const resolvedXChannelScale = xChannelScale != null && Number.isFinite(xChannelScale) ? xChannelScale : 1;
+
+  const channelScaleInputValue = (axis: 'y' | 'x', scale: number) =>
+    editingChannelScale === axis ? editingChannelScaleDraft : formatPlotAxisLimit(scale);
+
+  const beginEditingChannelScale = (axis: 'y' | 'x', scale: number) => {
+    setEditingChannelScale(axis);
+    setEditingChannelScaleDraft(formatPlotAxisLimit(scale));
+  };
+
+  const finishEditingChannelScale = (axis: 'y' | 'x', rawValue: string) => {
+    setEditingChannelScale(null);
+    setEditingChannelScaleDraft('');
+    const parsed = Number.parseFloat(rawValue.trim());
+    const nextScale = Number.isFinite(parsed) ? parsed : 1;
+    if (axis === 'y') {
+      onChangeYChannelScale(nextScale === 1 ? undefined : nextScale);
+      return;
+    }
+
+    onChangeXChannelScale(nextScale === 1 ? undefined : nextScale);
+  };
 
   const ensureXyMarker = (plot: uPlot) => {
     if (isTimePlot) {
@@ -243,7 +446,7 @@ function PlotPanel({
     }
   };
 
-  const syncPlaybackCursorRef = useRef<(plot: uPlot, time: number) => void>(() => {});
+  const syncPlaybackCursorRef = useRef<(plot: uPlot, time: number) => void>(() => { });
 
   const syncPlaybackCursor = (plot: uPlot, time: number) => {
     if (isTimePlot) {
@@ -342,7 +545,7 @@ function PlotPanel({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isTimePlot || event.defaultPrevented || event.repeat) {
+      if (!SQUARE_ASPECT_UI_ENABLED || isTimePlot || event.defaultPrevented || event.repeat) {
         return;
       }
 
@@ -419,34 +622,49 @@ function PlotPanel({
     let lastCursorTime: number | null = null;
 
     const attachScrubHandlers = (chart: uPlot) => {
-      const plotXFromClient = (clientX: number) => clientX - chart.over.getBoundingClientRect().left;
-      const plotYFromClient = (clientY: number) => clientY - chart.over.getBoundingClientRect().top;
+      const getCurrentLimits = (): PlotAxisLimits | null =>
+        liveDragLimitsRef.current ?? readChartLimits(chart) ?? plotLimitsRef.current;
 
-      const updateZoomSelect = (startX: number, endX: number, startY: number, endY: number) => {
-        const left = Math.min(startX, endX);
-        const top = Math.min(startY, endY);
-        const width = Math.max(Math.abs(endX - startX), 1);
-        const height = Math.max(Math.abs(endY - startY), 1);
-
-        if (isTimePlot) {
-          // Selection lives in chart.over (plot-area CSS coords), not canvas bbox space.
-          chart.setSelect(
-            {
-              left,
-              top: 0,
-              width,
-              height: chart.over.clientHeight,
-            },
-            false
-          );
-          return;
-        }
-
-        chart.setSelect({ left, top, width, height }, false);
+      const setChartLimits = (limits: PlotAxisLimits) => {
+        liveDragLimitsRef.current = limits;
+        chart.setScale('x', { min: limits.xMin, max: limits.xMax });
+        chart.setScale('y', { min: limits.yMin, max: limits.yMax });
       };
 
-      const clearZoomSelect = () => {
-        chart.setSelect({ left: 0, top: 0, width: 0, height: 0 }, false);
+      const releasePlotPointer = (event: PointerEvent) => {
+        if (chart.over.hasPointerCapture(event.pointerId)) {
+          chart.over.releasePointerCapture(event.pointerId);
+        }
+      };
+
+      const commitLiveDragLimits = () => {
+        const limits = liveDragLimitsRef.current ?? readChartLimits(chart);
+        liveDragLimitsRef.current = null;
+        if (limits) {
+          commitAxisLimitsRef.current(limits);
+        }
+      };
+
+      const clearGestureState = () => {
+        scrubbingRef.current = false;
+        manualZoomRef.current = null;
+        panningRef.current = null;
+        activePointerIdRef.current = null;
+      };
+
+      const beginPointerGesture = (event: PointerEvent) => {
+        if (
+          activePointerIdRef.current !== null &&
+          activePointerIdRef.current !== event.pointerId
+        ) {
+          if (panningRef.current || manualZoomRef.current) {
+            commitLiveDragLimits();
+          }
+          clearGestureState();
+        }
+
+        activePointerIdRef.current = event.pointerId;
+        chart.over.setPointerCapture(event.pointerId);
       };
 
       const applyManualPan = (event: PointerEvent) => {
@@ -455,18 +673,26 @@ function PlotPanel({
           return;
         }
 
-        const dxPx = event.clientX - panState.startClientX;
-        const dyPx = event.clientY - panState.startClientY;
-        const xSpan = panState.startLimits.xMax - panState.startLimits.xMin;
-        const ySpan = panState.startLimits.yMax - panState.startLimits.yMin;
-        const dxVal = (-dxPx / chart.bbox.width) * xSpan;
-        const dyVal = (dyPx / chart.bbox.height) * ySpan;
+        const { startLimits, startPlotX, startPlotY } = panState;
+        const pointer = plotAreaPointerFromClient(chart, event.clientX, event.clientY);
+        const xSpan = startLimits.xMax - startLimits.xMin;
+        const ySpan = startLimits.yMax - startLimits.yMin;
+        const dxVal = panDataShiftFromPixelDelta(
+          startPlotX - pointer.x,
+          xSpan,
+          pointer.width
+        );
+        const dyVal = panDataShiftFromPixelDelta(
+          pointer.y - startPlotY,
+          ySpan,
+          pointer.height
+        );
 
-        setDragLimits({
-          xMin: panState.startLimits.xMin + dxVal,
-          xMax: panState.startLimits.xMax + dxVal,
-          yMin: panState.startLimits.yMin + dyVal,
-          yMax: panState.startLimits.yMax + dyVal,
+        setChartLimits({
+          xMin: startLimits.xMin + dxVal,
+          xMax: startLimits.xMax + dxVal,
+          yMin: startLimits.yMin + dyVal,
+          yMax: startLimits.yMax + dyVal,
         });
       };
 
@@ -478,47 +704,38 @@ function PlotPanel({
 
         const deltaX = event.clientX - zoomState.startClientX;
         const deltaY = event.clientY - zoomState.startClientY;
+        const [xMin, xMax] = zoomAxisRange(
+          zoomState.startLimits.xMin,
+          zoomState.startLimits.xMax,
+          -deltaX
+        );
+        const [yMin, yMax] = zoomAxisRange(
+          zoomState.startLimits.yMin,
+          zoomState.startLimits.yMax,
+          deltaY
+        );
 
-        if (!zoomState.axis && (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3)) {
-          zoomState.axis = Math.abs(deltaX) >= Math.abs(deltaY) ? 'x' : 'y';
-        }
-
-        if (!zoomState.axis) {
-          return;
-        }
-
-        const [xMin, xMax] =
-          zoomState.axis === 'x'
-            ? zoomAxisRange(zoomState.startLimits.xMin, zoomState.startLimits.xMax, deltaX)
-            : [zoomState.startLimits.xMin, zoomState.startLimits.xMax];
-        const [yMin, yMax] =
-          zoomState.axis === 'y'
-            ? zoomAxisRange(zoomState.startLimits.yMin, zoomState.startLimits.yMax, deltaY)
-            : [zoomState.startLimits.yMin, zoomState.startLimits.yMax];
-
-        setDragLimits({ xMin, xMax, yMin, yMax });
+        setChartLimits({ xMin, xMax, yMin, yMax });
       };
 
       const onPointerDown = (event: PointerEvent) => {
         if (event.button === 2) {
-          if (!autoScaleRef.current) {
-            event.preventDefault();
-            const limits = readChartLimits(chart);
-            if (!limits) {
-              return;
-            }
-
-            scrubbingRef.current = false;
-            zoomSelectingRef.current = false;
-            manualZoomRef.current = null;
-            panningRef.current = {
-              startClientX: event.clientX,
-              startClientY: event.clientY,
-              startLimits: limits,
-            };
-            chart.over.setPointerCapture(event.pointerId);
+          event.preventDefault();
+          const limits = getCurrentLimits();
+          if (!limits) {
+            return;
           }
 
+          breakViewLatchesRef.current();
+          scrubbingRef.current = false;
+          manualZoomRef.current = null;
+          const pointer = plotAreaPointerFromClient(chart, event.clientX, event.clientY);
+          panningRef.current = {
+            startPlotX: pointer.x,
+            startPlotY: pointer.y,
+            startLimits: limits,
+          };
+          beginPointerGesture(event);
           return;
         }
 
@@ -532,49 +749,29 @@ function PlotPanel({
           scrubbingRef.current = false;
           panningRef.current = null;
 
-          if (autoScaleRef.current) {
-            zoomSelectingRef.current = true;
-            manualZoomRef.current = null;
-            const startX = plotXFromClient(event.clientX);
-            const startY = plotYFromClient(event.clientY);
-            zoomStartXRef.current = startX;
-            zoomStartYRef.current = startY;
-            chart.over.setPointerCapture(event.pointerId);
-            updateZoomSelect(startX, startX, startY, startY);
-            return;
-          }
-
-          const limits = readChartLimits(chart);
+          const limits = getCurrentLimits();
           if (!limits) {
             return;
           }
 
-          zoomSelectingRef.current = false;
+          breakViewLatchesRef.current();
           manualZoomRef.current = {
             startClientX: event.clientX,
             startClientY: event.clientY,
             startLimits: limits,
           };
-          chart.over.setPointerCapture(event.pointerId);
+          beginPointerGesture(event);
           return;
         }
 
+        manualZoomRef.current = null;
+        panningRef.current = null;
         scrubbingRef.current = true;
-        chart.over.setPointerCapture(event.pointerId);
+        beginPointerGesture(event);
         scrubToPointer(chart, event.clientX, event.clientY);
       };
 
       const onPointerMove = (event: PointerEvent) => {
-        if (zoomSelectingRef.current) {
-          updateZoomSelect(
-            zoomStartXRef.current,
-            plotXFromClient(event.clientX),
-            zoomStartYRef.current,
-            plotYFromClient(event.clientY)
-          );
-          return;
-        }
-
         if (manualZoomRef.current) {
           applyManualAxisZoom(event);
           return;
@@ -593,66 +790,22 @@ function PlotPanel({
       };
 
       const endPointer = (event: PointerEvent) => {
-        if (zoomSelectingRef.current) {
-          zoomSelectingRef.current = false;
-          if (chart.over.hasPointerCapture(event.pointerId)) {
-            chart.over.releasePointerCapture(event.pointerId);
-          }
-
-          const { left, top, width, height } = chart.select;
-          clearZoomSelect();
-
-          if (width > 2 && height > 2) {
-            const x0 = chart.posToVal(left, 'x');
-            const x1 = chart.posToVal(left + width, 'x');
-            const yTop = chart.posToVal(top, 'y');
-            const yBottom = chart.posToVal(top + height, 'y');
-            if (
-              Number.isFinite(x0) &&
-              Number.isFinite(x1) &&
-              Number.isFinite(yTop) &&
-              Number.isFinite(yBottom)
-            ) {
-              const xMin = Math.min(x0, x1);
-              const xMax = Math.max(x0, x1);
-              const yMin = Math.min(yTop, yBottom);
-              const yMax = Math.max(yTop, yBottom);
-
-              if (isTimePlot) {
-                const yBounds = computePlotYBounds(panelData.xValues, visibleSeries, xMin, xMax);
-                if (yBounds) {
-                  commitAxisLimitsRef.current({ xMin, xMax, yMin: yBounds.yMin, yMax: yBounds.yMax });
-                }
-              } else {
-                commitAxisLimitsRef.current({ xMin, xMax, yMin, yMax });
-              }
-            }
-          }
-
+        if (activePointerIdRef.current !== event.pointerId) {
           return;
         }
 
+        activePointerIdRef.current = null;
+        releasePlotPointer(event);
+
         if (manualZoomRef.current) {
-          const limits = readChartLimits(chart);
           manualZoomRef.current = null;
-          if (chart.over.hasPointerCapture(event.pointerId)) {
-            chart.over.releasePointerCapture(event.pointerId);
-          }
-          if (limits) {
-            commitAxisLimitsRef.current(limits);
-          }
+          commitLiveDragLimits();
           return;
         }
 
         if (panningRef.current) {
-          const limits = readChartLimits(chart);
           panningRef.current = null;
-          if (chart.over.hasPointerCapture(event.pointerId)) {
-            chart.over.releasePointerCapture(event.pointerId);
-          }
-          if (limits) {
-            commitAxisLimitsRef.current(limits);
-          }
+          commitLiveDragLimits();
           return;
         }
 
@@ -661,23 +814,19 @@ function PlotPanel({
         }
 
         scrubbingRef.current = false;
-        if (chart.over.hasPointerCapture(event.pointerId)) {
-          chart.over.releasePointerCapture(event.pointerId);
-        }
         syncPlaybackCursor(chart, currentTimeRef.current ?? tInitial);
         lastCursorTime = currentTimeRef.current ?? tInitial;
       };
 
       const onContextMenu = (event: MouseEvent) => {
-        if (!autoScaleRef.current) {
-          event.preventDefault();
-        }
+        event.preventDefault();
       };
 
       chart.over.addEventListener('pointerdown', onPointerDown);
       chart.over.addEventListener('pointermove', onPointerMove);
       chart.over.addEventListener('pointerup', endPointer);
       chart.over.addEventListener('pointercancel', endPointer);
+      chart.over.addEventListener('lostpointercapture', endPointer);
       chart.over.addEventListener('contextmenu', onContextMenu);
 
       return () => {
@@ -685,82 +834,86 @@ function PlotPanel({
         chart.over.removeEventListener('pointermove', onPointerMove);
         chart.over.removeEventListener('pointerup', endPointer);
         chart.over.removeEventListener('pointercancel', endPointer);
+        chart.over.removeEventListener('lostpointercapture', endPointer);
         chart.over.removeEventListener('contextmenu', onContextMenu);
-        zoomSelectingRef.current = false;
-        manualZoomRef.current = null;
-        panningRef.current = null;
+        clearGestureState();
+        liveDragLimitsRef.current = null;
       };
     };
 
     const buildOptions = (width: number): uPlot.Options => {
-      const height = resolvePlotHeight(width, squareAspect, isTimePlot);
+      const height = isTimePlot ? PLOT_HEIGHT_DEFAULT : PLOT_XY_DEFAULT_HEIGHT;
 
       return {
-      width,
-      height,
-      scales: {
-        x: {
-          time: false,
-          ...(plotLimits
-            ? { min: plotLimits.xMin, max: plotLimits.xMax }
-            : {}),
+        width,
+        height,
+        scales: {
+          x: {
+            time: false,
+            auto: false,
+            ...(plotLimits
+              ? { min: plotLimits.xMin, max: plotLimits.xMax }
+              : {}),
+          },
+          y: {
+            auto: false,
+            ...(plotLimits
+              ? { min: plotLimits.yMin, max: plotLimits.yMax }
+              : {}),
+          },
         },
-        y: plotLimits
-          ? { auto: false, min: plotLimits.yMin, max: plotLimits.yMax }
-          : { auto: true },
-      },
-      axes: [
-        {
-          label: isTimePlot ? undefined : panelData.xLabel,
-          labelSize: isTimePlot ? 0 : undefined,
-          labelGap: isTimePlot ? 0 : undefined,
-          stroke: colors.axis,
-          grid: { stroke: colors.grid, width: 1 },
-          ticks: { stroke: colors.grid },
-          font: '11px IBM Plex Mono, ui-monospace, monospace',
-        },
-        {
-          label: isTimePlot ? undefined : yAxisLabel,
-          stroke: colors.axis,
-          grid: { stroke: colors.grid, width: 1 },
-          ticks: { stroke: colors.grid },
-          font: '11px IBM Plex Mono, ui-monospace, monospace',
-        },
-      ],
-      series: [
-        {},
-        ...visibleSeries.map((series, index) => ({
-          label: series.label,
-          stroke: series.missing ? colors.grid : colors.series[index],
-          width: series.missing ? 1 : 1.5,
-          dash: series.missing ? [6, 6] : undefined,
+        axes: [
+          {
+            label: isTimePlot ? undefined : panelData.xLabel,
+            labelSize: isTimePlot ? 0 : PLOT_XY_AXIS_LABEL_SIZE,
+            labelGap: isTimePlot ? 0 : PLOT_XY_AXIS_LABEL_GAP,
+            stroke: colors.axis,
+            grid: { stroke: colors.grid, width: 1 },
+            ticks: { stroke: colors.grid },
+            font: '11px IBM Plex Mono, ui-monospace, monospace',
+          },
+          {
+            label: isTimePlot ? undefined : yAxisLabel,
+            stroke: colors.axis,
+            grid: { stroke: colors.grid, width: 1 },
+            ticks: { stroke: colors.grid },
+            font: '11px IBM Plex Mono, ui-monospace, monospace',
+          },
+        ],
+        series: [
+          {},
+          ...visibleSeries.map((series, index) => ({
+            label: series.label,
+            stroke: series.missing ? colors.grid : colors.series[index],
+            width: series.missing ? 1 : 1.5,
+            dash: series.missing ? [6, 6] : undefined,
+            points: { show: false },
+            // XY traces can have non-monotonic X values; disable sorted-X assumption.
+            sorted: isTimePlot ? 1 : 0,
+          })),
+        ],
+        legend: { show: false },
+        cursor: {
+          show: true,
           points: { show: false },
-          // XY traces can have non-monotonic X values; disable sorted-X assumption.
-          sorted: isTimePlot ? 1 : 0,
-        })),
-      ],
-      legend: { show: false },
-      cursor: {
-        show: true,
-        points: { show: false },
-        drag: { x: false, y: false, setScale: false },
-      },
-      select: { show: true, over: true },
-      hooks: {
-        ready: [
-          (chart) => {
-            syncPlaybackCursor(chart, currentTimeRef.current ?? tInitial);
-          },
-        ],
-        setSize: [
-          (chart) => {
-            if (!isTimePlot) {
+          drag: { x: false, y: false, setScale: false },
+        },
+        select: { show: false },
+        hooks: {
+          ready: [
+            (chart) => {
               syncPlaybackCursor(chart, currentTimeRef.current ?? tInitial);
-            }
-          },
-        ],
-      },
-    };
+            },
+          ],
+          setSize: [
+            (chart) => {
+              if (!isTimePlot) {
+                syncPlaybackCursor(chart, currentTimeRef.current ?? tInitial);
+              }
+            },
+          ],
+        },
+      };
     };
 
     const createPlot = (width: number) => {
@@ -787,11 +940,12 @@ function PlotPanel({
         return;
       }
 
-      const height = resolvePlotHeight(width, squareAspect, isTimePlot);
-      if (plot.width !== width || plot.height !== height) {
-        plot.setSize({ width, height });
+      if (plotSizeNeedsUpdate(plot, width, squareAspectRef.current, isTimePlot)) {
+        applyPlotSize(plot, width, squareAspectRef.current, isTimePlot);
         syncPlaybackCursor(plot, currentTimeRef.current ?? tInitial);
       }
+
+      hostLayoutWidthRef.current = width;
     };
 
     const syncCursorLoop = () => {
@@ -810,6 +964,10 @@ function PlotPanel({
     };
 
     resizeObserver = new ResizeObserver(() => {
+      const width = host.clientWidth;
+      if (width <= 0 || width === hostLayoutWidthRef.current) {
+        return;
+      }
       ensurePlotSize();
     });
     resizeObserver.observe(host);
@@ -850,10 +1008,31 @@ function PlotPanel({
     timeline,
     xMode,
     panelData.xValues,
-    squareAspect,
     visibleSeries,
     yAxisLabel,
   ]);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    const plot = plotRef.current;
+    if (!host || !plot || !hasRenderableSeries) {
+      return;
+    }
+
+    const width = host.clientWidth;
+    if (width <= 0) {
+      return;
+    }
+
+    applyPlotSize(plot, width, squareAspect, isTimePlot);
+    hostLayoutWidthRef.current = width;
+    requestAnimationFrame(() => {
+      const chart = plotRef.current;
+      if (chart) {
+        syncPlaybackCursorRef.current(chart, currentTimeRef.current ?? tInitial);
+      }
+    });
+  }, [currentTimeRef, hasRenderableSeries, isTimePlot, squareAspect, tInitial]);
 
   useEffect(() => {
     const plot = plotRef.current;
@@ -862,7 +1041,7 @@ function PlotPanel({
     }
 
     plot.setData(plotData, false);
-    if (plotLimits) {
+    if (plotLimits && !panningRef.current && !manualZoomRef.current) {
       plot.setScale('x', { min: plotLimits.xMin, max: plotLimits.xMax });
       plot.setScale('y', { min: plotLimits.yMin, max: plotLimits.yMax });
     }
@@ -882,38 +1061,40 @@ function PlotPanel({
       return;
     }
 
-    if (plotLimits) {
-      plot.setScale('x', { min: plotLimits.xMin, max: plotLimits.xMax });
-      plot.setScale('y', { min: plotLimits.yMin, max: plotLimits.yMax });
-      if (!isTimePlot) {
-        requestAnimationFrame(() => {
-          syncPlaybackCursorRef.current(plot, currentTimeRef.current ?? tInitial);
-        });
-      }
+    if (!plotLimits || panningRef.current || manualZoomRef.current) {
       return;
     }
 
-    plot.setScale('x', { min: null, max: null });
+    plot.setScale('x', { min: plotLimits.xMin, max: plotLimits.xMax });
+    plot.setScale('y', { min: plotLimits.yMin, max: plotLimits.yMax });
+    if (!isTimePlot) {
+      requestAnimationFrame(() => {
+        syncPlaybackCursorRef.current(plot, currentTimeRef.current ?? tInitial);
+      });
+    }
   }, [currentTimeRef, isTimePlot, plotLimits, tInitial]);
 
-  const toggleAutoScale = () => {
+  const applyZoomToFit = () => {
     if (!fullPlotLimits) {
       return;
     }
 
-    if (autoScale) {
-      const plot = plotRef.current;
-      const limits = plot ? readChartLimits(plot) : plotLimits;
-      if (limits) {
-        onChangeAxisView(buildPersistedPlotAxisFields(false, limits, fullPlotLimits, isTimePlot));
-      }
-      return;
-    }
+    setZoomToFitUiOff(false);
+    autoScaleRef.current = true;
+    setDragLimits(null);
+    onChangeAxisView(null);
+  };
 
-    onChangeAxisView({});
+  const limitInputValue = (key: keyof PlotAxisLimits, value: number) =>
+    editingLimitKey === key ? editingLimitDraft : formatPlotAxisLimit(value);
+
+  const beginEditingLimit = (key: keyof PlotAxisLimits, value: number) => {
+    setEditingLimitKey(key);
+    setEditingLimitDraft(formatPlotAxisLimit(value));
   };
 
   const updateManualLimit = (key: keyof PlotAxisLimits, rawValue: string) => {
+    setEditingLimitDraft(rawValue);
     const parsed = Number.parseFloat(rawValue);
     if (!Number.isFinite(parsed) || !plotLimits || !fullPlotLimits) {
       return;
@@ -922,15 +1103,17 @@ function PlotPanel({
     commitAxisLimitsRef.current({ ...plotLimits, [key]: parsed });
   };
 
-  const showResetView =
-    hasRenderableSeries && fullPlotLimits != null && plotAxisViewIsZoomed(axisPanel, fullPlotLimits, isTimePlot);
+  const finishEditingLimit = () => {
+    setEditingLimitKey(null);
+    setEditingLimitDraft('');
+  };
 
   const panelLabel = title?.trim() || `Panel ${panelIndex + 1}`;
-  const plotHostStyle =
-    squareAspect && !isTimePlot
-      ? { aspectRatio: '1 / 1', width: '100%', minHeight: PLOT_HEIGHT_DEFAULT }
-      : { height: PLOT_HEIGHT_DEFAULT };
-  const emptyPlotStyle = { minHeight: PLOT_HEIGHT_DEFAULT, height: PLOT_HEIGHT_DEFAULT };
+  const plotHostMinHeight = isTimePlot ? PLOT_HEIGHT_DEFAULT : PLOT_XY_DEFAULT_HEIGHT;
+  const plotHostStyle = isTimePlot
+    ? { height: PLOT_HEIGHT_DEFAULT }
+    : { width: '100%', minHeight: plotHostMinHeight };
+  const emptyPlotStyle = { minHeight: plotHostMinHeight, height: plotHostMinHeight };
 
   return (
     <section
@@ -955,51 +1138,76 @@ function PlotPanel({
         />
         <Button
           type="button"
-          variant={showSettings ? 'secondary' : 'outline'}
+          variant={showSettings ? 'default' : 'outline'}
           size="icon"
-          className="h-7 w-7 shrink-0"
+          className={cn(
+            'h-7 w-7 shrink-0',
+            showSettings &&
+              'shadow-sm ring-2 ring-primary/40 ring-offset-1 ring-offset-background'
+          )}
           onClick={() => setShowSettings((current) => !current)}
           aria-label={showSettings ? 'Hide plot settings' : 'Show plot settings'}
           aria-expanded={showSettings}
+          aria-pressed={showSettings}
           title={showSettings ? 'Hide settings' : 'Plot settings'}
         >
           <Settings className="h-3.5 w-3.5" />
         </Button>
         {hasRenderableSeries ? (
-          <Button
-            type="button"
-            variant={autoScale ? 'default' : 'outline'}
-            size="icon"
-            className={cn(
-              'plot-auto-scale-toggle h-7 w-7 shrink-0',
-              autoScale
-                ? 'border-primary bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/40 ring-offset-1 ring-offset-background hover:bg-primary/90'
-                : 'border-dashed border-muted-foreground/70 bg-muted/70 text-muted-foreground hover:border-foreground/50 hover:bg-muted hover:text-foreground'
-            )}
-            onClick={toggleAutoScale}
-            aria-label={autoScale ? 'Auto-scale axes (on)' : 'Auto-scale axes (off)'}
-            aria-pressed={autoScale}
-            title={
-              autoScale
-                ? isTimePlot
-                  ? 'Auto-scale on — Y follows data; Shift-drag selects a time region to zoom'
-                  : 'Auto-scale on — Shift-drag selects a region to zoom'
-                : 'Manual axes — Shift-drag to zoom, right-drag to pan'
-            }
-          >
-            <Focus className={cn('h-3.5 w-3.5', !autoScale && 'opacity-65')} strokeWidth={autoScale ? 2.5 : 2} />
-          </Button>
-        ) : null}
-        {showResetView ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            onClick={resetPlotView}
-          >
-            Reset view
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant={zoomToFitUiActive ? 'default' : 'outline'}
+              size="icon"
+              className={cn(
+                'plot-zoom-to-fit-toggle h-7 w-7 shrink-0',
+                zoomToFitUiActive
+                  ? 'border-primary bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/40 ring-offset-1 ring-offset-background hover:bg-primary/90'
+                  : 'border-dashed border-muted-foreground/70 bg-muted/70 text-muted-foreground hover:border-foreground/50 hover:bg-muted hover:text-foreground'
+              )}
+              onClick={applyZoomToFit}
+              aria-label={zoomToFitUiActive ? 'Zoom to fit (on)' : 'Zoom to fit (off)'}
+              aria-pressed={zoomToFitUiActive}
+              title={
+                zoomToFitUiActive
+                  ? 'Zoom to fit — drag scrubs; Shift-drag zooms (turns fit off); right-drag pans after zoom'
+                  : 'Click to zoom to fit. Shift-drag to zoom X and Y; right-drag (two-finger drag) to pan'
+              }
+            >
+              <Focus
+                className={cn('h-3.5 w-3.5', !zoomToFitUiActive && 'opacity-65')}
+                strokeWidth={zoomToFitUiActive ? 2.5 : 2}
+              />
+            </Button>
+            {!isTimePlot && SQUARE_ASPECT_UI_ENABLED ? (
+              <Button
+                type="button"
+                variant={squareAspect ? 'default' : 'outline'}
+                size="icon"
+                className={cn(
+                  'plot-square-aspect-toggle h-7 w-7 shrink-0',
+                  squareAspect
+                    ? 'border-primary bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/40 ring-offset-1 ring-offset-background hover:bg-primary/90'
+                    : 'border-dashed border-muted-foreground/70 bg-muted/70 text-muted-foreground hover:border-foreground/50 hover:bg-muted hover:text-foreground'
+                )}
+                onClick={() => {
+                  setSquareAspect((current) => !current);
+                }}
+                aria-label={squareAspect ? 'Square aspect (on)' : 'Square aspect (off)'}
+                aria-pressed={squareAspect}
+                title={
+                  squareAspect
+                    ? 'Square plot area — zoom or pan turns this off'
+                    : 'Square plot area (1) — zoom or pan turns this off'
+                }
+              >
+                <Square
+                  className={cn('h-3.5 w-3.5', !squareAspect && 'opacity-65')}
+                  strokeWidth={squareAspect ? 2.5 : 2}
+                />
+              </Button>
+            ) : null}
+          </>
         ) : null}
         <Button
           type="button"
@@ -1033,9 +1241,9 @@ function PlotPanel({
                 </div>
                 {modeToggle}
               </div>
-              <div className="flex items-end gap-2">
-                <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
-                  <div className="grid gap-1">
+              <div className="grid gap-2">
+                <div className="flex items-end gap-2">
+                  <div className="grid min-w-0 flex-1 gap-1">
                     <Label htmlFor={`plot-y-channel-${panelIndex}`} className="text-[0.68rem] text-muted-foreground">
                       Y channel
                     </Label>
@@ -1056,7 +1264,19 @@ function PlotPanel({
                       ))}
                     </select>
                   </div>
-                  <div className="grid gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="mb-px h-8 w-8 shrink-0"
+                    aria-label="Swap X and Y channels"
+                    title="Swap X and Y channels"
+                    disabled={!selectedYChannel || !xChannel}
+                    onClick={onSwapXyChannels}
+                  >
+                    <ArrowLeftRight className="h-3.5 w-3.5" />
+                  </Button>
+                  <div className="grid min-w-0 flex-1 gap-1">
                     <Label htmlFor={`plot-x-channel-${panelIndex}`} className="text-[0.68rem] text-muted-foreground">
                       X channel
                     </Label>
@@ -1078,18 +1298,39 @@ function PlotPanel({
                     </select>
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="mb-px h-8 w-8 shrink-0"
-                  aria-label="Swap X and Y channels"
-                  title="Swap X and Y channels"
-                  disabled={!selectedYChannel || !xChannel}
-                  onClick={onSwapXyChannels}
-                >
-                  <ArrowLeftRight className="h-3.5 w-3.5" />
-                </Button>
+                <div className="flex gap-2">
+                  <div className="grid min-w-0 flex-1 gap-1">
+                    <Label htmlFor={`plot-y-scale-${panelIndex}`} className="text-[0.68rem] text-muted-foreground">
+                      Y scale
+                    </Label>
+                    <Input
+                      id={`plot-y-scale-${panelIndex}`}
+                      type="text"
+                      inputMode="decimal"
+                      className="h-8 font-mono text-xs"
+                      value={channelScaleInputValue('y', resolvedYChannelScale)}
+                      onFocus={() => beginEditingChannelScale('y', resolvedYChannelScale)}
+                      onBlur={(event) => finishEditingChannelScale('y', event.target.value)}
+                      onChange={(event) => setEditingChannelScaleDraft(event.target.value)}
+                    />
+                  </div>
+                  <div className="w-8 shrink-0" aria-hidden="true" />
+                  <div className="grid min-w-0 flex-1 gap-1">
+                    <Label htmlFor={`plot-x-scale-${panelIndex}`} className="text-[0.68rem] text-muted-foreground">
+                      X scale
+                    </Label>
+                    <Input
+                      id={`plot-x-scale-${panelIndex}`}
+                      type="text"
+                      inputMode="decimal"
+                      className="h-8 font-mono text-xs"
+                      value={channelScaleInputValue('x', resolvedXChannelScale)}
+                      onFocus={() => beginEditingChannelScale('x', resolvedXChannelScale)}
+                      onBlur={(event) => finishEditingChannelScale('x', event.target.value)}
+                      onChange={(event) => setEditingChannelScaleDraft(event.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
@@ -1101,27 +1342,11 @@ function PlotPanel({
             />
           )}
           <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-2">
-            <span className="text-[0.68rem] font-medium text-muted-foreground">Axis</span>
-            {!isTimePlot ? (
-              <Label className="flex cursor-pointer items-center gap-1.5 text-xs">
-                <Checkbox checked={squareAspect} onCheckedChange={(checked) => setSquareAspect(checked === true)} />
-                Square aspect
-                <span className="font-mono text-[0.64rem] text-muted-foreground">(1)</span>
-              </Label>
-            ) : null}
-            {autoScale ? (
-              <span className="text-[0.68rem] text-muted-foreground">
-                {isTimePlot
-                  ? 'Shift-drag on the chart to zoom a time region (Y refits to visible data)'
-                  : 'Shift-drag on the chart to zoom a region'}
-              </span>
-            ) : (
-              <span className="text-[0.68rem] text-muted-foreground">
-                Shift-drag horizontally or vertically to zoom; right-drag (two-finger drag) to pan
-              </span>
-            )}
+            <span className="text-[0.68rem] text-muted-foreground">
+              {"Shift-drag to zoom X and Y; right-drag (two-finger drag) to pan."}
+            </span>
           </div>
-          {!autoScale && plotLimits ? (
+          {!zoomToFitActive && plotLimits ? (
             <div className="grid gap-2 border-t border-border/60 pt-2 sm:grid-cols-2">
               <div className="grid gap-1">
                 <Label htmlFor={`plot-x-min-${panelIndex}`} className="text-[0.68rem] text-muted-foreground">
@@ -1129,10 +1354,12 @@ function PlotPanel({
                 </Label>
                 <Input
                   id={`plot-x-min-${panelIndex}`}
-                  type="number"
-                  step="any"
+                  type="text"
+                  inputMode="decimal"
                   className="h-8 font-mono text-xs"
-                  value={plotLimits.xMin}
+                  value={limitInputValue('xMin', plotLimits.xMin)}
+                  onFocus={() => beginEditingLimit('xMin', plotLimits.xMin)}
+                  onBlur={finishEditingLimit}
                   onChange={(event) => updateManualLimit('xMin', event.target.value)}
                 />
               </div>
@@ -1142,10 +1369,12 @@ function PlotPanel({
                 </Label>
                 <Input
                   id={`plot-x-max-${panelIndex}`}
-                  type="number"
-                  step="any"
+                  type="text"
+                  inputMode="decimal"
                   className="h-8 font-mono text-xs"
-                  value={plotLimits.xMax}
+                  value={limitInputValue('xMax', plotLimits.xMax)}
+                  onFocus={() => beginEditingLimit('xMax', plotLimits.xMax)}
+                  onBlur={finishEditingLimit}
                   onChange={(event) => updateManualLimit('xMax', event.target.value)}
                 />
               </div>
@@ -1155,10 +1384,12 @@ function PlotPanel({
                 </Label>
                 <Input
                   id={`plot-y-min-${panelIndex}`}
-                  type="number"
-                  step="any"
+                  type="text"
+                  inputMode="decimal"
                   className="h-8 font-mono text-xs"
-                  value={plotLimits.yMin}
+                  value={limitInputValue('yMin', plotLimits.yMin)}
+                  onFocus={() => beginEditingLimit('yMin', plotLimits.yMin)}
+                  onBlur={finishEditingLimit}
                   onChange={(event) => updateManualLimit('yMin', event.target.value)}
                 />
               </div>
@@ -1168,10 +1399,12 @@ function PlotPanel({
                 </Label>
                 <Input
                   id={`plot-y-max-${panelIndex}`}
-                  type="number"
-                  step="any"
+                  type="text"
+                  inputMode="decimal"
                   className="h-8 font-mono text-xs"
-                  value={plotLimits.yMax}
+                  value={limitInputValue('yMax', plotLimits.yMax)}
+                  onFocus={() => beginEditingLimit('yMax', plotLimits.yMax)}
+                  onBlur={finishEditingLimit}
                   onChange={(event) => updateManualLimit('yMax', event.target.value)}
                 />
               </div>

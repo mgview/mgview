@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { extractPlotPanelData } from '../core/plotSeries.ts';
 import { mergePlotAxisFields } from '../core/plotAxisConfig.ts';
-import { createEmptyPlotPanel } from '../core/plotsConfig.ts';
+import { createEmptyPlotPanel, normalizeStoredChannelScale } from '../core/plotsConfig.ts';
 import type { NormalizedSceneConfig, PlotPanelConfig, PlotPanelXMode, Timeline } from '../core/types.ts';
 import PlotPanel from './PlotPanel.tsx';
 import { Button } from './ui/button.tsx';
@@ -109,6 +109,8 @@ export default function PlotsPanel({
               title={panel.title}
               xMode={panel.xMode ?? 'time'}
               xChannel={panel.xChannel}
+              yChannelScale={panel.yChannelScale}
+              xChannelScale={panel.xChannelScale}
               channels={panel.channels}
               autoScale={panel.autoScale}
               xMin={panel.xMin}
@@ -130,11 +132,11 @@ export default function PlotsPanel({
               onChangeXMode={(nextXMode: PlotPanelXMode) => {
                 updatePlotPanel(updateDraftScene, panelIndex, (currentPanel) => {
                   if (nextXMode === 'time') {
+                    const { yChannelScale: _y, xChannelScale: _x, xChannel: _xc, ...rest } = currentPanel;
                     return mergePlotAxisFields(
                       {
-                        ...currentPanel,
+                        ...rest,
                         xMode: 'time',
-                        xChannel: undefined,
                       },
                       null
                     );
@@ -164,12 +166,50 @@ export default function PlotsPanel({
                     return currentPanel;
                   }
 
-                  return {
+                  const nextPanel: PlotPanelConfig = {
                     ...currentPanel,
                     xMode: 'channel',
                     channels: [x],
                     xChannel: yChannel,
                   };
+
+                  if (currentPanel.yChannelScale != null) {
+                    nextPanel.xChannelScale = currentPanel.yChannelScale;
+                  } else {
+                    delete nextPanel.xChannelScale;
+                  }
+
+                  if (currentPanel.xChannelScale != null) {
+                    nextPanel.yChannelScale = currentPanel.xChannelScale;
+                  } else {
+                    delete nextPanel.yChannelScale;
+                  }
+
+                  return nextPanel;
+                });
+              }}
+              onChangeYChannelScale={(nextScale) => {
+                updatePlotPanel(updateDraftScene, panelIndex, (currentPanel) => {
+                  const nextPanel = { ...currentPanel };
+                  const stored = normalizeStoredChannelScale(nextScale);
+                  if (stored != null) {
+                    nextPanel.yChannelScale = stored;
+                  } else {
+                    delete nextPanel.yChannelScale;
+                  }
+                  return nextPanel;
+                });
+              }}
+              onChangeXChannelScale={(nextScale) => {
+                updatePlotPanel(updateDraftScene, panelIndex, (currentPanel) => {
+                  const nextPanel = { ...currentPanel };
+                  const stored = normalizeStoredChannelScale(nextScale);
+                  if (stored != null) {
+                    nextPanel.xChannelScale = stored;
+                  } else {
+                    delete nextPanel.xChannelScale;
+                  }
+                  return nextPanel;
                 });
               }}
               onChangeXChannel={(nextXChannel) => {

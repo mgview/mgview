@@ -67,7 +67,7 @@
 }
 
 .plot-panel-host .uplot {
-  width: 100% !important;
+  max-width: 100%;
 }
 
 .plot-panel-host .u-select {

@@ -84,21 +84,29 @@ export default function SimulationDataOverlay({
   setSimulationEntryInput,
 }: SimulationDataOverlayProps) {
   const [selectedBrowserPaths, setSelectedBrowserPaths] = useState<string[]>([]);
+  const [selectionAnchorPath, setSelectionAnchorPath] = useState<string | null>(null);
   const [manualEntryExpanded, setManualEntryExpanded] = useState(false);
   const [expandedChannelFiles, setExpandedChannelFiles] = useState<string[]>([]);
   const sceneBasePath = useMemo(() => getBasePath(scenePath), [scenePath]);
+  const selectableBrowserPaths = useMemo(
+    () => browserListing?.entries.filter((entry) => entry.type === 'file').map((entry) => entry.path) ?? [],
+    [browserListing]
+  );
   const selectedRelativeEntries = useMemo(
     () => selectedBrowserPaths.map((path) => getRelativePath(sceneBasePath, path)),
     [sceneBasePath, selectedBrowserPaths]
   );
-  const clearBrowserSelection = () => setSelectedBrowserPaths([]);
+  const clearBrowserSelection = () => {
+    setSelectedBrowserPaths([]);
+    setSelectionAnchorPath(null);
+  };
   const canonicalOrigin = activeScene.referenceContext.sceneOrigin.canonical;
   const canonicalFrame = activeScene.referenceContext.newtonianFrame.canonical;
 
   return (
     <OverlayPanel
       title="Simulation Data"
-      size="medium"
+      size="narrow"
       actions={simulationLoading ? <Badge variant="outline">Refreshing…</Badge> : null}
       onClose={onClose}
     >
@@ -204,11 +212,29 @@ export default function SimulationDataOverlay({
             onBrowse(path);
           }}
           onSelectFile={(path, options) => {
+            const range = options?.range ?? false;
+            const toggle = options?.toggle ?? false;
+
             setSelectedBrowserPaths((current) => {
-              const additive = options?.additive ?? false;
-              if (!additive) {
+              if (range) {
+                const anchorPath = selectionAnchorPath ?? current[0] ?? null;
+                const anchorIndex = anchorPath ? selectableBrowserPaths.indexOf(anchorPath) : -1;
+                const targetIndex = selectableBrowserPaths.indexOf(path);
+                if (anchorIndex !== -1 && targetIndex !== -1) {
+                  const [startIndex, endIndex] = anchorIndex < targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex];
+                  return selectableBrowserPaths.slice(startIndex, endIndex + 1);
+                }
+
+                setSelectionAnchorPath(path);
                 return current.length === 1 && current[0] === path ? current : [path];
               }
+
+              if (!toggle) {
+                setSelectionAnchorPath(path);
+                return current.length === 1 && current[0] === path ? current : [path];
+              }
+
+              setSelectionAnchorPath(path);
               return current.includes(path) ? current.filter((entry) => entry !== path) : [...current, path];
             });
           }}

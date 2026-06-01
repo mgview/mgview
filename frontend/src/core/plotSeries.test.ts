@@ -37,6 +37,7 @@ test('plot config normalizes and round-trips through createSavableScene', () => 
           xMode: 'channel',
           xChannel: 'Ta',
           channels: ['Tb'],
+          yChannelScale: -1,
           autoScale: false,
           xMin: 1,
           xMax: 9,
@@ -56,6 +57,7 @@ test('plot config normalizes and round-trips through createSavableScene', () => 
         xMode: 'channel',
         xChannel: 'Ta',
         channels: ['Tb'],
+        yChannelScale: -1,
         autoScale: false,
         xMin: 1,
         xMax: 9,
@@ -91,6 +93,32 @@ test('extractPlotPanelData supports Y vs X channel mode', async () => {
   assert.equal(panelData.series.length, 1);
   assert.equal(panelData.xValues[0], timeline.frames[0]?.data.Ta);
   assert.equal(panelData.series[0]?.values[0], timeline.frames[0]?.data.Tb);
+});
+
+test('extractPlotPanelData applies per-channel scales in Y vs X mode', async () => {
+  const url = new URL('../../../samples/robot_arm/circle_step/robot_arm.1', import.meta.url);
+  const text = await readFile(url, 'utf8');
+  const table = parseSimulationText(text, 'robot_arm.1');
+  const timeline = buildTimeline([table]);
+  const rawTa = timeline.frames[0]?.data.Ta;
+  const rawTb = timeline.frames[0]?.data.Tb;
+  assert.ok(Number.isFinite(rawTa));
+  assert.ok(Number.isFinite(rawTb));
+
+  const panelData = extractPlotPanelData(
+    timeline,
+    {
+      xMode: 'channel',
+      xChannel: 'Ta',
+      channels: ['Tb'],
+      yChannelScale: -1,
+      xChannelScale: 2,
+    },
+    table.channelNames
+  );
+
+  assert.equal(panelData.xValues[0], (rawTa as number) * 2);
+  assert.equal(panelData.series[0]?.values[0], (rawTb as number) * -1);
 });
 
 test('computePlotYBounds spans all series extrema with padding', async () => {

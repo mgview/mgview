@@ -20,7 +20,7 @@ interface LocalFileBrowserProps {
   titleActions?: ReactNode;
   onBrowse: (path: string) => void;
   onOpenFile?: (path: string) => void;
-  onSelectFile: (path: string, options?: { additive: boolean }) => void;
+  onSelectFile: (path: string, options?: { range?: boolean; toggle?: boolean }) => void;
   getDirectoryPath: (filePath: string) => string;
 }
 
@@ -132,7 +132,8 @@ export default function LocalFileBrowser({
                   }
 
                   onSelectFile(entry.path, {
-                    additive: event.metaKey || event.ctrlKey || event.shiftKey,
+                    range: event.shiftKey,
+                    toggle: !event.shiftKey && (event.metaKey || event.ctrlKey),
                   });
                 }}
                 onDoubleClick={() => {

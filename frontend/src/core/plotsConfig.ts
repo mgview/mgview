@@ -38,6 +38,40 @@ function normalizeXMode(xMode: PlotPanelXMode | undefined): PlotPanelXMode {
   return xMode === 'channel' ? 'channel' : 'time';
 }
 
+export function normalizeStoredChannelScale(scale: number | undefined): number | undefined {
+  return finiteChannelScale(scale);
+}
+
+function finiteChannelScale(scale: number | undefined): number | undefined {
+  if (scale == null || !Number.isFinite(scale) || scale === 1) {
+    return undefined;
+  }
+
+  return scale;
+}
+
+function normalizeChannelScaleFields(
+  panel: PlotPanelConfig,
+  xMode: PlotPanelXMode
+): Pick<PlotPanelConfig, 'yChannelScale' | 'xChannelScale'> {
+  if (xMode !== 'channel') {
+    return {};
+  }
+
+  const fields: Pick<PlotPanelConfig, 'yChannelScale' | 'xChannelScale'> = {};
+  const yChannelScale = finiteChannelScale(panel.yChannelScale);
+  const xChannelScale = finiteChannelScale(panel.xChannelScale);
+
+  if (yChannelScale != null) {
+    fields.yChannelScale = yChannelScale;
+  }
+  if (xChannelScale != null) {
+    fields.xChannelScale = xChannelScale;
+  }
+
+  return fields;
+}
+
 function normalizePanel(panel: PlotPanelConfig): PlotPanelConfig {
   const channels = [...new Set((panel.channels ?? []).filter((channel) => channel.trim().length > 0))];
   const title = panel.title?.trim();
@@ -51,6 +85,7 @@ function normalizePanel(panel: PlotPanelConfig): PlotPanelConfig {
     channels,
     xMode,
     ...(xMode === 'channel' && xChannel ? { xChannel } : {}),
+    ...normalizeChannelScaleFields(panel, xMode),
     ...axisFields,
   };
 }
