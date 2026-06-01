@@ -382,6 +382,8 @@ export default function App() {
         onOpenDiagnostics={shell.openDiagnostics}
         onOpenChannels={shell.openSimulationOverlay}
         onSetLayoutVisibility={updateSceneLayoutVisibility}
+        performanceOverlayOpen={shell.performanceOverlayOpen}
+        onSetPerformanceOverlayOpen={shell.setPerformanceOverlayOpen}
         onOpenSaveAsOverlay={shell.openSaveAsOverlay}
         onRedo={handleRedo}
         onSave={() => void handleSaveScene()}
@@ -395,7 +397,7 @@ export default function App() {
 
       {showWorkspaceShell ? (
           <div
-            className={`workspace-shell ${!showEditorRail ? 'workspace-shell-no-editor-rail' : ''}`}
+            className={`workspace-shell ${!showEditorRail ? 'workspace-shell-no-editor-rail' : ''} ${showEditorRail && !showVisualWorkspace ? 'workspace-shell-editor-only' : ''}`}
           >
             {showVisualWorkspace ? (
               <div
@@ -639,12 +641,7 @@ export default function App() {
       ) : null}
 
       {shell.diagnosticsOpen && loaded ? (
-        <DiagnosticsOverlay
-          diagnostics={diagnostics}
-          performanceOverlayOpen={shell.performanceOverlayOpen}
-          setPerformanceOverlayOpen={shell.setPerformanceOverlayOpen}
-          onClose={shell.closeDiagnostics}
-        />
+        <DiagnosticsOverlay diagnostics={diagnostics} onClose={shell.closeDiagnostics} />
       ) : null}
 
       {serverWorkspace.pickerOpen ? (

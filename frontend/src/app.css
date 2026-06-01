@@ -13,6 +13,14 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.workspace-shell-editor-only {
+  grid-template-columns: minmax(0, 1fr) minmax(510px, 568px);
+}
+
+.workspace-shell-editor-only > .workspace-editor-rail {
+  grid-column: 2;
+}
+
 .workspace-visual-shell {
   display: grid;
   gap: 6px;
