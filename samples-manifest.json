@@ -4,6 +4,7 @@
     { "group": "Motion Genesis Examples", "label": "Particle Pendulum", "path": "particle_pendulum/particle_pendulum.json" },
     { "group": "Motion Genesis Examples", "label": "Particle In Slot", "path": "particle_in_slot/slot.json" },
     { "group": "Motion Genesis Examples", "label": "Fourbar", "path": "fourbar/correct/fourbar.json" },
+    { "group": "Motion Genesis Examples", "label": "Disk", "path": "disk/disk.json" },
     { "group": "Constraint Stabilization", "label": "Fourbar", "path": "fourbar/stabilize/fourbar.json" },
     { "group": "Constraint Stabilization", "label": "Trifilar Pendulum", "path": "MGExampleAircraft/stabilize/aircraft.json" },
     { "group": "RCM Robot", "label": "RCM Homogeneous", "path": "rcm_robot/ME328_RCMRobot_Homogeneous.json" },

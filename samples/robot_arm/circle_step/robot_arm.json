@@ -12,9 +12,9 @@
     0
   ],
   "cameraEye": [
-    1.0334343476298833,
-    3.9771329231791914,
-    5.011429652354996
+    0.006059230207041677,
+    4.2066897081079935,
+    4.829527745864108
   ],
   "cameraFocus": [
     0,
@@ -25,31 +25,30 @@
   "plots": {
     "panels": [
       {
+        "id": "604d47ec-73d0-449a-bc03-aae14f9a3611",
         "title": "Joint torques",
         "channels": [
           "Ta",
           "Tb",
           "Tcd"
         ],
-        "xMode": "time"
+        "xMode": "time",
+        "autoScale": false,
+        "xMin": -0.02974,
+        "xMax": 16.03,
+        "yMin": -240.5,
+        "yMax": 1810.68
       },
       {
-        "title": "Ao position",
-        "channels": [
-          "P_No_Ao[1]",
-          "P_No_Ao[2]",
-          "P_No_Ao[3]"
-        ],
-        "xMode": "time"
-      },
-      {
+        "id": "0dd4a94c-855a-46eb-9e8e-5b9b4818a583",
         "channels": [
           "P_No_Eo[3]"
         ],
         "xMode": "channel",
         "xChannel": "P_No_Eo[1]"
       }
-    ]
+    ],
+    "heightScale": 2
   },
   "objects": {
     "N": {
@@ -836,5 +835,11 @@
     }
   },
   "backgroundColor": "#e0f0ff",
-  "spans": {}
+  "spans": {},
+  "layout": {
+    "showRenderer": true,
+    "showPlots": true,
+    "showEditorRail": false,
+    "focusTarget": null
+  }
 }

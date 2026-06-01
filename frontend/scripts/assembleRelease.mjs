@@ -24,7 +24,6 @@ const releaseFiles = [
   'RunMGViewMac',
   'RunMGViewLinux',
   'RunMGViewWindows.bat',
-  'RunMGViewWindows.lnk',
   'README.md',
   'LICENSE',
 ];
@@ -69,14 +68,7 @@ async function main() {
 
   for (const entry of releaseFiles) {
     const source = path.join(repoRoot, entry);
-    try {
-      await cp(source, path.join(stagingDir, entry), { recursive: true });
-    } catch (error) {
-      if (entry.startsWith('RunMGView') && entry.endsWith('.lnk')) {
-        continue;
-      }
-      throw error;
-    }
+    await cp(source, path.join(stagingDir, entry), { recursive: true });
   }
 
   await copyTree(path.join(repoRoot, 'samples'), path.join(stagingDir, 'samples'), {

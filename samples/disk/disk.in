@@ -1,0 +1,36 @@
+File: disk.in
+----------------------------------------------------------+------------------
+Description          Quantity             Units           | Value
+----------------------------------------------------------|------------------
+Constant             g                    m/s^2           |  9.8
+Constant             m                    kg              |  2
+Constant             r                    m               |  0.3429
+
+Initial Value        H                    UNITS           |  0
+Initial Value        L                    degrees         |  10
+Initial Value        theta                UNITS           |  0
+Initial Value        wx                   rad/sec         |  0
+Initial Value        wy                   rad/sec         |  0
+Initial Value        wz                   rad/sec         |  5
+Initial Value        x                    UNITS           |  0
+Initial Value        y                    UNITS           |  0
+
+Initial Time         tInitial             sec             |  0.0
+Final Time           tFinal               sec             |  10
+Integration Step     integStp             sec             |  0.05
+Print-Integer        printIntScreen       0 or +integer   |  1
+Print-Integer        printIntFile         0 or +integer   |  1
+Absolute Error       absError                             |  1.0E-08
+Relative Error       relError                             |  1.0E-08
+----------------------------------------------------------+------------------
+Note: Use spaces not tabs while editing this file.
+
+      printInt * integStp  is the time-interval for writing of output.
+              printInt = 0 suppresses writing output.
+
+      absError should be set equal to 10^(-8)*Xsmall, where Xsmall is the estimated
+               smallest maximum absolute value of the variables being integrated.
+
+      relError should be set equal to 10^(-d), where d is no less than the desired
+               number of significant digits of numerical integration results.
+-----------------------------------------------------------------------------

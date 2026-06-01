@@ -58,7 +58,7 @@ cd ..
 ./RunMGViewMac --workspace ~/simulations   # workspace folder (saved in ~/.mgview/config.json)
 ```
 
-On Windows (Command Prompt), same flags via `RunMGViewWindows.bat` or `bin\RunVisualizer.bat` (also used by the `RunMGViewWindows` shortcut):
+On Windows, double-click `RunMGViewWindows.bat` or run it from Command Prompt (same flags; `bin\RunVisualizer.bat` is the underlying script):
 
 ```bat
 RunMGViewWindows.bat --port 9000 --no-open
