@@ -42,6 +42,14 @@ export function normalizeStoredChannelScale(scale: number | undefined): number |
   return finiteChannelScale(scale);
 }
 
+export function createPlotPanelId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `plot-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function finiteChannelScale(scale: number | undefined): number | undefined {
   if (scale == null || !Number.isFinite(scale) || scale === 1) {
     return undefined;
@@ -77,10 +85,12 @@ function normalizePanel(panel: PlotPanelConfig): PlotPanelConfig {
   const title = panel.title?.trim();
   const xMode = normalizeXMode(panel.xMode);
   const xChannel = panel.xChannel?.trim();
+  const id = panel.id?.trim() || createPlotPanelId();
 
   const axisFields = normalizeStoredAxisFields(panel);
 
   return {
+    id,
     ...(title ? { title } : {}),
     channels,
     xMode,
@@ -123,5 +133,5 @@ export function collectPlotConfigDiagnostics(
 }
 
 export function createEmptyPlotPanel(): PlotPanelConfig {
-  return { channels: [], xMode: 'time' };
+  return { id: createPlotPanelId(), channels: [], xMode: 'time' };
 }

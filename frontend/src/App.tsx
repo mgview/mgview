@@ -8,10 +8,12 @@ import LoadSceneOverlay from './components/LoadSceneOverlay.tsx';
 import SamplesOverlay from './components/SamplesOverlay.tsx';
 import ObjectList from './components/ObjectList.tsx';
 import PlaybackStrip from './components/PlaybackStrip.tsx';
+import PlotsPanel from './components/PlotsPanel.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import SimulationDataOverlay from './components/SimulationDataOverlay.tsx';
 import { getFrameAtTime } from './core/timeline.ts';
+import { DEFAULT_SCENE_LAYOUT } from './core/workspaceLayout.ts';
 import { useInspectorSelectionState } from './hooks/useInspectorSelectionState.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
 import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
@@ -344,12 +346,62 @@ export default function App() {
 
   const groupedSamples = useMemo(() => groupSampleScenes(), []);
   const rendererSceneBasePath = loaded ? getSceneBasePath(loaded.sceneRef) : '';
+  const sceneLayout = activeScene?.layout ?? null;
+  const showRenderer = sceneLayout?.showRenderer ?? DEFAULT_SCENE_LAYOUT.showRenderer;
+  const showPlots = sceneLayout?.showPlots ?? DEFAULT_SCENE_LAYOUT.showPlots;
+  const showEditorRail = sceneLayout?.showEditorRail ?? DEFAULT_SCENE_LAYOUT.showEditorRail;
+  const showVisualWorkspace = showRenderer || showPlots;
+  const timelineOwner = showRenderer ? 'renderer' : showPlots ? 'plots' : null;
+
+  const updateSceneLayoutVisibility = useCallback(
+    (key: 'showRenderer' | 'showPlots' | 'showEditorRail', value: boolean) => {
+      updateDraftScene((scene) => {
+        scene.layout[key] = value;
+      });
+    },
+    [updateDraftScene]
+  );
+
+  const applySceneLayoutPreset = useCallback(
+    (preset: 'showAll' | 'plotsOnly' | 'rendererOnly' | 'reset') => {
+      updateDraftScene((scene) => {
+        switch (preset) {
+          case 'showAll':
+            scene.layout.showRenderer = true;
+            scene.layout.showPlots = true;
+            scene.layout.showEditorRail = true;
+            scene.layout.focusTarget = null;
+            break;
+          case 'plotsOnly':
+            scene.layout.showRenderer = false;
+            scene.layout.showPlots = true;
+            scene.layout.showEditorRail = false;
+            scene.layout.focusTarget = null;
+            break;
+          case 'rendererOnly':
+            scene.layout.showRenderer = true;
+            scene.layout.showPlots = false;
+            scene.layout.showEditorRail = false;
+            scene.layout.focusTarget = null;
+            break;
+          case 'reset':
+            scene.layout.showRenderer = DEFAULT_SCENE_LAYOUT.showRenderer;
+            scene.layout.showPlots = DEFAULT_SCENE_LAYOUT.showPlots;
+            scene.layout.showEditorRail = DEFAULT_SCENE_LAYOUT.showEditorRail;
+            scene.layout.focusTarget = DEFAULT_SCENE_LAYOUT.focusTarget;
+            break;
+        }
+      });
+    },
+    [updateDraftScene]
+  );
 
   return (
     <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-2">
       <DemoNotice />
       <SceneHeaderBar
         scenePath={loaded?.scenePath ?? null}
+        layout={sceneLayout}
         hasLocalEdits={hasLocalEdits}
         loading={loading}
         saving={saving}
@@ -363,6 +415,8 @@ export default function App() {
         onOpenSamplesOverlay={shell.openSamplesOverlay}
         onOpenDiagnostics={shell.openDiagnostics}
         onOpenChannels={shell.openSimulationOverlay}
+        onSetLayoutVisibility={updateSceneLayoutVisibility}
+        onApplyLayoutPreset={applySceneLayoutPreset}
         onOpenSaveAsOverlay={shell.openSaveAsOverlay}
         onRedo={handleRedo}
         onSave={() => void handleSaveScene()}
@@ -376,80 +430,116 @@ export default function App() {
 
       {showWorkspaceShell ? (
           <div
-            className={`workspace-shell ${shell.leftRailCollapsed ? 'workspace-shell-left-rail-collapsed' : ''}`}
+            className={`workspace-shell ${!showEditorRail ? 'workspace-shell-no-editor-rail' : ''}`}
           >
-            <div className="workspace-main">
-              {activeScene ? (
-                <>
-                  <RendererPanel
-                    cameraSeedKey={shell.cameraSeedKey}
-                    layoutSizeKey={`${shell.leftRailCollapsed}`}
-                    onCameraPreviewChange={shell.setCameraPreview}
-                    onCameraCommit={shell.commitCameraPreview}
-                    onClearSelection={selectionState.clearAllSelections}
-                    onSelectObject={(objectName, visualName) => {
-                      selectionState.selectObjectForEditor(objectName, visualName, selectObject);
-                    }}
-                    onSelectSpan={(spanName, visualName) => {
-                      selectionState.selectSpanForEditor(spanName, visualName, selectSpanOnly);
-                    }}
-                    scenePath={rendererSceneBasePath}
-                    scene={activeScene}
-                    frame={currentFrame?.frame}
-                    selectedObjectName={activeSelectedObject?.name ?? null}
-                    selectedSpanName={selectedSpanResolvedName}
-                    showPerformanceOverlay={shell.performanceOverlayOpen}
-                    onHidePerformanceOverlay={() => shell.setPerformanceOverlayOpen(false)}
-                  />
+            {showVisualWorkspace ? (
+              <div
+                className={`workspace-visual-shell ${
+                  showRenderer && showPlots ? 'workspace-visual-shell-dual' : 'workspace-visual-shell-single'
+                }`}
+              >
+                {showRenderer ? (
+                  <div className="workspace-panel-stack">
+                    {activeScene ? (
+                      <RendererPanel
+                        cameraSeedKey={shell.cameraSeedKey}
+                        layoutSizeKey={`${showRenderer}-${showPlots}-${showEditorRail}`}
+                        onCameraPreviewChange={shell.setCameraPreview}
+                        onCameraCommit={shell.commitCameraPreview}
+                        onClearSelection={selectionState.clearAllSelections}
+                        onSelectObject={(objectName, visualName) => {
+                          selectionState.selectObjectForEditor(objectName, visualName, selectObject);
+                        }}
+                        onSelectSpan={(spanName, visualName) => {
+                          selectionState.selectSpanForEditor(spanName, visualName, selectSpanOnly);
+                        }}
+                        scenePath={rendererSceneBasePath}
+                        scene={activeScene}
+                        frame={currentFrame?.frame}
+                        selectedObjectName={activeSelectedObject?.name ?? null}
+                        selectedSpanName={selectedSpanResolvedName}
+                        showPerformanceOverlay={shell.performanceOverlayOpen}
+                        onHidePerformanceOverlay={() => shell.setPerformanceOverlayOpen(false)}
+                      />
+                    ) : (
+                      <section className="flex min-h-0 h-full rounded-md border border-border bg-card p-1.5">
+                        <div className="renderer-surface flex items-center justify-center">
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                            Loading scene and simulation data…
+                          </div>
+                        </div>
+                      </section>
+                    )}
 
-                  <PlaybackStrip
-                    isPlaying={playback.isPlaying}
-                    currentTime={playback.currentTime}
-                    tInitial={timeline.tInitial}
-                    tFinal={timeline.tFinal}
-                    tStep={timeline.tStep || 0.001}
-                    playbackSpeed={playbackSpeed}
-                    onTogglePlay={playback.togglePlay}
-                    onReset={playback.resetPlayback}
-                    onChangeTime={playback.changeTime}
-                    onChangeSpeed={(nextValue) => {
-                      if (!Number.isFinite(nextValue)) {
-                        return;
-                      }
+                    {timelineOwner === 'renderer' ? (
+                      <PlaybackStrip
+                        isPlaying={playback.isPlaying}
+                        currentTime={playback.currentTime}
+                        tInitial={timeline.tInitial}
+                        tFinal={timeline.tFinal}
+                        tStep={timeline.tStep || 0.001}
+                        playbackSpeed={playbackSpeed}
+                        onTogglePlay={playback.togglePlay}
+                        onReset={playback.resetPlayback}
+                        onChangeTime={playback.changeTime}
+                        onChangeSpeed={(nextValue) => {
+                          if (!Number.isFinite(nextValue)) {
+                            return;
+                          }
 
-                      updateDraftScene((scene) => {
-                        scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
-                      });
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  <section className="flex min-h-0 h-full rounded-md border border-border bg-card p-1.5">
-                    <div className="renderer-surface flex items-center justify-center">
-                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Loading scene and simulation data…
+                          updateDraftScene((scene) => {
+                            scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
+                          });
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {showPlots ? (
+                  <div className="workspace-panel-stack">
+                    <section className="workspace-content-panel">
+                      <div className="h-full min-h-0 overflow-auto pr-0.5">
+                        <PlotsPanel
+                          activeScene={activeScene}
+                          channelNames={channelNames}
+                          currentTime={playback.currentTime}
+                          timeline={timeline}
+                          onChangeTime={playback.changeTime}
+                          updateDraftScene={updateDraftScene}
+                        />
                       </div>
-                    </div>
-                  </section>
-                  <section className="rounded-md border border-border bg-card px-2 py-1.5">
-                    <div className="h-7 w-56 animate-pulse rounded-md bg-muted" />
-                  </section>
-                </>
-              )}
-            </div>
+                    </section>
 
-            <button
-              type="button"
-              className="self-stretch w-[18px] min-w-[18px] rounded-md border border-border bg-muted/60 p-0 text-[0.72rem] text-muted-foreground hover:bg-accent hover:text-foreground"
-              onClick={() => shell.setLeftRailCollapsed((current) => !current)}
-              aria-label={shell.leftRailCollapsed ? 'Expand editor rail' : 'Collapse editor rail'}
-            >
-              {shell.leftRailCollapsed ? '<' : '>'}
-            </button>
+                    {timelineOwner === 'plots' ? (
+                      <PlaybackStrip
+                        isPlaying={playback.isPlaying}
+                        currentTime={playback.currentTime}
+                        tInitial={timeline.tInitial}
+                        tFinal={timeline.tFinal}
+                        tStep={timeline.tStep || 0.001}
+                        playbackSpeed={playbackSpeed}
+                        onTogglePlay={playback.togglePlay}
+                        onReset={playback.resetPlayback}
+                        onChangeTime={playback.changeTime}
+                        onChangeSpeed={(nextValue) => {
+                          if (!Number.isFinite(nextValue)) {
+                            return;
+                          }
 
-            {!shell.leftRailCollapsed ? (
-              <div className="workspace-left-rail">
+                          updateDraftScene((scene) => {
+                            scene.speedFactor = Math.min(10, Math.max(0.1, nextValue));
+                          });
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {showEditorRail ? (
+              <div className="workspace-editor-rail">
                 <div className="min-h-0 min-w-0">
                   <div className="h-full min-h-0 overflow-auto pr-0.5">
                     {loaded ? (
@@ -482,16 +572,14 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="workspace-drawer">
+                <div className="workspace-content-panel">
                   <div className="h-full min-h-0 overflow-auto pr-0.5">
                     <InspectorDrawer
                       activeScene={activeScene}
                       cameraPreview={shell.cameraPreview}
                       channelNames={channelNames}
                       clearCameraPreview={() => shell.setCameraPreview(null)}
-                      currentTime={playback.currentTime}
                       editorMode={selectionState.editorMode}
-                      hasLocalEdits={hasLocalEdits}
                       liveSelectedSpan={liveSelectedSpan}
                       liveSelectedSpanVisual={liveSelectedSpanVisual}
                       liveSelectedVisual={activeLiveSelectedVisual}
@@ -502,8 +590,6 @@ export default function App() {
                       selectedSpanName={selectedSpanResolvedName}
                       selectedSpanVisualName={selectedSpanVisualResolvedName}
                       selectedVisual={activeSelectedVisual}
-                      timeline={timeline}
-                      onChangeTime={playback.changeTime}
                       updateSelectedObject={updateSelectedObject}
                       createVisual={createVisual}
                       renameVisual={renameVisual}
@@ -533,6 +619,13 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            ) : null}
+
+            {!showVisualWorkspace && !showEditorRail ? (
+              <section className="workspace-empty-state">
+                <p className="text-sm font-medium">All workspace panels are hidden.</p>
+                <p className="text-xs text-muted-foreground">Use the Layout menu to show the 3D view, plots, or the editor rail.</p>
+              </section>
             ) : null}
           </div>
       ) : null}

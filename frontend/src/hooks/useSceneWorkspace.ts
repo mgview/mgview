@@ -120,6 +120,7 @@ export function createSavableScene(
 
   nextScene.name = draftScene.name;
   nextScene.simulationData = [...draftScene.simulationData];
+  nextScene.layout = structuredClone(draftScene.layout);
   delete nextScene.newtonianFrame;
   delete nextScene.sceneOrigin;
   nextScene.backgroundColor = draftScene.backgroundColor;

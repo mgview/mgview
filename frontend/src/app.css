@@ -2,18 +2,33 @@
 
 .workspace-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 14px minmax(510px, 568px);
+  grid-template-columns: minmax(0, 1fr) minmax(510px, 568px);
   gap: 6px;
   align-items: stretch;
   min-height: 0;
   height: 100%;
 }
 
-.workspace-shell-left-rail-collapsed {
-  grid-template-columns: minmax(0, 1fr) 14px;
+.workspace-shell-no-editor-rail {
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.workspace-left-rail {
+.workspace-visual-shell {
+  display: grid;
+  gap: 6px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.workspace-visual-shell-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace-visual-shell-dual {
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+}
+
+.workspace-editor-rail {
   display: grid;
   grid-template-columns: minmax(112px, 136px) minmax(392px, 430px);
   gap: 6px;
@@ -22,7 +37,7 @@
   min-width: 0;
 }
 
-.workspace-main {
+.workspace-panel-stack {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   gap: 6px;
@@ -30,16 +45,32 @@
   min-width: 0;
 }
 
-.workspace-main > * {
+.workspace-panel-stack > * {
   width: 100%;
   min-width: 0;
 }
 
-.workspace-drawer {
+.workspace-content-panel {
   display: grid;
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   min-width: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.5rem;
+}
+
+.workspace-empty-state {
+  display: grid;
+  place-items: center;
+  gap: 0.25rem;
+  min-height: 0;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+  background: var(--card);
+  padding: 1rem;
+  text-align: center;
 }
 
 .renderer-surface {
@@ -201,11 +232,12 @@
     grid-template-rows: minmax(0, 1fr) auto;
   }
 
-  .workspace-shell-left-rail-collapsed {
+  .workspace-visual-shell-dual {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(240px, 1fr) minmax(220px, auto);
   }
 
-  .workspace-left-rail {
+  .workspace-editor-rail {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(200px, 1fr);
   }

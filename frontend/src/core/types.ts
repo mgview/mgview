@@ -93,7 +93,15 @@ export interface SceneObject {
 
 export type PlotPanelXMode = 'time' | 'channel';
 
+export interface SceneLayoutConfig {
+  showRenderer?: boolean;
+  showPlots?: boolean;
+  showEditorRail?: boolean;
+  focusTarget?: 'renderer' | 'plots' | null;
+}
+
 export interface PlotPanelConfig {
+  id?: string;
   title?: string;
   channels: string[];
   /** Default: plot Y channel(s) vs simulation time. */
@@ -120,6 +128,7 @@ export interface ScenePlotsConfig {
 export interface SceneConfig {
   name?: string;
   simulationData?: string[];
+  layout?: SceneLayoutConfig;
   newtonianFrame?: string;
   sceneOrigin?: string;
   backgroundColor?: string;
@@ -149,6 +158,7 @@ export interface SceneReferenceContext {
 }
 
 export interface NormalizedSceneConfig extends SceneConfig {
+  layout: SceneLayoutConfig;
   simulationData: string[];
   newtonianFrame: string;
   sceneOrigin: string;

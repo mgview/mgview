@@ -49,22 +49,27 @@ test('plot config normalizes and round-trips through createSavableScene', () => 
   };
 
   const draftScene = createSceneDocument(rawScene, ['Ta', 'Tb']);
-  assert.deepEqual(draftScene.plots, {
-    panels: [
-      { title: 'Torques', channels: ['Ta'], xMode: 'time' },
-      { channels: ['Tb'], xMode: 'time' },
-      {
-        xMode: 'channel',
-        xChannel: 'Ta',
-        channels: ['Tb'],
-        yChannelScale: -1,
-        autoScale: false,
-        xMin: 1,
-        xMax: 9,
-        yMin: -2,
-        yMax: 2,
-      },
-    ],
+  assert.equal(draftScene.plots.panels.length, 3);
+  assert.equal(draftScene.plots.panels[0]?.title, 'Torques');
+  assert.deepEqual(draftScene.plots.panels[0]?.channels, ['Ta']);
+  assert.equal(draftScene.plots.panels[0]?.xMode, 'time');
+  assert.equal(typeof draftScene.plots.panels[0]?.id, 'string');
+  assert.deepEqual(draftScene.plots.panels[1], {
+    id: draftScene.plots.panels[1]?.id,
+    channels: ['Tb'],
+    xMode: 'time',
+  });
+  assert.deepEqual(draftScene.plots.panels[2], {
+    id: draftScene.plots.panels[2]?.id,
+    xMode: 'channel',
+    xChannel: 'Ta',
+    channels: ['Tb'],
+    yChannelScale: -1,
+    autoScale: false,
+    xMin: 1,
+    xMax: 9,
+    yMin: -2,
+    yMax: 2,
   });
 
   const saved = createSavableScene(rawScene, draftScene);

@@ -9,13 +9,12 @@ import type {
   VisualType,
 } from '../core/types.ts';
 import JsonEditorPanel from './JsonEditorPanel.tsx';
-import PlotsPanel from './PlotsPanel.tsx';
 import SceneSettingsPanel from './SceneSettingsPanel.tsx';
 import SpanEditorPanel from './SpanEditorPanel.tsx';
 import VisualEditorPanel from './VisualEditorPanel.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs.tsx';
 
-export type InspectorEditorMode = 'visual' | 'scene' | 'json' | 'plots';
+export type InspectorEditorMode = 'visual' | 'scene' | 'json';
 
 interface InspectorDrawerProps {
   activeScene: NormalizedSceneConfig | null;
@@ -27,9 +26,7 @@ interface InspectorDrawerProps {
   } | null;
   channelNames: string[];
   clearCameraPreview: () => void;
-  currentTime: number;
   editorMode: InspectorEditorMode;
-  hasLocalEdits: boolean;
   liveSelectedVisual?: SceneVisual;
   loaded: LoadedSceneData | null;
   savePreview: string;
@@ -40,8 +37,6 @@ interface InspectorDrawerProps {
   liveSelectedSpanVisual?: SceneSpanVisual;
   selectedVisual?: SceneObjectInspection['visuals'][number];
   selectedObjectName: string | null;
-  timeline: Timeline;
-  onChangeTime: (time: number) => void;
   updateSelectedObject: (updater: (sceneObject: NormalizedSceneConfig['objects'][string]) => void) => void;
   createVisual: (type: VisualType) => boolean;
   renameVisual: (currentName: string, nextName: string) => boolean;
@@ -82,7 +77,6 @@ export default function InspectorDrawer({
   cameraPreview,
   channelNames,
   clearCameraPreview,
-  currentTime,
   editorMode,
   liveSelectedVisual,
   loaded,
@@ -94,8 +88,6 @@ export default function InspectorDrawer({
   liveSelectedSpanVisual,
   selectedVisual,
   selectedObjectName,
-  timeline,
-  onChangeTime,
   updateSelectedObject,
   createVisual,
   renameVisual,
@@ -140,7 +132,6 @@ export default function InspectorDrawer({
           <TabsTrigger value="visual">Editor</TabsTrigger>
           <TabsTrigger value="scene">Scene Settings</TabsTrigger>
           <TabsTrigger value="json">JSON Editor</TabsTrigger>
-          <TabsTrigger value="plots">Plots</TabsTrigger>
         </TabsList>
 
         <TabsContent value="scene" className="min-h-0 overflow-auto">
@@ -158,19 +149,6 @@ export default function InspectorDrawer({
 
         <TabsContent value="json" className="min-h-0 overflow-auto">
           <JsonEditorPanel savePreview={savePreview} />
-        </TabsContent>
-
-        <TabsContent value="plots" className="min-h-0 overflow-auto">
-          {editorMode === 'plots' ? (
-            <PlotsPanel
-              activeScene={activeScene}
-              channelNames={channelNames}
-              currentTime={currentTime}
-              timeline={timeline}
-              onChangeTime={onChangeTime}
-              updateDraftScene={updateDraftScene}
-            />
-          ) : null}
         </TabsContent>
 
         <TabsContent value="visual" className="min-h-0 overflow-auto">

@@ -60,6 +60,12 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
   assert.equal(document.referenceContext.sceneOrigin.canonical, null);
   assert.equal(document.backgroundColor, '#e0f0ff');
   assert.equal(document.cameraParentFrame, 'N');
+  assert.deepEqual(document.layout, {
+    showRenderer: true,
+    showPlots: false,
+    showEditorRail: true,
+    focusTarget: null,
+  });
   assert.ok(document.objects.N);
   assert.equal(document.objects.N.type, 'frame');
   assert.ok(document.objects.N.visual?.label);
@@ -72,6 +78,41 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
     document.objects.P.visual?.point?.radius,
     document.workspaceSize * DEFAULT_POINT_MARKER_WORKSPACE_FRACTION
   );
+});
+
+test('scene normalization preserves authored layout intent and assigns plot ids', () => {
+  const document = createSceneDocument({
+    layout: {
+      showRenderer: false,
+      showPlots: true,
+      showEditorRail: false,
+      focusTarget: 'plots',
+    },
+    plots: {
+      panels: [
+        {
+          channels: ['alpha', 'alpha', 'beta'],
+          xMode: 'time',
+        },
+        {
+          id: 'plot-manual',
+          channels: ['gamma'],
+          xMode: 'channel',
+          xChannel: 'delta',
+        },
+      ],
+    },
+  });
+
+  assert.equal(document.layout.showRenderer, false);
+  assert.equal(document.layout.showPlots, true);
+  assert.equal(document.layout.showEditorRail, false);
+  assert.equal(document.layout.focusTarget, 'plots');
+  assert.equal(document.plots.panels.length, 2);
+  assert.equal(typeof document.plots.panels[0].id, 'string');
+  assert.ok(document.plots.panels[0].id);
+  assert.equal(document.plots.panels[1].id, 'plot-manual');
+  assert.deepEqual(document.plots.panels[0].channels, ['alpha', 'beta']);
 });
 
 test('scene normalization does not auto-add defaults when authored visuals already exist', () => {
