@@ -1,7 +1,7 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
-import { ArrowLeftRight, Focus, Settings, Square, X } from 'lucide-react';
+import { ArrowLeftRight, Focus, ListOrdered, Settings, Square, X } from 'lucide-react';
 import {
   buildPersistedPlotAxisFields,
   computeFullPlotAxisLimits,
@@ -270,6 +270,10 @@ function PlotPanel({
   const sectionRef = useRef<HTMLElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const xyMarkerRef = useRef<HTMLDivElement>(null);
+  const timeMarkersLayerRef = useRef<HTMLDivElement | null>(null);
+  const timeMarkerElsRef = useRef<HTMLDivElement[]>([]);
+  const timeValuesOverlayRef = useRef<HTMLDivElement | null>(null);
+  const showTimeValuesRef = useRef(false);
   const plotRef = useRef<uPlot | null>(null);
   const scrubbingRef = useRef(false);
   const manualZoomRef = useRef<{
@@ -309,6 +313,7 @@ function PlotPanel({
   const [squareAspect, setSquareAspect] = useState(false);
   /** Optimistic: zoom-to-fit button dims as soon as a zoom/pan gesture starts. */
   const [zoomToFitUiOff, setZoomToFitUiOff] = useState(false);
+  const [showTimeValues, setShowTimeValues] = useState(false);
   const [xyChannelFilter, setXyChannelFilter] = useState('');
   const [editingChannelScale, setEditingChannelScale] = useState<'y' | 'x' | null>(null);
   const [editingChannelScaleDraft, setEditingChannelScaleDraft] = useState('');
@@ -316,6 +321,7 @@ function PlotPanel({
   onChangeTimeRef.current = onChangeTime;
   onChangeAxisViewRef.current = onChangeAxisView;
   timelineRef.current = timeline;
+  showTimeValuesRef.current = showTimeValues;
 
   useEffect(() => {
     autoScaleRef.current = autoScale;
@@ -471,6 +477,117 @@ function PlotPanel({
     }
   };
 
+  const ensureTimePlotOverlays = (plot: uPlot) => {
+    let layer = timeMarkersLayerRef.current;
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.className = 'plot-time-markers';
+      timeMarkersLayerRef.current = layer;
+    }
+
+    if (layer.parentElement !== plot.over) {
+      plot.over.appendChild(layer);
+    }
+
+    while (timeMarkerElsRef.current.length < visibleSeries.length) {
+      const marker = document.createElement('div');
+      marker.className = 'plot-time-marker';
+      layer.appendChild(marker);
+      timeMarkerElsRef.current.push(marker);
+    }
+
+    while (timeMarkerElsRef.current.length > visibleSeries.length) {
+      const marker = timeMarkerElsRef.current.pop();
+      marker?.remove();
+    }
+
+    let valuesOverlay = timeValuesOverlayRef.current;
+    if (!valuesOverlay) {
+      valuesOverlay = document.createElement('div');
+      valuesOverlay.className = 'plot-time-values-overlay';
+      wireValuesOverlayScrubGuard(valuesOverlay);
+      timeValuesOverlayRef.current = valuesOverlay;
+    }
+
+    if (valuesOverlay.parentElement !== plot.over) {
+      plot.over.appendChild(valuesOverlay);
+    }
+
+    if (valuesOverlay.childElementCount !== visibleSeries.length) {
+      valuesOverlay.replaceChildren();
+      for (const series of visibleSeries) {
+        appendValuesOverlayRow(valuesOverlay, series.label);
+      }
+    }
+  };
+
+  const wireValuesOverlayScrubGuard = (overlay: HTMLDivElement) => {
+    if (overlay.dataset.scrubGuard === '1') {
+      return;
+    }
+
+    overlay.dataset.scrubGuard = '1';
+    overlay.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+    });
+  };
+
+  const appendValuesOverlayRow = (parent: HTMLElement, label: string, showSwatch = true) => {
+    const row = document.createElement('div');
+    row.className = 'plot-time-values-row';
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'plot-time-values-label';
+    labelEl.textContent = label;
+    labelEl.title = label;
+
+    const value = document.createElement('span');
+    value.className = 'plot-time-values-value';
+
+    if (showSwatch) {
+      const swatch = document.createElement('span');
+      swatch.className = 'plot-time-values-swatch';
+      row.append(swatch, labelEl, value);
+    } else {
+      row.classList.add('plot-time-values-row-no-swatch');
+      row.append(labelEl, value);
+    }
+
+    parent.append(row);
+  };
+
+  const ensureXyValuesOverlay = (plot: uPlot) => {
+    let valuesOverlay = timeValuesOverlayRef.current;
+    if (!valuesOverlay) {
+      valuesOverlay = document.createElement('div');
+      valuesOverlay.className = 'plot-time-values-overlay';
+      wireValuesOverlayScrubGuard(valuesOverlay);
+      timeValuesOverlayRef.current = valuesOverlay;
+    }
+
+    if (valuesOverlay.parentElement !== plot.over) {
+      plot.over.appendChild(valuesOverlay);
+    }
+
+    const xLabel = panelData.xLabel;
+    const yLabel = visibleSeries[0]?.label ?? 'Y';
+    if (valuesOverlay.childElementCount !== 2) {
+      valuesOverlay.replaceChildren();
+      appendValuesOverlayRow(valuesOverlay, xLabel, false);
+      appendValuesOverlayRow(valuesOverlay, yLabel, false);
+    } else {
+      const labels = valuesOverlay.querySelectorAll('.plot-time-values-label');
+      if (labels[0]) {
+        labels[0].textContent = xLabel;
+        (labels[0] as HTMLElement).title = xLabel;
+      }
+      if (labels[1]) {
+        labels[1].textContent = yLabel;
+        (labels[1] as HTMLElement).title = yLabel;
+      }
+    }
+  };
+
   const syncPlaybackCursorRef = useRef<(plot: uPlot, time: number) => void>(() => { });
 
   const syncPlaybackCursor = (plot: uPlot, time: number) => {
@@ -478,15 +595,117 @@ function PlotPanel({
       if (xyMarkerRef.current) {
         xyMarkerRef.current.style.opacity = '0';
       }
-      plot.setCursor({ left: plot.valToPos(time, 'x'), top: 0 });
+
+      if (!visibleSeries.length) {
+        plot.setCursor({ left: plot.valToPos(time, 'x') });
+        return;
+      }
+
+      ensureTimePlotOverlays(plot);
+      const idx = getFrameIndexAtTime(timelineRef.current, time);
+      const left = plot.valToPos(time, 'x');
+      const cursorUpdate: { left: number; top?: number } = { left };
+      if (visibleSeries.length === 1) {
+        const yValue = visibleSeries[0]?.values[idx];
+        if (Number.isFinite(yValue)) {
+          cursorUpdate.top = plot.valToPos(yValue, 'y');
+        }
+      }
+      plot.setCursor(cursorUpdate);
+      const showValues = showTimeValuesRef.current;
+      const valuesOverlay = timeValuesOverlayRef.current;
+
+      if (valuesOverlay) {
+        valuesOverlay.classList.toggle('is-visible', showValues);
+      }
+
+      visibleSeries.forEach((series, index) => {
+        const marker = timeMarkerElsRef.current[index];
+        const stroke = series.missing ? colors.grid : colors.series[index];
+        const yValue = series.values[idx];
+
+        if (marker) {
+          marker.style.background = stroke ?? '';
+          if (!series.missing && Number.isFinite(yValue)) {
+            const top = plot.valToPos(yValue, 'y');
+            marker.style.opacity = '1';
+            marker.style.left = `${left}px`;
+            marker.style.top = `${top}px`;
+          } else {
+            marker.style.opacity = '0';
+          }
+        }
+
+        if (showValues && valuesOverlay) {
+          const row = valuesOverlay.children[index] as HTMLElement | undefined;
+          if (!row) {
+            return;
+          }
+
+          const swatch = row.querySelector('.plot-time-values-swatch') as HTMLElement | null;
+          const valueEl = row.querySelector('.plot-time-values-value');
+          if (swatch) {
+            swatch.style.background = stroke ?? '';
+          }
+          if (valueEl) {
+            valueEl.textContent =
+              series.missing || yValue == null || !Number.isFinite(yValue)
+                ? '—'
+                : formatPlotAxisLimit(yValue);
+          }
+        }
+      });
+
       return;
     }
 
+    if (timeMarkersLayerRef.current) {
+      for (const marker of timeMarkerElsRef.current) {
+        marker.style.opacity = '0';
+      }
+    }
+    if (timeValuesOverlayRef.current) {
+      timeValuesOverlayRef.current.classList.remove('is-visible');
+    }
+
     ensureXyMarker(plot);
+    ensureXyValuesOverlay(plot);
 
     const idx = getFrameIndexAtTime(timelineRef.current, time);
     const xValue = panelData.xValues[idx];
-    const yValue = visibleSeries[0]?.values[idx];
+    const ySeries = visibleSeries[0];
+    const yValue = ySeries?.values[idx];
+    const showValues = showTimeValuesRef.current;
+    const valuesOverlay = timeValuesOverlayRef.current;
+
+    if (valuesOverlay) {
+      valuesOverlay.classList.toggle('is-visible', showValues);
+    }
+
+    const formatChannelValue = (
+      value: number | null | undefined,
+      missing: boolean | undefined
+    ) =>
+      missing || value == null || !Number.isFinite(value) ? '—' : formatPlotAxisLimit(value);
+
+    if (showValues && valuesOverlay) {
+      const rows = valuesOverlay.querySelectorAll('.plot-time-values-row');
+      const xRow = rows[0];
+      const yRow = rows[1];
+      if (xRow) {
+        const valueEl = xRow.querySelector('.plot-time-values-value');
+        if (valueEl) {
+          valueEl.textContent = formatChannelValue(xValue, panelData.xChannelMissing);
+        }
+      }
+      if (yRow) {
+        const valueEl = yRow.querySelector('.plot-time-values-value');
+        if (valueEl) {
+          valueEl.textContent = formatChannelValue(yValue, ySeries?.missing);
+        }
+      }
+    }
+
     if (!Number.isFinite(xValue) || !Number.isFinite(yValue)) {
       if (xyMarkerRef.current) {
         xyMarkerRef.current.style.opacity = '0';
@@ -515,7 +734,9 @@ function PlotPanel({
         return;
       }
 
-      onChangeTimeRef.current(Math.min(tFinal, Math.max(tInitial, time)));
+      const clampedTime = Math.min(tFinal, Math.max(tInitial, time));
+      onChangeTimeRef.current(clampedTime);
+      syncPlaybackCursor(plot, clampedTime);
       return;
     }
 
@@ -548,6 +769,7 @@ function PlotPanel({
     const frameTime = panelData.times[bestIndex];
     if (Number.isFinite(frameTime)) {
       onChangeTimeRef.current(frameTime);
+      syncPlaybackCursor(plot, frameTime);
     }
   };
 
@@ -775,6 +997,15 @@ function PlotPanel({
       };
 
       const onPointerDown = (event: PointerEvent) => {
+        const valuesOverlay = timeValuesOverlayRef.current;
+        if (
+          valuesOverlay?.classList.contains('is-visible') &&
+          event.target instanceof Node &&
+          valuesOverlay.contains(event.target)
+        ) {
+          return;
+        }
+
         if (event.button === 2) {
           event.preventDefault();
           const limits = getCurrentLimits();
@@ -952,6 +1183,8 @@ function PlotPanel({
         legend: { show: false },
         cursor: {
           show: true,
+          x: true,
+          y: !isTimePlot || visibleSeries.length === 1,
           points: { show: false },
           drag: { x: false, y: false, setScale: false },
         },
@@ -1008,13 +1241,23 @@ function PlotPanel({
     };
 
     const syncCursorLoop = () => {
-      if (cancelled || !plotRef.current || scrubbingRef.current) {
+      if (cancelled || !plotRef.current) {
+        cursorFrameId = requestAnimationFrame(syncCursorLoop);
+        return;
+      }
+
+      if (scrubbingRef.current && !isTimePlot) {
         cursorFrameId = requestAnimationFrame(syncCursorLoop);
         return;
       }
 
       const nextTime = currentTimeRef.current ?? tInitial;
-      if (!isTimePlot || lastCursorTime !== nextTime) {
+      if (!isTimePlot) {
+        if (lastCursorTime !== nextTime) {
+          syncPlaybackCursor(plotRef.current, nextTime);
+          lastCursorTime = nextTime;
+        }
+      } else {
         syncPlaybackCursor(plotRef.current, nextTime);
         lastCursorTime = nextTime;
       }
@@ -1053,6 +1296,9 @@ function PlotPanel({
       plot?.destroy();
       plotRef.current = null;
       xyMarkerRef.current = null;
+      timeMarkersLayerRef.current = null;
+      timeMarkerElsRef.current = [];
+      timeValuesOverlayRef.current = null;
     };
   }, [
     colors,
@@ -1126,12 +1372,19 @@ function PlotPanel({
 
     plot.setScale('x', { min: plotLimits.xMin, max: plotLimits.xMax });
     plot.setScale('y', { min: plotLimits.yMin, max: plotLimits.yMax });
-    if (!isTimePlot) {
-      requestAnimationFrame(() => {
-        syncPlaybackCursorRef.current(plot, currentTimeRef.current ?? tInitial);
-      });
-    }
+    requestAnimationFrame(() => {
+      syncPlaybackCursorRef.current(plot, currentTimeRef.current ?? tInitial);
+    });
   }, [currentTimeRef, isTimePlot, plotLimits, tInitial]);
+
+  useEffect(() => {
+    const plot = plotRef.current;
+    if (!plot) {
+      return;
+    }
+
+    syncPlaybackCursorRef.current(plot, currentTimeRef.current ?? tInitial);
+  }, [colors, currentTimeRef, isTimePlot, panelData.xLabel, showTimeValues, tInitial, visibleSeries]);
 
   const applyZoomToFit = () => {
     if (!fullPlotLimits) {
@@ -1174,6 +1427,26 @@ function PlotPanel({
     ? { height: plotHostHeight }
     : { width: '100%', minHeight: plotHostHeight };
   const emptyPlotStyle = { minHeight: plotHostHeight, height: plotHostHeight };
+
+  const plotValuesToggleButton = (className: string) => (
+    <Button
+      type="button"
+      variant={showTimeValues ? 'default' : 'outline'}
+      size="icon"
+      className={cn(
+        'h-6 w-6 shrink-0',
+        className,
+        showTimeValues &&
+          'shadow-sm ring-2 ring-primary/40 ring-offset-1 ring-offset-background'
+      )}
+      onClick={() => setShowTimeValues((current) => !current)}
+      aria-label={showTimeValues ? 'Hide current values' : 'Show current values'}
+      aria-pressed={showTimeValues}
+      title={showTimeValues ? 'Hide current values' : 'Show current values at playback time'}
+    >
+      <ListOrdered className="h-3 w-3" />
+    </Button>
+  );
 
   return (
     <section
@@ -1497,15 +1770,18 @@ function PlotPanel({
             : 'Selected channels are missing from the loaded simulation data.'}
         </div>
       ) : (
-        <div
-          ref={hostRef}
-          className="plot-panel-host w-full min-w-0 rounded-md border border-border/60 bg-card"
-          style={plotHostStyle}
-        />
+        <div className="relative w-full min-w-0">
+          <div
+            ref={hostRef}
+            className="plot-panel-host w-full min-w-0 rounded-md border border-border/60 bg-card"
+            style={plotHostStyle}
+          />
+          {!isTimePlot ? plotValuesToggleButton('absolute bottom-1.5 right-1.5 z-10 shadow-sm') : null}
+        </div>
       )}
 
       {isTimePlot && channels.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {visibleSeries.map((series, index) => (
             <span
               key={series.id}
@@ -1516,6 +1792,7 @@ function PlotPanel({
               {series.missing ? ' (missing)' : null}
             </span>
           ))}
+          {plotValuesToggleButton('ml-auto')}
         </div>
       ) : null}
     </section>
