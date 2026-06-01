@@ -1,5 +1,6 @@
-import { Code2, ExternalLink, Globe } from 'lucide-react';
+import { BookOpenText, Code2, ExternalLink, Globe } from 'lucide-react';
 import buildInfo from '../generated/buildInfo.ts';
+import { getDocumentationPath } from '../core/appRoutes.ts';
 import { cn } from '../lib/utils.ts';
 import OverlayPanel from './OverlayPanel.tsx';
 
@@ -28,6 +29,24 @@ interface AboutOverlayProps {
 export default function AboutOverlay({ onClose }: AboutOverlayProps) {
   return (
     <OverlayPanel title="About MGView" size="compact" onClose={onClose}>
+      <a
+        href={getDocumentationPath()}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          'group mb-2 flex items-center gap-2.5 rounded-md border border-border bg-primary/6 px-2.5 py-2',
+          'transition-colors hover:border-primary/40 hover:bg-accent'
+        )}
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted-foreground group-hover:text-foreground">
+          <BookOpenText className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-xs font-medium text-foreground">Documentation</span>
+          <span className="block truncate font-mono text-[0.68rem] text-muted-foreground">Open the in-app docs page</span>
+        </span>
+      </a>
+
       <nav className="grid gap-1.5" aria-label="MGView links">
         {ABOUT_LINKS.map(({ href, label, description, icon: Icon }) => (
           <a
