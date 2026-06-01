@@ -362,39 +362,11 @@ export default function App() {
     [updateDraftScene]
   );
 
-  const applySceneLayoutPreset = useCallback(
-    (preset: 'showAll' | 'plotsOnly' | 'rendererOnly' | 'reset') => {
-      updateDraftScene((scene) => {
-        switch (preset) {
-          case 'showAll':
-            scene.layout.showRenderer = true;
-            scene.layout.showPlots = true;
-            scene.layout.showEditorRail = true;
-            scene.layout.focusTarget = null;
-            break;
-          case 'plotsOnly':
-            scene.layout.showRenderer = false;
-            scene.layout.showPlots = true;
-            scene.layout.showEditorRail = false;
-            scene.layout.focusTarget = null;
-            break;
-          case 'rendererOnly':
-            scene.layout.showRenderer = true;
-            scene.layout.showPlots = false;
-            scene.layout.showEditorRail = false;
-            scene.layout.focusTarget = null;
-            break;
-          case 'reset':
-            scene.layout.showRenderer = DEFAULT_SCENE_LAYOUT.showRenderer;
-            scene.layout.showPlots = DEFAULT_SCENE_LAYOUT.showPlots;
-            scene.layout.showEditorRail = DEFAULT_SCENE_LAYOUT.showEditorRail;
-            scene.layout.focusTarget = DEFAULT_SCENE_LAYOUT.focusTarget;
-            break;
-        }
-      });
-    },
-    [updateDraftScene]
-  );
+  const openEditorRailIfClosed = useCallback(() => {
+    if (!showEditorRail) {
+      updateSceneLayoutVisibility('showEditorRail', true);
+    }
+  }, [showEditorRail, updateSceneLayoutVisibility]);
 
   return (
     <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-2">
@@ -416,7 +388,8 @@ export default function App() {
         onOpenDiagnostics={shell.openDiagnostics}
         onOpenChannels={shell.openSimulationOverlay}
         onSetLayoutVisibility={updateSceneLayoutVisibility}
-        onApplyLayoutPreset={applySceneLayoutPreset}
+        performanceOverlayOpen={shell.performanceOverlayOpen}
+        onSetPerformanceOverlayOpen={shell.setPerformanceOverlayOpen}
         onOpenSaveAsOverlay={shell.openSaveAsOverlay}
         onRedo={handleRedo}
         onSave={() => void handleSaveScene()}
@@ -430,7 +403,7 @@ export default function App() {
 
       {showWorkspaceShell ? (
           <div
-            className={`workspace-shell ${!showEditorRail ? 'workspace-shell-no-editor-rail' : ''}`}
+            className={`workspace-shell ${!showEditorRail ? 'workspace-shell-no-editor-rail' : ''} ${showEditorRail && !showVisualWorkspace ? 'workspace-shell-editor-only' : ''}`}
           >
             {showVisualWorkspace ? (
               <div
@@ -448,9 +421,11 @@ export default function App() {
                         onCameraCommit={shell.commitCameraPreview}
                         onClearSelection={selectionState.clearAllSelections}
                         onSelectObject={(objectName, visualName) => {
+                          openEditorRailIfClosed();
                           selectionState.selectObjectForEditor(objectName, visualName, selectObject);
                         }}
                         onSelectSpan={(spanName, visualName) => {
+                          openEditorRailIfClosed();
                           selectionState.selectSpanForEditor(spanName, visualName, selectSpanOnly);
                         }}
                         scenePath={rendererSceneBasePath}
@@ -674,12 +649,7 @@ export default function App() {
       ) : null}
 
       {shell.diagnosticsOpen && loaded ? (
-        <DiagnosticsOverlay
-          diagnostics={diagnostics}
-          performanceOverlayOpen={shell.performanceOverlayOpen}
-          setPerformanceOverlayOpen={shell.setPerformanceOverlayOpen}
-          onClose={shell.closeDiagnostics}
-        />
+        <DiagnosticsOverlay diagnostics={diagnostics} onClose={shell.closeDiagnostics} />
       ) : null}
 
       {serverWorkspace.pickerOpen ? (
