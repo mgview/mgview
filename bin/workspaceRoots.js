@@ -208,6 +208,34 @@ function readWorkspaceConfig(appRoot) {
   };
 }
 
+function prepareWorkspaceRoot(workspacePath, appRoot) {
+  const trimmed = String(workspacePath || '').trim();
+  if (!trimmed) {
+    return { error: 'workspaceRoot must be a non-empty string.' };
+  }
+
+  const resolvedWorkspaceRoot = path.resolve(trimmed);
+  if (isWorkspaceInsideAppInstall(resolvedWorkspaceRoot, appRoot)) {
+    return {
+      error:
+        'Workspace must be outside the MGView install folder (for example, the parent folder that contains mgview/).',
+    };
+  }
+
+  let stat;
+  try {
+    stat = fs.statSync(resolvedWorkspaceRoot);
+  } catch (statError) {
+    return { error: 'Workspace directory not found.' };
+  }
+  if (!stat.isDirectory()) {
+    return { error: 'Workspace path is not a directory.' };
+  }
+
+  const normalized = normalizeWorkspaceRoot(resolvedWorkspaceRoot, appRoot);
+  return { workspaceRoot: normalized.workspaceRoot };
+}
+
 function writeWorkspaceConfig(workspaceRoot, appRoot) {
   const configPath = getConfigPath();
   const normalized = normalizeWorkspaceRoot(workspaceRoot, appRoot);
@@ -255,6 +283,7 @@ module.exports = {
   normalizeLogicalPath,
   normalizeWorkspaceRoot,
   parseApiRoot,
+  prepareWorkspaceRoot,
   readWorkspaceConfig,
   resolveLogicalPathForRoot,
   resolveUrlAssetPath,

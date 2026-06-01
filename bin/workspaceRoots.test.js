@@ -8,6 +8,7 @@ const {
   isForbiddenWorkspacePath,
   normalizeWorkspaceRoot,
   parseApiRoot,
+  prepareWorkspaceRoot,
   resolveLogicalPathForRoot,
   resolveUrlAssetPath,
   toLogicalPathForRoot,
@@ -93,4 +94,14 @@ test('createWorkspaceRoots defaults workspace to parent of app root', () => {
   const roots = createWorkspaceRoots(appRoot, null);
   assert.equal(roots.appRoot, path.resolve(appRoot));
   assert.equal(roots.workspaceRoot, path.resolve(appRoot, '..'));
+});
+
+test('prepareWorkspaceRoot rejects paths inside the app install', () => {
+  const prepared = prepareWorkspaceRoot(path.join(appRoot, 'samples'), appRoot);
+  assert.equal(prepared.error.includes('outside the MGView install'), true);
+});
+
+test('prepareWorkspaceRoot accepts an external directory', () => {
+  const prepared = prepareWorkspaceRoot(os.tmpdir(), appRoot);
+  assert.equal(prepared.workspaceRoot, path.resolve(os.tmpdir()));
 });

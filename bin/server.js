@@ -5,18 +5,18 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const DEFAULT_PORT = 8000;
 const MGVIEW_ROOT = path.resolve(__dirname, '..');
+const { applyStartupWorkspace, formatServerUsage, parseServerArgs } = require('./serverCli.js');
 const MODERN_DIST_DIR = path.resolve(__dirname, '../frontend/dist');
 const VITE_BUNDLED_DIR = 'bundled'; // sync with frontend/scripts/deployConfig.mjs → viteBundledAssetsDir
 const API_PREFIX = '/mgview/api';
 const workspaceRoots = require('./workspaceRoots.js');
 const {
   createWorkspaceRoots,
-  isWorkspaceInsideAppInstall,
   normalizeLogicalPath,
   parseApiRoot,
   getDefaultWorkspaceRoot,
+  prepareWorkspaceRoot,
   readWorkspaceConfig,
   resolveLogicalPathForRoot,
   resolveUrlAssetPath,
@@ -25,12 +25,36 @@ const {
 } = workspaceRoots;
 
 function main(argv) {
+  let options;
+  try {
+    options = parseServerArgs(argv);
+  } catch (error) {
+    logError(error.message);
+    logError('');
+    logError(formatServerUsage());
+    process.exit(1);
+  }
+
+  if (options.help) {
+    console.log(formatServerUsage());
+    process.exit(0);
+  }
+
+  if (options.workspace) {
+    const applied = applyStartupWorkspace(options.workspace, MGVIEW_ROOT);
+    if (applied.error) {
+      logError(applied.error);
+      process.exit(1);
+    }
+    logInfo('Workspace: ' + applied.workspaceRoot);
+  }
+
   new HttpServer({
     GET: createServlet(StaticServlet),
     HEAD: createServlet(StaticServlet),
     POST: createServlet(StaticServlet),
     PUT: createServlet(StaticServlet),
-  }).start(Number(argv[2]) || DEFAULT_PORT);
+  }).start(options.port);
 }
 
 function escapeHtml(value) {
@@ -254,34 +278,19 @@ StaticServlet.prototype.handlePostWorkspaceApi_ = function(req, res) {
     }
 
     const nextWorkspaceRoot = parsed && parsed.workspaceRoot;
-    if (typeof nextWorkspaceRoot !== 'string' || nextWorkspaceRoot.trim().length === 0) {
-      return servlet.sendJson_(res, 400, { error: 'workspaceRoot must be a non-empty string.' });
+    const prepared = prepareWorkspaceRoot(nextWorkspaceRoot, servlet.appRoot);
+    if (prepared.error) {
+      const status = prepared.error === 'Workspace directory not found.' ? 404 : 400;
+      return servlet.sendJson_(res, status, { error: prepared.error });
     }
 
-    const resolvedWorkspaceRoot = path.resolve(nextWorkspaceRoot.trim());
-    if (isWorkspaceInsideAppInstall(resolvedWorkspaceRoot, servlet.appRoot)) {
-      return servlet.sendJson_(res, 400, {
-        error:
-          'Workspace must be outside the MGView install folder (for example, the parent folder that contains mgview/).',
-      });
+    try {
+      servlet.persistWorkspaceRoot_(prepared.workspaceRoot);
+    } catch (writeError) {
+      return servlet.sendJson_(res, 500, { error: 'Could not save workspace config.' });
     }
 
-    fs.stat(resolvedWorkspaceRoot, (statError, stat) => {
-      if (statError) {
-        return servlet.sendJson_(res, 404, { error: 'Workspace directory not found.' });
-      }
-      if (!stat.isDirectory()) {
-        return servlet.sendJson_(res, 400, { error: 'Workspace path is not a directory.' });
-      }
-
-      try {
-        servlet.persistWorkspaceRoot_(resolvedWorkspaceRoot);
-      } catch (writeError) {
-        return servlet.sendJson_(res, 500, { error: 'Could not save workspace config.' });
-      }
-
-      servlet.sendJson_(res, 200, servlet.getWorkspaceInfo_());
-    });
+    servlet.sendJson_(res, 200, servlet.getWorkspaceInfo_());
   });
 };
 

@@ -6,7 +6,7 @@
   "scripts": {
     "build:info": "node scripts/writeBuildInfo.mjs",
     "dev": "npm run build:info && vite",
-    "test": "node --experimental-strip-types --test src/api/*.test.ts src/core/*.test.ts src/rendering/*.test.ts src/hooks/*.test.ts && node --test ../bin/workspaceRoots.test.js",
+    "test": "node --experimental-strip-types --test src/api/*.test.ts src/core/*.test.ts src/rendering/*.test.ts src/hooks/*.test.ts && node --test ../bin/workspaceRoots.test.js ../bin/serverCli.test.js",
     "build": "npm run build:info && VITE_MGVIEW_PUBLIC_BASE=/mgview/ VITE_MGVIEW_BASE=/mgview/ vite build",
     "build:static:github": "npm run build:info && VITE_MGVIEW_STATIC=true VITE_MGVIEW_APP_DIR= VITE_MGVIEW_PUBLIC_BASE=/mgview/ VITE_MGVIEW_BASE=/mgview/ vite build --outDir dist-pages",
     "build:static:workspace": "npm run build:info && VITE_MGVIEW_STATIC=true VITE_MGVIEW_APP_DIR=mgview VITE_MGVIEW_PUBLIC_BASE=/ VITE_MGVIEW_BASE=/mgview/ vite build --outDir dist-pages",

@@ -54,6 +54,15 @@ npm test
 npm run build          # → frontend/dist/ (required before RunMGViewMac)
 cd ..
 ./RunMGViewMac         # http://localhost:8000/mgview/
+./RunMGViewMac --port 9000 --no-open   # custom port, skip browser launch
+./RunMGViewMac --workspace ~/simulations   # workspace folder (saved in ~/.mgview/config.json)
+```
+
+On Windows (Command Prompt), same flags via `RunMGViewWindows.bat` or `bin\RunVisualizer.bat` (also used by the `RunMGViewWindows` shortcut):
+
+```bat
+RunMGViewWindows.bat --port 9000 --no-open
+RunMGViewWindows.bat --workspace C:\simulations
 ```
 
 `frontend/dist/` is gitignored. Always run `npm run build` after pulling frontend changes.

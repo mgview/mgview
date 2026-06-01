@@ -23,6 +23,7 @@ const releaseFiles = [
   'bin',
   'RunMGViewMac',
   'RunMGViewLinux',
+  'RunMGViewWindows.bat',
   'RunMGViewWindows.lnk',
   'README.md',
   'LICENSE',
