@@ -193,16 +193,7 @@
 }
 
 .material-popover {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 50;
   width: min(360px, calc(100vw - 56px));
-}
-
-.material-popover[data-open-direction='up'] {
-  top: auto;
-  bottom: calc(100% + 6px);
 }
 
 .material-swatch-grid {

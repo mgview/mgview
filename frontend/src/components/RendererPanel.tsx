@@ -18,6 +18,8 @@ import { RenderGraphManager } from '../rendering/renderGraph.ts';
 import { Button } from './ui/button.tsx';
 
 const DEFAULT_BACKGROUND_COLOR = '#e0f0ff';
+/** Ignore selection when the primary pointer moves farther than this (camera orbit counts as drag). */
+const RENDERER_POINTER_DRAG_THRESHOLD_PX = 5;
 
 function buildCameraSeedKey(
   scenePath: string,
@@ -457,7 +459,36 @@ export default function RendererPanel({
     }
 
     const canvas = handle.renderer.domElement;
-    const handleClick = (event: MouseEvent) => {
+    let primaryPointerDown: { x: number; y: number } | null = null;
+    let primaryPointerDragged = false;
+
+    const resetPrimaryPointer = () => {
+      primaryPointerDown = null;
+      primaryPointerDragged = false;
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) {
+        return;
+      }
+
+      primaryPointerDown = { x: event.clientX, y: event.clientY };
+      primaryPointerDragged = false;
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!primaryPointerDown || primaryPointerDragged) {
+        return;
+      }
+
+      const dx = event.clientX - primaryPointerDown.x;
+      const dy = event.clientY - primaryPointerDown.y;
+      if (dx * dx + dy * dy > RENDERER_POINTER_DRAG_THRESHOLD_PX ** 2) {
+        primaryPointerDragged = true;
+      }
+    };
+
+    const resolveSelectionAtPointer = (event: PointerEvent) => {
       const entityRef = pickRenderEntity(event, canvas, handle.camera, handle.raycaster, handle.sceneRoot);
       if (!entityRef) {
         onClearSelection?.();
@@ -480,9 +511,29 @@ export default function RendererPanel({
       }
     };
 
-    canvas.addEventListener('click', handleClick);
+    const handlePointerUp = (event: PointerEvent) => {
+      if (event.button !== 0) {
+        return;
+      }
+
+      const wasClick = primaryPointerDown !== null && !primaryPointerDragged;
+      resetPrimaryPointer();
+      if (!wasClick) {
+        return;
+      }
+
+      resolveSelectionAtPointer(event);
+    };
+
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointercancel', resetPrimaryPointer);
     return () => {
-      canvas.removeEventListener('click', handleClick);
+      canvas.removeEventListener('pointerdown', handlePointerDown);
+      canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerup', handlePointerUp);
+      canvas.removeEventListener('pointercancel', resetPrimaryPointer);
     };
   }, [onClearSelection, onSelectObject, onSelectSpan, scene]);
 

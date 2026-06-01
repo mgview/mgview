@@ -1,8 +1,10 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import {
   parseCssColorString,
 } from '../core/materialPresets.ts';
+import { useAnchoredPopoverPlacement } from '../hooks/useAnchoredPopoverPlacement.ts';
 import { cn } from '../lib/utils.ts';
 import { Button } from './ui/button.tsx';
 import { Input } from './ui/input.tsx';
@@ -54,9 +56,9 @@ export default function ColorPicker({
   onChange,
 }: ColorPickerProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const { placementStyle, openUpward } = useAnchoredPopoverPlacement(pickerOpen, shellRef, popoverRef);
   const [customCssText, setCustomCssText] = useState('#e0f0ff');
   const [customHex, setCustomHex] = useState('#e0f0ff');
 
@@ -74,14 +76,12 @@ export default function ColorPicker({
     }
 
     const handlePointerDown = (event: PointerEvent) => {
-      const eventPath = typeof event.composedPath === 'function' ? event.composedPath() : [];
-      if (shellRef.current && eventPath.includes(shellRef.current)) {
+      const target = event.target as Node;
+      if (shellRef.current?.contains(target) || popoverRef.current?.contains(target)) {
         return;
       }
 
-      if (!shellRef.current?.contains(event.target as Node)) {
-        setPickerOpen(false);
-      }
+      setPickerOpen(false);
     };
 
     const handleEscape = (event: KeyboardEvent) => {
@@ -97,32 +97,6 @@ export default function ColorPicker({
     return () => {
       window.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('keydown', handleEscape, true);
-    };
-  }, [pickerOpen]);
-
-  useLayoutEffect(() => {
-    if (!pickerOpen || !shellRef.current || !popoverRef.current) {
-      return;
-    }
-
-    const updatePlacement = () => {
-      const shellRect = shellRef.current?.getBoundingClientRect();
-      const popoverRect = popoverRef.current?.getBoundingClientRect();
-      if (!shellRect || !popoverRect) {
-        return;
-      }
-
-      const spaceBelow = window.innerHeight - shellRect.bottom;
-      const spaceAbove = shellRect.top;
-      setOpenUpward(spaceBelow < popoverRect.height + 12 && spaceAbove > spaceBelow);
-    };
-
-    updatePlacement();
-    window.addEventListener('resize', updatePlacement);
-    window.addEventListener('scroll', updatePlacement, true);
-    return () => {
-      window.removeEventListener('resize', updatePlacement);
-      window.removeEventListener('scroll', updatePlacement, true);
     };
   }, [pickerOpen]);
 
@@ -151,21 +125,23 @@ export default function ColorPicker({
         </span>
       </Button>
 
-      {pickerOpen ? (
-        <div
-          ref={popoverRef}
-          className={cn(
-            'material-popover',
-            'grid gap-2.5 rounded-xl border border-border/50 bg-popover/95 p-2.5 shadow-lg backdrop-blur-sm'
-          )}
-          data-open-direction={openUpward ? 'up' : 'down'}
-          role="dialog"
-          aria-modal="false"
-          aria-label={`${popoverTitle} picker`}
-          onPointerDown={(event) => {
-            event.stopPropagation();
-          }}
-        >
+      {pickerOpen
+        ? createPortal(
+            <div
+              ref={popoverRef}
+              style={placementStyle}
+              className={cn(
+                'material-popover',
+                'grid gap-2.5 rounded-xl border border-border/50 bg-popover/95 p-2.5 shadow-lg backdrop-blur-sm'
+              )}
+              data-open-direction={openUpward ? 'up' : 'down'}
+              role="dialog"
+              aria-modal="false"
+              aria-label={`${popoverTitle} picker`}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+            >
           <div className="flex items-center justify-between gap-2">
             <strong className="text-[0.82rem] font-semibold uppercase tracking-wide text-primary">{popoverTitle}</strong>
             <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(false)}>
@@ -240,8 +216,10 @@ export default function ColorPicker({
               }}
             />
           </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }

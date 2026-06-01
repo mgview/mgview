@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import type { SceneMaterial } from '../core/types.ts';
 import {
@@ -13,6 +14,7 @@ import {
   parseCssColorString,
 } from '../core/materialPresets.ts';
 import { resolveBundledAssetUrl } from '../api/localFiles.ts';
+import { useAnchoredPopoverPlacement } from '../hooks/useAnchoredPopoverPlacement.ts';
 import { cn } from '../lib/utils.ts';
 import { NumericInput } from './editorShared.tsx';
 import { Button } from './ui/button.tsx';
@@ -70,6 +72,8 @@ export default function MaterialPicker({
 }: MaterialPickerProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const shellRef = useRef<HTMLDivElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const { placementStyle, openUpward } = useAnchoredPopoverPlacement(pickerOpen, shellRef, popoverRef);
   const materialDefinition = useMemo(() => materialDefinitionFromSceneMaterial(material), [material]);
   const materialName = materialDefinition.name;
   const materialKey = normalizeMaterialName(materialName);
@@ -90,14 +94,12 @@ export default function MaterialPicker({
     }
 
     const handlePointerDown = (event: PointerEvent) => {
-      const eventPath = typeof event.composedPath === 'function' ? event.composedPath() : [];
-      if (shellRef.current && eventPath.includes(shellRef.current)) {
+      const target = event.target as Node;
+      if (shellRef.current?.contains(target) || popoverRef.current?.contains(target)) {
         return;
       }
 
-      if (!shellRef.current?.contains(event.target as Node)) {
-        setPickerOpen(false);
-      }
+      setPickerOpen(false);
     };
 
     const handleEscape = (event: KeyboardEvent) => {
@@ -147,19 +149,23 @@ export default function MaterialPicker({
         </span>
       </Button>
 
-      {pickerOpen ? (
-        <div
-          className={cn(
-            'material-popover',
-            'grid gap-2.5 rounded-xl border border-border/50 bg-popover/95 p-2.5 shadow-lg backdrop-blur-sm'
-          )}
-          role="dialog"
-          aria-modal="false"
-          aria-label="Material picker"
-          onPointerDown={(event) => {
-            event.stopPropagation();
-          }}
-        >
+      {pickerOpen
+        ? createPortal(
+            <div
+              ref={popoverRef}
+              style={placementStyle}
+              className={cn(
+                'material-popover',
+                'grid gap-2.5 rounded-xl border border-border/50 bg-popover/95 p-2.5 shadow-lg backdrop-blur-sm'
+              )}
+              data-open-direction={openUpward ? 'up' : 'down'}
+              role="dialog"
+              aria-modal="false"
+              aria-label="Material picker"
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+            >
           <div className="flex items-center justify-between gap-2">
             <strong className="text-[0.82rem] font-semibold uppercase tracking-wide text-primary">Material / Color</strong>
             <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(false)}>
@@ -293,8 +299,10 @@ export default function MaterialPicker({
               }}
             />
           </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
