@@ -16,6 +16,11 @@ import type { PlotPanelData } from '../core/plotSeries.ts';
 import { getFrameIndexAtTime } from '../core/timeline.ts';
 import { readPlotThemeColors } from '../core/plotTheme.ts';
 import type { PlotPanelConfig, PlotPanelXMode, Timeline } from '../core/types.ts';
+import {
+  claimPlotSettings,
+  clearActivePlotSettings,
+  getActivePlotSettingsPanelIndex,
+} from '../lib/plotSettingsFocus.ts';
 import { cn } from '../lib/utils.ts';
 import PlotChannelPicker from './PlotChannelPicker.tsx';
 import { useTheme } from './ThemeProvider.tsx';
@@ -562,6 +567,37 @@ function PlotPanel({
       setSquareAspect(false);
     }
   }, [isTimePlot]);
+
+  useEffect(() => {
+    if (!showSettings) {
+      if (getActivePlotSettingsPanelIndex() === panelIndex) {
+        clearActivePlotSettings();
+      }
+      return;
+    }
+
+    claimPlotSettings(panelIndex);
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.repeat || event.defaultPrevented) {
+        return;
+      }
+      if (isTextEditingTarget(event.target)) {
+        return;
+      }
+      if (getActivePlotSettingsPanelIndex() !== panelIndex) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      setShowSettings(false);
+      clearActivePlotSettings();
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [panelIndex, showSettings]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1251,7 +1287,10 @@ function PlotPanel({
       </div>
 
       {showSettings ? (
-        <div className="grid gap-2 rounded-md border border-border/70 bg-card/40 p-2">
+        <div
+          data-plot-settings={panelIndex}
+          className="grid gap-2 rounded-md border border-border/70 bg-card/40 p-2"
+        >
           {!isTimePlot ? (
             <div className="grid gap-2">
               <div className="flex items-end gap-2">

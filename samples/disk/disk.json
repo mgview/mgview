@@ -3,13 +3,13 @@
   "showAxes": true,
   "cameraUp": [
     0,
-    0,
+    -2.220446049250313e-16,
     1
   ],
   "cameraEye": [
-    3,
-    3,
-    3
+    2.7650423480069732,
+    2.7650423480069724,
+    2.7650423480069732
   ],
   "cameraFocus": [
     0,
@@ -20,7 +20,11 @@
   "speedFactor": 1,
   "workspaceSize": 1,
   "simulationData": [
-    "disk.2:4"
+    "disk.1",
+    "disk.2",
+    "disk.3",
+    "disk.4",
+    "disk.5"
   ],
   "simulationSettings": "disk.in",
   "objects": {
@@ -483,17 +487,82 @@
           }
         }
       }
+    },
+    "DA": {
+      "type": "point",
+      "visual": {
+        "label": {
+          "visible": true,
+          "type": "text",
+          "text": "DA",
+          "scale": 0.125,
+          "position": {
+            "x": 0.08333333333333333,
+            "y": 0.03125,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "BLACK"
+          }
+        },
+        "point": {
+          "visible": true,
+          "type": "sphere",
+          "radius": 0.05,
+          "segments_width": 16,
+          "segments_height": 12,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
+          }
+        }
+      }
     }
   },
   "layout": {
     "showRenderer": true,
-    "showPlots": false,
+    "showPlots": true,
     "showEditorRail": false,
     "focusTarget": null
   },
   "backgroundColor": "#e0f0ff",
   "plots": {
-    "panels": []
+    "panels": [
+      {
+        "id": "19038cce-f8cb-47d8-9480-848c66b6755a",
+        "channels": [
+          "x"
+        ],
+        "xMode": "channel",
+        "xChannel": "y",
+        "autoScale": false,
+        "xMin": -1.0546,
+        "xMax": 0.9637,
+        "yMin": -0.45057,
+        "yMax": 0.43443
+      },
+      {
+        "id": "70314bc2-dd7e-492f-b99c-bff87c699308",
+        "channels": [
+          "L"
+        ],
+        "xMode": "time"
+      }
+    ]
   },
   "spans": {}
 }
