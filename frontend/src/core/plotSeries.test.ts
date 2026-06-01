@@ -81,6 +81,14 @@ test('normalizePlotsConfig tolerates missing plot section', () => {
   assert.deepEqual(normalizePlotsConfig({ panels: [] }), { panels: [] });
 });
 
+test('normalizePlotsConfig preserves plot height scale', () => {
+  assert.deepEqual(normalizePlotsConfig({ panels: [], heightScale: 1.5 }), {
+    panels: [],
+    heightScale: 1.5,
+  });
+  assert.deepEqual(normalizePlotsConfig({ panels: [], heightScale: 1 }), { panels: [] });
+});
+
 test('extractPlotPanelData supports Y vs X channel mode', async () => {
   const url = new URL('../../../samples/robot_arm/circle_step/robot_arm.1', import.meta.url);
   const text = await readFile(url, 'utf8');

@@ -23,9 +23,13 @@ import { Button } from './ui/button.tsx';
 import { Input } from './ui/input.tsx';
 import { Label } from './ui/label.tsx';
 
-const PLOT_HEIGHT_DEFAULT = 300;
+const PLOT_HEIGHT_DEFAULT = 220;
 /** Total uPlot height for Y vs X (axes included; see uPlot `setSize`). */
 const PLOT_XY_DEFAULT_HEIGHT = 228;
+
+function scalePlotTotalHeight(baseHeight: number, heightScale: number): number {
+  return Math.max(1, Math.round(baseHeight * heightScale));
+}
 /** Reserved below ticks for the X channel name (`labelGap` draws inside this band). */
 const PLOT_XY_AXIS_LABEL_SIZE = 18;
 const PLOT_XY_AXIS_LABEL_GAP = 2;
@@ -109,12 +113,12 @@ function plotAxisChromeHeight(chart: uPlot): number {
  * Max total uPlot height for square mode: square drawable side ≈ host width minus
  * Y-axis, plus axis chrome — never viewport-scale.
  */
-function maxSquarePlotTotalHeight(hostWidth: number): number {
-  return Math.round(hostWidth + 64);
+function maxSquarePlotTotalHeight(hostWidth: number, heightScale: number): number {
+  return scalePlotTotalHeight(hostWidth + 64, heightScale);
 }
 
-function applySquarePlotSize(chart: uPlot, hostWidth: number): void {
-  const maxHeight = maxSquarePlotTotalHeight(hostWidth);
+function applySquarePlotSize(chart: uPlot, hostWidth: number, heightScale: number): void {
+  const maxHeight = maxSquarePlotTotalHeight(hostWidth, heightScale);
 
   if (chart.width !== hostWidth) {
     chart.setSize({ width: hostWidth, height: chart.height });
@@ -131,7 +135,10 @@ function applySquarePlotSize(chart: uPlot, hostWidth: number): void {
       return;
     }
 
-    const targetHeight = Math.min(Math.round(plotW + plotAxisChromeHeight(chart)), maxHeight);
+    const targetHeight = Math.min(
+      scalePlotTotalHeight(plotW + plotAxisChromeHeight(chart), heightScale),
+      maxHeight
+    );
     if (targetHeight === chart.height) {
       return;
     }
@@ -144,33 +151,41 @@ function applyPlotSize(
   chart: uPlot,
   hostWidth: number,
   squareAspect: boolean,
-  isTimePlot: boolean
+  isTimePlot: boolean,
+  heightScale: number
 ): void {
   if (isTimePlot) {
-    chart.setSize({ width: hostWidth, height: PLOT_HEIGHT_DEFAULT });
+    chart.setSize({
+      width: hostWidth,
+      height: scalePlotTotalHeight(PLOT_HEIGHT_DEFAULT, heightScale),
+    });
     return;
   }
 
   if (squareAspect) {
-    applySquarePlotSize(chart, hostWidth);
+    applySquarePlotSize(chart, hostWidth, heightScale);
     return;
   }
 
-  chart.setSize({ width: hostWidth, height: PLOT_XY_DEFAULT_HEIGHT });
+  chart.setSize({
+    width: hostWidth,
+    height: scalePlotTotalHeight(PLOT_XY_DEFAULT_HEIGHT, heightScale),
+  });
 }
 
 function plotSizeNeedsUpdate(
   chart: uPlot,
   hostWidth: number,
   squareAspect: boolean,
-  isTimePlot: boolean
+  isTimePlot: boolean,
+  heightScale: number
 ): boolean {
   if (chart.width !== hostWidth) {
     return true;
   }
 
   if (isTimePlot) {
-    return chart.height !== PLOT_HEIGHT_DEFAULT;
+    return chart.height !== scalePlotTotalHeight(PLOT_HEIGHT_DEFAULT, heightScale);
   }
 
   if (squareAspect) {
@@ -182,7 +197,7 @@ function plotSizeNeedsUpdate(
     return Math.abs(area.width - area.height) >= 0.5;
   }
 
-  return chart.height !== PLOT_XY_DEFAULT_HEIGHT;
+  return chart.height !== scalePlotTotalHeight(PLOT_XY_DEFAULT_HEIGHT, heightScale);
 }
 
 type PersistedPlotAxisFields = Pick<PlotPanelConfig, 'autoScale' | 'xMin' | 'xMax' | 'yMin' | 'yMax'>;
@@ -204,6 +219,8 @@ interface PlotPanelProps {
   timeline: Timeline;
   currentTimeRef: RefObject<number>;
   panelIndex: number;
+  /** Multiplier on default plot height (Y vs t and Y vs X bases). */
+  heightScale?: number;
   onChangeTime: (time: number) => void;
   onChangeTitle: (title: string | undefined) => void;
   onChangeXMode: (xMode: PlotPanelXMode) => void;
@@ -228,6 +245,7 @@ function PlotPanel({
   timeline,
   currentTimeRef,
   panelIndex,
+  heightScale: heightScaleProp = 1,
   autoScale: autoScaleProp,
   xMin: storedXMin,
   xMax: storedXMax,
@@ -264,6 +282,7 @@ function PlotPanel({
   const plotLimitsRef = useRef<PlotAxisLimits | null>(null);
   const autoScaleRef = useRef(true);
   const squareAspectRef = useRef(false);
+  const heightScaleRef = useRef(heightScaleProp);
   /** Last host width applied; ignore ResizeObserver height-only churn from square sizing. */
   const hostLayoutWidthRef = useRef(0);
   const plotHoveredRef = useRef(false);
@@ -320,6 +339,7 @@ function PlotPanel({
   }, [zoomToFitActive]);
 
   squareAspectRef.current = squareAspect;
+  heightScaleRef.current = heightScaleProp;
 
   const resolvedPlotLimits = useMemo(
     () => resolvePlotAxisLimits(axisPanel, fullPlotLimits),
@@ -842,7 +862,8 @@ function PlotPanel({
     };
 
     const buildOptions = (width: number): uPlot.Options => {
-      const height = isTimePlot ? PLOT_HEIGHT_DEFAULT : PLOT_XY_DEFAULT_HEIGHT;
+      const baseHeight = isTimePlot ? PLOT_HEIGHT_DEFAULT : PLOT_XY_DEFAULT_HEIGHT;
+      const height = scalePlotTotalHeight(baseHeight, heightScaleRef.current);
 
       return {
         width,
@@ -940,8 +961,10 @@ function PlotPanel({
         return;
       }
 
-      if (plotSizeNeedsUpdate(plot, width, squareAspectRef.current, isTimePlot)) {
-        applyPlotSize(plot, width, squareAspectRef.current, isTimePlot);
+      if (
+        plotSizeNeedsUpdate(plot, width, squareAspectRef.current, isTimePlot, heightScaleRef.current)
+      ) {
+        applyPlotSize(plot, width, squareAspectRef.current, isTimePlot, heightScaleRef.current);
         syncPlaybackCursor(plot, currentTimeRef.current ?? tInitial);
       }
 
@@ -1024,7 +1047,7 @@ function PlotPanel({
       return;
     }
 
-    applyPlotSize(plot, width, squareAspect, isTimePlot);
+    applyPlotSize(plot, width, squareAspect, isTimePlot, heightScaleProp);
     hostLayoutWidthRef.current = width;
     requestAnimationFrame(() => {
       const chart = plotRef.current;
@@ -1032,7 +1055,7 @@ function PlotPanel({
         syncPlaybackCursorRef.current(chart, currentTimeRef.current ?? tInitial);
       }
     });
-  }, [currentTimeRef, hasRenderableSeries, isTimePlot, squareAspect, tInitial]);
+  }, [currentTimeRef, hasRenderableSeries, heightScaleProp, isTimePlot, squareAspect, tInitial]);
 
   useEffect(() => {
     const plot = plotRef.current;
@@ -1109,11 +1132,12 @@ function PlotPanel({
   };
 
   const panelLabel = title?.trim() || `Panel ${panelIndex + 1}`;
-  const plotHostMinHeight = isTimePlot ? PLOT_HEIGHT_DEFAULT : PLOT_XY_DEFAULT_HEIGHT;
+  const plotBaseHeight = isTimePlot ? PLOT_HEIGHT_DEFAULT : PLOT_XY_DEFAULT_HEIGHT;
+  const plotHostHeight = scalePlotTotalHeight(plotBaseHeight, heightScaleProp);
   const plotHostStyle = isTimePlot
-    ? { height: PLOT_HEIGHT_DEFAULT }
-    : { width: '100%', minHeight: plotHostMinHeight };
-  const emptyPlotStyle = { minHeight: plotHostMinHeight, height: plotHostMinHeight };
+    ? { height: plotHostHeight }
+    : { width: '100%', minHeight: plotHostHeight };
+  const emptyPlotStyle = { minHeight: plotHostHeight, height: plotHostHeight };
 
   return (
     <section
@@ -1130,8 +1154,12 @@ function PlotPanel({
         <Input
           value={title ?? ''}
           onChange={(event) => {
-            const nextTitle = event.target.value.trim();
+            const nextTitle = event.target.value;
             onChangeTitle(nextTitle.length > 0 ? nextTitle : undefined);
+          }}
+          onBlur={(event) => {
+            const trimmed = event.target.value.trim();
+            onChangeTitle(trimmed.length > 0 ? trimmed : undefined);
           }}
           placeholder={panelLabel}
           className="h-7 min-w-0 flex-1 text-xs"

@@ -499,7 +499,7 @@ export default function App() {
                 {showPlots ? (
                   <div className="workspace-panel-stack">
                     <section className="workspace-content-panel">
-                      <div className="h-full min-h-0 overflow-auto pr-0.5">
+                      <div className="h-full min-h-0">
                         <PlotsPanel
                           activeScene={activeScene}
                           channelNames={channelNames}

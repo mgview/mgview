@@ -123,6 +123,8 @@ export interface PlotPanelConfig {
 
 export interface ScenePlotsConfig {
   panels: PlotPanelConfig[];
+  /** Multiplier on default plot vertical size (default 1). */
+  heightScale?: number;
 }
 
 export interface SceneConfig {
