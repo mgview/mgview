@@ -1,5 +1,5 @@
 import { Undo2, Redo2, ChevronDown, Sun, Moon } from 'lucide-react';
-import { canPersistScenesToServer } from '../api/runtimeMode.ts';
+import { canPersistScenesToServer, isStaticHosting } from '../api/runtimeMode.ts';
 import type { SceneLayoutConfig } from '../core/types.ts';
 import { useTheme } from './ThemeProvider.tsx';
 import { Button } from './ui/button.tsx';
@@ -66,6 +66,13 @@ export default function SceneHeaderBar({
     : !hasLocalEdits
       ? 'No unsaved changes'
       : 'Save';
+  const openMenuAriaLabel = isStaticHosting ? 'Samples menu' : 'Load menu';
+  const primaryOpenLabel = loading
+    ? 'Loading…'
+    : isStaticHosting
+      ? 'Samples…'
+      : 'Load…';
+  const onPrimaryOpen = isStaticHosting ? onOpenSamplesOverlay : onOpenLoadOverlay;
 
   return (
     <header className="mb-1.5 flex items-center justify-between gap-3 rounded-md border border-border bg-card px-2 py-1.5">
@@ -123,36 +130,41 @@ export default function SceneHeaderBar({
           <Redo2 className="h-3.5 w-3.5" />
         </Button>
 
-        <Button type="button" variant="outline" size="sm" onClick={onOpenSamplesOverlay} disabled={loading}>
-          Samples…
-        </Button>
-
         <div className="inline-flex">
           <Button
             type="button"
             size="sm"
             className="rounded-r-none"
-            onClick={onOpenLoadOverlay}
+            onClick={onPrimaryOpen}
             disabled={loading}
           >
-            {loading ? 'Loading…' : 'Load…'}
+            {primaryOpenLabel}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" size="sm" variant="default" className="rounded-l-none border-l border-primary-foreground/20 px-1.5" disabled={loading} aria-label="Load menu">
+              <Button
+                type="button"
+                size="sm"
+                variant="default"
+                className="rounded-l-none border-l border-primary-foreground/20 px-1.5"
+                disabled={loading}
+                aria-label={openMenuAriaLabel}
+              >
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {isStaticHosting ? (
+                <DropdownMenuItem onSelect={onOpenLoadOverlay}>Load…</DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onSelect={onOpenSamplesOverlay}>Samples…</DropdownMenuItem>
+              )}
               <DropdownMenuItem disabled={!hasLocalEdits || saving} onSelect={onRevert}>
                 Reload
               </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!canPersistScenesToServer}
-                onSelect={onOpenCreateOverlay}
-              >
-                New…
-              </DropdownMenuItem>
+              {canPersistScenesToServer ? (
+                <DropdownMenuItem onSelect={onOpenCreateOverlay}>New…</DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem onSelect={onOpenChannels}>Sim Files…</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
