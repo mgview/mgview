@@ -6,12 +6,13 @@ import { Button } from './ui/button.tsx';
 import { Badge } from './ui/badge.tsx';
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu.tsx';
+import { Checkbox } from './ui/checkbox.tsx';
+import { Label } from './ui/label.tsx';
+import { cn } from '../lib/utils.ts';
 interface SceneHeaderBarProps {
   scenePath: string | null;
   layout: Required<SceneLayoutConfig> | null;
@@ -29,7 +30,6 @@ interface SceneHeaderBarProps {
   onOpenDiagnostics: () => void;
   onOpenChannels: () => void;
   onSetLayoutVisibility: (key: 'showRenderer' | 'showPlots' | 'showEditorRail', value: boolean) => void;
-  onApplyLayoutPreset: (preset: 'showAll' | 'plotsOnly' | 'rendererOnly' | 'reset') => void;
   onOpenSaveAsOverlay: () => void;
   onRedo: () => void;
   onSave: () => void;
@@ -53,7 +53,6 @@ export default function SceneHeaderBar({
   onOpenDiagnostics,
   onOpenChannels,
   onSetLayoutVisibility,
-  onApplyLayoutPreset,
   onOpenSaveAsOverlay,
   onRedo,
   onSave,
@@ -174,30 +173,39 @@ export default function SceneHeaderBar({
               Layout
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuCheckboxItem
-              checked={layout?.showRenderer ?? false}
-              onCheckedChange={(checked) => onSetLayoutVisibility('showRenderer', checked === true)}
-            >
-              3D View
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={layout?.showPlots ?? false}
-              onCheckedChange={(checked) => onSetLayoutVisibility('showPlots', checked === true)}
-            >
-              Plots
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={layout?.showEditorRail ?? false}
-              onCheckedChange={(checked) => onSetLayoutVisibility('showEditorRail', checked === true)}
-            >
-              Objects + Editor
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => onApplyLayoutPreset('showAll')}>Show all</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onApplyLayoutPreset('plotsOnly')}>Plots only</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onApplyLayoutPreset('rendererOnly')}>3D only</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onApplyLayoutPreset('reset')}>Reset layout</DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-52 p-1.5" onCloseAutoFocus={(event) => event.preventDefault()}>
+            {(
+              [
+                { key: 'showRenderer' as const, label: '3D View', checked: layout?.showRenderer ?? false },
+                { key: 'showPlots' as const, label: 'Plots', checked: layout?.showPlots ?? false },
+                {
+                  key: 'showEditorRail' as const,
+                  label: 'Objects + Editor',
+                  checked: layout?.showEditorRail ?? false,
+                },
+              ] as const
+            ).map(({ key, label, checked }) => {
+              const inputId = `layout-${key}`;
+
+              return (
+                <Label
+                  key={key}
+                  htmlFor={inputId}
+                  className={cn(
+                    'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent',
+                    checked && 'bg-accent/60'
+                  )}
+                  onPointerDown={(event) => event.preventDefault()}
+                >
+                  <Checkbox
+                    id={inputId}
+                    checked={checked}
+                    onCheckedChange={(nextChecked) => onSetLayoutVisibility(key, nextChecked === true)}
+                  />
+                  {label}
+                </Label>
+              );
+            })}
           </DropdownMenuContent>
         </DropdownMenu>
 
