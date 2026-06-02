@@ -27,7 +27,9 @@ const shortcutItems = [
   { keys: 'Cmd/Ctrl+S', description: 'Save the current scene when save is available.' },
   { keys: 'Cmd/Ctrl+Z', description: 'Undo the latest scene edit.' },
   { keys: 'Cmd/Ctrl+Shift+Z', description: 'Redo the latest undone edit.' },
+  { keys: 'Cmd/Ctrl+Y', description: 'Redo the latest undone edit.' },
   { keys: 'Alt+L', description: 'Open the Layout menu.' },
+  // { keys: 'Alt+1 / Alt+2 / Alt+3', description: 'Show or hide the 3D View, Plots, and Editor panes.' },
   { keys: 'Esc', description: 'Close / clear selection.' },
 ] as const;
 
