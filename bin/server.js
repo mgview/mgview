@@ -40,6 +40,8 @@ function main(argv) {
     process.exit(0);
   }
 
+  verboseLogging = options.verbose;
+
   if (options.workspace) {
     const applied = applyStartupWorkspace(options.workspace, MGVIEW_ROOT);
     if (applied.error) {
@@ -70,11 +72,16 @@ function createServlet(Class) {
   return servlet.handleRequest.bind(servlet);
 }
 
+let verboseLogging = false;
+
 function timestampedMessage(message) {
   return '[' + new Date().toISOString() + '] ' + message;
 }
 
 function logInfo(message) {
+  if (!verboseLogging) {
+    return;
+  }
   console.log(timestampedMessage(message));
 }
 
@@ -204,10 +211,10 @@ StaticServlet.prototype.handleRequest = function(req, res) {
   if (normalizedPathname === '/mgview/') {
     return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
-  if (normalizedPathname === '/mgview/documentation') {
-    return this.sendRedirect_(req, res, '/mgview/documentation/' + req.url.search);
+  if (normalizedPathname === '/mgview/docs') {
+    return this.sendRedirect_(req, res, '/mgview/docs/' + req.url.search);
   }
-  if (normalizedPathname === '/mgview/documentation/') {
+  if (normalizedPathname === '/mgview/docs/') {
     return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
 

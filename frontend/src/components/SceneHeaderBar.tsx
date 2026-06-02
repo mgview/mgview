@@ -14,6 +14,13 @@ import {
 } from './ui/dropdown-menu.tsx';
 import { Checkbox } from './ui/checkbox.tsx';
 import { Label } from './ui/label.tsx';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  TOOLTIP_DELAY_MS,
+} from './ui/tooltip.tsx';
 import { cn } from '../lib/utils.ts';
 
 type LayoutPaneKey = 'showRenderer' | 'showPlots' | 'showEditorRail';
@@ -55,6 +62,7 @@ interface SceneHeaderBarProps {
   onOpenWorkspace?: () => void;
   onOpenAbout: () => void;
   hasLocalEdits: boolean;
+  canSaveScene: boolean;
   loading: boolean;
   saving: boolean;
   canUndo: boolean;
@@ -80,6 +88,7 @@ export default function SceneHeaderBar({
   layout,
   onOpenAbout,
   hasLocalEdits,
+  canSaveScene,
   loading,
   saving,
   canUndo,
@@ -101,12 +110,15 @@ export default function SceneHeaderBar({
 }: SceneHeaderBarProps) {
   const { theme, toggleTheme } = useTheme();
   const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
-  const saveDisabled = !canPersistScenesToServer || !hasLocalEdits || saving;
+  const demoDisabledTitle = 'This action is not available in the online demo';
+  const saveDisabled = !canSaveScene || !hasLocalEdits || saving;
   const saveTitle = !canPersistScenesToServer
-    ? 'Save is not available in the online demo'
-    : !hasLocalEdits
-      ? 'No unsaved changes'
-      : 'Save';
+    ? demoDisabledTitle
+    : !canSaveScene
+      ? 'Samples are read-only — use Save As to keep your edits'
+      : !hasLocalEdits
+        ? 'No unsaved changes'
+        : 'Save';
   const openMenuAriaLabel = isStaticHosting ? 'Samples menu' : 'Load menu';
   const primaryOpenLabel = loading
     ? 'Loading…'
@@ -331,47 +343,71 @@ export default function SceneHeaderBar({
               </DropdownMenuItem>
               {canPersistScenesToServer ? (
                 <DropdownMenuItem onSelect={onOpenCreateOverlay}>New…</DropdownMenuItem>
-              ) : null}
+              ) : (
+                <div
+                  className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs opacity-50"
+                  title={demoDisabledTitle}
+                  aria-disabled="true"
+                >
+                  New…
+                </div>
+              )}
               <DropdownMenuItem onSelect={onOpenChannels}>Sim Files…</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
         <div className="inline-flex">
-          <Button
-            type="button"
-            size="sm"
-            className="rounded-r-none"
-            onClick={onSave}
-            disabled={saveDisabled}
-            title={saveTitle}
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="default"
-                className="rounded-l-none border-l border-primary-foreground/20 px-1.5"
-                disabled={saving || !canPersistScenesToServer}
-                title={!canPersistScenesToServer ? 'Save is not available in the online demo' : undefined}
-                aria-label="Save menu"
-              >
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                disabled={!scenePath}
-                title={!scenePath ? 'Load a scene before using Save As' : undefined}
-                onSelect={onOpenSaveAsOverlay}
-              >
-                Save As…
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <TooltipProvider delayDuration={TOOLTIP_DELAY_MS}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="rounded-r-none"
+                    onClick={onSave}
+                    disabled={saveDisabled}
+                  >
+                    {saving ? 'Saving…' : 'Save'}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{saveTitle}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={TOOLTIP_DELAY_MS}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="default"
+                        className="rounded-l-none border-l border-primary-foreground/20 px-1.5"
+                        disabled={saving || !canPersistScenesToServer}
+                        aria-label="Save menu"
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        disabled={!scenePath}
+                        title={!scenePath ? 'Load a scene before using Save As' : undefined}
+                        onSelect={onOpenSaveAsOverlay}
+                      >
+                        Save As…
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </span>
+              </TooltipTrigger>
+              {!canPersistScenesToServer ? <TooltipContent side="bottom">{saveTitle}</TooltipContent> : null}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </header>

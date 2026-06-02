@@ -9,6 +9,7 @@ for %%I in ("%MGVIEWPATH%\..") do set "MGPATH=%%~fI"
 set "PORT=8000"
 set "OPEN_BROWSER=1"
 set "WORKSPACE_DIR="
+set "VERBOSE=0"
 set "INVOCATION_DIR=%CD%"
 
 if not "%~1"=="" goto parse_args
@@ -26,6 +27,7 @@ if /i "%~1"=="--workspace" goto parse_workspace
 if /i "%~1"=="-w" goto parse_workspace
 if /i "%~1"=="--no-open" set "OPEN_BROWSER=0" & shift & goto parse_args
 if /i "%~1"=="--no-browser" set "OPEN_BROWSER=0" & shift & goto parse_args
+if /i "%~1"=="--verbose" set "VERBOSE=1" & shift & goto parse_args
 echo.
 echo    ERROR: Unknown option: %~1
 echo.
@@ -92,8 +94,10 @@ set /p MGViewVersion=<"%MGVIEWBINPATH%\VERSION"
 echo.
 echo    ---------------------- Starting MGView %MGViewVersion% ----------------------
 echo.
-echo    Serving MGView at %MGVIEW_URL%
 if defined WORKSPACE_DIR echo    Workspace: %WORKSPACE_DIR%
+echo.
+echo    If your browser does not open automatically, open this URL manually:
+echo    %MGVIEW_URL%
 echo.
 echo    Hit Ctrl + C at any time to quit.
 echo    MGView browser tabs will stop working when you close this window.
@@ -106,10 +110,13 @@ cd /d "%MGPATH%"
 
 if "%OPEN_BROWSER%"=="1" start "" "%MGVIEW_URL%"
 
+set "VERBOSE_FLAG="
+if "%VERBOSE%"=="1" set "VERBOSE_FLAG=--verbose"
+
 if defined WORKSPACE_DIR (
-  node "%MGVIEWBINPATH%\server.js" --port %PORT% --workspace "%WORKSPACE_DIR%"
+  node "%MGVIEWBINPATH%\server.js" --port %PORT% --workspace "%WORKSPACE_DIR%" %VERBOSE_FLAG%
 ) else (
-  node "%MGVIEWBINPATH%\server.js" --port %PORT%
+  node "%MGVIEWBINPATH%\server.js" --port %PORT% %VERBOSE_FLAG%
 )
 
 endlocal
@@ -124,6 +131,7 @@ echo Options:
 echo   -p, --port PORT         HTTP port (default: 8000)
 echo   -w, --workspace PATH    Workspace directory (saved for future runs)
 echo       --no-open           Do not open a browser tab on startup
+echo       --verbose           Log HTTP requests and server diagnostics
 echo   -h, --help          Show this help
 echo   -v, --version       Print MGView version and exit
 echo.

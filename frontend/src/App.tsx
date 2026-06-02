@@ -64,6 +64,7 @@ function WorkspaceApp() {
     handleSaveScene,
     handleUndo,
     hasLocalEdits,
+    canSaveScene,
     channelNames,
     diagnostics,
     fileErrors,
@@ -276,7 +277,7 @@ function WorkspaceApp() {
       if (hasModifier && event.key.toLowerCase() === 's') {
         event.preventDefault();
         if (
-          canPersistScenesToServer &&
+          canSaveScene &&
           !shell.loadOverlayOpen &&
           !loading &&
           !saving &&
@@ -318,6 +319,7 @@ function WorkspaceApp() {
     handleRedo,
     handleSaveScene,
     handleUndo,
+    canSaveScene,
     hasLocalEdits,
     loading,
     playback.togglePlay,
@@ -385,6 +387,7 @@ function WorkspaceApp() {
         scenePath={loaded?.scenePath ?? null}
         layout={sceneLayout}
         hasLocalEdits={hasLocalEdits}
+        canSaveScene={canSaveScene}
         loading={loading}
         saving={saving}
         canRedo={canRedoDraftScene}

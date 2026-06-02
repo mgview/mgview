@@ -11,6 +11,7 @@ function formatServerUsage() {
     'Options:',
     '  -p, --port PORT         HTTP port (default: 8000)',
     '  -w, --workspace PATH    Workspace directory (saved to ~/.mgview/config.json)',
+    '      --verbose           Log each HTTP request and server diagnostics',
     '  -h, --help              Show this help',
     '',
     'Examples:',
@@ -20,7 +21,7 @@ function formatServerUsage() {
 }
 
 function parseServerArgs(argv) {
-  const args = { port: DEFAULT_PORT, workspace: null, help: false };
+  const args = { port: DEFAULT_PORT, workspace: null, help: false, verbose: false };
   const positional = [];
 
   for (let index = 2; index < argv.length; index += 1) {
@@ -43,6 +44,10 @@ function parseServerArgs(argv) {
         throw new Error('--workspace requires a value.');
       }
       args.workspace = value;
+      continue;
+    }
+    if (token === '--verbose') {
+      args.verbose = true;
       continue;
     }
     if (token.startsWith('-')) {

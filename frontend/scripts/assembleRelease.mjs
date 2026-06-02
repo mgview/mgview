@@ -15,6 +15,7 @@ import {
   repoRoot,
   runtimeAssetsDir,
 } from './deployConfig.mjs';
+import { checkReleaseVersion } from './checkReleaseVersion.mjs';
 import { copyTree, excludeDotfiles } from './lib/copyTree.mjs';
 
 const RELEASE_TOP_LEVEL = 'mgview';
@@ -58,6 +59,8 @@ async function zipDirectory(stagingRoot, zipPath) {
 }
 
 async function main() {
+  await checkReleaseVersion();
+
   const version = process.env.MGVIEW_RELEASE_VERSION ?? (await readVersion());
   const stagingRoot = path.join(releaseDir, `mgview-${version}`);
   const stagingDir = path.join(stagingRoot, RELEASE_TOP_LEVEL);
