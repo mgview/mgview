@@ -22,7 +22,7 @@ export function resolveAppRoute(pathname: string, mountPrefix: string): AppRoute
     ? normalizedPathname.slice(normalizedMountPrefix.length)
     : trimSlashes(normalizedPathname);
 
-  return trimSlashes(relativePath) === 'documentation' ? 'documentation' : 'app';
+  return trimSlashes(relativePath) === 'docs' ? 'documentation' : 'app';
 }
 
 export function getCurrentAppRoute(): AppRoute {
@@ -38,7 +38,7 @@ export function getHomePath(): string {
 }
 
 export function getDocumentationPath(): string {
-  return `${getHomePath()}documentation/`.replace(/\/{2,}/g, '/');
+  return `${getHomePath()}docs/`.replace(/\/{2,}/g, '/');
 }
 
 /** Same-origin MGView pages — open in a new tab so the current workspace tab is preserved. */

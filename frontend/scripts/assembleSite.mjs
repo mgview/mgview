@@ -44,10 +44,10 @@ async function main() {
     path.join(repoRoot, 'samples-manifest.json'),
     path.join(outputDir, 'samples-manifest.json')
   );
-  await mkdir(path.join(outputDir, 'documentation'), { recursive: true });
+  await mkdir(path.join(outputDir, 'docs'), { recursive: true });
   await copyFile(
     path.join(outputDir, 'index.html'),
-    path.join(outputDir, 'documentation', 'index.html')
+    path.join(outputDir, 'docs', 'index.html')
   );
 
   const bundledAssetsSource = path.join(repoRoot, runtimeAssetsDir);

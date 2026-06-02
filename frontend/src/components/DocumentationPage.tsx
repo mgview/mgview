@@ -39,7 +39,9 @@ ls      # Confirm it shows /Applications/MotionGenesis/project1
 ../MotionGenesis myproject.txt`;
 
 const advancedOdeSubpathExample = `ODE() case1/my_data
-# change some initial conditions, parameters
+
+# Change some initial conditions or constants.
+
 ODE() case2/my_data`;
 
 const advancedOutputTreeExample = `<MotionGenesis folder>/project1/case1/my_data.{1,...,n}

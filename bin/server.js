@@ -211,10 +211,10 @@ StaticServlet.prototype.handleRequest = function(req, res) {
   if (normalizedPathname === '/mgview/') {
     return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
-  if (normalizedPathname === '/mgview/documentation') {
-    return this.sendRedirect_(req, res, '/mgview/documentation/' + req.url.search);
+  if (normalizedPathname === '/mgview/docs') {
+    return this.sendRedirect_(req, res, '/mgview/docs/' + req.url.search);
   }
-  if (normalizedPathname === '/mgview/documentation/') {
+  if (normalizedPathname === '/mgview/docs/') {
     return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
 
