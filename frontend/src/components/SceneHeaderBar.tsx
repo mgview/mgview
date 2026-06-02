@@ -14,6 +14,13 @@ import {
 } from './ui/dropdown-menu.tsx';
 import { Checkbox } from './ui/checkbox.tsx';
 import { Label } from './ui/label.tsx';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  TOOLTIP_DELAY_MS,
+} from './ui/tooltip.tsx';
 import { cn } from '../lib/utils.ts';
 
 type LayoutPaneKey = 'showRenderer' | 'showPlots' | 'showEditorRail';
@@ -55,6 +62,7 @@ interface SceneHeaderBarProps {
   onOpenWorkspace?: () => void;
   onOpenAbout: () => void;
   hasLocalEdits: boolean;
+  canSaveScene: boolean;
   loading: boolean;
   saving: boolean;
   canUndo: boolean;
@@ -80,6 +88,7 @@ export default function SceneHeaderBar({
   layout,
   onOpenAbout,
   hasLocalEdits,
+  canSaveScene,
   loading,
   saving,
   canUndo,
@@ -101,12 +110,14 @@ export default function SceneHeaderBar({
 }: SceneHeaderBarProps) {
   const { theme, toggleTheme } = useTheme();
   const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
-  const saveDisabled = !canPersistScenesToServer || !hasLocalEdits || saving;
+  const saveDisabled = !canSaveScene || !hasLocalEdits || saving;
   const saveTitle = !canPersistScenesToServer
     ? 'Save is not available in the online demo'
-    : !hasLocalEdits
-      ? 'No unsaved changes'
-      : 'Save';
+    : !canSaveScene
+      ? 'Samples are read-only — use Save As to keep your edits'
+      : !hasLocalEdits
+        ? 'No unsaved changes'
+        : 'Save';
   const openMenuAriaLabel = isStaticHosting ? 'Samples menu' : 'Load menu';
   const primaryOpenLabel = loading
     ? 'Loading…'
@@ -338,16 +349,24 @@ export default function SceneHeaderBar({
         </div>
 
         <div className="inline-flex">
-          <Button
-            type="button"
-            size="sm"
-            className="rounded-r-none"
-            onClick={onSave}
-            disabled={saveDisabled}
-            title={saveTitle}
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </Button>
+          <TooltipProvider delayDuration={TOOLTIP_DELAY_MS}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="rounded-r-none"
+                    onClick={onSave}
+                    disabled={saveDisabled}
+                  >
+                    {saving ? 'Saving…' : 'Save'}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{saveTitle}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

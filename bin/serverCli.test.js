@@ -37,3 +37,8 @@ test('parseServerArgs sets help flag', () => {
   const args = parseServerArgs(['node', 'server.js', '--help']);
   assert.equal(args.help, true);
 });
+
+test('parseServerArgs sets verbose flag', () => {
+  assert.equal(parseServerArgs(['node', 'server.js', '--verbose']).verbose, true);
+  assert.equal(parseServerArgs(['node', 'server.js']).verbose, false);
+});

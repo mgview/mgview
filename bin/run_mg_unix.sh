@@ -6,6 +6,7 @@ source "$BIN_DIR/colors.sh"
 PORT=8000
 OPEN_BROWSER=1
 WORKSPACE_DIR=""
+VERBOSE=0
 
 usage() {
   cat <<EOF
@@ -17,6 +18,7 @@ Options:
   -p, --port PORT         HTTP port (default: 8000)
   -w, --workspace PATH    Workspace directory (saved for future runs)
       --no-open           Do not open a browser tab on startup
+      --verbose           Log HTTP requests and server diagnostics
   -h, --help              Show this help
   -v, --version           Print MGView version and exit
 
@@ -70,6 +72,10 @@ while [[ $# -gt 0 ]]; do
       OPEN_BROWSER=0
       shift
       ;;
+    --verbose)
+      VERBOSE=1
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -100,6 +106,9 @@ if command -v node >/dev/null 2>&1; then
   if [[ -n "$WORKSPACE_DIR" ]]; then
     SERVER_CMD+=(--workspace "$WORKSPACE_DIR")
   fi
+  if [[ "$VERBOSE" -eq 1 ]]; then
+    SERVER_CMD+=(--verbose)
+  fi
 else
   echo -e "${C_RED_BOLD}Unable to find Node.js on your PATH.${C_DEFAULT}"
   echo -e "${C_YELLOW}Install the official Node.js LTS release from:${C_DEFAULT}"
@@ -113,10 +122,11 @@ pushd "$MGVIEW_PARENT_DIR" &> /dev/null
 
 echo -e "${C_YELLOW_BOLD}------------------------------------------------------------${C_DEFAULT}"
 echo -e "${C_YELLOW_BOLD}Starting MGView $(cat ${BIN_DIR}/VERSION)${C_DEFAULT}\n"
-echo -e "${C_GREEN_BOLD}Serving MGView at ${MGVIEW_URL}${C_DEFAULT}"
 if [[ -n "$WORKSPACE_DIR" ]]; then
-  echo -e "${C_GREEN_BOLD}Workspace: ${WORKSPACE_DIR}${C_DEFAULT}"
+  echo -e "${C_GREEN_BOLD}Workspace: ${WORKSPACE_DIR}${C_DEFAULT}\n"
 fi
+echo -e "${C_YELLOW}If your browser does not open automatically, open this URL manually:${C_DEFAULT}"
+echo -e "${C_GREEN_BOLD}${MGVIEW_URL}${C_DEFAULT}"
 echo
 echo -e "${C_RED_BOLD}Press Ctrl+C to quit.${C_DEFAULT}"
 echo -e "${C_YELLOW_BOLD}------------------------------------------------------------${C_DEFAULT}"

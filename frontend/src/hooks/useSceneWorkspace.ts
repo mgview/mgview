@@ -12,6 +12,7 @@ import { expandSimulationFiles } from '../core/expandSimulationFiles.ts';
 import { getBasePath } from '../core/pathUtils.ts';
 import {
   clearSceneRefFromUrl,
+  canOverwriteScene,
   createWorkspaceRef,
   formatSceneRef,
   getApiRoot,
@@ -330,6 +331,25 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
       JSON.stringify(draftScene) !== JSON.stringify(loaded.scene),
     [draftScene, loaded]
   );
+  const canSaveScene = useMemo(
+    () => canPersistScenesToServer && loaded !== null && canOverwriteScene(loaded.sceneRef),
+    [loaded]
+  );
+
+  useEffect(() => {
+    if (!hasLocalEdits) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasLocalEdits]);
+
   const showWorkspaceShell = loaded !== null || loading;
 
   const reportError = (message: string) => {
@@ -562,7 +582,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
   };
 
   const handleSaveScene = async () => {
-    if (!canPersistScenesToServer || !loaded || !draftScene) {
+    if (!canSaveScene || !loaded || !draftScene) {
       return;
     }
 
@@ -685,6 +705,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     handleRedo,
     handleUndo,
     hasLocalEdits,
+    canSaveScene,
     channelNames,
     diagnostics,
     fileErrors,

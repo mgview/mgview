@@ -40,3 +40,9 @@ export function getHomePath(): string {
 export function getDocumentationPath(): string {
   return `${getHomePath()}documentation/`.replace(/\/{2,}/g, '/');
 }
+
+/** Same-origin MGView pages — open in a new tab so the current workspace tab is preserved. */
+export const inAppLinkProps = {
+  target: '_blank',
+  rel: 'noopener noreferrer',
+} as const;

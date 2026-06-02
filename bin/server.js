@@ -40,6 +40,8 @@ function main(argv) {
     process.exit(0);
   }
 
+  verboseLogging = options.verbose;
+
   if (options.workspace) {
     const applied = applyStartupWorkspace(options.workspace, MGVIEW_ROOT);
     if (applied.error) {
@@ -70,11 +72,16 @@ function createServlet(Class) {
   return servlet.handleRequest.bind(servlet);
 }
 
+let verboseLogging = false;
+
 function timestampedMessage(message) {
   return '[' + new Date().toISOString() + '] ' + message;
 }
 
 function logInfo(message) {
+  if (!verboseLogging) {
+    return;
+  }
   console.log(timestampedMessage(message));
 }
 

@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   buildSceneUrl,
+  canOverwriteScene,
   createSampleRef,
   createWorkspaceRef,
   getDefaultSceneRef,
@@ -11,6 +12,11 @@ import {
   resolveApiFilePath,
   workspacePathFromInput,
 } from './sceneRef.ts';
+
+test('canOverwriteScene is true only for workspace refs', () => {
+  assert.equal(canOverwriteScene(createWorkspaceRef('my_sim/scene.json')), true);
+  assert.equal(canOverwriteScene(createSampleRef('particle_pendulum/particle_pendulum.json')), false);
+});
 
 test('parseSceneRefFromUrl prefers sample over scene', () => {
   const params = new URLSearchParams('sample=default.json&scene=my_sim/foo.json');

@@ -56,6 +56,7 @@ cd ..
 ./RunMGViewMac         # http://localhost:8000/mgview/
 ./RunMGViewMac --port 9000 --no-open   # custom port, skip browser launch
 ./RunMGViewMac --workspace ~/simulations   # workspace folder (saved in ~/.mgview/config.json)
+./RunMGViewMac --verbose   # log each HTTP request (quiet by default)
 ```
 
 On Windows, double-click `RunMGViewWindows.bat` or run it from Command Prompt (same flags; `bin\RunVisualizer.bat` is the underlying script):

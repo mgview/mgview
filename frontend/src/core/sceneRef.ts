@@ -28,6 +28,10 @@ export function formatSceneRef(ref: SceneRef): string {
   return ref.path;
 }
 
+export function canOverwriteScene(ref: SceneRef): boolean {
+  return ref.source === 'workspace';
+}
+
 export function parseSceneRefFromUrl(searchParams: URLSearchParams): SceneRef {
   const sample = searchParams.get('sample');
   const scene = searchParams.get('scene');

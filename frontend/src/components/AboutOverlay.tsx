@@ -1,11 +1,12 @@
-import { BookOpenText, Code2, ExternalLink, Globe } from 'lucide-react';
+import { BookOpenText, Code2, ExternalLink, Globe, MessageCircleWarning } from 'lucide-react';
 import buildInfo from '../generated/buildInfo.ts';
-import { getDocumentationPath } from '../core/appRoutes.ts';
+import { getDocumentationPath, inAppLinkProps } from '../core/appRoutes.ts';
 import { cn } from '../lib/utils.ts';
 import OverlayPanel from './OverlayPanel.tsx';
 
 const MGVIEW_HOMEPAGE_URL = 'https://mgview.github.io/mgview/';
 const MGVIEW_SOURCE_URL = 'https://github.com/mgview/mgview';
+const MGVIEW_ISSUES_URL = `${MGVIEW_SOURCE_URL}/issues`;
 
 const ABOUT_LINKS = [
   {
@@ -20,6 +21,12 @@ const ABOUT_LINKS = [
     description: 'github.com/mgview/mgview',
     icon: Code2,
   },
+  {
+    href: MGVIEW_ISSUES_URL,
+    label: 'Report an Issue',
+    description: 'github.com/mgview/mgview/issues',
+    icon: MessageCircleWarning,
+  },
 ] as const;
 
 interface AboutOverlayProps {
@@ -31,8 +38,7 @@ export default function AboutOverlay({ onClose }: AboutOverlayProps) {
     <OverlayPanel title="About MGView" size="compact" onClose={onClose}>
       <a
         href={getDocumentationPath()}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...inAppLinkProps}
         className={cn(
           'group mb-2 flex items-center gap-2.5 rounded-md border border-border bg-primary/6 px-2.5 py-2',
           'transition-colors hover:border-primary/40 hover:bg-accent'
