@@ -1,4 +1,12 @@
-import { CheckCircle2, CircleDotDashed, Settings2, SquareTerminal, TriangleAlert } from 'lucide-react';
+import {
+  ArrowDownToLine,
+  ArrowUpToLine,
+  CheckCircle2,
+  CircleDotDashed,
+  Settings2,
+  SquareTerminal,
+  TriangleAlert,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { listLocalFiles, type FileBrowserListing, type MotionGenesisRunOptions, type MotionGenesisRunState } from '../api/localFiles.ts';
 import { getBasePath, getRelativePath } from '../core/pathUtils.ts';
@@ -127,6 +135,7 @@ export default function MotionGenesisRunPanel({
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const flyoutRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
+  const outputRef = useRef<HTMLTextAreaElement | null>(null);
 
   const runActive = run?.status === 'running' || run?.status === 'waiting-input';
   const runDisabledReason = !loadedScenePath
@@ -410,12 +419,47 @@ export default function MotionGenesisRunPanel({
         ) : null}
       </div>
 
-      <textarea
-        className="h-full min-h-0 w-full resize-none rounded-md border border-border bg-background px-3 py-2 font-mono text-xs leading-5 text-foreground"
-        readOnly
-        spellCheck={false}
-        value={output}
-      />
+      <div className="relative h-full min-h-0">
+        <div className="pointer-events-none absolute right-2 top-2 z-10 flex flex-col gap-0.5">
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            className="pointer-events-auto h-6 w-6 bg-background/90 shadow-sm"
+            aria-label="Scroll to top"
+            onClick={() => {
+              const outputElement = outputRef.current;
+              if (outputElement) {
+                outputElement.scrollTop = 0;
+              }
+            }}
+          >
+            <ArrowUpToLine className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            className="pointer-events-auto h-6 w-6 bg-background/90 shadow-sm"
+            aria-label="Scroll to bottom"
+            onClick={() => {
+              const outputElement = outputRef.current;
+              if (outputElement) {
+                outputElement.scrollTop = outputElement.scrollHeight;
+              }
+            }}
+          >
+            <ArrowDownToLine className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+        <textarea
+          ref={outputRef}
+          className="h-full min-h-0 w-full resize-none rounded-md border border-border bg-background py-2 pl-3 pr-10 font-mono text-xs leading-5 text-foreground"
+          readOnly
+          spellCheck={false}
+          value={output}
+        />
+      </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5">
         <Input
