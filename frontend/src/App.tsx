@@ -21,6 +21,7 @@ import PlotsPanel from './components/PlotsPanel.tsx';
 import RendererPanel from './components/RendererPanel.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import SimulationDataOverlay from './components/SimulationDataOverlay.tsx';
+import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { getFrameAtTime } from './core/timeline.ts';
 import { DEFAULT_SCENE_LAYOUT } from './core/workspaceLayout.ts';
 import { useInspectorSelectionState } from './hooks/useInspectorSelectionState.ts';
@@ -152,6 +153,14 @@ function WorkspaceApp() {
       await handleRefreshSimulationData('Reloaded simulation data after Motion Genesis finished.');
     }, [handleRefreshSimulationData]);
   const motionGenesisRun = useMotionGenesisRun(handleMotionGenesisSuccess);
+  const runMotionGenesis = useCallback(() => {
+    if (!loaded || loaded.sceneRef.source !== 'workspace' || !activeScene?.simulationSettings) {
+      motionGenesisRun.setError('Load a workspace scene with simulationSettings before running Motion Genesis.');
+      return;
+    }
+
+    void motionGenesisRun.beginRun(loaded.sceneRef.path, activeScene.simulationSettings);
+  }, [activeScene, loaded, motionGenesisRun]);
 
   const currentFrame = useMemo(() => {
     if (!loaded) {
@@ -804,104 +813,120 @@ function WorkspaceApp() {
 
             {showEditorRail ? (
               <div className="workspace-editor-rail">
-                <div className="min-h-0 min-w-0">
-                  <div className="h-full min-h-0 overflow-auto pr-0.5">
-                    {loaded ? (
-                      <ObjectList
-                        entries={objectInspections}
-                        onCreateSpan={() => {
-                          selectionState.beginSpanCreation(createSpan);
-                        }}
-                        selectedObjectName={activeSelectedObject?.name ?? null}
-                        selectedSpanName={selectedSpanResolvedName}
-                        spans={spanEntries}
-                        onSelectObject={(objectName, firstVisualName) => {
-                          selectionState.selectObjectForEditor(objectName, firstVisualName, selectObject);
-                        }}
-                        onSelectSpan={(spanName, firstVisualName) => {
-                          selectionState.selectSpanForEditor(spanName, firstVisualName, selectSpanOnly);
-                        }}
-                      />
-                    ) : (
-                      <section className="rounded-md border border-border bg-card p-2">
-                        <h2 className="mb-1 text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Objects</h2>
-                        <div className="grid gap-2">
-                          <div className="h-7 animate-pulse rounded-md bg-muted" />
-                          <div className="h-7 animate-pulse rounded-md bg-muted" />
-                          <div className="h-7 animate-pulse rounded-md bg-muted" />
-                          <div className="h-7 animate-pulse rounded-md bg-muted" />
-                        </div>
-                      </section>
-                    )}
+                <Tabs
+                  value={selectionState.editorMode}
+                  onValueChange={(value) =>
+                    selectionState.setEditorMode(value as Parameters<typeof selectionState.setEditorMode>[0])
+                  }
+                  className="workspace-editor-rail-tabs"
+                >
+                  <div className="workspace-editor-rail-header">
+                    <TabsList className="w-full">
+                      <TabsTrigger value="visual">Editor</TabsTrigger>
+                      <TabsTrigger value="scene">Scene Settings</TabsTrigger>
+                      <TabsTrigger value="json">JSON Editor</TabsTrigger>
+                      <TabsTrigger value="sim">Sim Run</TabsTrigger>
+                    </TabsList>
                   </div>
-                </div>
 
-                <div className="workspace-content-panel">
-                  <div className="h-full min-h-0 overflow-auto pr-0.5">
-                    <InspectorDrawer
-                      activeScene={activeScene}
-                      cameraPreview={shell.cameraPreview}
-                      channelNames={channelNames}
-                      clearCameraPreview={() => shell.setCameraPreview(null)}
-                      editorMode={selectionState.editorMode}
-                      liveSelectedSpan={liveSelectedSpan}
-                      liveSelectedSpanVisual={liveSelectedSpanVisual}
-                      liveSelectedVisual={activeLiveSelectedVisual}
-                      loaded={loaded}
-                      motionGenesisError={motionGenesisRun.error}
-                      motionGenesisInput={motionGenesisRun.input}
-                      motionGenesisRun={motionGenesisRun.run}
-                      motionGenesisSendingInput={motionGenesisRun.sendingInput}
-                      motionGenesisOptions={motionGenesisRun.options}
-                      motionGenesisStarting={motionGenesisRun.starting}
-                      onMotionGenesisInputChange={motionGenesisRun.setInput}
-                      onMotionGenesisOptionsChange={motionGenesisRun.setOptions}
-                      onRunMotionGenesis={() => {
-                        if (!loaded || loaded.sceneRef.source !== 'workspace' || !activeScene?.simulationSettings) {
-                          motionGenesisRun.setError(
-                            'Load a workspace scene with simulationSettings before running Motion Genesis.'
-                          );
-                          return;
-                        }
-                        void motionGenesisRun.beginRun(loaded.sceneRef.path, activeScene.simulationSettings);
-                      }}
-                      onSendMotionGenesisInput={() => {
-                        void motionGenesisRun.submitInput();
-                      }}
-                      savePreview={savePreview}
-                      selectedObject={activeSelectedObject}
-                      selectedObjectName={activeSelectedObject?.name ?? null}
-                      selectedSpanName={selectedSpanResolvedName}
-                      selectedSpanVisualName={selectedSpanVisualResolvedName}
-                      selectedVisual={activeSelectedVisual}
-                      updateSelectedObject={updateSelectedObject}
-                      createVisual={createVisual}
-                      renameVisual={renameVisual}
-                      deleteSelectedVisual={deleteSelectedVisual}
-                      changeSelectedVisualType={changeSelectedVisualType}
-                      createSpan={createSpan}
-                      createSpanVisual={createSpanVisual}
-                      deleteSelectedSpan={deleteSelectedSpan}
-                      deleteSelectedSpanVisual={deleteSelectedSpanVisual}
-                      renameSpan={renameSpan}
-                      renameSpanVisual={renameSpanVisual}
-                      selectSpan={(spanName, firstVisualName) => {
-                        selectionState.selectSpanForEditor(spanName, firstVisualName, selectSpanOnly);
-                      }}
-                      setEditorMode={selectionState.setEditorMode}
-                      setSelectedVisualName={setSelectedVisualName}
-                      updateDraftScene={updateDraftScene}
-                      updateDraftScenePreview={updateDraftScenePreview}
-                      updateSceneVector={shell.updateSceneVector}
-                      updateSceneVectorPreview={shell.updateSceneVectorPreview}
-                      updateSelectedSpan={updateSelectedSpan}
-                      updateSelectedSpanVisual={updateSelectedSpanVisual}
-                      updateSelectedSpanVisualPreview={updateSelectedSpanVisualPreview}
-                      updateSelectedVisual={updateSelectedVisual}
-                      updateSelectedVisualPreview={updateSelectedVisualPreview}
-                    />
+                  <div
+                    className={`workspace-editor-rail-body ${
+                      selectionState.editorMode === 'sim' ? 'workspace-editor-rail-body-sim' : ''
+                    }`}
+                  >
+                    {selectionState.editorMode !== 'sim' ? (
+                      <div className="min-h-0 min-w-0">
+                        <div className="h-full min-h-0 overflow-auto pr-0.5">
+                          {loaded ? (
+                            <ObjectList
+                              entries={objectInspections}
+                              onCreateSpan={() => {
+                                selectionState.beginSpanCreation(createSpan);
+                              }}
+                              selectedObjectName={activeSelectedObject?.name ?? null}
+                              selectedSpanName={selectedSpanResolvedName}
+                              spans={spanEntries}
+                              onSelectObject={(objectName, firstVisualName) => {
+                                selectionState.selectObjectForEditor(objectName, firstVisualName, selectObject);
+                              }}
+                              onSelectSpan={(spanName, firstVisualName) => {
+                                selectionState.selectSpanForEditor(spanName, firstVisualName, selectSpanOnly);
+                              }}
+                            />
+                          ) : (
+                            <section className="rounded-md border border-border bg-card p-2">
+                              <h2 className="mb-1 text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Objects</h2>
+                              <div className="grid gap-2">
+                                <div className="h-7 animate-pulse rounded-md bg-muted" />
+                                <div className="h-7 animate-pulse rounded-md bg-muted" />
+                                <div className="h-7 animate-pulse rounded-md bg-muted" />
+                                <div className="h-7 animate-pulse rounded-md bg-muted" />
+                              </div>
+                            </section>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div className="workspace-content-panel">
+                      <div className="h-full min-h-0 overflow-auto pr-0.5">
+                        <InspectorDrawer
+                          activeScene={activeScene}
+                          cameraPreview={shell.cameraPreview}
+                          channelNames={channelNames}
+                          clearCameraPreview={() => shell.setCameraPreview(null)}
+                          editorMode={selectionState.editorMode}
+                          liveSelectedSpan={liveSelectedSpan}
+                          liveSelectedSpanVisual={liveSelectedSpanVisual}
+                          liveSelectedVisual={activeLiveSelectedVisual}
+                          loaded={loaded}
+                          motionGenesisError={motionGenesisRun.error}
+                          motionGenesisInput={motionGenesisRun.input}
+                          motionGenesisRun={motionGenesisRun.run}
+                          motionGenesisSendingInput={motionGenesisRun.sendingInput}
+                          motionGenesisOptions={motionGenesisRun.options}
+                          motionGenesisStarting={motionGenesisRun.starting}
+                          onMotionGenesisInputChange={motionGenesisRun.setInput}
+                          onMotionGenesisOptionsChange={motionGenesisRun.setOptions}
+                          onRunMotionGenesis={runMotionGenesis}
+                          onSendMotionGenesisInput={() => {
+                            void motionGenesisRun.submitInput();
+                          }}
+                          savePreview={savePreview}
+                          selectedObject={activeSelectedObject}
+                          selectedObjectName={activeSelectedObject?.name ?? null}
+                          selectedSpanName={selectedSpanResolvedName}
+                          selectedSpanVisualName={selectedSpanVisualResolvedName}
+                          selectedVisual={activeSelectedVisual}
+                          updateSelectedObject={updateSelectedObject}
+                          createVisual={createVisual}
+                          renameVisual={renameVisual}
+                          deleteSelectedVisual={deleteSelectedVisual}
+                          changeSelectedVisualType={changeSelectedVisualType}
+                          createSpan={createSpan}
+                          createSpanVisual={createSpanVisual}
+                          deleteSelectedSpan={deleteSelectedSpan}
+                          deleteSelectedSpanVisual={deleteSelectedSpanVisual}
+                          renameSpan={renameSpan}
+                          renameSpanVisual={renameSpanVisual}
+                          selectSpan={(spanName, firstVisualName) => {
+                            selectionState.selectSpanForEditor(spanName, firstVisualName, selectSpanOnly);
+                          }}
+                          setSelectedVisualName={setSelectedVisualName}
+                          updateDraftScene={updateDraftScene}
+                          updateDraftScenePreview={updateDraftScenePreview}
+                          updateSceneVector={shell.updateSceneVector}
+                          updateSceneVectorPreview={shell.updateSceneVectorPreview}
+                          updateSelectedSpan={updateSelectedSpan}
+                          updateSelectedSpanVisual={updateSelectedSpanVisual}
+                          updateSelectedSpanVisualPreview={updateSelectedSpanVisualPreview}
+                          updateSelectedVisual={updateSelectedVisual}
+                          updateSelectedVisualPreview={updateSelectedVisualPreview}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </Tabs>
               </div>
             ) : null}
 

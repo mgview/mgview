@@ -59,7 +59,7 @@ export default function MotionGenesisRunPanel({
   const output = run?.output ?? '';
 
   return (
-    <div className="grid min-h-0 gap-2">
+    <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-2">
       <div className="grid gap-1 rounded-md border border-border bg-muted/20 p-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="grid gap-0.5">
@@ -148,7 +148,7 @@ export default function MotionGenesisRunPanel({
       </div>
 
       <textarea
-        className="min-h-[18rem] w-full resize-y rounded-md border border-border bg-background px-3 py-2 font-mono text-xs leading-5 text-foreground"
+        className="h-full min-h-0 w-full resize-none rounded-md border border-border bg-background px-3 py-2 font-mono text-xs leading-5 text-foreground"
         readOnly
         spellCheck={false}
         value={output}
