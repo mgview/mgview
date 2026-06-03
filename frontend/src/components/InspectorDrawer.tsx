@@ -5,16 +5,17 @@ import type {
   SceneSpanVisual,
   SceneObjectInspection,
   SceneVisual,
-  Timeline,
   VisualType,
 } from '../core/types.ts';
+import type { MotionGenesisRunOptions } from '../api/localFiles.ts';
 import JsonEditorPanel from './JsonEditorPanel.tsx';
+import MotionGenesisRunPanel from './MotionGenesisRunPanel.tsx';
 import SceneSettingsPanel from './SceneSettingsPanel.tsx';
 import SpanEditorPanel from './SpanEditorPanel.tsx';
 import VisualEditorPanel from './VisualEditorPanel.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs.tsx';
 
-export type InspectorEditorMode = 'visual' | 'scene' | 'json';
+export type InspectorEditorMode = 'visual' | 'scene' | 'json' | 'sim';
 
 interface InspectorDrawerProps {
   activeScene: NormalizedSceneConfig | null;
@@ -46,6 +47,13 @@ interface InspectorDrawerProps {
   createSpanVisual: () => boolean;
   deleteSelectedSpan: () => boolean;
   deleteSelectedSpanVisual: () => boolean;
+  motionGenesisError: string | null;
+  motionGenesisInput: string;
+  motionGenesisRun: import('../api/localFiles.ts').MotionGenesisRunState | null;
+  onMotionGenesisInputChange: (value: string) => void;
+  onMotionGenesisOptionsChange: (options: MotionGenesisRunOptions) => void;
+  onRunMotionGenesis: () => void;
+  onSendMotionGenesisInput: () => void;
   renameSpan: (currentName: string, nextName: string) => boolean;
   renameSpanVisual: (currentName: string, nextName: string) => boolean;
   selectSpan: (spanName: string, firstVisualName: string | null) => void;
@@ -70,6 +78,9 @@ interface InspectorDrawerProps {
   updateSelectedSpanVisualPreview: (updater: (visual: SceneSpanVisual) => void) => void;
   updateSelectedVisual: (updater: (visual: SceneVisual) => void) => void;
   updateSelectedVisualPreview: (updater: (visual: SceneVisual) => void) => void;
+  motionGenesisStarting: boolean;
+  motionGenesisSendingInput: boolean;
+  motionGenesisOptions: MotionGenesisRunOptions;
 }
 
 export default function InspectorDrawer({
@@ -96,6 +107,15 @@ export default function InspectorDrawer({
   createSpanVisual,
   deleteSelectedSpan,
   deleteSelectedSpanVisual,
+  motionGenesisError,
+  motionGenesisInput,
+  motionGenesisRun,
+  motionGenesisSendingInput,
+  motionGenesisStarting,
+  onMotionGenesisInputChange,
+  onMotionGenesisOptionsChange,
+  onRunMotionGenesis,
+  onSendMotionGenesisInput,
   renameSpan,
   renameSpanVisual,
   selectSpan,
@@ -110,6 +130,7 @@ export default function InspectorDrawer({
   updateSelectedSpanVisualPreview,
   updateSelectedVisual,
   updateSelectedVisualPreview,
+  motionGenesisOptions,
 }: InspectorDrawerProps) {
   if (!loaded) {
     return (
@@ -132,6 +153,7 @@ export default function InspectorDrawer({
           <TabsTrigger value="visual">Editor</TabsTrigger>
           <TabsTrigger value="scene">Scene Settings</TabsTrigger>
           <TabsTrigger value="json">JSON Editor</TabsTrigger>
+          <TabsTrigger value="sim">Sim Run</TabsTrigger>
         </TabsList>
 
         <TabsContent value="scene" className="min-h-0 overflow-auto">
@@ -185,6 +207,24 @@ export default function InspectorDrawer({
               updateSelectedVisualPreview={updateSelectedVisualPreview}
             />
           )}
+        </TabsContent>
+
+        <TabsContent value="sim" className="min-h-0 overflow-auto">
+          <MotionGenesisRunPanel
+            canRun={loaded.sceneRef.source === 'workspace' && Boolean(activeScene?.simulationSettings)}
+            error={motionGenesisError}
+            input={motionGenesisInput}
+            loadedScenePath={loaded.sceneRef.source === 'workspace' ? loaded.scenePath : null}
+            options={motionGenesisOptions}
+            onInputChange={onMotionGenesisInputChange}
+            onOptionsChange={onMotionGenesisOptionsChange}
+            onRun={onRunMotionGenesis}
+            onSendInput={onSendMotionGenesisInput}
+            run={motionGenesisRun}
+            simulationSettings={activeScene?.simulationSettings}
+            starting={motionGenesisStarting}
+            sendingInput={motionGenesisSendingInput}
+          />
         </TabsContent>
       </Tabs>
     </section>

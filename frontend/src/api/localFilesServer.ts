@@ -1,7 +1,7 @@
 import type { SceneRef } from '../core/sceneRef.ts';
 import { getApiRoot } from '../core/sceneRef.ts';
 import type { SceneConfig } from '../core/types.ts';
-import type { FileBrowserListing } from './localFilesTypes.ts';
+import type { FileBrowserListing, MotionGenesisRunOptions, MotionGenesisRunState } from './localFilesTypes.ts';
 import type { WorkspaceInfo } from './workspaceTypes.ts';
 
 const API_PREFIX = '/mgview/api';
@@ -112,4 +112,41 @@ export async function createWorkspaceDirectory(filePath: string): Promise<void> 
     method: 'POST',
   });
   await expectOk(response, `Could not create folder: ${filePath}`);
+}
+
+export async function startMotionGenesisRun(
+  scenePath: string,
+  simulationSettings: string,
+  options: MotionGenesisRunOptions
+): Promise<MotionGenesisRunState> {
+  const response = await apiFetch(getApiUrl('mg-run'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ scenePath, simulationSettings, options }),
+  });
+  await expectOk(response, `Could not start Motion Genesis for ${scenePath}`);
+  return (await response.json()) as MotionGenesisRunState;
+}
+
+export async function getMotionGenesisRun(runId: string): Promise<MotionGenesisRunState> {
+  const response = await apiFetch(getApiUrl(`mg-run/${encodeURIComponent(runId)}`));
+  await expectOk(response, `Could not load Motion Genesis run ${runId}`);
+  return (await response.json()) as MotionGenesisRunState;
+}
+
+export async function sendMotionGenesisInput(
+  runId: string,
+  input: string
+): Promise<MotionGenesisRunState> {
+  const response = await apiFetch(getApiUrl(`mg-run/${encodeURIComponent(runId)}/input`), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ input }),
+  });
+  await expectOk(response, `Could not send input to Motion Genesis run ${runId}`);
+  return (await response.json()) as MotionGenesisRunState;
 }

@@ -17,6 +17,7 @@ import { getFrameAtTime } from './core/timeline.ts';
 import { DEFAULT_SCENE_LAYOUT } from './core/workspaceLayout.ts';
 import { useInspectorSelectionState } from './hooks/useInspectorSelectionState.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
+import { useMotionGenesisRun } from './hooks/useMotionGenesisRun.ts';
 import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
 import { useSceneSelectionEditor } from './hooks/useSceneSelectionEditor.ts';
 import { useSceneSpanEditor } from './hooks/useSceneSpanEditor.ts';
@@ -58,6 +59,7 @@ function WorkspaceApp() {
     handleLoad,
     handleWorkspaceChange,
     handleLoadWorkspacePath,
+    handleRefreshSimulationData,
     handleRevertDraft,
     handleRedo,
     handleSaveSceneAs,
@@ -129,6 +131,10 @@ function WorkspaceApp() {
 
   const playbackSpeed = activeScene?.speedFactor ?? loaded?.scene.speedFactor ?? 1;
   const playback = usePlaybackController(loaded ? timeline : null, playbackSpeed, loaded?.scenePath ?? null);
+  const handleMotionGenesisSuccess = useCallback(async () => {
+      await handleRefreshSimulationData('Reloaded simulation data after Motion Genesis finished.');
+    }, [handleRefreshSimulationData]);
+  const motionGenesisRun = useMotionGenesisRun(handleMotionGenesisSuccess);
 
   const currentFrame = useMemo(() => {
     if (!loaded) {
@@ -572,6 +578,26 @@ function WorkspaceApp() {
                       liveSelectedSpanVisual={liveSelectedSpanVisual}
                       liveSelectedVisual={activeLiveSelectedVisual}
                       loaded={loaded}
+                      motionGenesisError={motionGenesisRun.error}
+                      motionGenesisInput={motionGenesisRun.input}
+                      motionGenesisRun={motionGenesisRun.run}
+                      motionGenesisSendingInput={motionGenesisRun.sendingInput}
+                      motionGenesisOptions={motionGenesisRun.options}
+                      motionGenesisStarting={motionGenesisRun.starting}
+                      onMotionGenesisInputChange={motionGenesisRun.setInput}
+                      onMotionGenesisOptionsChange={motionGenesisRun.setOptions}
+                      onRunMotionGenesis={() => {
+                        if (!loaded || loaded.sceneRef.source !== 'workspace' || !activeScene?.simulationSettings) {
+                          motionGenesisRun.setError(
+                            'Load a workspace scene with simulationSettings before running Motion Genesis.'
+                          );
+                          return;
+                        }
+                        void motionGenesisRun.beginRun(loaded.sceneRef.path, activeScene.simulationSettings);
+                      }}
+                      onSendMotionGenesisInput={() => {
+                        void motionGenesisRun.submitInput();
+                      }}
                       savePreview={savePreview}
                       selectedObject={activeSelectedObject}
                       selectedObjectName={activeSelectedObject?.name ?? null}

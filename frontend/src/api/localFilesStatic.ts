@@ -1,7 +1,11 @@
 import { resolveApiFilePath, type SceneRef } from '../core/sceneRef.ts';
 import type { SceneConfig } from '../core/types.ts';
 import { resolvePublicAssetUrl } from './assetPaths.ts';
-import type { FileBrowserListing, StaticFileManifest } from './localFilesTypes.ts';
+import type {
+  FileBrowserListing,
+  MotionGenesisRunState,
+  StaticFileManifest,
+} from './localFilesTypes.ts';
 
 let manifestPromise: Promise<StaticFileManifest> | null = null;
 
@@ -82,4 +86,23 @@ export async function saveSceneJson(sceneRef: SceneRef, scene: SceneConfig): Pro
 
 export async function createSceneJson(sceneRef: SceneRef, scene: SceneConfig): Promise<void> {
   downloadJson(resolveApiFilePath(sceneRef), scene);
+}
+
+export async function startMotionGenesisRun(
+  scenePath: string,
+  simulationSettings: string,
+  options?: unknown
+): Promise<MotionGenesisRunState> {
+  throw new Error(`Motion Genesis runs are unavailable in static mode: ${scenePath} (${simulationSettings})`);
+}
+
+export async function getMotionGenesisRun(runId: string): Promise<MotionGenesisRunState> {
+  throw new Error(`Motion Genesis runs are unavailable in static mode: ${runId}`);
+}
+
+export async function sendMotionGenesisInput(
+  runId: string,
+  input: string
+): Promise<MotionGenesisRunState> {
+  throw new Error(`Motion Genesis runs are unavailable in static mode: ${runId} (${input})`);
 }
