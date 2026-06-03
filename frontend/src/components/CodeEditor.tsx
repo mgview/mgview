@@ -1,7 +1,13 @@
-import Editor, { type OnMount } from '@monaco-editor/react';
+import Editor, { type BeforeMount, type OnMount } from '@monaco-editor/react';
 import { initVimMode } from 'monaco-vim';
 import { useEffect, useRef, useState } from 'react';
+import type { Monaco } from '@monaco-editor/react';
 import type { editor as MonacoEditor } from 'monaco-editor';
+import {
+  getMotionGenesisEditorTheme,
+  motionGenesisLanguageId,
+  registerMotionGenesisMonaco,
+} from '../core/mgLanguage/registerMotionGenesisMonaco.ts';
 import { cn } from '../lib/utils.ts';
 import { useTheme } from './ThemeProvider.tsx';
 
@@ -24,22 +30,36 @@ export default function CodeEditor({
 }: CodeEditorProps) {
   const { theme } = useTheme();
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<Monaco | null>(null);
   const onRunRef = useRef(onRun);
   const vimStatusRef = useRef<HTMLDivElement | null>(null);
   const vimModeRef = useRef<{ dispose: () => void } | null>(null);
   const [editorReady, setEditorReady] = useState(false);
+  const appTheme = theme === 'dark' ? 'dark' : 'light';
+  const editorTheme = getMotionGenesisEditorTheme(appTheme);
 
   useEffect(() => {
     onRunRef.current = onRun;
   }, [onRun]);
 
+  const handleBeforeMount: BeforeMount = (monaco) => {
+    registerMotionGenesisMonaco(monaco);
+    monacoRef.current = monaco;
+  };
+
   const handleMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
+    monacoRef.current = monaco;
+    monaco.editor.setTheme(editorTheme);
     setEditorReady(true);
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       void onRunRef.current?.();
     });
   };
+
+  useEffect(() => {
+    monacoRef.current?.editor.setTheme(editorTheme);
+  }, [editorTheme]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -72,10 +92,11 @@ export default function CodeEditor({
     <div className={cn('relative flex min-h-0 flex-col overflow-hidden rounded-md border border-border', className)}>
       <Editor
         height="100%"
-        language="plaintext"
-        theme={theme === 'dark' ? 'vs-dark' : 'light'}
+        language={motionGenesisLanguageId}
+        theme={editorTheme}
         value={value}
         onChange={(nextValue) => onChange(nextValue ?? '')}
+        beforeMount={handleBeforeMount}
         onMount={handleMount}
         options={{
           automaticLayout: true,

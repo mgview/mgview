@@ -7,6 +7,7 @@ const path = require('path');
 
 const MGVIEW_ROOT = path.resolve(__dirname, '..');
 const { createMotionGenesisRunManager } = require('./motionGenesisRunner.js');
+const { resolveMotionGenesisHelpPath } = require('./mgToolbox.js');
 const { applyStartupWorkspace, formatServerUsage, parseServerArgs } = require('./serverCli.js');
 const MODERN_DIST_DIR = path.resolve(__dirname, '../frontend/dist');
 const VITE_BUNDLED_DIR = 'bundled'; // sync with frontend/scripts/deployConfig.mjs → viteBundledAssetsDir
@@ -278,10 +279,52 @@ StaticServlet.prototype.handleApiRequest_ = function(req, res, pathname) {
   if (pathname.indexOf(API_PREFIX + '/mg-run/') === 0) {
     return this.handleMotionGenesisRunInstanceApi_(req, res, pathname);
   }
+  if (pathname === API_PREFIX + '/mg-help' && req.method === 'GET') {
+    return this.handleGetMgHelpApi_(req, res);
+  }
 
   this.sendJson_(res, 404, {
     error: 'Not found',
   });
+};
+
+StaticServlet.prototype.handleGetMgHelpApi_ = function(req, res) {
+  const helpPath = resolveMotionGenesisHelpPath(
+    this.appRoot,
+    this.workspaceRoot,
+    process.env,
+    process.platform
+  );
+  const bundledHelpPath = path.join(this.appRoot, 'frontend', 'public', 'mg-help', 'MotionGenesisHelp.html');
+
+  return fs.promises
+    .access(helpPath)
+    .then(() => helpPath)
+    .catch(() =>
+      fs.promises
+        .access(bundledHelpPath)
+        .then(() => bundledHelpPath)
+        .catch(() => null)
+    )
+    .then((resolvedPath) => {
+      if (!resolvedPath) {
+        return this.sendJson_(res, 404, {
+          error: 'Motion Genesis help file not found. Install Motion Genesis or run npm run build:mg-help.',
+        });
+      }
+
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+      });
+      const stream = fs.createReadStream(resolvedPath);
+      stream.on('error', () => {
+        if (!res.headersSent) {
+          this.sendJson_(res, 500, { error: 'Could not read Motion Genesis help file.' });
+        }
+      });
+      stream.pipe(res);
+    });
 };
 
 StaticServlet.prototype.handleMotionGenesisRunInstanceApi_ = function(req, res, pathname) {
