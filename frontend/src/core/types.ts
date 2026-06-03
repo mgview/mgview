@@ -98,6 +98,8 @@ export interface SceneLayoutConfig {
   showPlots?: boolean;
   showEditorRail?: boolean;
   focusTarget?: 'renderer' | 'plots' | null;
+  visualSplit?: number;
+  workspaceSplit?: number;
 }
 
 export interface PlotPanelConfig {
