@@ -104,6 +104,17 @@ export async function saveSceneJson(sceneRef: SceneRef, scene: SceneConfig): Pro
   await expectOk(response, `Could not save scene file: ${sceneRef.path}`);
 }
 
+export async function saveTextFile(filePath: string, contents: string, root: ApiRoot = 'workspace'): Promise<void> {
+  const response = await apiFetch(getApiUrl('file', { root, path: filePath }), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+    },
+    body: contents,
+  });
+  await expectOk(response, `Could not save file: ${filePath}`);
+}
+
 export async function createSceneJson(sceneRef: SceneRef, scene: SceneConfig): Promise<void> {
   const response = await apiFetch(getApiUrl('file', { root: getApiRoot(sceneRef), path: sceneRef.path }), {
     method: 'POST',

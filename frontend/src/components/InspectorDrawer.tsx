@@ -52,7 +52,7 @@ interface InspectorDrawerProps {
   onMotionGenesisInputChange: (value: string) => void;
   onMotionGenesisOptionsChange: (options: MotionGenesisRunOptions) => void;
   onSimulationSettingsChange: (value: string) => void;
-  onRunMotionGenesis: () => void;
+  onRunMotionGenesis: () => void | Promise<void>;
   onStopMotionGenesis: () => void;
   onSendMotionGenesisInput: () => void;
   renameSpan: (currentName: string, nextName: string) => boolean;
@@ -82,6 +82,12 @@ interface InspectorDrawerProps {
   motionGenesisStopping: boolean;
   motionGenesisSendingInput: boolean;
   motionGenesisOptions: MotionGenesisRunOptions;
+  onSimFileChange: (value: string) => void;
+  simFileContent: string;
+  simFileDirty: boolean;
+  simFileError: string | null;
+  simFileLoading: boolean;
+  simFileReadOnly: boolean;
 }
 
 export default function InspectorDrawer({
@@ -134,6 +140,12 @@ export default function InspectorDrawer({
   updateSelectedVisual,
   updateSelectedVisualPreview,
   motionGenesisOptions,
+  onSimFileChange,
+  simFileContent,
+  simFileDirty,
+  simFileError,
+  simFileLoading,
+  simFileReadOnly,
 }: InspectorDrawerProps) {
   if (!loaded) {
     return (
@@ -179,9 +191,15 @@ export default function InspectorDrawer({
         onOptionsChange={onMotionGenesisOptionsChange}
         onSimulationSettingsChange={onSimulationSettingsChange}
         onRun={onRunMotionGenesis}
+        onSimFileChange={onSimFileChange}
         onStop={onStopMotionGenesis}
         onSendInput={onSendMotionGenesisInput}
         run={motionGenesisRun}
+        simFileContent={simFileContent}
+        simFileDirty={simFileDirty}
+        simFileError={simFileError}
+        simFileLoading={simFileLoading}
+        simFileReadOnly={simFileReadOnly}
         simulationSettings={activeScene?.simulationSettings}
         starting={motionGenesisStarting}
         stopping={motionGenesisStopping}

@@ -2,6 +2,30 @@ export function normalizePathSeparators(path: string): string {
   return path.replace(/\\/g, '/');
 }
 
+export function normalizeWorkspaceRelativePath(path: string): string | null {
+  const segments = normalizePathSeparators(path)
+    .replace(/^\/+/, '')
+    .split('/')
+    .filter((segment) => segment.length > 0);
+  const stack: string[] = [];
+
+  for (const segment of segments) {
+    if (segment === '.') {
+      continue;
+    }
+    if (segment === '..') {
+      if (stack.length === 0) {
+        return null;
+      }
+      stack.pop();
+      continue;
+    }
+    stack.push(segment);
+  }
+
+  return stack.join('/') || '.';
+}
+
 export function getBasePath(path: string): string {
   const normalized = normalizePathSeparators(path);
   const slashIndex = normalized.lastIndexOf('/');

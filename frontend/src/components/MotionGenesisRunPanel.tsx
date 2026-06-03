@@ -3,13 +3,20 @@ import {
   ArrowUpToLine,
   CheckCircle2,
   CircleDotDashed,
+  FileText,
   Settings2,
   SquareTerminal,
   TriangleAlert,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { listLocalFiles, type FileBrowserListing, type MotionGenesisRunOptions, type MotionGenesisRunState } from '../api/localFiles.ts';
+import CodeEditor from './CodeEditor.tsx';
 import { getBasePath, getRelativePath } from '../core/pathUtils.ts';
+import {
+  getSceneDirectoryPath,
+  isMotionGenesisInputPath,
+  resolveSimulationFilePath,
+} from '../core/simulationFilePath.ts';
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import { cn } from '../lib/utils.ts';
 import { Badge } from './ui/badge.tsx';
@@ -29,10 +36,16 @@ interface MotionGenesisRunPanelProps {
   onInputChange: (value: string) => void;
   onOptionsChange: (nextOptions: MotionGenesisRunOptions) => void;
   onSimulationSettingsChange: (value: string) => void;
-  onRun: () => void;
+  onRun: () => void | Promise<void>;
+  onSimFileChange: (value: string) => void;
   onStop: () => void;
   onSendInput: () => void;
   run: MotionGenesisRunState | null;
+  simFileContent: string;
+  simFileDirty: boolean;
+  simFileError: string | null;
+  simFileLoading: boolean;
+  simFileReadOnly: boolean;
   simulationSettings: string | null | undefined;
   starting: boolean;
   stopping: boolean;
@@ -87,26 +100,14 @@ function StatusIcon({ run }: { run: MotionGenesisRunState | null }) {
   return <CircleDotDashed className="h-3.5 w-3.5 animate-spin" />;
 }
 
-function getSceneDirectoryPath(scenePath: string | null): string {
-  if (!scenePath) {
-    return '.';
+const VIM_MODE_STORAGE_KEY = 'mgview-sim-editor-vim-mode';
+
+function readStoredVimMode(): boolean {
+  try {
+    return window.localStorage.getItem(VIM_MODE_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
   }
-
-  const basePath = getBasePath(scenePath).replace(/\/$/, '');
-  return basePath.length > 0 ? basePath : '.';
-}
-
-function resolveSelectedPath(sceneDirectoryPath: string, simulationSettings: string | null | undefined): string | null {
-  const trimmedSettings = simulationSettings?.trim();
-  if (!trimmedSettings) {
-    return null;
-  }
-
-  return sceneDirectoryPath === '.' ? trimmedSettings : `${sceneDirectoryPath}/${trimmedSettings}`;
-}
-
-function isMotionGenesisInputPath(filePath: string): boolean {
-  return /\.(al|txt|in)$/i.test(filePath);
 }
 
 export default function MotionGenesisRunPanel({
@@ -119,21 +120,29 @@ export default function MotionGenesisRunPanel({
   onOptionsChange,
   onSimulationSettingsChange,
   onRun,
+  onSimFileChange,
   onStop,
   onSendInput,
   run,
+  simFileContent,
+  simFileDirty,
+  simFileError,
+  simFileLoading,
+  simFileReadOnly,
   simulationSettings,
   starting,
   stopping,
   sendingInput,
 }: MotionGenesisRunPanelProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [activeFlyout, setActiveFlyout] = useState<'configure' | 'status' | null>(null);
+  const [vimMode, setVimMode] = useState(readStoredVimMode);
+  const [activeFlyout, setActiveFlyout] = useState<'configure' | 'edit' | 'status' | null>(null);
   const [browserListing, setBrowserListing] = useState<FileBrowserListing | null>(null);
   const [browserError, setBrowserError] = useState<string | null>(null);
   const [browserLoading, setBrowserLoading] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const flyoutRef = useRef<HTMLDivElement | null>(null);
+  const editFlyoutRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const outputRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -145,6 +154,10 @@ export default function MotionGenesisRunPanel({
       : null;
   const output = run?.output ?? '';
   const sceneDirectoryPath = useMemo(() => getSceneDirectoryPath(loadedScenePath), [loadedScenePath]);
+  const simulationFilePath = useMemo(
+    () => resolveSimulationFilePath(loadedScenePath, simulationSettings),
+    [loadedScenePath, simulationSettings]
+  );
   const statusLabel = useMemo(() => getStatusLabel(run), [run]);
   const statusVariant = useMemo(() => getStatusVariant(run), [run]);
   const selectedRelativePath = useMemo(() => {
@@ -188,9 +201,9 @@ export default function MotionGenesisRunPanel({
       return;
     }
 
-    setSelectedPath(resolveSelectedPath(sceneDirectoryPath, simulationSettings));
+    setSelectedPath(simulationFilePath);
     void browse(sceneDirectoryPath);
-  }, [pickerOpen, sceneDirectoryPath, simulationSettings]);
+  }, [pickerOpen, sceneDirectoryPath, simulationFilePath, simulationSettings]);
 
   useEffect(() => {
     if (!activeFlyout) {
@@ -206,7 +219,11 @@ export default function MotionGenesisRunPanel({
       if (!(target instanceof Node)) {
         return;
       }
-      if (headerRef.current?.contains(target) || flyoutRef.current?.contains(target)) {
+      if (
+        headerRef.current?.contains(target) ||
+        flyoutRef.current?.contains(target) ||
+        editFlyoutRef.current?.contains(target)
+      ) {
         return;
       }
       setActiveFlyout(null);
@@ -228,6 +245,75 @@ export default function MotionGenesisRunPanel({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [activeFlyout, pickerOpen]);
+
+  const toggleFlyout = (flyout: 'configure' | 'edit' | 'status') => {
+    setActiveFlyout((current) => (current === flyout ? null : flyout));
+  };
+
+  const handleRunShortcut = useCallback(async () => {
+    if (!canRun || starting || runActive) {
+      return;
+    }
+    await onRun();
+  }, [canRun, onRun, runActive, starting]);
+
+  const renderSimulationEditor = () => (
+    <div
+      ref={editFlyoutRef}
+      className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-1.5 rounded-md border border-border bg-popover p-2 text-popover-foreground shadow-sm"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0 text-xs text-muted-foreground">
+          {simulationFilePath ? (
+            <>
+            <span className="inline-flex flex-wrap items-baseline gap-1.5">
+              <span>Editing</span>
+              <code className="text-foreground">{simulationFilePath}</code>
+              {simFileDirty ? <span className="text-warning">• unsaved</span> : null}
+            </span>
+            </>
+          ) : (
+            'Select a simulation file in Configure to edit it here.'
+          )}
+        </div>
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Checkbox
+            checked={vimMode}
+            disabled={simFileReadOnly || simFileLoading || !simulationFilePath}
+            onCheckedChange={(checked) => {
+              const nextValue = checked === true;
+              setVimMode(nextValue);
+              try {
+                window.localStorage.setItem(VIM_MODE_STORAGE_KEY, String(nextValue));
+              } catch {
+                // Ignore storage failures.
+              }
+            }}
+          />
+          <span className="text-foreground">Vim</span>
+        </label>
+      </div>
+      {simFileError ? <p className="text-xs text-destructive">{simFileError}</p> : null}
+      {simFileLoading ? (
+        <div className="flex min-h-0 items-center justify-center rounded-md border border-border bg-background text-xs text-muted-foreground">
+          Loading simulation file…
+        </div>
+      ) : simulationFilePath ? (
+        <CodeEditor
+          className="min-h-0"
+          onChange={onSimFileChange}
+          onRun={handleRunShortcut}
+          readOnly={simFileReadOnly}
+          value={simFileContent}
+          vimMode={vimMode}
+        />
+      ) : (
+        <div className="flex min-h-0 items-center justify-center rounded-md border border-dashed border-border bg-muted/10 px-4 text-center text-xs text-muted-foreground">
+          No simulation file selected for this scene.
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="relative grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-2">
@@ -254,11 +340,24 @@ export default function MotionGenesisRunPanel({
                 size="sm"
                 variant="outline"
                 className={cn(
+                  activeFlyout === 'edit' && 'border-primary/40 bg-accent text-accent-foreground shadow-sm'
+                )}
+                aria-expanded={activeFlyout === 'edit'}
+                onClick={() => toggleFlyout('edit')}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Edit
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className={cn(
                   activeFlyout === 'configure' &&
                     'border-primary/40 bg-accent text-accent-foreground shadow-sm'
                 )}
                 aria-expanded={activeFlyout === 'configure'}
-                onClick={() => setActiveFlyout(activeFlyout === 'configure' ? null : 'configure')}
+                onClick={() => toggleFlyout('configure')}
               >
                 <Settings2 className="h-3.5 w-3.5" />
                 Configure
@@ -271,7 +370,7 @@ export default function MotionGenesisRunPanel({
                   activeFlyout === 'status' && 'border-primary/40 bg-accent text-accent-foreground shadow-sm'
                 )}
                 aria-expanded={activeFlyout === 'status'}
-                onClick={() => setActiveFlyout(activeFlyout === 'status' ? null : 'status')}
+                onClick={() => toggleFlyout('status')}
               >
                 <SquareTerminal className="h-3.5 w-3.5" />
                 Status
@@ -296,7 +395,7 @@ export default function MotionGenesisRunPanel({
         ) : null}
         {error ? <p className="text-xs text-destructive">{error}</p> : null}
 
-        {activeFlyout ? (
+        {activeFlyout === 'configure' || activeFlyout === 'status' ? (
           <div
             ref={flyoutRef}
             className="absolute inset-x-0 top-full z-20 mt-2 rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-lg"
@@ -419,9 +518,12 @@ export default function MotionGenesisRunPanel({
         ) : null}
       </div>
 
-      <div className="relative h-full min-h-0">
-        <div className="pointer-events-none absolute right-2 top-2 z-10 flex flex-col gap-0.5">
-          <Button
+      {activeFlyout === 'edit' ? (
+        renderSimulationEditor()
+      ) : (
+        <div className="relative h-full min-h-0">
+          <div className="pointer-events-none absolute right-2 top-2 z-10 flex flex-col gap-0.5">
+            <Button
             type="button"
             size="icon"
             variant="outline"
@@ -459,10 +561,12 @@ export default function MotionGenesisRunPanel({
           spellCheck={false}
           value={output}
         />
-      </div>
+        </div>
+      )}
 
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5">
-        <Input
+      {activeFlyout !== 'edit' ? (
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5">
+          <Input
           type="text"
           value={input}
           onChange={(event) => onInputChange(event.target.value)}
@@ -484,7 +588,8 @@ export default function MotionGenesisRunPanel({
         >
           {sendingInput ? 'Sending…' : 'Send'}
         </Button>
-      </div>
+        </div>
+      ) : null}
 
       {pickerOpen ? (
         <OverlayPanel

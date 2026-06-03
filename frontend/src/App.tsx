@@ -27,6 +27,7 @@ import { DEFAULT_SCENE_LAYOUT } from './core/workspaceLayout.ts';
 import { useInspectorSelectionState } from './hooks/useInspectorSelectionState.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
 import { useMotionGenesisRun } from './hooks/useMotionGenesisRun.ts';
+import { useSimulationSettingsEditor } from './hooks/useSimulationSettingsEditor.ts';
 import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
 import { useSceneSelectionEditor } from './hooks/useSceneSelectionEditor.ts';
 import { useSceneSpanEditor } from './hooks/useSceneSpanEditor.ts';
@@ -157,20 +158,6 @@ function WorkspaceApp() {
       await handleRefreshSimulationData('Reloaded simulation data after Motion Genesis finished.');
     }, [handleRefreshSimulationData]);
   const motionGenesisRun = useMotionGenesisRun(handleMotionGenesisSuccess);
-  const runMotionGenesis = useCallback(() => {
-    if (!loaded || loaded.sceneRef.source !== 'workspace' || !activeScene?.simulationSettings) {
-      motionGenesisRun.setError('Load a workspace scene with simulationSettings before running Motion Genesis.');
-      return;
-    }
-    if (!isLikelyMotionGenesisInputPath(activeScene.simulationSettings)) {
-      motionGenesisRun.setError(
-        'Simulation File must point to a Motion Genesis input file with a .al, .txt, or .in extension.'
-      );
-      return;
-    }
-
-    void motionGenesisRun.beginRun(loaded.sceneRef.path, activeScene.simulationSettings);
-  }, [activeScene, loaded, motionGenesisRun]);
   const handleSimulationSettingsChange = useCallback(
     (value: string) => {
       updateDraftScene((scene) => {
@@ -185,6 +172,83 @@ function WorkspaceApp() {
     },
     [updateDraftScene]
   );
+  const simulationSettingsEditor = useSimulationSettingsEditor({
+    canEdit: loaded?.sceneRef.source === 'workspace',
+    scenePath: loaded?.sceneRef.source === 'workspace' ? loaded.sceneRef.path : null,
+    simulationSettings: activeScene?.simulationSettings,
+  });
+  const runMotionGenesis = useCallback(async () => {
+    if (!loaded || loaded.sceneRef.source !== 'workspace' || !activeScene?.simulationSettings) {
+      motionGenesisRun.setError('Load a workspace scene with simulationSettings before running Motion Genesis.');
+      return;
+    }
+    if (!isLikelyMotionGenesisInputPath(activeScene.simulationSettings)) {
+      motionGenesisRun.setError(
+        'Simulation File must point to a Motion Genesis input file with a .al, .txt, or .in extension.'
+      );
+      return;
+    }
+    if (simulationSettingsEditor.saving) {
+      return;
+    }
+
+    if (simulationSettingsEditor.hasSimEdits && simulationSettingsEditor.canSaveSimFile) {
+      const didSaveSim = await simulationSettingsEditor.saveSimFile();
+      if (!didSaveSim) {
+        return;
+      }
+    }
+
+    void motionGenesisRun.beginRun(loaded.sceneRef.path, activeScene.simulationSettings);
+  }, [
+    activeScene,
+    loaded,
+    motionGenesisRun,
+    simulationSettingsEditor.canSaveSimFile,
+    simulationSettingsEditor.hasSimEdits,
+    simulationSettingsEditor.saveSimFile,
+    simulationSettingsEditor.saving,
+  ]);
+  const hasUnsavedChanges = hasLocalEdits || simulationSettingsEditor.hasSimEdits;
+  const canSaveAnything =
+    (hasLocalEdits && canSaveScene) ||
+    (simulationSettingsEditor.hasSimEdits && simulationSettingsEditor.canSaveSimFile);
+  const handleSaveAll = useCallback(async () => {
+    if (simulationSettingsEditor.hasSimEdits && simulationSettingsEditor.canSaveSimFile) {
+      const didSaveSim = await simulationSettingsEditor.saveSimFile();
+      if (!didSaveSim) {
+        return;
+      }
+      showSuccess(`Saved simulation file ${simulationSettingsEditor.filePath ?? ''}`.trim());
+    }
+
+    if (hasLocalEdits && canSaveScene) {
+      await handleSaveScene();
+    }
+  }, [
+    canSaveScene,
+    handleSaveScene,
+    hasLocalEdits,
+    showSuccess,
+    simulationSettingsEditor.canSaveSimFile,
+    simulationSettingsEditor.filePath,
+    simulationSettingsEditor.hasSimEdits,
+    simulationSettingsEditor.saveSimFile,
+  ]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const currentFrame = useMemo(() => {
     if (!loaded) {
@@ -333,13 +397,14 @@ function WorkspaceApp() {
       if (hasModifier && event.key.toLowerCase() === 's') {
         event.preventDefault();
         if (
-          canSaveScene &&
+          canSaveAnything &&
           !shell.loadOverlayOpen &&
           !loading &&
           !saving &&
-          hasLocalEdits
+          !simulationSettingsEditor.saving &&
+          hasUnsavedChanges
         ) {
-          void handleSaveScene();
+          void handleSaveAll();
         }
         return;
       }
@@ -372,11 +437,11 @@ function WorkspaceApp() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [
+    canSaveAnything,
     handleRedo,
-    handleSaveScene,
+    handleSaveAll,
     handleUndo,
-    canSaveScene,
-    hasLocalEdits,
+    hasUnsavedChanges,
     loading,
     playback.togglePlay,
     saving,
@@ -385,6 +450,7 @@ function WorkspaceApp() {
     shell.loadOverlayOpen,
     shell.samplesOverlayOpen,
     shell.simulationOverlayOpen,
+    simulationSettingsEditor.saving,
   ]);
 
   const spanEntries = useMemo(
@@ -668,10 +734,10 @@ function WorkspaceApp() {
       <SceneHeaderBar
         scenePath={loaded?.scenePath ?? null}
         layout={sceneLayout}
-        hasLocalEdits={hasLocalEdits}
-        canSaveScene={canSaveScene}
+        hasLocalEdits={hasUnsavedChanges}
+        canSaveScene={canSaveAnything}
         loading={loading}
-        saving={saving}
+        saving={saving || simulationSettingsEditor.saving}
         canRedo={canRedoDraftScene}
         canUndo={canUndoDraftScene}
         diagnosticsWarningCount={diagnosticsWarningCount}
@@ -687,9 +753,20 @@ function WorkspaceApp() {
         onSetPerformanceOverlayOpen={shell.setPerformanceOverlayOpen}
         onOpenSaveAsOverlay={shell.openSaveAsOverlay}
         onRedo={handleRedo}
-        onSave={() => void handleSaveScene()}
+        onSave={() => void handleSaveAll()}
         onRevert={() => {
+          if (simulationSettingsEditor.hasSimEdits && !hasLocalEdits) {
+            if (!window.confirm('Discard unsaved simulation file edits?')) {
+              return;
+            }
+            simulationSettingsEditor.revertSimFile();
+            return;
+          }
+
           if (handleRevertDraft()) {
+            if (simulationSettingsEditor.hasSimEdits) {
+              simulationSettingsEditor.revertSimFile();
+            }
             selectionState.setEditorMode('visual');
           }
         }}
@@ -921,6 +998,12 @@ function WorkspaceApp() {
                           onSendMotionGenesisInput={() => {
                             void motionGenesisRun.submitInput();
                           }}
+                          onSimFileChange={simulationSettingsEditor.setDraftContent}
+                          simFileContent={simulationSettingsEditor.draftContent}
+                          simFileDirty={simulationSettingsEditor.hasSimEdits}
+                          simFileError={simulationSettingsEditor.error}
+                          simFileLoading={simulationSettingsEditor.loading}
+                          simFileReadOnly={!simulationSettingsEditor.canSaveSimFile}
                           savePreview={savePreview}
                           selectedObject={activeSelectedObject}
                           selectedObjectName={activeSelectedObject?.name ?? null}

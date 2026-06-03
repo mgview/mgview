@@ -628,8 +628,13 @@ StaticServlet.prototype.handlePutFileApi_ = function(req, res) {
     return this.sendJson_(res, 403, { error: 'Forbidden path.' });
   }
 
-  if (path.extname(filePath).toLowerCase() !== '.json') {
-    return this.sendJson_(res, 400, { error: 'Only JSON scene files can be saved through this API.' });
+  const extension = path.extname(filePath).toLowerCase();
+  const isJsonSceneFile = extension === '.json';
+  const isMotionGenesisInputFile = extension === '.al' || extension === '.txt' || extension === '.in';
+  if (!isJsonSceneFile && !isMotionGenesisInputFile) {
+    return this.sendJson_(res, 400, {
+      error: 'Only JSON scene files and Motion Genesis input files can be saved through this API.',
+    });
   }
 
   fs.stat(filePath, (statError, stat) => {
@@ -645,14 +650,22 @@ StaticServlet.prototype.handlePutFileApi_ = function(req, res) {
         return this.sendJson_(res, 500, { error: 'Could not read request body.' });
       }
 
-      let parsed;
-      try {
-        parsed = JSON.parse(body);
-      } catch (parseError) {
+      const serialized = isJsonSceneFile
+        ? (() => {
+            let parsed;
+            try {
+              parsed = JSON.parse(body);
+            } catch (parseError) {
+              return null;
+            }
+            return JSON.stringify(parsed, null, 2) + '\n';
+          })()
+        : body;
+
+      if (serialized === null) {
         return this.sendJson_(res, 400, { error: 'Invalid JSON body.' });
       }
 
-      const serialized = JSON.stringify(parsed, null, 2) + '\n';
       fs.writeFile(filePath, serialized, 'utf8', (writeError) => {
         if (writeError) {
           return this.sendJson_(res, 500, { error: 'Could not save file.' });
