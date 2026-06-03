@@ -57,6 +57,7 @@ function main(argv) {
     HEAD: createServlet(StaticServlet),
     POST: createServlet(StaticServlet),
     PUT: createServlet(StaticServlet),
+    DELETE: createServlet(StaticServlet),
   }).start(options.port);
 }
 
@@ -300,6 +301,17 @@ StaticServlet.prototype.handleMotionGenesisRunInstanceApi_ = function(req, res, 
       return this.sendJson_(res, 404, { error: 'Motion Genesis run not found.' });
     }
     return this.sendJson_(res, 200, run);
+  }
+
+  if (parts.length === 1 && req.method === 'DELETE') {
+    try {
+      const run = motionGenesisRuns.stopRun(runId);
+      return this.sendJson_(res, 200, run);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not stop Motion Genesis run.';
+      const status = message.indexOf('not found') !== -1 ? 404 : 400;
+      return this.sendJson_(res, status, { error: message });
+    }
   }
 
   if (parts.length === 2 && subresource === 'input' && req.method === 'POST') {

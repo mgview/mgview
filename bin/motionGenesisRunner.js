@@ -22,6 +22,17 @@ function trimOutput(output) {
   return output.slice(output.length - MAX_OUTPUT_LENGTH);
 }
 
+function normalizePtyOutput(text) {
+  // Collapse PTY newline artifacts only. MG uses intentional blank lines after -> output
+  // (lines ending with >), which also appear as ">\r\n\n" through the PTY.
+  return String(text || '')
+    .replace(/>\r\n\n/g, '>\n\n')
+    .replace(/\n\r\n/g, '\n')
+    .replace(/\r\n\n/g, '\n')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '');
+}
+
 function formatSystemLine(message) {
   return `[mgview ${new Date().toISOString()}] ${message}\n`;
 }
@@ -56,6 +67,10 @@ function normalizeRunOptions(options) {
     autoDefaultValues: source.autoDefaultValues === true,
     debug: source.debug === true,
   };
+}
+
+function isLikelyMotionGenesisInputPath(filePath) {
+  return /\.(al|txt|in)$/i.test(String(filePath || ''));
 }
 
 function buildAutoQuitInputFile(originalFilePath, runId) {
@@ -131,20 +146,24 @@ function resolveMotionGenesisCommand(sceneDirectory, workspaceRoot, environment,
 function createInitialRunState(
   id,
   scenePath,
+  sceneFilePath,
   simulationSettings,
   command,
   commandSource,
   workingDirectory,
+  workspaceRoot,
   options
 ) {
   return {
     id,
     scenePath,
+    sceneFilePath,
     simulationSettings,
     command,
     commandLine: '',
     commandSource,
     workingDirectory,
+    workspaceRoot,
     pid: null,
     status: 'running',
     output: '',
@@ -170,12 +189,14 @@ function createMotionGenesisRunManager(options) {
       return;
     }
 
-    run.output = trimOutput(run.output + text);
+    const nextOutput = run.output + text;
+    run.output = trimOutput(run.pty ? normalizePtyOutput(nextOutput) : nextOutput);
     if (run.status === 'success' || run.status === 'failed') {
       return;
     }
 
-    const chunk = options && options.rawChunk ? options.rawChunk : text;
+    const rawChunk = options && options.rawChunk ? options.rawChunk : text;
+    const chunk = run.pty ? normalizePtyOutput(rawChunk) : rawChunk;
     if (run.inputOpen && /[^\r\n]$/.test(chunk)) {
       run.status = 'waiting-input';
       return;
@@ -196,7 +217,7 @@ function createMotionGenesisRunManager(options) {
     run.endedAt = new Date().toISOString();
     run.canSendInput = false;
     run.inputOpen = false;
-    run.status = exitCode === 0 ? 'success' : 'failed';
+    run.status = exitCode === 0 && run.stopRequested !== true ? 'success' : 'failed';
     appendSystemOutput(
       run,
       `process exited with code ${run.exitCode === null ? 'unknown' : String(run.exitCode)}`
@@ -207,11 +228,13 @@ function createMotionGenesisRunManager(options) {
     return {
       id: run.id,
       scenePath: run.scenePath,
+      sceneFilePath: run.sceneFilePath,
       simulationSettings: run.simulationSettings,
       command: run.command,
       commandLine: run.commandLine,
       commandSource: run.commandSource,
       workingDirectory: run.workingDirectory,
+      workspaceRoot: run.workspaceRoot,
       pid: run.pid,
       status: run.status,
       output: run.output,
@@ -250,19 +273,24 @@ function createMotionGenesisRunManager(options) {
       throw new Error(`Motion Genesis input file not found: ${simulationSettings}`);
     }
 
+    if (!isLikelyMotionGenesisInputPath(simulationSettings)) {
+      throw new Error('simulationSettings must point to a Motion Genesis input file with a .al, .txt, or .in extension.');
+    }
+
     for (const run of runs.values()) {
       if (run.scenePath === scenePath && (run.status === 'running' || run.status === 'waiting-input')) {
         throw new Error(`A Motion Genesis run is already active for ${scenePath}.`);
       }
     }
 
+    const simulationDirectory = path.dirname(settingsFilePath);
     const commandInfo = resolveMotionGenesisCommand(
-      sceneDirectory,
+      simulationDirectory,
       workspaceRoot,
       environment,
       platform
     );
-    let launchSimulationSettings = simulationSettings;
+    let launchSimulationSettings = path.basename(settingsFilePath);
     let tempInputFilePath = null;
     if (runOptions.autoQuit) {
       const tempInput = buildAutoQuitInputFile(settingsFilePath, id);
@@ -277,7 +305,7 @@ function createMotionGenesisRunManager(options) {
       environment
     );
     const child = spawnProcess(launchInfo.spawnCommand, launchInfo.spawnArgs, {
-      cwd: sceneDirectory,
+      cwd: simulationDirectory,
       env: environment,
       stdio: launchInfo.stdio,
     });
@@ -285,21 +313,24 @@ function createMotionGenesisRunManager(options) {
     const run = createInitialRunState(
       id,
       scenePath,
+      sceneFilePath,
       simulationSettings,
       commandInfo.command,
       commandInfo.source,
-      sceneDirectory,
+      simulationDirectory,
+      workspaceRoot,
       runOptions
     );
     run.child = child;
     run.pid = typeof child.pid === 'number' ? child.pid : null;
     run.commandLine = launchInfo.commandLine;
     run.tempInputFilePath = tempInputFilePath;
+    run.pty = launchInfo.pty === true;
     runs.set(id, run);
     appendSystemOutput(run, `spawned command ${JSON.stringify(launchInfo.spawnCommand)}`);
     appendSystemOutput(run, `full command line ${JSON.stringify(run.commandLine)}`);
-    appendSystemOutput(run, `working directory ${JSON.stringify(sceneDirectory)}`);
-    appendSystemOutput(run, `argument ${JSON.stringify(simulationSettings)}`);
+    appendSystemOutput(run, `working directory ${JSON.stringify(simulationDirectory)}`);
+    appendSystemOutput(run, `argument ${JSON.stringify(launchSimulationSettings)}`);
     appendSystemOutput(
       run,
       `pid ${run.pid === null ? 'unavailable' : String(run.pid)} via ${commandInfo.source}`
@@ -378,11 +409,35 @@ function createMotionGenesisRunManager(options) {
     return serializeRun(run);
   }
 
+  function stopRun(runId) {
+    const run = runs.get(String(runId || ''));
+    if (!run) {
+      throw new Error('Motion Genesis run not found.');
+    }
+    if (!run.child || run.status === 'success' || run.status === 'failed') {
+      return serializeRun(run);
+    }
+
+    run.stopRequested = true;
+    run.canSendInput = false;
+    run.inputOpen = false;
+    appendOutput(run, '\n[mgview] Stop requested by user.\n');
+
+    try {
+      run.child.kill('SIGTERM');
+    } catch (error) {
+      throw new Error('Could not stop Motion Genesis run.');
+    }
+
+    return serializeRun(run);
+  }
+
   return {
     getRun,
     resolveMotionGenesisCommand: (sceneDirectory, workspaceRoot) =>
       resolveMotionGenesisCommand(sceneDirectory, workspaceRoot, environment, platform),
     sendInput,
+    stopRun,
     startRun,
   };
 }
@@ -390,6 +445,7 @@ function createMotionGenesisRunManager(options) {
 module.exports = {
   MAX_OUTPUT_LENGTH,
   createMotionGenesisRunManager,
+  normalizePtyOutput,
   normalizeRunOptions,
   resolveMotionGenesisCommand,
 };

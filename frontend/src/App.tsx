@@ -38,6 +38,10 @@ import { useServerWorkspace } from './hooks/useServerWorkspace.ts';
 import WorkspacePickerOverlay from './components/WorkspacePickerOverlay.tsx';
 import { getCurrentAppRoute } from './core/appRoutes.ts';
 
+function isLikelyMotionGenesisInputPath(filePath: string): boolean {
+  return /\.(al|txt|in)$/i.test(filePath);
+}
+
 const MIN_RENDERER_PANEL_WIDTH = 320;
 const MIN_PLOTS_PANEL_WIDTH = 320;
 const MIN_EDITOR_RAIL_WIDTH = 510;
@@ -158,9 +162,29 @@ function WorkspaceApp() {
       motionGenesisRun.setError('Load a workspace scene with simulationSettings before running Motion Genesis.');
       return;
     }
+    if (!isLikelyMotionGenesisInputPath(activeScene.simulationSettings)) {
+      motionGenesisRun.setError(
+        'Simulation File must point to a Motion Genesis input file with a .al, .txt, or .in extension.'
+      );
+      return;
+    }
 
     void motionGenesisRun.beginRun(loaded.sceneRef.path, activeScene.simulationSettings);
   }, [activeScene, loaded, motionGenesisRun]);
+  const handleSimulationSettingsChange = useCallback(
+    (value: string) => {
+      updateDraftScene((scene) => {
+        const trimmedValue = value.trim();
+        if (trimmedValue.length > 0) {
+          scene.simulationSettings = trimmedValue;
+          return;
+        }
+
+        delete scene.simulationSettings;
+      });
+    },
+    [updateDraftScene]
+  );
 
   const currentFrame = useMemo(() => {
     if (!loaded) {
@@ -886,9 +910,14 @@ function WorkspaceApp() {
                           motionGenesisSendingInput={motionGenesisRun.sendingInput}
                           motionGenesisOptions={motionGenesisRun.options}
                           motionGenesisStarting={motionGenesisRun.starting}
+                          motionGenesisStopping={motionGenesisRun.stopping}
                           onMotionGenesisInputChange={motionGenesisRun.setInput}
                           onMotionGenesisOptionsChange={motionGenesisRun.setOptions}
+                          onSimulationSettingsChange={handleSimulationSettingsChange}
                           onRunMotionGenesis={runMotionGenesis}
+                          onStopMotionGenesis={() => {
+                            void motionGenesisRun.stopRun();
+                          }}
                           onSendMotionGenesisInput={() => {
                             void motionGenesisRun.submitInput();
                           }}

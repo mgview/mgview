@@ -139,6 +139,11 @@ export function createSavableScene(
     : undefined;
   nextScene.speedFactor = draftScene.speedFactor;
   nextScene.plots = structuredClone(draftScene.plots);
+  if (typeof draftScene.simulationSettings === 'string' && draftScene.simulationSettings.trim().length > 0) {
+    nextScene.simulationSettings = draftScene.simulationSettings.trim();
+  } else {
+    delete nextScene.simulationSettings;
+  }
 
   nextScene.objects = {};
   for (const [objectName, draftObject] of Object.entries(draftScene.objects)) {

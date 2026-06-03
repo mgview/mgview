@@ -25,6 +25,7 @@ export const createSceneJson = impl.createSceneJson;
 export const startMotionGenesisRun = impl.startMotionGenesisRun;
 export const getMotionGenesisRun = impl.getMotionGenesisRun;
 export const sendMotionGenesisInput = impl.sendMotionGenesisInput;
+export const stopMotionGenesisRun = impl.stopMotionGenesisRun;
 export const createWorkspaceDirectory = isStaticHosting
   ? () => {
       throw new Error('Workspace folders can only be created with the local MGView server.');

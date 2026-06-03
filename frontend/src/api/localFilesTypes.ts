@@ -30,11 +30,13 @@ export interface MotionGenesisRunOptions {
 export interface MotionGenesisRunState {
   id: string;
   scenePath: string;
+  sceneFilePath: string;
   simulationSettings: string;
   command: string;
   commandLine: string;
   commandSource: string;
   workingDirectory: string;
+  workspaceRoot: string;
   pid: number | null;
   status: MotionGenesisRunStatus;
   output: string;

@@ -51,7 +51,9 @@ interface InspectorDrawerProps {
   motionGenesisRun: import('../api/localFiles.ts').MotionGenesisRunState | null;
   onMotionGenesisInputChange: (value: string) => void;
   onMotionGenesisOptionsChange: (options: MotionGenesisRunOptions) => void;
+  onSimulationSettingsChange: (value: string) => void;
   onRunMotionGenesis: () => void;
+  onStopMotionGenesis: () => void;
   onSendMotionGenesisInput: () => void;
   renameSpan: (currentName: string, nextName: string) => boolean;
   renameSpanVisual: (currentName: string, nextName: string) => boolean;
@@ -77,6 +79,7 @@ interface InspectorDrawerProps {
   updateSelectedVisual: (updater: (visual: SceneVisual) => void) => void;
   updateSelectedVisualPreview: (updater: (visual: SceneVisual) => void) => void;
   motionGenesisStarting: boolean;
+  motionGenesisStopping: boolean;
   motionGenesisSendingInput: boolean;
   motionGenesisOptions: MotionGenesisRunOptions;
 }
@@ -110,9 +113,12 @@ export default function InspectorDrawer({
   motionGenesisRun,
   motionGenesisSendingInput,
   motionGenesisStarting,
+  motionGenesisStopping,
   onMotionGenesisInputChange,
   onMotionGenesisOptionsChange,
+  onSimulationSettingsChange,
   onRunMotionGenesis,
+  onStopMotionGenesis,
   onSendMotionGenesisInput,
   renameSpan,
   renameSpanVisual,
@@ -171,11 +177,14 @@ export default function InspectorDrawer({
         options={motionGenesisOptions}
         onInputChange={onMotionGenesisInputChange}
         onOptionsChange={onMotionGenesisOptionsChange}
+        onSimulationSettingsChange={onSimulationSettingsChange}
         onRun={onRunMotionGenesis}
+        onStop={onStopMotionGenesis}
         onSendInput={onSendMotionGenesisInput}
         run={motionGenesisRun}
         simulationSettings={activeScene?.simulationSettings}
         starting={motionGenesisStarting}
+        stopping={motionGenesisStopping}
         sendingInput={motionGenesisSendingInput}
       />
     );

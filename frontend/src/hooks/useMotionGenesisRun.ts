@@ -4,6 +4,7 @@ import {
   getMotionGenesisRun,
   sendMotionGenesisInput,
   startMotionGenesisRun,
+  stopMotionGenesisRun,
 } from '../api/localFiles.ts';
 
 const DEFAULT_RUN_OPTIONS: MotionGenesisRunOptions = {
@@ -27,6 +28,7 @@ export function useMotionGenesisRun(onRunSucceeded?: () => Promise<void> | void)
   const [options, setOptions] = useState<MotionGenesisRunOptions>(DEFAULT_RUN_OPTIONS);
   const [starting, setStarting] = useState(false);
   const [sendingInput, setSendingInput] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const successHandledRef = useRef<string | null>(null);
   const lastAutoSubmittedPromptRef = useRef<string | null>(null);
 
@@ -122,6 +124,26 @@ export function useMotionGenesisRun(onRunSucceeded?: () => Promise<void> | void)
     }
   };
 
+  const stopRun = async () => {
+    if (!run) {
+      return false;
+    }
+
+    setStopping(true);
+    setError(null);
+
+    try {
+      const nextRun = await stopMotionGenesisRun(run.id);
+      setRun(nextRun);
+      return true;
+    } catch (stopError) {
+      setError(stopError instanceof Error ? stopError.message : 'Could not stop Motion Genesis.');
+      return false;
+    } finally {
+      setStopping(false);
+    }
+  };
+
   return {
     beginRun,
     error,
@@ -133,6 +155,8 @@ export function useMotionGenesisRun(onRunSucceeded?: () => Promise<void> | void)
     setInput,
     setOptions,
     starting,
+    stopRun,
+    stopping,
     submitInput,
   };
 }

@@ -7,6 +7,7 @@ const path = require('path');
 const {
   MAX_OUTPUT_LENGTH,
   createMotionGenesisRunManager,
+  normalizePtyOutput,
   normalizeRunOptions,
   resolveMotionGenesisCommand,
 } = require('./motionGenesisRunner.js');
@@ -46,6 +47,116 @@ test('resolveMotionGenesisCommand falls back to scene parent when no workspace r
   assert.equal(result.source, 'scene-parent');
 });
 
+test('normalizePtyOutput collapses PTY newline translation to Unix newlines', () => {
+  const ptyLike = '(1) NewtonianFrame N\n\r\n(2) RigidBody A,B\n\r\n';
+  const normalized = normalizePtyOutput(ptyLike);
+  assert.equal(normalized, '(1) NewtonianFrame N\n(2) RigidBody A,B\n');
+  assert.doesNotMatch(normalized, /\n\n/);
+  assert.equal(normalizePtyOutput('line\r\n'), 'line\n');
+  assert.equal(normalizePtyOutput('(1) N\r\n\n(2) B\r\n\n'), '(1) N\n(2) B\n');
+  assert.equal(normalizePtyOutput('-> (15) alf\n\n   (16) B.rotate\n'), '-> (15) alf\n\n   (16) B.rotate\n');
+  assert.equal(
+    normalizePtyOutput("-> (15) alf_A_N> = qA''*Ax>\r\n\n   (16) B.rotate\r\n"),
+    "-> (15) alf_A_N> = qA''*Ax>\n\n   (16) B.rotate\n"
+  );
+  assert.equal(normalizePtyOutput('-> (13) ...]\r\n-> (14) w>\r\n-> (15) alf>\r\n\n   (16)'), '-> (13) ...]\n-> (14) w>\n-> (15) alf>\n\n   (16)');
+});
+
+test('runner normalizes PTY output split across stdout chunks', () => {
+  const workspaceRoot = makeTempWorkspace();
+  const scenePath = 'project/demo.json';
+  const sceneFilePath = path.join(workspaceRoot, scenePath);
+  const simulationSettings = 'demo.txt';
+  const settingsFilePath = path.join(workspaceRoot, 'project', simulationSettings);
+
+  writeFile(sceneFilePath, '{}\n');
+  writeFile(settingsFilePath, 'INPUT\n');
+
+  let stdoutHandler = null;
+  const manager = createMotionGenesisRunManager({
+    environment: {
+      ...process.env,
+      MGVIEW_MOTION_GENESIS_BIN: '/Applications/MotionGenesis/MotionGenesis',
+    },
+    platform: 'darwin',
+    spawnProcess() {
+      return {
+        pid: 1234,
+        stdout: {
+          on(event, handler) {
+            if (event === 'data') {
+              stdoutHandler = handler;
+            }
+          },
+        },
+        stderr: { on() {} },
+        stdin: { on() {}, write() {} },
+        on() {},
+      };
+    },
+  });
+
+  const started = manager.startRun({
+    scenePath,
+    sceneFilePath,
+    simulationSettings,
+    options: { autoQuit: false, autoDefaultValues: false, debug: false },
+    workspaceRoot,
+  });
+
+  stdoutHandler(Buffer.from('(1) line one\r'));
+  stdoutHandler(Buffer.from('\n(2) line two\r\n\n'));
+  const current = manager.getRun(started.id);
+  assert.equal(current.output, '(1) line one\n(2) line two\n');
+});
+
+test('runner normalizes PTY output chunks on macOS', async () => {
+  const workspaceRoot = makeTempWorkspace();
+  const scenePath = 'project/demo.json';
+  const sceneFilePath = path.join(workspaceRoot, scenePath);
+  const simulationSettings = 'demo.txt';
+  const settingsFilePath = path.join(workspaceRoot, 'project', simulationSettings);
+
+  writeFile(sceneFilePath, '{}\n');
+  writeFile(settingsFilePath, 'INPUT\n');
+
+  let stdoutHandler = null;
+  const manager = createMotionGenesisRunManager({
+    environment: {
+      ...process.env,
+      MGVIEW_MOTION_GENESIS_BIN: '/Applications/MotionGenesis/MotionGenesis',
+    },
+    platform: 'darwin',
+    spawnProcess(command, args, options) {
+      return {
+        pid: 1234,
+        stdout: {
+          on(event, handler) {
+            if (event === 'data') {
+              stdoutHandler = handler;
+            }
+          },
+        },
+        stderr: { on() {} },
+        stdin: { on() {}, write() {} },
+        on() {},
+      };
+    },
+  });
+
+  const started = manager.startRun({
+    scenePath,
+    sceneFilePath,
+    simulationSettings,
+    options: { autoQuit: false, autoDefaultValues: false, debug: false },
+    workspaceRoot,
+  });
+
+  stdoutHandler(Buffer.from('(1) line one\n\r\n(2) line two\r\n'));
+  const current = manager.getRun(started.id);
+  assert.equal(current.output, '(1) line one\n(2) line two\n');
+});
+
 test('normalizeRunOptions applies MVP defaults', () => {
   assert.deepEqual(normalizeRunOptions(), {
     autoQuit: true,
@@ -63,7 +174,7 @@ test('runner starts, streams output, accepts stdin, and completes successfully',
   const workspaceRoot = makeTempWorkspace();
   const scenePath = 'project/demo.json';
   const sceneFilePath = path.join(workspaceRoot, scenePath);
-  const simulationSettings = 'demo-script.js';
+  const simulationSettings = 'demo-script.txt';
   const settingsFilePath = path.join(workspaceRoot, 'project', simulationSettings);
 
   writeFile(sceneFilePath, '{}\n');
@@ -100,8 +211,10 @@ test('runner starts, streams output, accepts stdin, and completes successfully',
   });
   assert.equal(started.status, 'running');
   assert.equal(started.workingDirectory, path.join(workspaceRoot, 'project'));
+  assert.equal(started.workspaceRoot, workspaceRoot);
   assert.equal(started.commandSource, 'env');
-  assert.equal(started.commandLine, `${process.execPath} demo-script.js`);
+  assert.equal(started.commandLine, `${process.execPath} demo-script.txt`);
+  assert.equal(started.sceneFilePath, sceneFilePath);
   assert.equal(typeof started.output, 'string');
   assert.equal(started.output, '');
   assert.deepEqual(started.options, {
@@ -141,11 +254,47 @@ test('runner starts, streams output, accepts stdin, and completes successfully',
   assert.doesNotMatch(current.output, /process exited with code 0/);
 });
 
+test('runner rejects scene json files as simulationSettings', () => {
+  const workspaceRoot = makeTempWorkspace();
+  const scenePath = 'project/demo.json';
+  const sceneFilePath = path.join(workspaceRoot, scenePath);
+  const simulationSettings = 'demo.json';
+  const settingsFilePath = path.join(workspaceRoot, 'project', simulationSettings);
+
+  writeFile(sceneFilePath, '{}\n');
+  writeFile(settingsFilePath, '{}\n');
+
+  const manager = createMotionGenesisRunManager({
+    environment: {
+      ...process.env,
+      MGVIEW_MOTION_GENESIS_BIN: process.execPath,
+    },
+    platform: 'linux',
+  });
+
+  assert.throws(
+    () => {
+      manager.startRun({
+        scenePath,
+        sceneFilePath,
+        simulationSettings,
+        options: {
+          autoQuit: false,
+          autoDefaultValues: false,
+          debug: false,
+        },
+        workspaceRoot,
+      });
+    },
+    /simulationSettings must point to a Motion Genesis input file with a \.al, \.txt, or \.in extension\./
+  );
+});
+
 test('runner accepts blank stdin lines for default-value prompts', async () => {
   const workspaceRoot = makeTempWorkspace();
   const scenePath = 'project/demo.json';
   const sceneFilePath = path.join(workspaceRoot, scenePath);
-  const simulationSettings = 'blank-line.js';
+  const simulationSettings = 'blank-line.txt';
   const settingsFilePath = path.join(workspaceRoot, 'project', simulationSettings);
 
   writeFile(sceneFilePath, '{}\n');
@@ -207,6 +356,63 @@ test('runner accepts blank stdin lines for default-value prompts', async () => {
   assert.match(current.output, /"\\n"/);
 });
 
+test('runner preserves relative input directories when auto-quit is enabled on macOS', () => {
+  const workspaceRoot = makeTempWorkspace();
+  const scenePath = 'sims/babyboot/chaotic/babyboot.json';
+  const sceneFilePath = path.join(workspaceRoot, scenePath);
+  const simulationSettings = '../babyboot.txt';
+  const settingsFilePath = path.join(workspaceRoot, 'sims', 'babyboot', 'babyboot.txt');
+  const spawnCalls = [];
+
+  writeFile(sceneFilePath, '{}\n');
+  writeFile(settingsFilePath, 'INPUT\n');
+
+  const manager = createMotionGenesisRunManager({
+    environment: {
+      ...process.env,
+      MGVIEW_MOTION_GENESIS_BIN: '/Applications/MotionGenesis/MotionGenesis',
+    },
+    platform: 'darwin',
+    spawnProcess(command, args, options) {
+      spawnCalls.push({ command, args, options });
+      return {
+        pid: 1234,
+        stdout: { on() {} },
+        stderr: { on() {} },
+        stdin: { on() {}, write() {} },
+        on() {},
+      };
+    },
+  });
+
+  const started = manager.startRun({
+    scenePath,
+    sceneFilePath,
+    simulationSettings,
+    options: {
+      autoQuit: true,
+      autoDefaultValues: false,
+      debug: false,
+    },
+    workspaceRoot,
+  });
+
+  assert.equal(spawnCalls.length, 1);
+  assert.equal(spawnCalls[0].command, 'python3');
+  assert.equal(spawnCalls[0].options.cwd, path.dirname(settingsFilePath));
+  assert.equal(spawnCalls[0].args[0], path.resolve(__dirname, 'mg_pty_bridge.py'));
+  assert.equal(spawnCalls[0].args[1], '/Applications/MotionGenesis/MotionGenesis');
+  assert.match(
+    spawnCalls[0].args[2],
+    /^\.mgview-run-[0-9a-f-]+-babyboot\.txt$/
+  );
+  assert.match(
+    started.commandLine,
+    / \.mgview-run-[0-9a-f-]+-babyboot\.txt$/
+  );
+  assert.equal(started.workingDirectory, path.dirname(settingsFilePath));
+});
+
 test('runner rejects simulationSettings that escape the workspace', () => {
   const workspaceRoot = makeTempWorkspace();
   const sceneFilePath = path.join(workspaceRoot, 'project', 'demo.json');
@@ -236,7 +442,7 @@ test('runner caps stored output size', async () => {
   const workspaceRoot = makeTempWorkspace();
   const scenePath = 'project/demo.json';
   const sceneFilePath = path.join(workspaceRoot, scenePath);
-  const simulationSettings = 'large-output.js';
+  const simulationSettings = 'large-output.txt';
   const settingsFilePath = path.join(workspaceRoot, 'project', simulationSettings);
 
   writeFile(sceneFilePath, '{}\n');
@@ -346,6 +552,69 @@ test('runner uses macOS python PTY bridge for terminal-style execution', () => {
   assert.match(run.output, /pty bridge enabled via python3/);
   assert.match(run.output, /temporary auto-quit input/);
   assert.equal(run.canSendInput, true);
+});
+
+test('runner can stop an active run', async () => {
+  const workspaceRoot = makeTempWorkspace();
+  const scenePath = 'project/demo.json';
+  const sceneFilePath = path.join(workspaceRoot, scenePath);
+  const simulationSettings = 'waiting.txt';
+  const settingsFilePath = path.join(workspaceRoot, 'project', simulationSettings);
+
+  writeFile(sceneFilePath, '{}\n');
+  writeFile(
+    settingsFilePath,
+    [
+      "process.stdout.write('Waiting...');",
+      'setInterval(() => {}, 1000);',
+    ].join('\n')
+  );
+
+  const manager = createMotionGenesisRunManager({
+    environment: {
+      ...process.env,
+      MGVIEW_MOTION_GENESIS_BIN: process.execPath,
+    },
+    platform: 'linux',
+  });
+
+  const started = manager.startRun({
+    scenePath,
+    sceneFilePath,
+    simulationSettings,
+    options: {
+      autoQuit: false,
+      autoDefaultValues: false,
+      debug: false,
+    },
+    workspaceRoot,
+  });
+
+  let current = started;
+  for (let index = 0; index < 30; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    current = manager.getRun(started.id);
+    if (current && current.status === 'waiting-input') {
+      break;
+    }
+  }
+
+  assert.ok(current);
+  const stopped = manager.stopRun(started.id);
+  assert.equal(stopped.canSendInput, false);
+  assert.match(stopped.output, /Stop requested by user/);
+
+  for (let index = 0; index < 50; index += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    current = manager.getRun(started.id);
+    if (current && current.status === 'failed') {
+      break;
+    }
+  }
+
+  assert.ok(current);
+  assert.equal(current.status, 'failed');
+  assert.equal(current.canSendInput, false);
 });
 
 test('runner skips auto-quit temp file when option is disabled', () => {

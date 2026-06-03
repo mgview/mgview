@@ -106,3 +106,7 @@ export async function sendMotionGenesisInput(
 ): Promise<MotionGenesisRunState> {
   throw new Error(`Motion Genesis runs are unavailable in static mode: ${runId} (${input})`);
 }
+
+export async function stopMotionGenesisRun(runId: string): Promise<MotionGenesisRunState> {
+  throw new Error(`Motion Genesis runs are unavailable in static mode: ${runId}`);
+}

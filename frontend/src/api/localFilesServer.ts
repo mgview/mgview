@@ -34,9 +34,17 @@ async function expectOk(response: Response, fallbackMessage: string): Promise<Re
   }
 
   try {
-    const data = (await response.json()) as { error?: string };
+    const body = await response.text();
+    if (!body.trim()) {
+      throw new Error(fallbackMessage);
+    }
+
+    const data = JSON.parse(body) as { error?: string };
     throw new Error(data.error || fallbackMessage);
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error(fallbackMessage);
+    }
     if (error instanceof Error) {
       throw error;
     }
@@ -148,5 +156,13 @@ export async function sendMotionGenesisInput(
     body: JSON.stringify({ input }),
   });
   await expectOk(response, `Could not send input to Motion Genesis run ${runId}`);
+  return (await response.json()) as MotionGenesisRunState;
+}
+
+export async function stopMotionGenesisRun(runId: string): Promise<MotionGenesisRunState> {
+  const response = await apiFetch(getApiUrl(`mg-run/${encodeURIComponent(runId)}`), {
+    method: 'DELETE',
+  });
+  await expectOk(response, `Could not stop Motion Genesis run ${runId}`);
   return (await response.json()) as MotionGenesisRunState;
 }
