@@ -12,19 +12,23 @@ Handoff docs:
 
 | Output | Command | Used for |
 |--------|---------|----------|
-| **Server app** | `cd frontend && npm run build` | Local Node server (`./RunMGViewMac`) — full API, read/write scenes |
+| **Server app** | `cd frontend && npm run build` | Local Node server (launchers below) — full API, read/write scenes |
 | **GitHub Pages site** | `cd frontend && npm run build:site` | https://mgview.github.io/mgview/ — static demo, bundled samples |
 | **Release zip** | `cd frontend && npm run build:release` | User download — server + compiled app + samples (no legacy) |
 
 All assembly logic is in `frontend/scripts/`. Shared constants: `deployConfig.mjs`.
+
+Every `build*` script runs `build:info` first, which writes `frontend/src/generated/buildInfo.ts` and `bin/VERSION` from [frontend/package.json](frontend/package.json).
 
 ### What gets shipped where
 
 **GitHub Pages** (`build/gh-pages/`):
 
 - Modern static app (`index.html`, `bundled/` — Vite JS/CSS)
-- `samples/`
+- `samples/` and `samples-manifest.json`
 - `assets/` (textures and other bundled runtime media)
+- `docs/index.html` — same SPA entry as root (for `/mgview/docs/`)
+- `.nojekyll` (so GitHub Pages serves `_`-prefixed paths)
 - `legacy/` (optional, copied if present — historical reference only)
 
 ### URL namespaces (local server and static site)
@@ -42,7 +46,7 @@ These must not share a directory — the Node server routes `/mgview/bundled/` t
 - `mgview/frontend/dist/` — compiled modern app (server mode)
 - `mgview/samples/`
 - `mgview/assets/`
-- Launchers + README + LICENSE
+- `RunMGViewMac`, `RunMGViewLinux`, `RunMGViewWindows.bat`, README, LICENSE
 - **No** `legacy/`, **no** frontend source, **no** `node_modules`
 
 ## Local development
@@ -51,9 +55,11 @@ These must not share a directory — the Node server routes `/mgview/bundled/` t
 cd frontend
 npm install
 npm test
-npm run build          # → frontend/dist/ (required before RunMGViewMac)
+npm run dev            # Vite dev server (hot reload; API needs full server below)
+npm run build          # → frontend/dist/ (required before launchers)
 cd ..
 ./RunMGViewMac         # http://localhost:8000/mgview/
+./RunMGViewLinux       # same flags as Mac
 ./RunMGViewMac --port 9000 --no-open   # custom port, skip browser launch
 ./RunMGViewMac --workspace ~/simulations   # workspace folder (saved in ~/.mgview/config.json)
 ./RunMGViewMac --verbose   # log each HTTP request (quiet by default)
@@ -66,7 +72,7 @@ RunMGViewWindows.bat --port 9000 --no-open
 RunMGViewWindows.bat --workspace C:\simulations
 ```
 
-`frontend/dist/` is gitignored. Always run `npm run build` after pulling frontend changes.
+`frontend/dist/` and `frontend/dist-pages/` are gitignored. Run `npm run build` after pulling frontend changes before using the launchers.
 
 ## Preview static site locally
 
@@ -74,14 +80,19 @@ Simulates GitHub Pages URL shape (`/mgview/` prefix):
 
 ```bash
 cd frontend
-npm run preview:site   # http://localhost:8001/mgview/
+npm run preview:site   # build if needed, serve http://localhost:8001/mgview/
 ```
 
 Workspace layout preview (parent-folder serving):
 
 ```bash
 npm run preview:site:workspace   # http://localhost:8001/mgview/
+npm run build:site:workspace     # assemble only → build/gh-pages-workspace/mgview/
 ```
+
+## CI
+
+Pull requests run `.github/workflows/ci.yml`: `npm ci`, `npm test`, and `npm run build:site` in `frontend/`.
 
 ## Deploy to GitHub Pages
 
@@ -108,21 +119,23 @@ After switching to Actions, you can delete the old `gh-pages` branch once the fi
 cd frontend
 npm test
 npm run build:release
-# → build/release/mgview-0.3.0.zip
+# → build/release/mgview-0.3.2.zip  (version from package.json)
 ```
 
-Version is read from [`frontend/package.json`](/Users/adam/code/mgview_project/mgview/frontend/package.json). The build also regenerates `bin/VERSION` for the launcher banner. Override with `MGVIEW_RELEASE_VERSION=0.3.1 npm run build:release`.
+Version is read from [frontend/package.json](frontend/package.json). Override with `MGVIEW_RELEASE_VERSION=0.3.3 npm run build:release`.
+
+When `HEAD` is on an exact tag `vX.Y.Z`, `build:release` checks that `X.Y.Z` matches `package.json` (same check as the release workflow). Set `MGVIEW_SKIP_VERSION_CHECK=1` to bypass.
 
 ### Attach to a GitHub Release
 
-Push a tag — `.github/workflows/release.yml` builds the zip and attaches it:
+Bump `frontend/package.json`, then tag and push — `.github/workflows/release.yml` builds the zip and attaches it:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.3.2
+git push origin v0.3.2
 ```
 
-Or run **Actions → Release zip → Run workflow** manually.
+Or run **Actions → Release zip → Run workflow** manually (no tag required for the workflow artifact; GitHub Release attachment needs a `v*` tag push).
 
 ## Build env vars (Vite)
 
@@ -133,14 +146,4 @@ Or run **Actions → Release zip → Run workflow** manually.
 | `VITE_MGVIEW_BASE` | `/mgview/` | `/mgview/` | `/mgview/` |
 | `VITE_MGVIEW_PUBLIC_BASE` | `/` | `/mgview/` | `/` |
 
-Scene URLs: `?sample=particle_pendulum/particle_pendulum.json` (bundled samples) or `?scene=my_sim/foo.json` (workspace). List/file APIs take `root=workspace|sample|app` and `path=` relative to that root (e.g. `GET /mgview/api/list?root=workspace&path=.`). Workspace API: `GET`/`POST` `/mgview/api/workspace` (config `~/.mgview/config.json`; in-memory roots sync on every API request after POST). Static HTTP: `/mgview/samples/…`, `/mgview/assets/…`. Local app URL: `http://localhost:8000/mgview/` (server redirects `/mgview` → `/mgview/`).
-
-## One-time cleanup (source-only repo)
-
-If `frontend/dist/` was previously committed:
-
-```bash
-git rm -r --cached frontend/dist
-```
-
-Then commit. The `.gitignore` already excludes `frontend/dist/`, `frontend/dist-pages/`, and `build/`.
+Scene URLs: `?sample=particle_pendulum/particle_pendulum.json` (bundled samples) or `?scene=my_sim/foo.json` (workspace). List/file APIs take `root=workspace|sample|app` and `path=` relative to that root (e.g. `GET /mgview/api/list?root=workspace&path=.`). Workspace API: `GET`/`POST` `/mgview/api/workspace` (config `~/.mgview/config.json`; in-memory roots sync on every API request after POST). Static HTTP: `/mgview/samples/…`, `/mgview/assets/…`. Local app URL: `http://localhost:8000/mgview/` (server redirects `/mgview` → `/mgview/`). Docs: `/mgview/docs/`.
