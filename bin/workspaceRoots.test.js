@@ -52,6 +52,16 @@ test('resolveLogicalPathForRoot maps sample API paths to app samples directory',
   );
 });
 
+test('resolveLogicalPathForRoot resolves parent segments in workspace paths', () => {
+  const resolved = resolveLogicalPathForRoot(
+    'workspace',
+    'sims/babyboot/chaotic/../babyboot.txt',
+    appRoot,
+    workspaceRoot
+  );
+  assert.equal(resolved, path.join(workspaceRoot, 'sims/babyboot/babyboot.txt'));
+});
+
 test('resolveLogicalPathForRoot maps workspace API paths to workspace root', () => {
   const simPath = resolveLogicalPathForRoot('workspace', 'my_sim_folder/run.1', appRoot, workspaceRoot);
   assert.equal(simPath, path.resolve(workspaceRoot, 'my_sim_folder/run.1'));
