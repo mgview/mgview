@@ -16,3 +16,9 @@ test('resolveAppRoute supports a root-mounted static app', () => {
   assert.equal(resolveAppRoute('/docs/', '/'), 'documentation');
   assert.equal(resolveAppRoute('/', '/'), 'app');
 });
+
+test('resolveAppRoute matches the MG editor lab route', () => {
+  assert.equal(resolveAppRoute('/mgview/lab/', '/mgview/'), 'lab');
+  assert.equal(resolveAppRoute('/mgview/lab', '/mgview/'), 'lab');
+  assert.equal(resolveAppRoute('/lab/', '/'), 'lab');
+});

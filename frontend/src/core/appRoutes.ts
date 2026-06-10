@@ -1,6 +1,6 @@
 import { getAppMountPrefix } from '../api/assetPaths.ts';
 
-export type AppRoute = 'app' | 'documentation';
+export type AppRoute = 'app' | 'documentation' | 'lab';
 
 function ensureLeadingSlash(value: string): string {
   return value.startsWith('/') ? value : `/${value}`;
@@ -22,7 +22,14 @@ export function resolveAppRoute(pathname: string, mountPrefix: string): AppRoute
     ? normalizedPathname.slice(normalizedMountPrefix.length)
     : trimSlashes(normalizedPathname);
 
-  return trimSlashes(relativePath) === 'docs' ? 'documentation' : 'app';
+  const trimmed = trimSlashes(relativePath);
+  if (trimmed === 'docs') {
+    return 'documentation';
+  }
+  if (trimmed === 'lab') {
+    return 'lab';
+  }
+  return 'app';
 }
 
 export function getCurrentAppRoute(): AppRoute {
@@ -39,6 +46,10 @@ export function getHomePath(): string {
 
 export function getDocumentationPath(): string {
   return `${getHomePath()}docs/`.replace(/\/{2,}/g, '/');
+}
+
+export function getLabPath(): string {
+  return `${getHomePath()}lab/`.replace(/\/{2,}/g, '/');
 }
 
 /** Same-origin MGView pages — open in a new tab so the current workspace tab is preserved. */

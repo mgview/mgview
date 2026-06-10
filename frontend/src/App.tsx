@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import DocumentationPage from './components/DocumentationPage.tsx';
+import MgLabPage from './components/MgLabPage.tsx';
 import { canPersistScenesToServer } from './api/runtimeMode.ts';
 import DemoNotice from './components/DemoNotice.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
@@ -22,8 +23,12 @@ import { useServerWorkspace } from './hooks/useServerWorkspace.ts';
 import { getCurrentAppRoute } from './core/appRoutes.ts';
 
 export default function App() {
-  if (getCurrentAppRoute() === 'documentation') {
+  const route = getCurrentAppRoute();
+  if (route === 'documentation') {
     return <DocumentationPage />;
+  }
+  if (route === 'lab') {
+    return <MgLabPage />;
   }
 
   return <WorkspaceApp />;

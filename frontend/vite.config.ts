@@ -13,6 +13,53 @@ import { viteBundledAssetsDir } from './scripts/deployConfig.mjs';
 //   npm run build:static:workspace → frontend/dist-pages/ (workspace static preview)
 const isStaticHostingBuild = process.env.VITE_MGVIEW_STATIC === 'true';
 
+function mgHelpApiPlugin(): Plugin {
+  const configDir = path.dirname(fileURLToPath(import.meta.url));
+  const helpPath = path.resolve(configDir, 'public/mg-help/MotionGenesisHelp.html');
+  const apiPath = '/mgview/api/mg-help';
+
+  const serveMgHelp = async (
+    req: { url?: string; method?: string },
+    res: { statusCode: number; setHeader: (name: string, value: string) => void; end: (body?: string | Buffer) => void }
+  ) => {
+    const url = req.url ?? '';
+    if (req.method !== 'GET' || !url.startsWith(apiPath)) {
+      return false;
+    }
+
+    try {
+      const body = await readFile(helpPath);
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.end(body);
+      return true;
+    } catch {
+      res.statusCode = 404;
+      res.end('Motion Genesis help not found. Run npm run build:mg-help.');
+      return true;
+    }
+  };
+
+  const attach = (server: { middlewares: { use: (fn: (req: unknown, res: unknown, next: () => void) => void) => void } }) => {
+    server.middlewares.use((req, res, next) => {
+      void serveMgHelp(req as Parameters<typeof serveMgHelp>[0], res as Parameters<typeof serveMgHelp>[1]).then(
+        (handled) => {
+          if (!handled) {
+            next();
+          }
+        },
+        next
+      );
+    });
+  };
+
+  return {
+    name: 'mg-help-api',
+    configureServer: attach,
+    configurePreviewServer: attach,
+  };
+}
+
 function legacySamplesPlugin(): Plugin {
   const configDir = path.dirname(fileURLToPath(import.meta.url));
   const samplesRoot = path.resolve(configDir, '../samples');
@@ -134,6 +181,7 @@ export default defineConfig({
     staticHostingFlagPlugin(),
     tailwindcss(),
     react(),
+    mgHelpApiPlugin(),
     legacySamplesPlugin(),
     staticHostingManifestPlugin(),
   ],

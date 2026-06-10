@@ -7,3 +7,4 @@ build/
 /index.html
 /static-file-manifest.json
 .DS_Store
+frontend/public/mg-help/MotionGenesisHelp.html
