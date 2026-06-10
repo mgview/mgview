@@ -1,7 +1,11 @@
 import { resolveApiFilePath, type SceneRef } from '../core/sceneRef.ts';
 import type { SceneConfig } from '../core/types.ts';
 import { resolvePublicAssetUrl } from './assetPaths.ts';
-import type { FileBrowserListing, StaticFileManifest } from './localFilesTypes.ts';
+import type {
+  FileBrowserListing,
+  MotionGenesisRunState,
+  StaticFileManifest,
+} from './localFilesTypes.ts';
 
 let manifestPromise: Promise<StaticFileManifest> | null = null;
 
@@ -33,17 +37,19 @@ function normalizeBrowserPath(filePath: string): string {
   return normalized.length === 0 ? '.' : normalized;
 }
 
-function downloadJson(scenePath: string, scene: SceneConfig): void {
-  const fileName = scenePath.split('/').pop() || 'scene.json';
-  const blob = new Blob([`${JSON.stringify(scene, null, 2)}\n`], {
-    type: 'application/json',
-  });
+function downloadBlob(fileName: string, contents: string, mimeType: string): void {
+  const blob = new Blob([contents], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = fileName;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadJson(scenePath: string, scene: SceneConfig): void {
+  const fileName = scenePath.split('/').pop() || 'scene.json';
+  downloadBlob(fileName, `${JSON.stringify(scene, null, 2)}\n`, 'application/json');
 }
 
 export async function listLocalFiles(
@@ -80,6 +86,34 @@ export async function saveSceneJson(sceneRef: SceneRef, scene: SceneConfig): Pro
   downloadJson(resolveApiFilePath(sceneRef), scene);
 }
 
+export async function saveTextFile(filePath: string, contents: string): Promise<void> {
+  const fileName = filePath.split('/').pop() || 'simulation.txt';
+  downloadBlob(fileName, contents, 'text/plain');
+}
+
 export async function createSceneJson(sceneRef: SceneRef, scene: SceneConfig): Promise<void> {
   downloadJson(resolveApiFilePath(sceneRef), scene);
+}
+
+export async function startMotionGenesisRun(
+  scenePath: string,
+  simulationSettings: string,
+  options?: unknown
+): Promise<MotionGenesisRunState> {
+  throw new Error(`Motion Genesis runs are unavailable in static mode: ${scenePath} (${simulationSettings})`);
+}
+
+export async function getMotionGenesisRun(runId: string): Promise<MotionGenesisRunState> {
+  throw new Error(`Motion Genesis runs are unavailable in static mode: ${runId}`);
+}
+
+export async function sendMotionGenesisInput(
+  runId: string,
+  input: string
+): Promise<MotionGenesisRunState> {
+  throw new Error(`Motion Genesis runs are unavailable in static mode: ${runId} (${input})`);
+}
+
+export async function stopMotionGenesisRun(runId: string): Promise<MotionGenesisRunState> {
+  throw new Error(`Motion Genesis runs are unavailable in static mode: ${runId}`);
 }

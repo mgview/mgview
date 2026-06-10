@@ -1,7 +1,7 @@
 import type { SceneRef } from '../core/sceneRef.ts';
 import { getApiRoot } from '../core/sceneRef.ts';
 import type { SceneConfig } from '../core/types.ts';
-import type { FileBrowserListing } from './localFilesTypes.ts';
+import type { FileBrowserListing, MotionGenesisRunOptions, MotionGenesisRunState } from './localFilesTypes.ts';
 import type { WorkspaceInfo } from './workspaceTypes.ts';
 
 const API_PREFIX = '/mgview/api';
@@ -34,9 +34,17 @@ async function expectOk(response: Response, fallbackMessage: string): Promise<Re
   }
 
   try {
-    const data = (await response.json()) as { error?: string };
+    const body = await response.text();
+    if (!body.trim()) {
+      throw new Error(fallbackMessage);
+    }
+
+    const data = JSON.parse(body) as { error?: string };
     throw new Error(data.error || fallbackMessage);
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error(fallbackMessage);
+    }
     if (error instanceof Error) {
       throw error;
     }
@@ -96,6 +104,17 @@ export async function saveSceneJson(sceneRef: SceneRef, scene: SceneConfig): Pro
   await expectOk(response, `Could not save scene file: ${sceneRef.path}`);
 }
 
+export async function saveTextFile(filePath: string, contents: string, root: ApiRoot = 'workspace'): Promise<void> {
+  const response = await apiFetch(getApiUrl('file', { root, path: filePath }), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+    },
+    body: contents,
+  });
+  await expectOk(response, `Could not save file: ${filePath}`);
+}
+
 export async function createSceneJson(sceneRef: SceneRef, scene: SceneConfig): Promise<void> {
   const response = await apiFetch(getApiUrl('file', { root: getApiRoot(sceneRef), path: sceneRef.path }), {
     method: 'POST',
@@ -112,4 +131,49 @@ export async function createWorkspaceDirectory(filePath: string): Promise<void> 
     method: 'POST',
   });
   await expectOk(response, `Could not create folder: ${filePath}`);
+}
+
+export async function startMotionGenesisRun(
+  scenePath: string,
+  simulationSettings: string,
+  options: MotionGenesisRunOptions
+): Promise<MotionGenesisRunState> {
+  const response = await apiFetch(getApiUrl('mg-run'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ scenePath, simulationSettings, options }),
+  });
+  await expectOk(response, `Could not start Motion Genesis for ${scenePath}`);
+  return (await response.json()) as MotionGenesisRunState;
+}
+
+export async function getMotionGenesisRun(runId: string): Promise<MotionGenesisRunState> {
+  const response = await apiFetch(getApiUrl(`mg-run/${encodeURIComponent(runId)}`));
+  await expectOk(response, `Could not load Motion Genesis run ${runId}`);
+  return (await response.json()) as MotionGenesisRunState;
+}
+
+export async function sendMotionGenesisInput(
+  runId: string,
+  input: string
+): Promise<MotionGenesisRunState> {
+  const response = await apiFetch(getApiUrl(`mg-run/${encodeURIComponent(runId)}/input`), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ input }),
+  });
+  await expectOk(response, `Could not send input to Motion Genesis run ${runId}`);
+  return (await response.json()) as MotionGenesisRunState;
+}
+
+export async function stopMotionGenesisRun(runId: string): Promise<MotionGenesisRunState> {
+  const response = await apiFetch(getApiUrl(`mg-run/${encodeURIComponent(runId)}`), {
+    method: 'DELETE',
+  });
+  await expectOk(response, `Could not stop Motion Genesis run ${runId}`);
+  return (await response.json()) as MotionGenesisRunState;
 }

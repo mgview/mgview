@@ -1,6 +1,7 @@
 import { isStaticHosting } from './runtimeMode.ts';
 
 export type { FileBrowserEntry, FileBrowserListing } from './localFilesTypes.ts';
+export type { MotionGenesisRunOptions, MotionGenesisRunState, MotionGenesisRunStatus } from './localFilesTypes.ts';
 export type { WorkspaceInfo } from './workspaceTypes.ts';
 export {
   getPublicBaseUrl,
@@ -20,7 +21,12 @@ export const listLocalFiles = impl.listLocalFiles;
 export const loadSceneJson = impl.loadSceneJson;
 export const loadTextFile = impl.loadTextFile;
 export const saveSceneJson = impl.saveSceneJson;
+export const saveTextFile = impl.saveTextFile;
 export const createSceneJson = impl.createSceneJson;
+export const startMotionGenesisRun = impl.startMotionGenesisRun;
+export const getMotionGenesisRun = impl.getMotionGenesisRun;
+export const sendMotionGenesisInput = impl.sendMotionGenesisInput;
+export const stopMotionGenesisRun = impl.stopMotionGenesisRun;
 export const createWorkspaceDirectory = isStaticHosting
   ? () => {
       throw new Error('Workspace folders can only be created with the local MGView server.');
