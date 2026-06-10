@@ -130,6 +130,7 @@ export interface ScenePlotsConfig {
 export interface SceneConfig {
   name?: string;
   simulationData?: string[];
+  simulationSettings?: string;
   layout?: SceneLayoutConfig;
   newtonianFrame?: string;
   sceneOrigin?: string;

@@ -139,6 +139,11 @@ export function createSavableScene(
     : undefined;
   nextScene.speedFactor = draftScene.speedFactor;
   nextScene.plots = structuredClone(draftScene.plots);
+  if (typeof draftScene.simulationSettings === 'string' && draftScene.simulationSettings.trim().length > 0) {
+    nextScene.simulationSettings = draftScene.simulationSettings.trim();
+  } else {
+    delete nextScene.simulationSettings;
+  }
 
   nextScene.objects = {};
   for (const [objectName, draftObject] of Object.entries(draftScene.objects)) {
@@ -179,9 +184,11 @@ export function createSavableScene(
   return nextScene;
 }
 
-async function loadSceneData(sceneRef: SceneRef): Promise<LoadedSceneData> {
-  const rawScene = await loadSceneJson(sceneRef);
-  const simulationState = await loadSimulationWorkspaceState(rawScene, sceneRef);
+function buildLoadedSceneData(
+  rawScene: SceneConfig,
+  sceneRef: SceneRef,
+  simulationState: SimulationWorkspaceState
+): LoadedSceneData {
   const channelNames = simulationState.channelNames;
   const scene = createSceneDocument(rawScene, channelNames);
   const diagnostics = collectSceneDiagnostics(
@@ -207,6 +214,12 @@ async function loadSceneData(sceneRef: SceneRef): Promise<LoadedSceneData> {
     objectInspections,
     fileErrors: simulationState.fileErrors,
   };
+}
+
+async function loadSceneData(sceneRef: SceneRef): Promise<LoadedSceneData> {
+  const rawScene = await loadSceneJson(sceneRef);
+  const simulationState = await loadSimulationWorkspaceState(rawScene, sceneRef);
+  return buildLoadedSceneData(rawScene, sceneRef, simulationState);
 }
 
 async function loadSimulationWorkspaceState(
@@ -590,18 +603,19 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     setError(null);
 
     try {
-      await saveSceneJson(loaded.sceneRef, createSavableScene(loaded.rawScene, draftScene));
-      const nextLoaded = await loadSceneData(loaded.sceneRef);
+      const savedScene = createSavableScene(loaded.rawScene, draftScene);
+      await saveSceneJson(loaded.sceneRef, savedScene);
+      const nextSimulationState = simulationState ?? {
+        simulationFiles: loaded.simulationFiles,
+        timeline: loaded.timeline,
+        channelNames: loaded.channelNames,
+        parsedSimulationFiles: loaded.parsedSimulationFiles,
+        fileErrors: loaded.fileErrors,
+      };
+      const nextLoaded = buildLoadedSceneData(savedScene, loaded.sceneRef, nextSimulationState);
       setLoaded(nextLoaded);
-      setSimulationState({
-        simulationFiles: nextLoaded.simulationFiles,
-        timeline: nextLoaded.timeline,
-        channelNames: nextLoaded.channelNames,
-        parsedSimulationFiles: nextLoaded.parsedSimulationFiles,
-        fileErrors: nextLoaded.fileErrors,
-      });
-      resetDraftScene(cloneScene(nextLoaded.scene));
-      updateSelectionFromLoadedScene(nextLoaded);
+      setSimulationState(nextSimulationState);
+      replaceDraftScene(cloneScene(nextLoaded.scene));
       reportSuccess(`Saved changes to ${loaded.scenePath}`);
       void handleBrowse(getDirectoryPath(loaded.sceneRef.path), 'workspace');
     } catch (saveError) {
