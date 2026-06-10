@@ -18,6 +18,27 @@ function normalizeLogicalPath(requestedPath) {
     .replace(/^\/+/, '');
 }
 
+function normalizeResolvedLogicalPath(logicalPath) {
+  const segments = normalizeLogicalPath(logicalPath).split('/').filter(Boolean);
+  const stack = [];
+
+  for (const segment of segments) {
+    if (segment === '.') {
+      continue;
+    }
+    if (segment === '..') {
+      if (stack.length === 0) {
+        return null;
+      }
+      stack.pop();
+      continue;
+    }
+    stack.push(segment);
+  }
+
+  return stack.join('/') || '.';
+}
+
 function hasParentTraversal(logicalPath) {
   return logicalPath.split('/').some((segment) => segment === '..');
 }
@@ -68,9 +89,13 @@ function resolveLogicalPathForRoot(apiRoot, requestedPath, appRoot, workspaceRoo
     return null;
   }
 
-  const logicalPath = normalizeLogicalPath(
+  const rawLogicalPath = normalizeLogicalPath(
     settings.fromUrlPath ? String(requestedPath || '').replace(/^\/+/, '') : requestedPath
   );
+  const logicalPath = normalizeResolvedLogicalPath(rawLogicalPath);
+  if (logicalPath === null) {
+    return null;
+  }
 
   if (parsedRoot === 'workspace' && isForbiddenWorkspacePath(logicalPath)) {
     return null;

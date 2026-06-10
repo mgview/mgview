@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { createSceneDocument, DEFAULT_POINT_MARKER_WORKSPACE_FRACTION } from './sceneDocument.ts';
 import { buildObjectInspections, collectSceneDiagnostics } from './sceneInspector.ts';
 import { expandSimulationFiles } from './expandSimulationFiles.ts';
-import { getBasePath, getFileExtension, getRelativePath } from './pathUtils.ts';
+import { getBasePath, getFileExtension, getRelativePath, normalizeWorkspaceRelativePath } from './pathUtils.ts';
 import type { SceneConfig } from './types.ts';
 
 async function readSceneFixture(relativePath: string): Promise<SceneConfig> {
@@ -22,6 +22,11 @@ test('path helpers preserve MGView-style relative paths', () => {
     getRelativePath('samples/tricycle/', 'samples/common/demo.1'),
     '../common/demo.1'
   );
+  assert.equal(
+    normalizeWorkspaceRelativePath('sims/babyboot/chaotic/../babyboot.txt'),
+    'sims/babyboot/babyboot.txt'
+  );
+  assert.equal(normalizeWorkspaceRelativePath('../escape.txt'), null);
 });
 
 test('simulation file expansion matches legacy numeric range behavior', () => {
