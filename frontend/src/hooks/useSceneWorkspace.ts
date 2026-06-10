@@ -700,6 +700,32 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
   const handleUndo = () => undoDraftScene();
   const handleRedo = () => redoDraftScene();
 
+  const handleRefreshSimulationData = async (successMessage?: string) => {
+    if (!loaded || !draftScene) {
+      return false;
+    }
+
+    setSimulationLoading(true);
+
+    try {
+      const nextSimulationState = await loadSimulationWorkspaceState(draftScene, loaded.sceneRef);
+      setSimulationState(nextSimulationState);
+      const inferredScene = createSceneDocument(draftScene, nextSimulationState.channelNames);
+      await replaceDraftScene(inferredScene);
+      if (successMessage) {
+        reportSuccess(successMessage);
+      }
+      return true;
+    } catch (refreshError) {
+      reportError(
+        refreshError instanceof Error ? refreshError.message : 'Unknown simulation refresh error'
+      );
+      return false;
+    } finally {
+      setSimulationLoading(false);
+    }
+  };
+
   return {
     activeScene,
     browserError,
@@ -717,6 +743,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     handleSaveSceneAs,
     handleSaveScene,
     handleRedo,
+    handleRefreshSimulationData,
     handleUndo,
     hasLocalEdits,
     canSaveScene,

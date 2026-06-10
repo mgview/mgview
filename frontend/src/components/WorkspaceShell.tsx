@@ -2,6 +2,8 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent, RefObject } from
 import WorkspaceEditorRail, { type WorkspaceSpanEntry } from './WorkspaceEditorRail.tsx';
 import WorkspaceVisualRegion from './WorkspaceVisualRegion.tsx';
 import type { InspectorEditorMode } from './InspectorDrawer.tsx';
+import type { MotionGenesisRunOptions } from '../api/localFiles.ts';
+import type { MotionGenesisRunState } from '../api/localFiles.ts';
 import type {
   NormalizedSceneConfig,
   SceneObjectInspection,
@@ -27,13 +29,27 @@ interface WorkspaceShellProps {
   loaded: LoadedSceneData | null;
   liveSelectedSpan: SceneSpan | undefined;
   liveSelectedSpanVisual: SceneSpanVisual | undefined;
+  motionGenesisError: string | null;
+  motionGenesisInput: string;
+  motionGenesisOptions: MotionGenesisRunOptions;
+  motionGenesisRun: MotionGenesisRunState | null;
+  motionGenesisSendingInput: boolean;
+  motionGenesisStarting: boolean;
+  motionGenesisStopping: boolean;
   objectInspections: SceneObjectInspection[];
   onBeginSpanCreation: () => void;
   onClearSelection: () => void;
   onEditorModeChange: (mode: InspectorEditorMode) => void;
+  onMotionGenesisInputChange: (value: string) => void;
+  onMotionGenesisOptionsChange: (options: MotionGenesisRunOptions) => void;
   onOpenEditorRail: () => void;
+  onRunMotionGenesis: () => void | Promise<void>;
   onSelectObject: (objectName: string, visualName: string | null) => void;
   onSelectSpan: (spanName: string, visualName: string | null) => void;
+  onSendMotionGenesisInput: () => void;
+  onSimFileChange: (value: string) => void;
+  onSimulationSettingsChange: (value: string) => void;
+  onStopMotionGenesis: () => void;
   onStartSplitterDrag: (
     splitter: 'visual' | 'workspace',
     event: ReactPointerEvent<HTMLDivElement>,
@@ -51,6 +67,11 @@ interface WorkspaceShellProps {
   showPlots: boolean;
   showRenderer: boolean;
   showVisualWorkspace: boolean;
+  simFileContent: string;
+  simFileDirty: boolean;
+  simFileError: string | null;
+  simFileLoading: boolean;
+  simFileReadOnly: boolean;
   spanEntries: WorkspaceSpanEntry[];
   timeline: Timeline;
   timelineOwner: 'renderer' | 'plots' | null;
@@ -88,13 +109,27 @@ export default function WorkspaceShell({
   loaded,
   liveSelectedSpan,
   liveSelectedSpanVisual,
+  motionGenesisError,
+  motionGenesisInput,
+  motionGenesisOptions,
+  motionGenesisRun,
+  motionGenesisSendingInput,
+  motionGenesisStarting,
+  motionGenesisStopping,
   objectInspections,
   onBeginSpanCreation,
   onClearSelection,
   onEditorModeChange,
+  onMotionGenesisInputChange,
+  onMotionGenesisOptionsChange,
   onOpenEditorRail,
+  onRunMotionGenesis,
   onSelectObject,
   onSelectSpan,
+  onSendMotionGenesisInput,
+  onSimFileChange,
+  onSimulationSettingsChange,
+  onStopMotionGenesis,
   onStartSplitterDrag,
   playback,
   playbackSpeed,
@@ -108,6 +143,11 @@ export default function WorkspaceShell({
   showPlots,
   showRenderer,
   showVisualWorkspace,
+  simFileContent,
+  simFileDirty,
+  simFileError,
+  simFileLoading,
+  simFileReadOnly,
   spanEntries,
   timeline,
   timelineOwner,
@@ -186,16 +226,35 @@ export default function WorkspaceShell({
           loaded={loaded}
           liveSelectedSpan={liveSelectedSpan}
           liveSelectedSpanVisual={liveSelectedSpanVisual}
+          motionGenesisError={motionGenesisError}
+          motionGenesisInput={motionGenesisInput}
+          motionGenesisOptions={motionGenesisOptions}
+          motionGenesisRun={motionGenesisRun}
+          motionGenesisSendingInput={motionGenesisSendingInput}
+          motionGenesisStarting={motionGenesisStarting}
+          motionGenesisStopping={motionGenesisStopping}
           objectInspections={objectInspections}
           onBeginSpanCreation={onBeginSpanCreation}
           onEditorModeChange={onEditorModeChange}
+          onMotionGenesisInputChange={onMotionGenesisInputChange}
+          onMotionGenesisOptionsChange={onMotionGenesisOptionsChange}
+          onRunMotionGenesis={onRunMotionGenesis}
           onSelectObject={onSelectObject}
           onSelectSpan={onSelectSpan}
+          onSendMotionGenesisInput={onSendMotionGenesisInput}
+          onSimFileChange={onSimFileChange}
+          onSimulationSettingsChange={onSimulationSettingsChange}
+          onStopMotionGenesis={onStopMotionGenesis}
           savePreview={savePreview}
           selectedSpanName={selectedSpanName}
           selectedSpanVisualName={selectedSpanVisualName}
           setSelectedVisualName={setSelectedVisualName}
           shell={shell}
+          simFileContent={simFileContent}
+          simFileDirty={simFileDirty}
+          simFileError={simFileError}
+          simFileLoading={simFileLoading}
+          simFileReadOnly={simFileReadOnly}
           spanEntries={spanEntries}
           updateDraftScene={updateDraftScene}
           updateDraftScenePreview={updateDraftScenePreview}

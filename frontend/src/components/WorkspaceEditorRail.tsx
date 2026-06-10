@@ -2,6 +2,8 @@ import InspectorDrawer from './InspectorDrawer.tsx';
 import ObjectList from './ObjectList.tsx';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs.tsx';
 import type { InspectorEditorMode } from './InspectorDrawer.tsx';
+import type { MotionGenesisRunOptions } from '../api/localFiles.ts';
+import type { MotionGenesisRunState } from '../api/localFiles.ts';
 import type {
   NormalizedSceneConfig,
   SceneObjectInspection,
@@ -32,16 +34,35 @@ interface WorkspaceEditorRailProps {
   loaded: LoadedSceneData | null;
   liveSelectedSpan: SceneSpan | undefined;
   liveSelectedSpanVisual: SceneSpanVisual | undefined;
+  motionGenesisError: string | null;
+  motionGenesisInput: string;
+  motionGenesisOptions: MotionGenesisRunOptions;
+  motionGenesisRun: MotionGenesisRunState | null;
+  motionGenesisSendingInput: boolean;
+  motionGenesisStarting: boolean;
+  motionGenesisStopping: boolean;
   objectInspections: SceneObjectInspection[];
   onBeginSpanCreation: () => void;
   onEditorModeChange: (mode: InspectorEditorMode) => void;
+  onMotionGenesisInputChange: (value: string) => void;
+  onMotionGenesisOptionsChange: (options: MotionGenesisRunOptions) => void;
+  onRunMotionGenesis: () => void | Promise<void>;
   onSelectObject: (objectName: string, firstVisualName: string | null) => void;
   onSelectSpan: (spanName: string, firstVisualName: string | null) => void;
+  onSendMotionGenesisInput: () => void;
+  onSimFileChange: (value: string) => void;
+  onSimulationSettingsChange: (value: string) => void;
+  onStopMotionGenesis: () => void;
   savePreview: string;
   selectedSpanName: string | null;
   selectedSpanVisualName: string | null;
   setSelectedVisualName: (name: string | null) => void;
   shell: ReturnType<typeof useWorkspaceShell>;
+  simFileContent: string;
+  simFileDirty: boolean;
+  simFileError: string | null;
+  simFileLoading: boolean;
+  simFileReadOnly: boolean;
   spanEntries: WorkspaceSpanEntry[];
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
   updateDraftScenePreview: (updater: (scene: NormalizedSceneConfig) => void) => void;
@@ -73,16 +94,35 @@ export default function WorkspaceEditorRail({
   loaded,
   liveSelectedSpan,
   liveSelectedSpanVisual,
+  motionGenesisError,
+  motionGenesisInput,
+  motionGenesisOptions,
+  motionGenesisRun,
+  motionGenesisSendingInput,
+  motionGenesisStarting,
+  motionGenesisStopping,
   objectInspections,
   onBeginSpanCreation,
   onEditorModeChange,
+  onMotionGenesisInputChange,
+  onMotionGenesisOptionsChange,
+  onRunMotionGenesis,
   onSelectObject,
   onSelectSpan,
+  onSendMotionGenesisInput,
+  onSimFileChange,
+  onSimulationSettingsChange,
+  onStopMotionGenesis,
   savePreview,
   selectedSpanName,
   selectedSpanVisualName,
   setSelectedVisualName,
   shell,
+  simFileContent,
+  simFileDirty,
+  simFileError,
+  simFileLoading,
+  simFileReadOnly,
   spanEntries,
   updateDraftScene,
   updateDraftScenePreview,
@@ -111,37 +151,42 @@ export default function WorkspaceEditorRail({
             <TabsTrigger value="visual">Editor</TabsTrigger>
             <TabsTrigger value="scene">Scene Settings</TabsTrigger>
             <TabsTrigger value="json">JSON Editor</TabsTrigger>
+            <TabsTrigger value="sim">Sim Run</TabsTrigger>
           </TabsList>
         </div>
 
-        <div className="workspace-editor-rail-body">
-          <div className="min-h-0 min-w-0">
-            <div className="h-full min-h-0 overflow-auto pr-0.5">
-              {loaded ? (
-                <ObjectList
-                  entries={objectInspections}
-                  onCreateSpan={onBeginSpanCreation}
-                  selectedObjectName={activeSelectedObject?.name ?? null}
-                  selectedSpanName={selectedSpanName}
-                  spans={spanEntries}
-                  onSelectObject={onSelectObject}
-                  onSelectSpan={onSelectSpan}
-                />
-              ) : (
-                <section className="rounded-md border border-border bg-card p-2">
-                  <h2 className="mb-1 text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Objects
-                  </h2>
-                  <div className="grid gap-2">
-                    <div className="h-7 animate-pulse rounded-md bg-muted" />
-                    <div className="h-7 animate-pulse rounded-md bg-muted" />
-                    <div className="h-7 animate-pulse rounded-md bg-muted" />
-                    <div className="h-7 animate-pulse rounded-md bg-muted" />
-                  </div>
-                </section>
-              )}
+        <div
+          className={`workspace-editor-rail-body ${editorMode === 'sim' ? 'workspace-editor-rail-body-sim' : ''}`}
+        >
+          {editorMode !== 'sim' ? (
+            <div className="min-h-0 min-w-0">
+              <div className="h-full min-h-0 overflow-auto pr-0.5">
+                {loaded ? (
+                  <ObjectList
+                    entries={objectInspections}
+                    onCreateSpan={onBeginSpanCreation}
+                    selectedObjectName={activeSelectedObject?.name ?? null}
+                    selectedSpanName={selectedSpanName}
+                    spans={spanEntries}
+                    onSelectObject={onSelectObject}
+                    onSelectSpan={onSelectSpan}
+                  />
+                ) : (
+                  <section className="rounded-md border border-border bg-card p-2">
+                    <h2 className="mb-1 text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Objects
+                    </h2>
+                    <div className="grid gap-2">
+                      <div className="h-7 animate-pulse rounded-md bg-muted" />
+                      <div className="h-7 animate-pulse rounded-md bg-muted" />
+                      <div className="h-7 animate-pulse rounded-md bg-muted" />
+                      <div className="h-7 animate-pulse rounded-md bg-muted" />
+                    </div>
+                  </section>
+                )}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div className="workspace-content-panel">
             <div className="h-full min-h-0 overflow-auto pr-0.5">
@@ -155,6 +200,25 @@ export default function WorkspaceEditorRail({
                 liveSelectedSpanVisual={liveSelectedSpanVisual}
                 liveSelectedVisual={activeLiveSelectedVisual}
                 loaded={loaded}
+                motionGenesisError={motionGenesisError}
+                motionGenesisInput={motionGenesisInput}
+                motionGenesisRun={motionGenesisRun}
+                motionGenesisSendingInput={motionGenesisSendingInput}
+                motionGenesisOptions={motionGenesisOptions}
+                motionGenesisStarting={motionGenesisStarting}
+                motionGenesisStopping={motionGenesisStopping}
+                onMotionGenesisInputChange={onMotionGenesisInputChange}
+                onMotionGenesisOptionsChange={onMotionGenesisOptionsChange}
+                onSimulationSettingsChange={onSimulationSettingsChange}
+                onRunMotionGenesis={onRunMotionGenesis}
+                onStopMotionGenesis={onStopMotionGenesis}
+                onSendMotionGenesisInput={onSendMotionGenesisInput}
+                onSimFileChange={onSimFileChange}
+                simFileContent={simFileContent}
+                simFileDirty={simFileDirty}
+                simFileError={simFileError}
+                simFileLoading={simFileLoading}
+                simFileReadOnly={simFileReadOnly}
                 savePreview={savePreview}
                 selectedObject={activeSelectedObject}
                 selectedObjectName={activeSelectedObject?.name ?? null}

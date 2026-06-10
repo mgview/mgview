@@ -9,6 +9,7 @@ import WorkspaceShell from './components/WorkspaceShell.tsx';
 import { getFrameAtTime } from './core/timeline.ts';
 import { DEFAULT_SCENE_LAYOUT } from './core/workspaceLayout.ts';
 import { useInspectorSelectionState } from './hooks/useInspectorSelectionState.ts';
+import { useMotionGenesisWorkspace } from './hooks/useMotionGenesisWorkspace.ts';
 import { usePlaybackController } from './hooks/usePlaybackController.ts';
 import { createSavableScene, useSceneWorkspace } from './hooks/useSceneWorkspace.ts';
 import { useSceneSelectionEditor } from './hooks/useSceneSelectionEditor.ts';
@@ -56,6 +57,7 @@ function WorkspaceApp() {
     handleLoad,
     handleWorkspaceChange,
     handleLoadWorkspacePath,
+    handleRefreshSimulationData,
     handleRevertDraft,
     handleRedo,
     handleSaveSceneAs,
@@ -127,6 +129,27 @@ function WorkspaceApp() {
 
   const playbackSpeed = activeScene?.speedFactor ?? loaded?.scene.speedFactor ?? 1;
   const playback = usePlaybackController(loaded ? timeline : null, playbackSpeed, loaded?.scenePath ?? null);
+
+  const motionGenesis = useMotionGenesisWorkspace({
+    activeScene,
+    canSaveScene,
+    handleRefreshSimulationData,
+    handleSaveScene,
+    hasLocalEdits,
+    loaded,
+    showSuccess,
+    updateDraftScene,
+  });
+
+  const {
+    canSaveAnything,
+    handleSaveAll,
+    handleSimulationSettingsChange,
+    hasUnsavedChanges,
+    motionGenesisRun,
+    runMotionGenesis,
+    simulationSettingsEditor,
+  } = motionGenesis;
 
   const currentFrame = useMemo(() => {
     if (!loaded) {
@@ -200,16 +223,17 @@ function WorkspaceApp() {
   }, [selectedSpanResolvedName, selectionState]);
 
   useWorkspaceKeyboardShortcuts({
-    canSaveScene,
+    canSaveAnything,
     handleRedo,
-    handleSaveScene,
+    handleSaveAll,
     handleUndo,
-    hasLocalEdits,
+    hasUnsavedChanges,
     loading,
     playback,
     saving,
     selectionState,
     shell,
+    simFileSaving: simulationSettingsEditor.saving,
   });
 
   const spanEntries = useMemo(
@@ -255,10 +279,21 @@ function WorkspaceApp() {
   });
 
   const handleRevert = useCallback(() => {
+    if (simulationSettingsEditor.hasSimEdits && !hasLocalEdits) {
+      if (!window.confirm('Discard unsaved simulation file edits?')) {
+        return;
+      }
+      simulationSettingsEditor.revertSimFile();
+      return;
+    }
+
     if (handleRevertDraft()) {
+      if (simulationSettingsEditor.hasSimEdits) {
+        simulationSettingsEditor.revertSimFile();
+      }
       selectionState.setEditorMode('visual');
     }
-  }, [handleRevertDraft, selectionState]);
+  }, [handleRevertDraft, hasLocalEdits, selectionState, simulationSettingsEditor]);
 
   return (
     <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-2">
@@ -266,10 +301,10 @@ function WorkspaceApp() {
       <SceneHeaderBar
         scenePath={loaded?.scenePath ?? null}
         layout={sceneLayout}
-        hasLocalEdits={hasLocalEdits}
-        canSaveScene={canSaveScene}
+        hasLocalEdits={hasUnsavedChanges}
+        canSaveScene={canSaveAnything}
         loading={loading}
-        saving={saving}
+        saving={saving || simulationSettingsEditor.saving}
         canRedo={canRedoDraftScene}
         canUndo={canUndoDraftScene}
         diagnosticsWarningCount={diagnosticsWarningCount}
@@ -285,7 +320,7 @@ function WorkspaceApp() {
         onSetPerformanceOverlayOpen={shell.setPerformanceOverlayOpen}
         onOpenSaveAsOverlay={shell.openSaveAsOverlay}
         onRedo={handleRedo}
-        onSave={() => void handleSaveScene()}
+        onSave={() => void handleSaveAll()}
         onRevert={handleRevert}
         onUndo={handleUndo}
       />
@@ -302,18 +337,36 @@ function WorkspaceApp() {
           loaded={loaded}
           liveSelectedSpan={liveSelectedSpan}
           liveSelectedSpanVisual={liveSelectedSpanVisual}
+          motionGenesisError={motionGenesisRun.error}
+          motionGenesisInput={motionGenesisRun.input}
+          motionGenesisOptions={motionGenesisRun.options}
+          motionGenesisRun={motionGenesisRun.run}
+          motionGenesisSendingInput={motionGenesisRun.sendingInput}
+          motionGenesisStarting={motionGenesisRun.starting}
+          motionGenesisStopping={motionGenesisRun.stopping}
           objectInspections={objectInspections}
           onBeginSpanCreation={() => {
             selectionState.beginSpanCreation(createSpan);
           }}
           onClearSelection={selectionState.clearAllSelections}
           onEditorModeChange={selectionState.setEditorMode}
+          onMotionGenesisInputChange={motionGenesisRun.setInput}
+          onMotionGenesisOptionsChange={motionGenesisRun.setOptions}
           onOpenEditorRail={layout.openEditorRailIfClosed}
+          onRunMotionGenesis={runMotionGenesis}
           onSelectObject={(objectName, firstVisualName) => {
             selectionState.selectObjectForEditor(objectName, firstVisualName, selectObject);
           }}
           onSelectSpan={(spanName, firstVisualName) => {
             selectionState.selectSpanForEditor(spanName, firstVisualName, selectSpanOnly);
+          }}
+          onSendMotionGenesisInput={() => {
+            void motionGenesisRun.submitInput();
+          }}
+          onSimFileChange={simulationSettingsEditor.setDraftContent}
+          onSimulationSettingsChange={handleSimulationSettingsChange}
+          onStopMotionGenesis={() => {
+            void motionGenesisRun.stopRun();
           }}
           onStartSplitterDrag={layout.startSplitterDrag}
           playback={playback}
@@ -328,6 +381,11 @@ function WorkspaceApp() {
           showPlots={showPlots}
           showRenderer={showRenderer}
           showVisualWorkspace={layout.showVisualWorkspace}
+          simFileContent={simulationSettingsEditor.draftContent}
+          simFileDirty={simulationSettingsEditor.hasSimEdits}
+          simFileError={simulationSettingsEditor.error}
+          simFileLoading={simulationSettingsEditor.loading}
+          simFileReadOnly={!simulationSettingsEditor.canSaveSimFile}
           spanEntries={spanEntries}
           timeline={timeline}
           timelineOwner={timelineOwner}
