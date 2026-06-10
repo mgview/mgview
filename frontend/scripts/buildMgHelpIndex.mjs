@@ -2,10 +2,12 @@
  * Parse MotionGenesisHelp.html into a compact index for Monaco syntax + hovers.
  *
  * Usage:
- *   node scripts/buildMgHelpIndex.mjs [path/to/MotionGenesisHelp.html]
+ *   node scripts/buildMgHelpIndex.mjs [path/to/MotionGenesisHelp.html] [--version <mg-version>]
  *
- * Default path (darwin): /Applications/MotionGenesis/MGToolbox/MotionGenesisHelp.html
- * Override with MG_HELP_HTML or the first CLI argument.
+ * Default path depends on the current platform.
+ * Override help path with MG_HELP_HTML or the first CLI argument.
+ * Default source version metadata comes from frontend/package.json.
+ * Override source version metadata with MG_HELP_VERSION or --version.
  */
 
 import { promises as fs } from 'node:fs';
@@ -21,6 +23,44 @@ const defaultHelpPath =
 const MAX_PURPOSE_CHARS = 320;
 const MAX_SYNTAX_LINES = 6;
 const MAX_SYNTAX_LINE_CHARS = 120;
+
+function parseCliArgs(argv) {
+  let helpPath;
+  let sourceVersion;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--version') {
+      sourceVersion = argv[index + 1] ?? '';
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--version=')) {
+      sourceVersion = arg.slice('--version='.length);
+      continue;
+    }
+    if (!helpPath) {
+      helpPath = arg;
+    }
+  }
+
+  return {
+    helpPath,
+    sourceVersion,
+  };
+}
+
+async function readPackageSourceVersion() {
+  const packageJsonPath = path.resolve(scriptDir, '../package.json');
+  try {
+    const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
+    return typeof packageJson.motionGenesisHelpVersion === 'string'
+      ? packageJson.motionGenesisHelpVersion
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 function stripHtml(html) {
   return html
@@ -201,7 +241,8 @@ function parseIndexAliases(indexHtml) {
   return aliasToId;
 }
 
-export function buildMgHelpIndex(html, sourcePath) {
+export function buildMgHelpIndex(html, options = {}) {
+  const sourceVersion = typeof options.sourceVersion === 'string' ? options.sourceVersion : null;
   const indexHtml = extractKeywordIndexHtml(html);
   const aliasToId = parseIndexAliases(indexHtml);
   const topics = {};
@@ -244,7 +285,7 @@ export function buildMgHelpIndex(html, sourcePath) {
 
   return {
     version: 1,
-    sourcePath,
+    sourceVersion,
     topicCount: Object.keys(topics).length,
     topics,
     aliasToId: Object.fromEntries(aliasToId.entries()),
@@ -253,7 +294,10 @@ export function buildMgHelpIndex(html, sourcePath) {
 }
 
 async function main() {
-  const helpPath = process.argv[2] || process.env.MG_HELP_HTML || defaultHelpPath;
+  const cliArgs = parseCliArgs(process.argv.slice(2));
+  const helpPath = cliArgs.helpPath || process.env.MG_HELP_HTML || defaultHelpPath;
+  const packageSourceVersion = await readPackageSourceVersion();
+  const sourceVersion = cliArgs.sourceVersion || process.env.MG_HELP_VERSION || packageSourceVersion || null;
   const outputPath = path.resolve(scriptDir, '../src/core/mgLanguage/mgHelpIndex.data.json');
   const publicHelpPath = path.resolve(scriptDir, '../public/mg-help/MotionGenesisHelp.html');
 
@@ -275,7 +319,7 @@ async function main() {
     }
   }
 
-  const index = buildMgHelpIndex(html, helpPath);
+  const index = buildMgHelpIndex(html, { sourceVersion });
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.writeFile(outputPath, `${JSON.stringify(index, null, 2)}\n`, 'utf8');
   await fs.mkdir(path.dirname(publicHelpPath), { recursive: true });

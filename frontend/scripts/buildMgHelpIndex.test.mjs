@@ -36,7 +36,7 @@ Syntax 1:  pi
 </PRE></body></html>`;
 
 test('buildMgHelpIndex extracts purpose and syntax without examples', () => {
-  const index = buildMgHelpIndex(sampleHtml, 'sample.html');
+  const index = buildMgHelpIndex(sampleHtml);
   const topic = index.topics.NewtonianFrame;
   assert.ok(topic);
   assert.equal(topic.title, 'NewtonianFrame');
@@ -45,15 +45,22 @@ test('buildMgHelpIndex extracts purpose and syntax without examples', () => {
   assert.equal(topic.syntax[0], 'Syntax 1:  NewtonianFrame N');
   assert.ok(index.aliasToId.Newtonian === 'NewtonianFrame');
   assert.ok(index.keywords.includes('NewtonianFrame'));
+  assert.equal('sourcePath' in index, false);
+  assert.equal(index.sourceVersion, null);
+});
+
+test('buildMgHelpIndex includes source version metadata when provided', () => {
+  const index = buildMgHelpIndex(sampleHtml, { sourceVersion: '7.6' });
+  assert.equal(index.sourceVersion, '7.6');
 });
 
 test('buildMgHelpIndex includes pi topics', () => {
-  const index = buildMgHelpIndex(sampleHtml, 'sample.html');
+  const index = buildMgHelpIndex(sampleHtml);
   assert.equal(index.topics.pi.purpose.includes('circumference'), true);
 });
 
 test('buildMgHelpIndex adds lowercase aliases for case-insensitive lookup', () => {
-  const index = buildMgHelpIndex(sampleHtml, 'sample.html');
+  const index = buildMgHelpIndex(sampleHtml);
   assert.equal(index.aliasToId.newtonianframe, 'NewtonianFrame');
   assert.equal(index.aliasToId.newtonian, 'NewtonianFrame');
 });
@@ -73,7 +80,7 @@ Syntax:  QB.TranslateAcrossJoint( fromPoint, positionVector )
   assert.match(indexHtml, /Solve/);
   assert.doesNotMatch(indexHtml, /TranslateAcrossJoint/);
 
-  const index = buildMgHelpIndex(catalogHtml, 'sample.html');
+  const index = buildMgHelpIndex(catalogHtml);
   assert.equal(index.aliasToId.QB, undefined);
   assert.equal(index.aliasToId.qb, undefined);
   assert.equal(index.aliasToId.Solve, 'Solve');

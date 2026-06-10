@@ -8,7 +8,7 @@ export interface MgHelpTopic {
 
 export interface MgHelpIndex {
   version: number;
-  sourcePath: string;
+  sourceVersion: string | null;
   topicCount: number;
   topics: Record<string, MgHelpTopic>;
   aliasToId: Record<string, string>;

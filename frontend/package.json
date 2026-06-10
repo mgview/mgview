@@ -2,6 +2,7 @@
   "name": "mgview-frontend",
   "private": true,
   "version": "0.3.2",
+  "motionGenesisHelpVersion": "6.6",
   "type": "module",
   "scripts": {
     "build:info": "node scripts/writeBuildInfo.mjs && node scripts/buildMgHelpIndex.mjs",
