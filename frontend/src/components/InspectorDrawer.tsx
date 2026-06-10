@@ -5,14 +5,12 @@ import type {
   SceneSpanVisual,
   SceneObjectInspection,
   SceneVisual,
-  Timeline,
   VisualType,
 } from '../core/types.ts';
 import JsonEditorPanel from './JsonEditorPanel.tsx';
 import SceneSettingsPanel from './SceneSettingsPanel.tsx';
 import SpanEditorPanel from './SpanEditorPanel.tsx';
 import VisualEditorPanel from './VisualEditorPanel.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs.tsx';
 
 export type InspectorEditorMode = 'visual' | 'scene' | 'json';
 
@@ -49,7 +47,6 @@ interface InspectorDrawerProps {
   renameSpan: (currentName: string, nextName: string) => boolean;
   renameSpanVisual: (currentName: string, nextName: string) => boolean;
   selectSpan: (spanName: string, firstVisualName: string | null) => void;
-  setEditorMode: (mode: InspectorEditorMode) => void;
   setSelectedVisualName: (name: string | null) => void;
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
   updateDraftScenePreview: (updater: (scene: NormalizedSceneConfig) => void) => void;
@@ -99,7 +96,6 @@ export default function InspectorDrawer({
   renameSpan,
   renameSpanVisual,
   selectSpan,
-  setEditorMode,
   setSelectedVisualName,
   updateDraftScene,
   updateDraftScenePreview,
@@ -113,8 +109,7 @@ export default function InspectorDrawer({
 }: InspectorDrawerProps) {
   if (!loaded) {
     return (
-      <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] rounded-md border border-border bg-card p-2">
-        <h2 className="mb-1 text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Inspector</h2>
+      <section className="grid min-h-0">
         <div className="grid gap-2">
           <div className="h-7 animate-pulse rounded-md bg-muted" />
           <div className="h-7 animate-pulse rounded-md bg-muted" />
@@ -125,68 +120,56 @@ export default function InspectorDrawer({
     );
   }
 
-  return (
-    <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] rounded-md border border-border bg-card p-2">
-      <Tabs value={editorMode} onValueChange={(value) => setEditorMode(value as InspectorEditorMode)}>
-        <TabsList className="w-full">
-          <TabsTrigger value="visual">Editor</TabsTrigger>
-          <TabsTrigger value="scene">Scene Settings</TabsTrigger>
-          <TabsTrigger value="json">JSON Editor</TabsTrigger>
-        </TabsList>
+  if (editorMode === 'scene') {
+    return (
+      <SceneSettingsPanel
+        activeScene={activeScene}
+        cameraPreview={cameraPreview}
+        clearCameraPreview={clearCameraPreview}
+        objectNames={activeScene ? Object.keys(activeScene.objects) : []}
+        updateDraftScene={updateDraftScene}
+        updateDraftScenePreview={updateDraftScenePreview}
+        updateSceneVector={updateSceneVector}
+        updateSceneVectorPreview={updateSceneVectorPreview}
+      />
+    );
+  }
 
-        <TabsContent value="scene" className="min-h-0 overflow-auto">
-          <SceneSettingsPanel
-            activeScene={activeScene}
-            cameraPreview={cameraPreview}
-            clearCameraPreview={clearCameraPreview}
-            objectNames={activeScene ? Object.keys(activeScene.objects) : []}
-            updateDraftScene={updateDraftScene}
-            updateDraftScenePreview={updateDraftScenePreview}
-            updateSceneVector={updateSceneVector}
-            updateSceneVectorPreview={updateSceneVectorPreview}
-          />
-        </TabsContent>
+  if (editorMode === 'json') {
+    return <JsonEditorPanel savePreview={savePreview} />;
+  }
 
-        <TabsContent value="json" className="min-h-0 overflow-auto">
-          <JsonEditorPanel savePreview={savePreview} />
-        </TabsContent>
-
-        <TabsContent value="visual" className="min-h-0 overflow-auto">
-          {selectedSpanName ? (
-            <SpanEditorPanel
-              activeScene={activeScene}
-              channelNames={channelNames}
-              createSpanVisual={createSpanVisual}
-              deleteSelectedSpan={deleteSelectedSpan}
-              deleteSelectedSpanVisual={deleteSelectedSpanVisual}
-              liveSelectedSpan={liveSelectedSpan}
-              liveSelectedSpanVisual={liveSelectedSpanVisual}
-              renameSpan={renameSpan}
-              renameSpanVisual={renameSpanVisual}
-              selectedSpanName={selectedSpanName}
-              selectedSpanVisualName={selectedSpanVisualName}
-              selectSpan={selectSpan}
-              updateSelectedSpan={updateSelectedSpan}
-              updateSelectedSpanVisual={updateSelectedSpanVisual}
-              updateSelectedSpanVisualPreview={updateSelectedSpanVisualPreview}
-            />
-          ) : (
-            <VisualEditorPanel
-              liveSelectedVisual={liveSelectedVisual}
-              selectedObject={selectedObject}
-              selectedVisual={selectedVisual}
-              updateSelectedObject={updateSelectedObject}
-              createVisual={createVisual}
-              renameVisual={renameVisual}
-              deleteSelectedVisual={deleteSelectedVisual}
-              changeSelectedVisualType={changeSelectedVisualType}
-              setSelectedVisualName={setSelectedVisualName}
-              updateSelectedVisual={updateSelectedVisual}
-              updateSelectedVisualPreview={updateSelectedVisualPreview}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
-    </section>
+  return selectedSpanName ? (
+    <SpanEditorPanel
+      activeScene={activeScene}
+      channelNames={channelNames}
+      createSpanVisual={createSpanVisual}
+      deleteSelectedSpan={deleteSelectedSpan}
+      deleteSelectedSpanVisual={deleteSelectedSpanVisual}
+      liveSelectedSpan={liveSelectedSpan}
+      liveSelectedSpanVisual={liveSelectedSpanVisual}
+      renameSpan={renameSpan}
+      renameSpanVisual={renameSpanVisual}
+      selectedSpanName={selectedSpanName}
+      selectedSpanVisualName={selectedSpanVisualName}
+      selectSpan={selectSpan}
+      updateSelectedSpan={updateSelectedSpan}
+      updateSelectedSpanVisual={updateSelectedSpanVisual}
+      updateSelectedSpanVisualPreview={updateSelectedSpanVisualPreview}
+    />
+  ) : (
+    <VisualEditorPanel
+      liveSelectedVisual={liveSelectedVisual}
+      selectedObject={selectedObject}
+      selectedVisual={selectedVisual}
+      updateSelectedObject={updateSelectedObject}
+      createVisual={createVisual}
+      renameVisual={renameVisual}
+      deleteSelectedVisual={deleteSelectedVisual}
+      changeSelectedVisualType={changeSelectedVisualType}
+      setSelectedVisualName={setSelectedVisualName}
+      updateSelectedVisual={updateSelectedVisual}
+      updateSelectedVisualPreview={updateSelectedVisualPreview}
+    />
   );
 }

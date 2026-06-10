@@ -70,6 +70,8 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
     showPlots: false,
     showEditorRail: true,
     focusTarget: null,
+    visualSplit: 0.6,
+    workspaceSplit: 0.68,
   });
   assert.ok(document.objects.N);
   assert.equal(document.objects.N.type, 'frame');
@@ -92,6 +94,8 @@ test('scene normalization preserves authored layout intent and assigns plot ids'
       showPlots: true,
       showEditorRail: false,
       focusTarget: 'plots',
+      visualSplit: 0.55,
+      workspaceSplit: 0.72,
     },
     plots: {
       panels: [
@@ -113,6 +117,8 @@ test('scene normalization preserves authored layout intent and assigns plot ids'
   assert.equal(document.layout.showPlots, true);
   assert.equal(document.layout.showEditorRail, false);
   assert.equal(document.layout.focusTarget, 'plots');
+  assert.equal(document.layout.visualSplit, 0.55);
+  assert.equal(document.layout.workspaceSplit, 0.72);
   assert.equal(document.plots.panels.length, 2);
   assert.equal(typeof document.plots.panels[0].id, 'string');
   assert.ok(document.plots.panels[0].id);

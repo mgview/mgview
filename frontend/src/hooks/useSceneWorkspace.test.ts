@@ -36,6 +36,8 @@ test('createSavableScene preserves inferred objects added through the draft scen
     showPlots: true,
     showEditorRail: false,
     focusTarget: null,
+    visualSplit: 0.6,
+    workspaceSplit: 0.68,
   });
   assert.equal(savableScene.objects?.Qo?.type, 'point');
   assert.deepEqual(savableScene.objects?.Qo?.visual?.marker, draftScene.objects.Qo.visual.marker);
