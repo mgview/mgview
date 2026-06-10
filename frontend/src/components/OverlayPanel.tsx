@@ -28,7 +28,19 @@ export default function OverlayPanel({
 }: OverlayPanelProps) {
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent size={size} onPointerDownOutside={onClose} onEscapeKeyDown={onClose}>
+      <DialogContent
+        size={size}
+        onPointerDownOutside={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }}
+        onEscapeKeyDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }}
+      >
         <DialogHeader>
           <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
             <div>
