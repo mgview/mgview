@@ -6,6 +6,8 @@ const fs = require('fs');
 const path = require('path');
 
 const MGVIEW_ROOT = path.resolve(__dirname, '..');
+const { createMotionGenesisRunManager } = require('./motionGenesisRunner.js');
+const { resolveMotionGenesisHelpPath } = require('./mgToolbox.js');
 const { applyStartupWorkspace, formatServerUsage, parseServerArgs } = require('./serverCli.js');
 const MODERN_DIST_DIR = path.resolve(__dirname, '../frontend/dist');
 const VITE_BUNDLED_DIR = 'bundled'; // sync with frontend/scripts/deployConfig.mjs → viteBundledAssetsDir
@@ -56,6 +58,7 @@ function main(argv) {
     HEAD: createServlet(StaticServlet),
     POST: createServlet(StaticServlet),
     PUT: createServlet(StaticServlet),
+    DELETE: createServlet(StaticServlet),
   }).start(options.port);
 }
 
@@ -73,6 +76,7 @@ function createServlet(Class) {
 }
 
 let verboseLogging = false;
+const motionGenesisRuns = createMotionGenesisRunManager();
 
 function timestampedMessage(message) {
   return '[' + new Date().toISOString() + '] ' + message;
@@ -211,10 +215,11 @@ StaticServlet.prototype.handleRequest = function(req, res) {
   if (normalizedPathname === '/mgview/') {
     return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
-  if (normalizedPathname === '/mgview/docs') {
-    return this.sendRedirect_(req, res, '/mgview/docs/' + req.url.search);
-  }
-  if (normalizedPathname === '/mgview/docs/') {
+  const spaRouteMatch = /^\/mgview\/(docs|lab)\/?$/.exec(normalizedPathname);
+  if (spaRouteMatch) {
+    if (!normalizedPathname.endsWith('/')) {
+      return this.sendRedirect_(req, res, '/mgview/' + spaRouteMatch[1] + '/' + req.url.search);
+    }
     return this.sendFile_(req, res, path.join(MODERN_DIST_DIR, 'index.html'));
   }
 
@@ -269,10 +274,98 @@ StaticServlet.prototype.handleApiRequest_ = function(req, res, pathname) {
   if (pathname === API_PREFIX + '/mkdir' && req.method === 'POST') {
     return this.handlePostMkdirApi_(req, res);
   }
+  if (pathname === API_PREFIX + '/mg-run' && req.method === 'POST') {
+    return this.handlePostMotionGenesisRunApi_(req, res);
+  }
+  if (pathname === API_PREFIX + '/mg-run-file' && req.method === 'POST') {
+    return this.handlePostMotionGenesisFileRunApi_(req, res);
+  }
+  if (pathname.indexOf(API_PREFIX + '/mg-run/') === 0) {
+    return this.handleMotionGenesisRunInstanceApi_(req, res, pathname);
+  }
+  if (pathname === API_PREFIX + '/mg-help' && req.method === 'GET') {
+    return this.handleGetMgHelpApi_(req, res);
+  }
 
   this.sendJson_(res, 404, {
     error: 'Not found',
   });
+};
+
+StaticServlet.prototype.handleGetMgHelpApi_ = function(req, res) {
+  const helpPath = resolveMotionGenesisHelpPath(
+    this.appRoot,
+    this.workspaceRoot,
+    process.env,
+    process.platform
+  );
+  const bundledHelpPath = path.join(this.appRoot, 'frontend', 'public', 'mg-help', 'MotionGenesisHelp.html');
+
+  return fs.promises
+    .access(helpPath)
+    .then(() => helpPath)
+    .catch(() =>
+      fs.promises
+        .access(bundledHelpPath)
+        .then(() => bundledHelpPath)
+        .catch(() => null)
+    )
+    .then((resolvedPath) => {
+      if (!resolvedPath) {
+        return this.sendJson_(res, 404, {
+          error: 'Motion Genesis help file not found. Install Motion Genesis or run npm run build:mg-help.',
+        });
+      }
+
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+      });
+      const stream = fs.createReadStream(resolvedPath);
+      stream.on('error', () => {
+        if (!res.headersSent) {
+          this.sendJson_(res, 500, { error: 'Could not read Motion Genesis help file.' });
+        }
+      });
+      stream.pipe(res);
+    });
+};
+
+StaticServlet.prototype.handleMotionGenesisRunInstanceApi_ = function(req, res, pathname) {
+  const prefix = API_PREFIX + '/mg-run/';
+  const remainder = pathname.slice(prefix.length);
+  if (!remainder) {
+    return this.sendJson_(res, 404, { error: 'Not found' });
+  }
+
+  const parts = remainder.split('/').filter(Boolean);
+  const runId = parts[0];
+  const subresource = parts[1] || null;
+
+  if (parts.length === 1 && req.method === 'GET') {
+    const run = motionGenesisRuns.getRun(runId);
+    if (!run) {
+      return this.sendJson_(res, 404, { error: 'Motion Genesis run not found.' });
+    }
+    return this.sendJson_(res, 200, run);
+  }
+
+  if (parts.length === 1 && req.method === 'DELETE') {
+    try {
+      const run = motionGenesisRuns.stopRun(runId);
+      return this.sendJson_(res, 200, run);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not stop Motion Genesis run.';
+      const status = message.indexOf('not found') !== -1 ? 404 : 400;
+      return this.sendJson_(res, status, { error: message });
+    }
+  }
+
+  if (parts.length === 2 && subresource === 'input' && req.method === 'POST') {
+    return this.handlePostMotionGenesisRunInputApi_(req, res, runId);
+  }
+
+  return this.sendJson_(res, 404, { error: 'Not found' });
 };
 
 StaticServlet.prototype.handlePostWorkspaceApi_ = function(req, res) {
@@ -414,6 +507,133 @@ StaticServlet.prototype.handlePostMkdirApi_ = function(req, res) {
   });
 };
 
+StaticServlet.prototype.handlePostMotionGenesisRunApi_ = function(req, res) {
+  const servlet = this;
+
+  servlet.readRequestBody_(req, (bodyError, body) => {
+    if (bodyError) {
+      return servlet.sendJson_(res, 500, { error: 'Could not read request body.' });
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(body);
+    } catch (parseError) {
+      return servlet.sendJson_(res, 400, { error: 'Invalid JSON body.' });
+    }
+
+    const scenePath = parsed && typeof parsed.scenePath === 'string' ? parsed.scenePath : '';
+    const simulationSettings =
+      parsed && typeof parsed.simulationSettings === 'string' ? parsed.simulationSettings : '';
+    const options = parsed && typeof parsed.options === 'object' && parsed.options
+      ? parsed.options
+      : {};
+
+    if (!scenePath.trim()) {
+      return servlet.sendJson_(res, 400, { error: 'scenePath is required.' });
+    }
+    if (!simulationSettings.trim()) {
+      return servlet.sendJson_(res, 400, { error: 'simulationSettings is required.' });
+    }
+
+    const sceneFilePath = servlet.resolveApiPath_(scenePath, { root: 'workspace' });
+    if (!sceneFilePath) {
+      return servlet.sendJson_(res, 403, { error: 'Forbidden scene path.' });
+    }
+    if (path.extname(sceneFilePath).toLowerCase() !== '.json') {
+      return servlet.sendJson_(res, 400, { error: 'scenePath must point to a JSON scene file.' });
+    }
+
+    try {
+      const run = motionGenesisRuns.startRun({
+        scenePath,
+        sceneFilePath,
+        simulationSettings,
+        options,
+        workspaceRoot: servlet.workspaceRoot,
+      });
+      return servlet.sendJson_(res, 201, run);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not start Motion Genesis.';
+      return servlet.sendJson_(res, 400, { error: message });
+    }
+  });
+};
+
+StaticServlet.prototype.handlePostMotionGenesisFileRunApi_ = function(req, res) {
+  const servlet = this;
+
+  servlet.readRequestBody_(req, (bodyError, body) => {
+    if (bodyError) {
+      return servlet.sendJson_(res, 500, { error: 'Could not read request body.' });
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(body);
+    } catch (parseError) {
+      return servlet.sendJson_(res, 400, { error: 'Invalid JSON body.' });
+    }
+
+    const filePath = parsed && typeof parsed.filePath === 'string' ? parsed.filePath : '';
+    const options = parsed && typeof parsed.options === 'object' && parsed.options
+      ? parsed.options
+      : {};
+
+    if (!filePath.trim()) {
+      return servlet.sendJson_(res, 400, { error: 'filePath is required.' });
+    }
+
+    const settingsFilePath = servlet.resolveApiPath_(filePath, { root: 'workspace' });
+    if (!settingsFilePath) {
+      return servlet.sendJson_(res, 403, { error: 'Forbidden Motion Genesis file path.' });
+    }
+
+    try {
+      const run = motionGenesisRuns.startFileRun({
+        filePath,
+        settingsFilePath,
+        options,
+        workspaceRoot: servlet.workspaceRoot,
+      });
+      return servlet.sendJson_(res, 201, run);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not start Motion Genesis.';
+      return servlet.sendJson_(res, 400, { error: message });
+    }
+  });
+};
+
+StaticServlet.prototype.handlePostMotionGenesisRunInputApi_ = function(req, res, runId) {
+  const servlet = this;
+
+  servlet.readRequestBody_(req, (bodyError, body) => {
+    if (bodyError) {
+      return servlet.sendJson_(res, 500, { error: 'Could not read request body.' });
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(body);
+    } catch (parseError) {
+      return servlet.sendJson_(res, 400, { error: 'Invalid JSON body.' });
+    }
+
+    if (!parsed || typeof parsed.input !== 'string') {
+      return servlet.sendJson_(res, 400, { error: 'input must be a string.' });
+    }
+
+    try {
+      const run = motionGenesisRuns.sendInput(runId, parsed.input);
+      return servlet.sendJson_(res, 200, run);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not send Motion Genesis input.';
+      const status = message.indexOf('not found') !== -1 ? 404 : 400;
+      return servlet.sendJson_(res, status, { error: message });
+    }
+  });
+};
+
 StaticServlet.prototype.handleListApi_ = function(req, res) {
   const requestedPath = req.url.searchParams.get('path') || '.';
   const apiRoot = req.url.searchParams.get('root') || 'workspace';
@@ -499,8 +719,13 @@ StaticServlet.prototype.handlePutFileApi_ = function(req, res) {
     return this.sendJson_(res, 403, { error: 'Forbidden path.' });
   }
 
-  if (path.extname(filePath).toLowerCase() !== '.json') {
-    return this.sendJson_(res, 400, { error: 'Only JSON scene files can be saved through this API.' });
+  const extension = path.extname(filePath).toLowerCase();
+  const isJsonSceneFile = extension === '.json';
+  const isMotionGenesisInputFile = extension === '.al' || extension === '.txt' || extension === '.in';
+  if (!isJsonSceneFile && !isMotionGenesisInputFile) {
+    return this.sendJson_(res, 400, {
+      error: 'Only JSON scene files and Motion Genesis input files can be saved through this API.',
+    });
   }
 
   fs.stat(filePath, (statError, stat) => {
@@ -516,14 +741,22 @@ StaticServlet.prototype.handlePutFileApi_ = function(req, res) {
         return this.sendJson_(res, 500, { error: 'Could not read request body.' });
       }
 
-      let parsed;
-      try {
-        parsed = JSON.parse(body);
-      } catch (parseError) {
+      const serialized = isJsonSceneFile
+        ? (() => {
+            let parsed;
+            try {
+              parsed = JSON.parse(body);
+            } catch (parseError) {
+              return null;
+            }
+            return JSON.stringify(parsed, null, 2) + '\n';
+          })()
+        : body;
+
+      if (serialized === null) {
         return this.sendJson_(res, 400, { error: 'Invalid JSON body.' });
       }
 
-      const serialized = JSON.stringify(parsed, null, 2) + '\n';
       fs.writeFile(filePath, serialized, 'utf8', (writeError) => {
         if (writeError) {
           return this.sendJson_(res, 500, { error: 'Could not save file.' });

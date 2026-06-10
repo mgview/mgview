@@ -4,29 +4,31 @@ import type { usePlaybackController } from './usePlaybackController.ts';
 import type { useWorkspaceShell } from './useWorkspaceShell.ts';
 
 interface UseWorkspaceKeyboardShortcutsOptions {
-  canSaveScene: boolean;
+  canSaveAnything: boolean;
   handleRedo: () => void;
-  handleSaveScene: () => Promise<void>;
+  handleSaveAll: () => Promise<void>;
   handleUndo: () => void;
-  hasLocalEdits: boolean;
+  hasUnsavedChanges: boolean;
   loading: boolean;
   playback: ReturnType<typeof usePlaybackController>;
   saving: boolean;
   selectionState: ReturnType<typeof useInspectorSelectionState>;
   shell: ReturnType<typeof useWorkspaceShell>;
+  simFileSaving: boolean;
 }
 
 export function useWorkspaceKeyboardShortcuts({
-  canSaveScene,
+  canSaveAnything,
   handleRedo,
-  handleSaveScene,
+  handleSaveAll,
   handleUndo,
-  hasLocalEdits,
+  hasUnsavedChanges,
   loading,
   playback,
   saving,
   selectionState,
   shell,
+  simFileSaving,
 }: UseWorkspaceKeyboardShortcutsOptions) {
   useEffect(() => {
     const isTextEditingTarget = (target: EventTarget | null) => {
@@ -104,8 +106,15 @@ export function useWorkspaceKeyboardShortcuts({
 
       if (hasModifier && event.key.toLowerCase() === 's') {
         event.preventDefault();
-        if (canSaveScene && !shell.loadOverlayOpen && !loading && !saving && hasLocalEdits) {
-          void handleSaveScene();
+        if (
+          canSaveAnything &&
+          !shell.loadOverlayOpen &&
+          !loading &&
+          !saving &&
+          !simFileSaving &&
+          hasUnsavedChanges
+        ) {
+          void handleSaveAll();
         }
         return;
       }
@@ -136,11 +145,11 @@ export function useWorkspaceKeyboardShortcuts({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [
-    canSaveScene,
+    canSaveAnything,
     handleRedo,
-    handleSaveScene,
+    handleSaveAll,
     handleUndo,
-    hasLocalEdits,
+    hasUnsavedChanges,
     loading,
     playback.togglePlay,
     saving,
@@ -149,5 +158,6 @@ export function useWorkspaceKeyboardShortcuts({
     shell.loadOverlayOpen,
     shell.samplesOverlayOpen,
     shell.simulationOverlayOpen,
+    simFileSaving,
   ]);
 }

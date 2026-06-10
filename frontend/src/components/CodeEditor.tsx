@@ -29,6 +29,7 @@ export default function CodeEditor({
   vimMode = false,
 }: CodeEditorProps) {
   const { theme } = useTheme();
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
   const onRunRef = useRef(onRun);
@@ -62,6 +63,30 @@ export default function CodeEditor({
   }, [editorTheme]);
 
   useEffect(() => {
+    const container = containerRef.current;
+    const editor = editorRef.current;
+    if (!container || !editor) {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) {
+        return;
+      }
+
+      const { width, height } = entry.contentRect;
+      editor.layout({
+        width: Math.max(0, Math.floor(width)),
+        height: Math.max(0, Math.floor(height)),
+      });
+    });
+
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, [editorReady]);
+
+  useEffect(() => {
     const editor = editorRef.current;
     const statusNode = vimStatusRef.current;
     if (!editorReady || !editor || !statusNode) {
@@ -89,27 +114,30 @@ export default function CodeEditor({
   }, []);
 
   return (
-    <div className={cn('relative flex min-h-0 flex-col overflow-hidden rounded-md border border-border', className)}>
-      <Editor
-        height="100%"
-        language={motionGenesisLanguageId}
-        theme={editorTheme}
-        value={value}
-        onChange={(nextValue) => onChange(nextValue ?? '')}
-        beforeMount={handleBeforeMount}
-        onMount={handleMount}
-        options={{
-          automaticLayout: true,
-          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-          fontSize: 12,
-          lineNumbers: 'on',
-          minimap: { enabled: false },
-          readOnly,
-          scrollBeyondLastLine: false,
-          tabSize: 2,
-          wordWrap: 'on',
-        }}
-      />
+    <div className={cn('relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border', className)}>
+      <div ref={containerRef} className="min-h-0 min-w-0 flex-1">
+        <Editor
+          height="100%"
+          width="100%"
+          language={motionGenesisLanguageId}
+          theme={editorTheme}
+          value={value}
+          onChange={(nextValue) => onChange(nextValue ?? '')}
+          beforeMount={handleBeforeMount}
+          onMount={handleMount}
+          options={{
+            automaticLayout: true,
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+            fontSize: 12,
+            lineNumbers: 'on',
+            minimap: { enabled: false },
+            readOnly,
+            scrollBeyondLastLine: false,
+            tabSize: 2,
+            wordWrap: 'on',
+          }}
+        />
+      </div>
       <div
         ref={vimStatusRef}
         className={cn(

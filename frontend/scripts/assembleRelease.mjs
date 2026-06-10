@@ -1,8 +1,9 @@
 /**
  * Assemble a local-download release tree under build/release/mgview-<version>/.
  *
- * Includes only what RunMGViewMac needs: Node server, modern app build, samples,
- * and shared runtime assets. Does NOT include legacy/, frontend source, or node_modules.
+ * Includes only what MGView runtime needs: Node server, modern app build, samples,
+ * shared runtime assets, and bundled server-side native dependencies. Does NOT include
+ * legacy/ or frontend source.
  */
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -28,6 +29,8 @@ const releaseFiles = [
   'README.md',
   'LICENSE',
 ];
+const bundledNodeModules = ['node-pty', 'node-addon-api'];
+const bundledScopedNodeModules = [['@homebridge', 'node-pty-prebuilt-multiarch']];
 
 async function readVersion() {
   const packageJsonPath = path.join(frontendDir, 'package.json');
@@ -85,6 +88,24 @@ async function main() {
   await copyTree(distServerDir, path.join(stagingDir, 'frontend', 'dist'), {
     exclude: excludeDotfiles,
   });
+
+  for (const moduleName of bundledNodeModules) {
+    await cp(
+      path.join(frontendDir, 'node_modules', moduleName),
+      path.join(stagingDir, 'bin', 'node_modules', moduleName),
+      { recursive: true }
+    );
+  }
+
+  for (const [scopeName, moduleName] of bundledScopedNodeModules) {
+    const targetScopeDir = path.join(stagingDir, 'bin', 'node_modules', scopeName);
+    await mkdir(targetScopeDir, { recursive: true });
+    await cp(
+      path.join(frontendDir, 'node_modules', scopeName, moduleName),
+      path.join(targetScopeDir, moduleName),
+      { recursive: true }
+    );
+  }
 
   await zipDirectory(stagingRoot, zipPath);
   console.log(`Release zip: ${zipPath}`);

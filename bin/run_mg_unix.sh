@@ -100,6 +100,15 @@ fi
 MGVIEW_PARENT_DIR=$( cd "$BIN_DIR/../.." && pwd )
 MGVIEW_URL="http://localhost:${PORT}/mgview/"
 SERVER_CMD=()
+IS_PACKAGED_RELEASE=0
+
+if [[ ! -d "$MGVIEW_PARENT_DIR/frontend/src" ]]; then
+  IS_PACKAGED_RELEASE=1
+fi
+
+if [[ "$(uname -s)" == "Darwin" && "$IS_PACKAGED_RELEASE" -eq 1 && -z "${MGVIEW_PTY_BACKEND:-}" ]]; then
+  export MGVIEW_PTY_BACKEND="python-bridge"
+fi
 
 if command -v node >/dev/null 2>&1; then
   SERVER_CMD=(node "$BIN_DIR/server.js" --port "$PORT")
@@ -124,6 +133,9 @@ echo -e "${C_YELLOW_BOLD}-------------------------------------------------------
 echo -e "${C_YELLOW_BOLD}Starting MGView $(cat ${BIN_DIR}/VERSION)${C_DEFAULT}\n"
 if [[ -n "$WORKSPACE_DIR" ]]; then
   echo -e "${C_GREEN_BOLD}Workspace: ${WORKSPACE_DIR}${C_DEFAULT}\n"
+fi
+if [[ "${MGVIEW_PTY_BACKEND:-}" == "python-bridge" && "$(uname -s)" == "Darwin" ]]; then
+  echo -e "${C_YELLOW}Motion Genesis PTY backend: python bridge${C_DEFAULT}\n"
 fi
 echo -e "${C_YELLOW}If your browser does not open automatically, open this URL manually:${C_DEFAULT}"
 echo -e "${C_GREEN_BOLD}${MGVIEW_URL}${C_DEFAULT}"
