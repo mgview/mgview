@@ -2,11 +2,11 @@
 
 .workspace-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(510px, 568px);
   gap: 6px;
   align-items: stretch;
   min-height: 0;
   height: 100%;
+  min-width: 0;
 }
 
 .workspace-shell-no-editor-rail {
@@ -33,16 +33,43 @@
 }
 
 .workspace-visual-shell-dual {
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  grid-template-columns: minmax(320px, 1.2fr) 8px minmax(320px, 0.8fr);
 }
 
 .workspace-editor-rail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+
+.workspace-editor-rail-tabs {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.workspace-editor-rail-header {
+  min-width: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.5rem;
+}
+
+.workspace-editor-rail-body {
   display: grid;
   grid-template-columns: minmax(112px, 112px) minmax(392px, 430px);
   gap: 6px;
   align-items: stretch;
   min-height: 0;
   min-width: 0;
+}
+
+.workspace-editor-rail-body-sim {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .workspace-panel-stack {
@@ -56,6 +83,40 @@
 .workspace-panel-stack > * {
   width: 100%;
   min-width: 0;
+}
+
+.workspace-horizontal-splitter {
+  min-width: 8px;
+  min-height: 0;
+  align-self: stretch;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--border) 72%, transparent);
+  cursor: col-resize;
+  touch-action: none;
+  position: relative;
+}
+
+.workspace-horizontal-splitter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 20%,
+      color-mix(in oklab, var(--muted-foreground) 28%, transparent) 20%,
+      color-mix(in oklab, var(--muted-foreground) 28%, transparent) 80%,
+      transparent 80%,
+      transparent 100%
+    );
+  opacity: 0.9;
+}
+
+.workspace-horizontal-splitter:hover,
+.workspace-splitter-dragging .workspace-horizontal-splitter {
+  background: color-mix(in oklab, var(--primary) 28%, var(--border));
 }
 
 .workspace-content-panel {
@@ -310,6 +371,14 @@
 
   .workspace-editor-rail {
     grid-template-columns: 1fr;
+  }
+
+  .workspace-editor-rail-body {
+    grid-template-columns: 1fr;
     grid-template-rows: auto minmax(200px, 1fr);
+  }
+
+  .workspace-horizontal-splitter {
+    display: none;
   }
 }
