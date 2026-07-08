@@ -20,6 +20,21 @@ function writeFile(filePath, contents) {
   fs.writeFileSync(filePath, contents, 'utf8');
 }
 
+function quoteCommandPart(value) {
+  const text = String(value);
+  if (text.length === 0) {
+    return '""';
+  }
+  if (!/[\s"]/u.test(text)) {
+    return text;
+  }
+  return `"${text.replace(/"/g, '\\"')}"`;
+}
+
+function expectedCommandLine(command, argument) {
+  return `${quoteCommandPart(command)} ${quoteCommandPart(argument)}`;
+}
+
 function createFakeNativePty(overrides) {
   const settings = overrides || {};
   return {
@@ -163,6 +178,66 @@ test('normalizePtyOutput collapses PTY newline translation to Unix newlines', ()
     "-> (15) alf_A_N> = qA''*Ax>\n\n   (16) B.rotate\n"
   );
   assert.equal(normalizePtyOutput('-> (13) ...]\r\n-> (14) w>\r\n-> (15) alf>\r\n\n   (16)'), '-> (13) ...]\n-> (14) w>\n-> (15) alf>\n\n   (16)');
+  assert.equal(
+    normalizePtyOutput('\u001b[?9001h\u001b[2J\u001b]0;C:\\Users\\adaml\\MotionGenesis\\MotionGenesis.exe\u0007(1) NewtonianFrame N\r\n'),
+    '(1) NewtonianFrame N\n'
+  );
+  assert.equal(
+    normalizePtyOutput('\u001b[15;1H  Type QUIT to end this session.\u001b[?25h'),
+    '\n  Type QUIT to end this session.'
+  );
+  assert.equal(
+    normalizePtyOutput(
+      '███████████████████████████████████████████████████████████████████████████████\u001b[15;1H  Type QUIT to end this session.\n  Type HELP for a list of commands.\n-------------------------------------------------------------------------------\u001b[21;1HNote: Educational use ONLY.\u001b[23;1H   (1) NewtonianFrame N'
+    ),
+    '███████████████████████████████████████████████████████████████████████████████\n  Type QUIT to end this session.\n  Type HELP for a list of commands.\n-------------------------------------------------------------------------------\nNote: Educational use ONLY.\n   (1) NewtonianFrame N'
+  );
+  assert.equal(
+    normalizePtyOutput('ABCDEFGHIJ\nKLMNOPQRST', 10),
+    'ABCDEFGHIJKLMNOPQRST'
+  );
+  assert.equal(
+    normalizePtyOutput('   (41) EoM> = System.getDynamics(No)\n-> (42) EoM> = abcdefghij\nklmnopqrst', 10),
+    '   (41) EoM> = System.getDynamics(No)\n-> (42) EoM> = abcdefghij\nklmnopqrst'
+  );
+  assert.equal(
+    normalizePtyOutput('((IBx-Ibz)*c\ncos(qB)*qA\'*qB\'', 80),
+    '((IBx-Ibz)*c\ncos(qB)*qA\'*qB\''
+  );
+  assert.equal(
+    normalizePtyOutput(`${'a'.repeat(78)}*c\ncos(qB)*qA'*qB'`, 80),
+    `${'a'.repeat(78)}*cos(qB)*qA'*qB'`
+  );
+  assert.equal(
+    normalizePtyOutput(`${'a'.repeat(79)}q\nqB)*qA'^2`, 80),
+    `${'a'.repeat(79)}qB)*qA'^2`
+  );
+  assert.equal(
+    normalizePtyOutput(`${'a'.repeat(78)}''\n'+ Iby*sin(qB)^2`, 80),
+    `${'a'.repeat(78)}''+ Iby*sin(qB)^2`
+  );
+  assert.equal(
+    normalizePtyOutput('cos(qB)*qA\'\'\n)\n)', 80),
+    'cos(qB)*qA\'\'\n)\n)'
+  );
+  assert.equal(
+    normalizePtyOutput(`${'a'.repeat(78)}(I\nIa+mA*La^2`, 80),
+    `${'a'.repeat(78)}(Ia+mA*La^2`
+  );
+  assert.equal(
+    normalizePtyOutput(
+      '███████████████████████████████████████████████████████████████████████████████\n██     MotionGenesis Kane 6.5: Symbolic solutions for forces and motion.     ██\n██                       Student version. June 9, 2025                       ██',
+      80
+    ),
+    '███████████████████████████████████████████████████████████████████████████████\n██     MotionGenesis Kane 6.5: Symbolic solutions for forces and motion.     ██\n██                       Student version. June 9, 2025                       ██'
+  );
+  assert.equal(
+    normalizePtyOutput(
+      '-------------------------------------------------------------------------------\nNote: Educational use ONLY.',
+      80
+    ),
+    '-------------------------------------------------------------------------------\nNote: Educational use ONLY.'
+  );
 });
 
 test('runner normalizes PTY output split across stdout chunks', () => {
@@ -303,7 +378,7 @@ test('runner starts, streams output, accepts stdin, and completes successfully',
   assert.equal(started.workingDirectory, path.join(workspaceRoot, 'project'));
   assert.equal(started.workspaceRoot, workspaceRoot);
   assert.equal(started.commandSource, 'env');
-  assert.equal(started.commandLine, `${process.execPath} demo-script.txt`);
+  assert.equal(started.commandLine, expectedCommandLine(process.execPath, 'demo-script.txt'));
   assert.equal(started.sceneFilePath, sceneFilePath);
   assert.equal(typeof started.output, 'string');
   assert.equal(started.output, '');
@@ -387,7 +462,7 @@ test('runner can start directly from a workspace Motion Genesis file', async () 
   assert.equal(started.scenePath, null);
   assert.equal(started.sceneFilePath, null);
   assert.equal(started.workingDirectory, path.join(workspaceRoot, 'project'));
-  assert.equal(started.commandLine, `${process.execPath} file-mode.txt`);
+  assert.equal(started.commandLine, expectedCommandLine(process.execPath, 'file-mode.txt'));
 
   let current = started;
   for (let index = 0; index < 30; index += 1) {
@@ -793,11 +868,13 @@ test('runner uses native macOS PTY execution by default', () => {
   assert.match(spawned[0].args[0], /^\.mgview-run-.*-demo\.al$/);
   assert.deepEqual(spawned[0].options, {
     cwd: path.join(workspaceRoot, 'project'),
+    cols: 80,
     env: {
       ...process.env,
       MGVIEW_MOTION_GENESIS_BIN: '/custom/MotionGenesis',
     },
     platform: 'darwin',
+    rows: 30,
     stdio: 'pipe',
   });
   assert.match(run.commandLine, /^\/custom\/MotionGenesis \.mgview-run-.*-demo\.al$/);
@@ -923,11 +1000,13 @@ test('runner uses native Windows PTY execution for interactive sessions', () => 
   assert.deepEqual(spawned[0].args, ['demo.al']);
   assert.deepEqual(spawned[0].options, {
     cwd: path.join(workspaceRoot, 'project'),
+    cols: 80,
     env: {
       ...process.env,
       MGVIEW_MOTION_GENESIS_BIN: 'C:\\MotionGenesis\\MotionGenesis',
     },
     platform: 'win32',
+    rows: 30,
     stdio: 'pipe',
   });
   assert.equal(typeof errorHandler, 'function');
@@ -991,11 +1070,13 @@ test('runner uses native Linux PTY execution with prebuilt binaries', () => {
   assert.deepEqual(spawned[0].args, ['demo.al']);
   assert.deepEqual(spawned[0].options, {
     cwd: path.join(workspaceRoot, 'project'),
+    cols: 80,
     env: {
       ...process.env,
       MGVIEW_MOTION_GENESIS_BIN: '/custom/MotionGenesis',
     },
     platform: 'linux',
+    rows: 30,
     stdio: 'pipe',
   });
   assert.match(run.output, /native pty enabled via node-pty/);

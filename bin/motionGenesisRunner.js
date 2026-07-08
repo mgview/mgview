@@ -5,6 +5,8 @@ const childProcess = require('child_process');
 const { readMotionGenesisBinFromConfig } = require('./workspaceRoots.js');
 
 const PTY_BRIDGE_PATH = path.resolve(__dirname, 'mg_pty_bridge.py');
+const DEFAULT_PTY_COLS = 80;
+const DEFAULT_PTY_ROWS = 30;
 
 function isWithinRoot(candidatePath, rootPath) {
   const normalizedRoot = path.resolve(rootPath);
@@ -32,15 +34,136 @@ function trimOutput(output, limit) {
   return lines.slice(lines.length - (limit + 1)).join('\n');
 }
 
-function normalizePtyOutput(text) {
+function stripTerminalControlSequences(text) {
+  return String(text || '')
+    // Absolute cursor moves (CUP/HVP) and line positioning become line breaks in plain text.
+    .replace(/\u001b\[(\d+)(?:;(\d+))?[Hf]/g, '\n')
+    .replace(/\u001b\[(\d+)d/g, '\n')
+    // OSC (Operating System Command), e.g. terminal window title updates.
+    .replace(/\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g, '')
+    // DCS (Device Control String).
+    .replace(/\u001bP[\s\S]*?\u001b\\/g, '')
+    // CSI sequences (cursor movement, color, private mode toggles, etc).
+    .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
+    // Two-character escape sequences.
+    .replace(/\u001b[@-_]/g, '')
+    // C0 controls except newline, carriage return, and tab.
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+}
+
+function findWrapOverlap(previous, next) {
+  const limit = Math.min(previous.length, next.length, 32);
+  for (let size = limit; size > 0; size -= 1) {
+    if (previous.slice(-size) === next.slice(0, size)) {
+      return size;
+    }
+  }
+  return 0;
+}
+
+function isMgPromptLine(line) {
+  return /^\s*(?:->\s*)?\(\d+\)/.test(line);
+}
+
+function isMgStaticScreenLine(line) {
+  const text = String(line || '');
+  const trimmed = text.trim();
+  if (/^██/.test(text)) {
+    return true;
+  }
+  if (/^█{10,}$/.test(trimmed)) {
+    return true;
+  }
+  if (/^[-=]{10,}$/.test(trimmed)) {
+    return true;
+  }
+  if (/^Note:\b/.test(trimmed)) {
+    return true;
+  }
+  if (/^Type (QUIT|HELP|PLOT)\b/.test(trimmed)) {
+    return true;
+  }
+  return false;
+}
+
+function canContinueWrappedLine(line, nextLine) {
+  return (
+    typeof nextLine === 'string' &&
+    nextLine.length > 0 &&
+    !isMgPromptLine(nextLine) &&
+    !isMgStaticScreenLine(line) &&
+    !isMgStaticScreenLine(nextLine)
+  );
+}
+
+function isFullTerminalRow(line, cols) {
+  return Number.isFinite(cols) && cols > 0 && line.length >= cols - 1 && line.length <= cols + 1;
+}
+
+function shouldMergeWrappedLine(line, nextLine, cols) {
+  if (!canContinueWrappedLine(line, nextLine)) {
+    return false;
+  }
+
+  const overlap = findWrapOverlap(line, nextLine);
+  if (overlap >= 2) {
+    return true;
+  }
+
+  if (!isFullTerminalRow(line, cols)) {
+    return false;
+  }
+
+  return true;
+}
+
+function mergeWrappedLine(line, nextLine, cols) {
+  const overlap = findWrapOverlap(line, nextLine);
+  if (overlap > 0) {
+    return line + nextLine.slice(overlap);
+  }
+  return line + nextLine;
+}
+
+function unwrapSoftWrappedLines(text, terminalColumns) {
+  const cols = Number(terminalColumns);
+  const lines = String(text || '').split('\n');
+  if (lines.length < 2) {
+    return String(text || '');
+  }
+
+  const mergedLines = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    let line = lines[index];
+
+    while (index + 1 < lines.length) {
+      const nextLine = lines[index + 1];
+      if (!shouldMergeWrappedLine(line, nextLine, cols)) {
+        break;
+      }
+
+      line = mergeWrappedLine(line, nextLine, cols);
+      index += 1;
+    }
+
+    mergedLines.push(line);
+  }
+
+  return mergedLines.join('\n');
+}
+
+function normalizePtyOutput(text, terminalColumns) {
   // Collapse PTY newline artifacts only. MG uses intentional blank lines after -> output
   // (lines ending with >), which also appear as ">\r\n\n" through the PTY.
-  return String(text || '')
+  return unwrapSoftWrappedLines(
+    stripTerminalControlSequences(text)
     .replace(/>\r\n\n/g, '>\n\n')
     .replace(/\n\r\n/g, '\n')
     .replace(/\r\n\n/g, '\n')
     .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '');
+    .replace(/\r/g, ''),
+    terminalColumns
+  );
 }
 
 function formatSystemLine(message) {
@@ -141,10 +264,14 @@ function assertInteractivePtyAvailable(platform, environment) {
 
 function defaultPtySpawn(command, args, options) {
   const pty = loadNodePty(options && options.platform ? options.platform : process.platform);
+  const requestedCols = Number(options && options.cols);
+  const requestedRows = Number(options && options.rows);
+  const cols = Number.isFinite(requestedCols) && requestedCols > 0 ? Math.floor(requestedCols) : DEFAULT_PTY_COLS;
+  const rows = Number.isFinite(requestedRows) && requestedRows > 0 ? Math.floor(requestedRows) : DEFAULT_PTY_ROWS;
   return pty.spawn(command, args, {
     name: 'xterm-color',
-    cols: 80,
-    rows: 30,
+    cols,
+    rows,
     cwd: options && options.cwd ? options.cwd : process.cwd(),
     env: options && options.env ? options.env : process.env,
   });
@@ -420,7 +547,7 @@ function createMotionGenesisRunManager(options) {
 
     const nextOutput = run.output + text;
     run.output = trimOutput(
-      run.pty ? normalizePtyOutput(nextOutput) : nextOutput,
+      run.pty ? normalizePtyOutput(nextOutput, run.ptyCols) : nextOutput,
       run.options.scrollbackLimit
     );
     if (run.status === 'success' || run.status === 'failed') {
@@ -428,7 +555,7 @@ function createMotionGenesisRunManager(options) {
     }
 
     const rawChunk = options && options.rawChunk ? options.rawChunk : text;
-    const chunk = run.pty ? normalizePtyOutput(rawChunk) : rawChunk;
+    const chunk = run.pty ? normalizePtyOutput(rawChunk, run.ptyCols) : rawChunk;
     if (run.inputOpen && /[^\r\n]$/.test(chunk)) {
       run.status = 'waiting-input';
       return;
@@ -573,6 +700,8 @@ function createMotionGenesisRunManager(options) {
       ? spawnPtyProcess(launchInfo.spawnCommand, launchInfo.spawnArgs, {
           cwd: simulationDirectory,
           env: environment,
+          cols: DEFAULT_PTY_COLS,
+          rows: DEFAULT_PTY_ROWS,
           platform,
           stdio: launchInfo.stdio,
         })
@@ -604,6 +733,7 @@ function createMotionGenesisRunManager(options) {
     run.nativePty = launchInfo.nativePty === true;
     run.inputTerminator = launchInfo.inputTerminator || '\n';
     run.stopSignal = launchInfo.stopSignal;
+    run.ptyCols = DEFAULT_PTY_COLS;
     runs.set(id, run);
     appendSystemOutput(run, `spawned command ${JSON.stringify(launchInfo.spawnCommand)}`);
     appendSystemOutput(run, `full command line ${JSON.stringify(run.commandLine)}`);

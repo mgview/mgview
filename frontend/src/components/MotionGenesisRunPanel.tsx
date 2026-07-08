@@ -556,7 +556,7 @@ export default function MotionGenesisRunPanel({
         </div>
         <textarea
           ref={outputRef}
-          className="h-full min-h-0 w-full resize-none rounded-md border border-border bg-background py-2 pl-3 pr-10 font-mono text-xs leading-5 text-foreground"
+          className="h-full min-h-0 w-full resize-none overflow-x-auto rounded-md border border-border bg-background py-2 pl-3 pr-10 font-mono text-xs leading-5 whitespace-pre-wrap break-all hyphens-none text-foreground"
           readOnly
           spellCheck={false}
           value={output}

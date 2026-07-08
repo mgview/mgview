@@ -740,7 +740,7 @@ export default function MgLabPage() {
               outputAutoFollowRef.current = distanceFromBottom <= 12;
             }}
           >
-            <div className="whitespace-pre-wrap break-words">
+            <div className="whitespace-pre-wrap break-all hyphens-none">
               {outputSegments.map((segment) => {
                 if (segment.type === 'line') {
                   return (
@@ -758,7 +758,7 @@ export default function MgLabPage() {
                       className="flex w-full items-center justify-between gap-3 px-2 py-1 text-left text-[11px] text-muted-foreground transition-colors hover:bg-muted/20"
                       onClick={() => toggleOutputBlock(segment.key)}
                     >
-                      <span className={cn('min-w-0 flex-1 whitespace-pre-wrap break-words', getToneClassName('input'))}>
+                      <span className={cn('min-w-0 flex-1 whitespace-pre-wrap break-all hyphens-none', getToneClassName('input'))}>
                         {segment.commandLine}
                       </span>
                       <span className="shrink-0 uppercase tracking-wide">
