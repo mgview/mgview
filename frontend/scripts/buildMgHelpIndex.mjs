@@ -2,23 +2,97 @@
  * Parse MotionGenesisHelp.html into a compact index for Monaco syntax + hovers.
  *
  * Usage:
- *   node scripts/buildMgHelpIndex.mjs [path/to/MotionGenesisHelp.html] [--version <mg-version>]
+ *   node scripts/buildMgHelpIndex.mjs [path/to/MotionGenesisHelp.html | MotionGenesis folder] [--version <mg-version>]
  *
- * Default path depends on the current platform.
- * Override help path with MG_HELP_HTML or the first CLI argument.
+ * Help file resolution (first match wins):
+ *   1. First CLI argument (help HTML file or MotionGenesis install folder)
+ *   2. MG_HELP_HTML (path to MotionGenesisHelp.html)
+ *   3. MG_HOME or MOTION_GENESIS_HOME (MotionGenesis install folder)
+ *   4. Platform default, then ~/MotionGenesis
+ *
  * Default source version metadata comes from frontend/package.json.
  * Override source version metadata with MG_HELP_VERSION or --version.
  */
 
 import { promises as fs } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const defaultHelpPath =
-  process.platform === 'win32'
-    ? 'C:\\MotionGenesis\\MGToolbox\\MotionGenesisHelp.html'
-    : '/Applications/MotionGenesis/MGToolbox/MotionGenesisHelp.html';
+const HELP_RELATIVE_SEGMENTS = ['MGToolbox', 'MotionGenesisHelp.html'];
+
+export function helpPathFromInstallDir(installDir) {
+  return path.join(installDir, ...HELP_RELATIVE_SEGMENTS);
+}
+
+export function getMotionGenesisInstallCandidates() {
+  const candidates = [];
+
+  if (process.platform === 'win32') {
+    candidates.push('C:\\MotionGenesis');
+  } else {
+    candidates.push('/Applications/MotionGenesis');
+  }
+
+  candidates.push(path.join(os.homedir(), 'MotionGenesis'));
+
+  return candidates;
+}
+
+async function pathExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveHelpPathFromArg(argPath) {
+  const resolved = path.resolve(argPath);
+  if (resolved.toLowerCase().endsWith('.html')) {
+    return resolved;
+  }
+
+  const helpPath = helpPathFromInstallDir(resolved);
+  if (await pathExists(helpPath)) {
+    return helpPath;
+  }
+
+  return resolved;
+}
+
+export async function resolveMotionGenesisHelpPath(options = {}) {
+  const env = options.env ?? process.env;
+  const cliPath = options.helpPath;
+
+  if (cliPath) {
+    return resolveHelpPathFromArg(cliPath);
+  }
+
+  if (typeof env.MG_HELP_HTML === 'string' && env.MG_HELP_HTML.trim().length > 0) {
+    return path.resolve(env.MG_HELP_HTML.trim());
+  }
+
+  const installDirOverride = env.MG_HOME || env.MOTION_GENESIS_HOME;
+  if (typeof installDirOverride === 'string' && installDirOverride.trim().length > 0) {
+    const helpPath = helpPathFromInstallDir(path.resolve(installDirOverride.trim()));
+    if (await pathExists(helpPath)) {
+      return helpPath;
+    }
+  }
+
+  const candidates = options.installCandidates ?? getMotionGenesisInstallCandidates();
+  for (const installDir of candidates) {
+    const helpPath = helpPathFromInstallDir(installDir);
+    if (await pathExists(helpPath)) {
+      return helpPath;
+    }
+  }
+
+  return helpPathFromInstallDir(candidates[0]);
+}
 
 const MAX_PURPOSE_CHARS = 320;
 const MAX_SYNTAX_LINES = 6;
@@ -295,7 +369,7 @@ export function buildMgHelpIndex(html, options = {}) {
 
 async function main() {
   const cliArgs = parseCliArgs(process.argv.slice(2));
-  const helpPath = cliArgs.helpPath || process.env.MG_HELP_HTML || defaultHelpPath;
+  const helpPath = await resolveMotionGenesisHelpPath({ helpPath: cliArgs.helpPath });
   const packageSourceVersion = await readPackageSourceVersion();
   const sourceVersion = cliArgs.sourceVersion || process.env.MG_HELP_VERSION || packageSourceVersion || null;
   const outputPath = path.resolve(scriptDir, '../src/core/mgLanguage/mgHelpIndex.data.json');

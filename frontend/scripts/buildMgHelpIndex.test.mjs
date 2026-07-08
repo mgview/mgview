@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
+import { promises as fs } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
-import { buildMgHelpIndex, extractKeywordIndexHtml } from './buildMgHelpIndex.mjs';
+import {
+  buildMgHelpIndex,
+  extractKeywordIndexHtml,
+  getMotionGenesisInstallCandidates,
+  helpPathFromInstallDir,
+  resolveMotionGenesisHelpPath,
+} from './buildMgHelpIndex.mjs';
 
 const sampleHtml = `<!DOCTYPE html><html><body>
 <a ID="Help"><b>Help</b></a>
@@ -84,4 +93,64 @@ Syntax:  QB.TranslateAcrossJoint( fromPoint, positionVector )
   assert.equal(index.aliasToId.QB, undefined);
   assert.equal(index.aliasToId.qb, undefined);
   assert.equal(index.aliasToId.Solve, 'Solve');
+});
+
+test('helpPathFromInstallDir appends MGToolbox help file', () => {
+  assert.equal(
+    helpPathFromInstallDir('/Applications/MotionGenesis'),
+    path.join('/Applications/MotionGenesis', 'MGToolbox', 'MotionGenesisHelp.html')
+  );
+});
+
+test('getMotionGenesisInstallCandidates includes platform default and home folder', () => {
+  const candidates = getMotionGenesisInstallCandidates();
+  assert.ok(candidates.length >= 2);
+  assert.ok(candidates.includes(path.join(os.homedir(), 'MotionGenesis')));
+});
+
+test('resolveMotionGenesisHelpPath prefers MG_HELP_HTML over install search', async () => {
+  const helpPath = await resolveMotionGenesisHelpPath({
+    env: {
+      MG_HELP_HTML: '/custom/MotionGenesisHelp.html',
+      MG_HOME: '/ignored',
+    },
+    installCandidates: ['/also/ignored'],
+  });
+  assert.equal(helpPath, path.resolve('/custom/MotionGenesisHelp.html'));
+});
+
+test('resolveMotionGenesisHelpPath resolves MG_HOME install folder', async () => {
+  const installDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mg-home-'));
+  const helpDir = path.join(installDir, 'MGToolbox');
+  await fs.mkdir(helpDir, { recursive: true });
+  const helpFile = path.join(helpDir, 'MotionGenesisHelp.html');
+  await fs.writeFile(helpFile, '<html></html>', 'utf8');
+
+  try {
+    const helpPath = await resolveMotionGenesisHelpPath({
+      env: { MG_HOME: installDir },
+      installCandidates: ['/does/not/exist'],
+    });
+    assert.equal(helpPath, helpFile);
+  } finally {
+    await fs.rm(installDir, { recursive: true, force: true });
+  }
+});
+
+test('resolveMotionGenesisHelpPath searches install candidates when unset', async () => {
+  const installDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mg-candidate-'));
+  const helpDir = path.join(installDir, 'MGToolbox');
+  await fs.mkdir(helpDir, { recursive: true });
+  const helpFile = path.join(helpDir, 'MotionGenesisHelp.html');
+  await fs.writeFile(helpFile, '<html></html>', 'utf8');
+
+  try {
+    const helpPath = await resolveMotionGenesisHelpPath({
+      env: {},
+      installCandidates: [installDir],
+    });
+    assert.equal(helpPath, helpFile);
+  } finally {
+    await fs.rm(installDir, { recursive: true, force: true });
+  }
 });
