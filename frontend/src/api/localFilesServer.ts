@@ -2,6 +2,7 @@ import type { SceneRef } from '../core/sceneRef.ts';
 import { getApiRoot } from '../core/sceneRef.ts';
 import type { SceneConfig } from '../core/types.ts';
 import type { FileBrowserListing, MotionGenesisRunOptions, MotionGenesisRunState } from './localFilesTypes.ts';
+import type { MotionGenesisRuntimeInfo } from './motionGenesisTypes.ts';
 import type { WorkspaceInfo } from './workspaceTypes.ts';
 
 const API_PREFIX = '/mgview/api';
@@ -68,6 +69,24 @@ export async function setWorkspaceRoot(workspaceRoot: string): Promise<Workspace
   });
   await expectOk(response, 'Could not update workspace');
   return (await response.json()) as WorkspaceInfo;
+}
+
+export async function getMotionGenesisRuntime(): Promise<MotionGenesisRuntimeInfo> {
+  const response = await apiFetch(getApiUrl('motion-genesis'));
+  await expectOk(response, 'Could not load Motion Genesis runtime settings');
+  return (await response.json()) as MotionGenesisRuntimeInfo;
+}
+
+export async function setMotionGenesisExecutable(motionGenesisBin: string): Promise<MotionGenesisRuntimeInfo> {
+  const response = await apiFetch(getApiUrl('motion-genesis'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ motionGenesisBin }),
+  });
+  await expectOk(response, 'Could not update Motion Genesis executable');
+  return (await response.json()) as MotionGenesisRuntimeInfo;
 }
 
 export async function listLocalFiles(

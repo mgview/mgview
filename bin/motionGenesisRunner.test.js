@@ -105,6 +105,45 @@ test('resolveMotionGenesisCommand defaults to the Windows install location', () 
   assert.equal(result.source, 'platform-default');
 });
 
+test('resolveMotionGenesisCommand discovers a Windows executable under the user profile', () => {
+  const workspaceRoot = makeTempWorkspace();
+  const fakeHome = path.join(workspaceRoot, 'home');
+  const discovered = path.join(fakeHome, 'MotionGenesis', 'MotionGenesis.exe');
+  writeFile(discovered, '');
+
+  const result = resolveMotionGenesisCommand(
+    path.join(workspaceRoot, 'project'),
+    workspaceRoot,
+    { USERPROFILE: fakeHome },
+    'win32'
+  );
+  assert.equal(result.command, discovered);
+  assert.equal(result.source, 'platform-search');
+});
+
+test('resolveMotionGenesisCommand prefers saved config over platform search', () => {
+  const workspaceRoot = makeTempWorkspace();
+  const configDir = path.join(workspaceRoot, '.mgview');
+  const configured = path.join(workspaceRoot, 'custom', 'MotionGenesis.exe');
+  writeFile(configured, '');
+  writeFile(path.join(configDir, 'config.json'), JSON.stringify({ motionGenesisBin: configured }) + '\n');
+
+  const originalHomedir = os.homedir;
+  os.homedir = () => workspaceRoot;
+  try {
+    const result = resolveMotionGenesisCommand(
+      path.join(workspaceRoot, 'project'),
+      workspaceRoot,
+      { USERPROFILE: path.join(workspaceRoot, 'unused-home') },
+      'win32'
+    );
+    assert.equal(result.command, configured);
+    assert.equal(result.source, 'config');
+  } finally {
+    os.homedir = originalHomedir;
+  }
+});
+
 test('resolveMotionGenesisCommand falls back to scene parent when no workspace root is available', () => {
   const result = resolveMotionGenesisCommand('/tmp/project/case1', null, {}, 'linux');
   assert.equal(result.command, path.resolve('/tmp/project/case1', '../MotionGenesis'));

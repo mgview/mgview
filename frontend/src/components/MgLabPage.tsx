@@ -4,10 +4,12 @@ import { listLocalFiles } from '../api/localFiles.ts';
 import { getHomePath, inAppLinkProps } from '../core/appRoutes.ts';
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import { useMotionGenesisRun } from '../hooks/useMotionGenesisRun.ts';
+import { useMotionGenesisRuntime } from '../hooks/useMotionGenesisRuntime.ts';
 import { useWorkspaceTextFileEditor } from '../hooks/useWorkspaceTextFileEditor.ts';
 import { cn } from '../lib/utils.ts';
 import CodeEditor from './CodeEditor.tsx';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
+import MotionGenesisExecutableOverlay from './MotionGenesisExecutableOverlay.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
 import { Badge } from './ui/badge.tsx';
 import { Button } from './ui/button.tsx';
@@ -190,6 +192,7 @@ export default function MgLabPage() {
 
   const fileEditor = useWorkspaceTextFileEditor({ filePath });
   const motionGenesisRun = useMotionGenesisRun();
+  const motionGenesisRuntime = useMotionGenesisRuntime();
   const run = motionGenesisRun.run;
   const runActive = run?.status === 'running' || run?.status === 'waiting-input';
   const status = run?.status ?? 'idle';
@@ -208,6 +211,9 @@ export default function MgLabPage() {
     }
     return 'Idle';
   }, [status]);
+
+  const resolvedCommand = run?.command ?? motionGenesisRuntime.runtimeInfo?.command ?? 'Not configured';
+  const ptySetupError = motionGenesisRuntime.runtimeInfo?.ptyError ?? null;
 
   useEffect(() => {
     if (!fileEditor.hasEdits) {
@@ -560,8 +566,17 @@ export default function MgLabPage() {
           </div>
           <div className="min-w-0">
             <span className="text-muted-foreground">Command: </span>
-            <code className="break-all text-foreground">{run?.command ?? '/Applications/MotionGenesis/MotionGenesis'}</code>
+            <button
+              type="button"
+              className="rounded-sm text-left underline decoration-dotted underline-offset-4 transition-colors hover:text-primary"
+              onClick={motionGenesisRuntime.openPicker}
+            >
+              <code className="break-all text-foreground">{resolvedCommand}</code>
+            </button>
           </div>
+          {ptySetupError ? (
+            <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-destructive">{ptySetupError}</pre>
+          ) : null}
           {motionGenesisRun.error ? <p className="text-xs text-destructive">{motionGenesisRun.error}</p> : null}
           {fileEditor.error ? <p className="text-xs text-destructive">{fileEditor.error}</p> : null}
         </div>
@@ -846,6 +861,24 @@ export default function MgLabPage() {
             </div>
           </div>
         </OverlayPanel>
+      ) : null}
+
+      {motionGenesisRuntime.pickerOpen ? (
+        <MotionGenesisExecutableOverlay
+          draftExecutablePath={motionGenesisRuntime.draftExecutablePath}
+          errorMessage={motionGenesisRuntime.error}
+          runtimeInfo={motionGenesisRuntime.runtimeInfo}
+          saving={motionGenesisRuntime.saving}
+          onApply={() => {
+            void motionGenesisRuntime.applyExecutablePath();
+          }}
+          onClearConfigured={() => {
+            void motionGenesisRuntime.clearConfiguredExecutable();
+          }}
+          onClose={motionGenesisRuntime.closePicker}
+          onDraftChange={motionGenesisRuntime.setDraftExecutablePath}
+          onSelectCandidate={motionGenesisRuntime.selectCandidate}
+        />
       ) : null}
     </main>
   );

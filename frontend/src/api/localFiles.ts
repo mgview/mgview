@@ -2,6 +2,7 @@ import { isStaticHosting } from './runtimeMode.ts';
 
 export type { FileBrowserEntry, FileBrowserListing } from './localFilesTypes.ts';
 export type { MotionGenesisRunOptions, MotionGenesisRunState, MotionGenesisRunStatus } from './localFilesTypes.ts';
+export type { MotionGenesisCandidate, MotionGenesisPtyLoadAttempt, MotionGenesisRuntimeInfo } from './motionGenesisTypes.ts';
 export type { WorkspaceInfo } from './workspaceTypes.ts';
 export {
   getPublicBaseUrl,
@@ -38,5 +39,15 @@ const staticWorkspaceUnavailable = () => {
   throw new Error('Workspace settings are only available with the local MGView server.');
 };
 
+const staticMotionGenesisUnavailable = () => {
+  throw new Error('Motion Genesis runtime settings are only available with the local MGView server.');
+};
+
 export const getWorkspaceInfo = isStaticHosting ? staticWorkspaceUnavailable : localFilesServer.getWorkspaceInfo;
 export const setWorkspaceRoot = isStaticHosting ? staticWorkspaceUnavailable : localFilesServer.setWorkspaceRoot;
+export const getMotionGenesisRuntime = isStaticHosting
+  ? staticMotionGenesisUnavailable
+  : localFilesServer.getMotionGenesisRuntime;
+export const setMotionGenesisExecutable = isStaticHosting
+  ? staticMotionGenesisUnavailable
+  : localFilesServer.setMotionGenesisExecutable;

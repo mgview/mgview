@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const childProcess = require('child_process');
+const { readMotionGenesisBinFromConfig } = require('./workspaceRoots.js');
 
 const PTY_BRIDGE_PATH = path.resolve(__dirname, 'mg_pty_bridge.py');
 
@@ -61,43 +62,81 @@ function defaultSpawn(command, args, options) {
   return childProcess.spawn(command, args, options);
 }
 
-function getNodePtyCandidatePaths(platform) {
-  const resolvedPlatform = platform || process.platform;
-  const paths = [];
+const PTY_MODULE_NAME = '@homebridge/node-pty-prebuilt-multiarch';
 
-  if (resolvedPlatform === 'linux') {
-    paths.push(
-      path.resolve(__dirname, 'node_modules', '@homebridge', 'node-pty-prebuilt-multiarch'),
-      path.resolve(__dirname, '../frontend/node_modules/@homebridge/node-pty-prebuilt-multiarch'),
-      '@homebridge/node-pty-prebuilt-multiarch'
-    );
-  }
-
-  paths.push(
-    path.resolve(__dirname, 'node_modules', 'node-pty'),
-    path.resolve(__dirname, '../frontend/node_modules/node-pty'),
-    'node-pty'
-  );
-
-  return paths;
+function getNodePtyCandidatePaths() {
+  return [
+    path.resolve(__dirname, 'node_modules', '@homebridge', 'node-pty-prebuilt-multiarch'),
+    path.resolve(__dirname, '../frontend/node_modules/@homebridge/node-pty-prebuilt-multiarch'),
+    PTY_MODULE_NAME,
+  ];
 }
 
-function loadNodePty(platform) {
-  const candidatePaths = getNodePtyCandidatePaths(platform);
+function formatNodePtyLoadError(platform, attempts) {
+  const lines = [
+    `Interactive Motion Genesis runs on ${platform || process.platform} require ${PTY_MODULE_NAME}.`,
+    `Node.js ${process.version}.`,
+    'Module load attempts:',
+    ...attempts.map((attempt) => `  - ${attempt.path}: ${attempt.error}`),
+    'Dev setup: cd frontend && npm install',
+    'Release bundles this module under bin/node_modules/.',
+    'Node.js 24 requires @homebridge/node-pty-prebuilt-multiarch >= 0.13.1.',
+  ];
+  return lines.join('\n');
+}
 
-  for (const candidatePath of candidatePaths) {
+function inspectNodePtyLoad(platform) {
+  const attempts = [];
+
+  for (const candidatePath of getNodePtyCandidatePaths()) {
     try {
-      return require(candidatePath);
+      require(candidatePath);
+      return {
+        ptyAvailable: true,
+        ptyError: null,
+        requiredModule: PTY_MODULE_NAME,
+        resolvedModulePath: candidatePath,
+        loadAttempts: attempts.concat({
+          path: candidatePath,
+          ok: true,
+          error: null,
+        }),
+      };
     } catch (error) {
-      if (error && error.code !== 'MODULE_NOT_FOUND') {
-        throw error;
-      }
+      attempts.push({
+        path: candidatePath,
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
-  throw new Error(
-    `node-pty is required for interactive Motion Genesis runs on ${platform || process.platform}. Reinstall MGView to restore the bundled PTY runtime.`
-  );
+  return {
+    ptyAvailable: false,
+    ptyError: formatNodePtyLoadError(platform, attempts),
+    requiredModule: PTY_MODULE_NAME,
+    resolvedModulePath: null,
+    loadAttempts: attempts,
+  };
+}
+
+function loadNodePty(platform) {
+  const inspection = inspectNodePtyLoad(platform);
+  if (!inspection.ptyAvailable || !inspection.resolvedModulePath) {
+    throw new Error(inspection.ptyError || `Could not load ${PTY_MODULE_NAME}.`);
+  }
+
+  return require(inspection.resolvedModulePath);
+}
+
+function assertInteractivePtyAvailable(platform, environment) {
+  const resolvedPlatform = platform || process.platform;
+  const ptyBackend = resolvePtyBackend(resolvedPlatform, environment);
+  if (ptyBackend !== 'native') {
+    return;
+  }
+
+  loadNodePty(resolvedPlatform);
 }
 
 function defaultPtySpawn(command, args, options) {
@@ -203,16 +242,49 @@ function resolveMotionGenesisLaunch(command, simulationSettings, platform, envir
     };
   }
 
-  return {
-    spawnCommand: command,
-    spawnArgs: [simulationSettings],
-    commandLine: `${quoteCommandPart(command)} ${quoteCommandPart(simulationSettings)}`,
-    stdio: 'pipe',
-    pty: false,
-    nativePty: false,
-    inputTerminator: '\n',
-    stopSignal: 'SIGTERM',
-  };
+  throw new Error(
+    `Interactive Motion Genesis runs are not configured for platform ${resolvedPlatform}. ` +
+      'Supported platforms use native PTY execution, or macOS python-bridge when MGVIEW_PTY_BACKEND=python-bridge.'
+  );
+}
+
+function getMotionGenesisCommandCandidates(environment, platform) {
+  const env = environment || process.env;
+  const resolvedPlatform = platform || process.platform;
+  const homeDirectory =
+    (typeof env.USERPROFILE === 'string' && env.USERPROFILE.trim()) ||
+    (typeof env.HOME === 'string' && env.HOME.trim()) ||
+    '';
+  const candidateCommands = [];
+
+  if (resolvedPlatform === 'win32') {
+    candidateCommands.push(
+      'C:\\MotionGenesis\\MotionGenesis',
+      'C:\\MotionGenesis\\MotionGenesis.exe'
+    );
+    if (homeDirectory) {
+      candidateCommands.push(
+        path.join(homeDirectory, 'MotionGenesis', 'MotionGenesis'),
+        path.join(homeDirectory, 'MotionGenesis', 'MotionGenesis.exe')
+      );
+    }
+  } else if (resolvedPlatform === 'darwin') {
+    candidateCommands.push('/Applications/MotionGenesis/MotionGenesis');
+  }
+
+  const seen = new Set();
+  return candidateCommands
+    .filter((candidate) => {
+      if (seen.has(candidate)) {
+        return false;
+      }
+      seen.add(candidate);
+      return true;
+    })
+    .map((candidate) => ({
+      path: candidate,
+      exists: fs.existsSync(candidate),
+    }));
 }
 
 function resolveMotionGenesisCommand(sceneDirectory, workspaceRoot, environment, platform) {
@@ -227,6 +299,23 @@ function resolveMotionGenesisCommand(sceneDirectory, workspaceRoot, environment,
       command: explicitPath,
       source: 'env',
     };
+  }
+
+  const configuredPath = readMotionGenesisBinFromConfig();
+  if (configuredPath) {
+    return {
+      command: configuredPath,
+      source: 'config',
+    };
+  }
+
+  for (const candidate of getMotionGenesisCommandCandidates(env, resolvedPlatform)) {
+    if (candidate.exists) {
+      return {
+        command: candidate.path,
+        source: 'platform-search',
+      };
+    }
   }
 
   if (resolvedPlatform === 'win32') {
@@ -246,6 +335,35 @@ function resolveMotionGenesisCommand(sceneDirectory, workspaceRoot, environment,
   return {
     command: path.resolve(sceneDirectory, '../MotionGenesis'),
     source: 'scene-parent',
+  };
+}
+
+function getMotionGenesisRuntimeInfo(options) {
+  const settings = options || {};
+  const sceneDirectory = settings.sceneDirectory || settings.workspaceRoot || process.cwd();
+  const workspaceRoot = settings.workspaceRoot || sceneDirectory;
+  const environment = settings.environment || process.env;
+  const platform = settings.platform || process.platform;
+  const commandInfo = resolveMotionGenesisCommand(
+    sceneDirectory,
+    workspaceRoot,
+    environment,
+    platform
+  );
+  const ptyInspection = inspectNodePtyLoad(platform);
+
+  return {
+    command: commandInfo.command,
+    source: commandInfo.source,
+    exists: fs.existsSync(commandInfo.command),
+    configuredPath: readMotionGenesisBinFromConfig(),
+    candidates: getMotionGenesisCommandCandidates(environment, platform),
+    nodeVersion: process.version,
+    requiredModule: ptyInspection.requiredModule,
+    resolvedModulePath: ptyInspection.resolvedModulePath,
+    loadAttempts: ptyInspection.loadAttempts,
+    ptyAvailable: ptyInspection.ptyAvailable,
+    ptyError: ptyInspection.ptyError,
   };
 }
 
@@ -450,6 +568,7 @@ function createMotionGenesisRunManager(options) {
       platform,
       environment
     );
+    assertInteractivePtyAvailable(platform, environment);
     const child = launchInfo.nativePty
       ? spawnPtyProcess(launchInfo.spawnCommand, launchInfo.spawnArgs, {
           cwd: simulationDirectory,
@@ -663,7 +782,11 @@ function createMotionGenesisRunManager(options) {
 }
 
 module.exports = {
+  assertInteractivePtyAvailable,
   createMotionGenesisRunManager,
+  getMotionGenesisCommandCandidates,
+  getMotionGenesisRuntimeInfo,
+  inspectNodePtyLoad,
   normalizePtyOutput,
   normalizeRunOptions,
   resolveMotionGenesisCommand,

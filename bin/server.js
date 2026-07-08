@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const MGVIEW_ROOT = path.resolve(__dirname, '..');
-const { createMotionGenesisRunManager } = require('./motionGenesisRunner.js');
+const { createMotionGenesisRunManager, getMotionGenesisRuntimeInfo } = require('./motionGenesisRunner.js');
 const { resolveMotionGenesisHelpPath } = require('./mgToolbox.js');
 const { applyStartupWorkspace, formatServerUsage, parseServerArgs } = require('./serverCli.js');
 const MODERN_DIST_DIR = path.resolve(__dirname, '../frontend/dist');
@@ -23,6 +23,7 @@ const {
   resolveLogicalPathForRoot,
   resolveUrlAssetPath,
   toLogicalPathForRoot,
+  writeMotionGenesisBin,
   writeWorkspaceConfig,
 } = workspaceRoots;
 
@@ -274,6 +275,12 @@ StaticServlet.prototype.handleApiRequest_ = function(req, res, pathname) {
   if (pathname === API_PREFIX + '/mkdir' && req.method === 'POST') {
     return this.handlePostMkdirApi_(req, res);
   }
+  if (pathname === API_PREFIX + '/motion-genesis' && req.method === 'GET') {
+    return this.handleGetMotionGenesisApi_(req, res);
+  }
+  if (pathname === API_PREFIX + '/motion-genesis' && req.method === 'POST') {
+    return this.handlePostMotionGenesisApi_(req, res);
+  }
   if (pathname === API_PREFIX + '/mg-run' && req.method === 'POST') {
     return this.handlePostMotionGenesisRunApi_(req, res);
   }
@@ -504,6 +511,67 @@ StaticServlet.prototype.handlePostMkdirApi_ = function(req, res) {
         path: this.normalizeRelativePath_(directoryPath, apiRoot),
       });
     });
+  });
+};
+
+StaticServlet.prototype.handleGetMotionGenesisApi_ = function(req, res) {
+  return this.sendJson_(
+    res,
+    200,
+    getMotionGenesisRuntimeInfo({
+      sceneDirectory: this.workspaceRoot,
+      workspaceRoot: this.workspaceRoot,
+      environment: process.env,
+      platform: process.platform,
+    })
+  );
+};
+
+StaticServlet.prototype.handlePostMotionGenesisApi_ = function(req, res) {
+  const servlet = this;
+
+  servlet.readRequestBody_(req, (bodyError, body) => {
+    if (bodyError) {
+      return servlet.sendJson_(res, 500, { error: 'Could not read request body.' });
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(body);
+    } catch (parseError) {
+      return servlet.sendJson_(res, 400, { error: 'Invalid JSON body.' });
+    }
+
+    const motionGenesisBin =
+      parsed && typeof parsed.motionGenesisBin === 'string' ? parsed.motionGenesisBin.trim() : '';
+
+    if (motionGenesisBin.length > 0) {
+      try {
+        const stat = fs.statSync(motionGenesisBin);
+        if (!stat.isFile()) {
+          return servlet.sendJson_(res, 400, { error: 'Motion Genesis executable must be a file.' });
+        }
+      } catch (statError) {
+        return servlet.sendJson_(res, 404, { error: 'Motion Genesis executable not found.' });
+      }
+    }
+
+    try {
+      writeMotionGenesisBin(motionGenesisBin, servlet.appRoot);
+    } catch (writeError) {
+      return servlet.sendJson_(res, 500, { error: 'Could not save Motion Genesis settings.' });
+    }
+
+    return servlet.sendJson_(
+      res,
+      200,
+      getMotionGenesisRuntimeInfo({
+        sceneDirectory: servlet.workspaceRoot,
+        workspaceRoot: servlet.workspaceRoot,
+        environment: process.env,
+        platform: process.platform,
+      })
+    );
   });
 };
 
