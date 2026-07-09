@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { listLocalFiles, type FileBrowserListing, type MotionGenesisRunOptions, type MotionGenesisRunState } from '../api/localFiles.ts';
+import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 import CodeEditor from './CodeEditor.tsx';
 import { getBasePath, getRelativePath } from '../core/pathUtils.ts';
 import {
@@ -23,7 +24,9 @@ import { Badge } from './ui/badge.tsx';
 import { Button } from './ui/button.tsx';
 import { Checkbox } from './ui/checkbox.tsx';
 import { Input } from './ui/input.tsx';
+import { useMotionGenesisRuntime } from '../hooks/useMotionGenesisRuntime.ts';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
+import MotionGenesisExecutableOverlay from './MotionGenesisExecutableOverlay.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
 import { Separator } from './ui/separator.tsx';
 
@@ -134,6 +137,10 @@ export default function MotionGenesisRunPanel({
   stopping,
   sendingInput,
 }: MotionGenesisRunPanelProps) {
+  const motionGenesisRuntime = useMotionGenesisRuntime();
+  const resolvedCommand =
+    run?.command ?? motionGenesisRuntime.runtimeInfo?.command ?? 'Not configured';
+  const ptySetupError = motionGenesisRuntime.runtimeInfo?.ptyError ?? null;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [vimMode, setVimMode] = useState(readStoredVimMode);
   const [activeFlyout, setActiveFlyout] = useState<'configure' | 'edit' | 'status' | null>(null);
@@ -422,8 +429,23 @@ export default function MotionGenesisRunPanel({
                   </div>
                   <div className="text-muted-foreground">
                     Motion Genesis executable:{' '}
-                    <code className="text-foreground">{run?.command ?? '/Applications/MotionGenesis/MotionGenesis'}</code>
+                    {canPersistScenesToServer ? (
+                      <button
+                        type="button"
+                        className="group cursor-pointer rounded-sm text-primary underline decoration-primary decoration-2 underline-offset-[3px] transition-colors hover:text-primary/80 hover:decoration-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={motionGenesisRuntime.openPicker}
+                      >
+                        <code className="font-mono text-inherit group-hover:text-inherit">{resolvedCommand}</code>
+                      </button>
+                    ) : (
+                      <code className="text-foreground">{resolvedCommand}</code>
+                    )}
                   </div>
+                  {ptySetupError ? (
+                    <pre className="overflow-x-auto whitespace-pre-wrap text-[0.68rem] text-destructive">
+                      {ptySetupError}
+                    </pre>
+                  ) : null}
                 </div>
 
                 <div className="grid gap-2 rounded-md border border-border/70 bg-background/80 p-3 text-xs">
@@ -655,6 +677,23 @@ export default function MotionGenesisRunPanel({
         </OverlayPanel>
       ) : null}
 
+      {motionGenesisRuntime.pickerOpen ? (
+        <MotionGenesisExecutableOverlay
+          draftExecutablePath={motionGenesisRuntime.draftExecutablePath}
+          errorMessage={motionGenesisRuntime.error}
+          runtimeInfo={motionGenesisRuntime.runtimeInfo}
+          saving={motionGenesisRuntime.saving}
+          onApply={() => {
+            void motionGenesisRuntime.applyExecutablePath();
+          }}
+          onClearConfigured={() => {
+            void motionGenesisRuntime.clearConfiguredExecutable();
+          }}
+          onClose={motionGenesisRuntime.closePicker}
+          onDraftChange={motionGenesisRuntime.setDraftExecutablePath}
+          onSelectCandidate={motionGenesisRuntime.selectCandidate}
+        />
+      ) : null}
     </div>
   );
 }
