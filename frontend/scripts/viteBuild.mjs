@@ -23,6 +23,7 @@ const viteBin = path.join(path.dirname(vitePackageJson), 'bin', 'vite.js');
 const PRESETS = {
   server: {
     env: {
+      VITE_MGVIEW_STATIC: 'false',
       VITE_MGVIEW_PUBLIC_BASE: '/mgview/',
       VITE_MGVIEW_BASE: '/mgview/',
     },
