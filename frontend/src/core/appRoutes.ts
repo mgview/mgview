@@ -52,6 +52,45 @@ export function getLabPath(): string {
   return `${getHomePath()}lab/`.replace(/\/{2,}/g, '/');
 }
 
+export type AppMode = 'app' | 'lab';
+
+const SKIP_DEFAULT_SCENE_KEY = 'mgview-skip-default-scene';
+
+export function markSkipDefaultSceneLoad(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  sessionStorage.setItem(SKIP_DEFAULT_SCENE_KEY, '1');
+}
+
+export function consumeSkipDefaultSceneLoad(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  if (sessionStorage.getItem(SKIP_DEFAULT_SCENE_KEY) !== '1') {
+    return false;
+  }
+
+  sessionStorage.removeItem(SKIP_DEFAULT_SCENE_KEY);
+  return true;
+}
+
+export function navigateToAppMode(mode: AppMode): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (mode === 'lab') {
+    window.location.assign(getLabPath());
+    return;
+  }
+
+  markSkipDefaultSceneLoad();
+  window.location.assign(getHomePath());
+}
+
 /** Same-origin MGView pages — open in a new tab so the current workspace tab is preserved. */
 export const inAppLinkProps = {
   target: '_blank',

@@ -3,6 +3,7 @@ import { Undo2, Redo2, ChevronDown, Sun, Moon, PanelsTopLeft, TriangleAlert } fr
 import { canPersistScenesToServer, isStaticHosting } from '../api/runtimeMode.ts';
 import type { NormalizedSceneLayout } from '../core/types.ts';
 import { DEFAULT_SCENE_LAYOUT } from '../core/workspaceLayout.ts';
+import AppModeSwitcher from './AppModeSwitcher.tsx';
 import { useTheme } from './ThemeProvider.tsx';
 import { Button } from './ui/button.tsx';
 import {
@@ -185,7 +186,16 @@ export default function SceneHeaderBar({
   return (
     <header className="mb-1.5 flex items-center justify-between gap-3 rounded-md border border-border bg-card px-2 py-1.5">
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <span className="shrink-0 text-base font-bold tracking-tight">MGView</span>
+        <AppModeSwitcher
+          mode="app"
+          onBeforeNavigate={() => {
+            if (!hasLocalEdits) {
+              return true;
+            }
+
+            return window.confirm('Switching modes will discard unsaved edits. Continue?');
+          }}
+        />
         <Button
           type="button"
           variant="outline"

@@ -9,6 +9,7 @@ import {
   getDefaultSceneRef,
   getSceneBasePath,
   parseSceneRefFromUrl,
+  resolveInitialSceneRef,
   resolveApiFilePath,
   workspacePathFromInput,
 } from './sceneRef.ts';
@@ -28,8 +29,12 @@ test('parseSceneRefFromUrl maps scene param to workspace', () => {
   assert.deepEqual(parseSceneRefFromUrl(params), createWorkspaceRef('ME328/run_01/scene.json'));
 });
 
-test('parseSceneRefFromUrl defaults to bundled sample', () => {
-  assert.deepEqual(parseSceneRefFromUrl(new URLSearchParams()), getDefaultSceneRef());
+test('parseSceneRefFromUrl returns null without scene params', () => {
+  assert.equal(parseSceneRefFromUrl(new URLSearchParams()), null);
+});
+
+test('resolveInitialSceneRef defaults to bundled sample', () => {
+  assert.deepEqual(resolveInitialSceneRef(new URLSearchParams()), getDefaultSceneRef());
 });
 
 test('buildSceneUrl uses separate query params', () => {

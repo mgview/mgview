@@ -1,3 +1,4 @@
+import { consumeSkipDefaultSceneLoad } from './appRoutes.ts';
 import { getBasePath } from './pathUtils.ts';
 
 export type SceneRef =
@@ -32,7 +33,7 @@ export function canOverwriteScene(ref: SceneRef): boolean {
   return ref.source === 'workspace';
 }
 
-export function parseSceneRefFromUrl(searchParams: URLSearchParams): SceneRef {
+export function parseSceneRefFromUrl(searchParams: URLSearchParams): SceneRef | null {
   const sample = searchParams.get('sample');
   const scene = searchParams.get('scene');
 
@@ -42,6 +43,19 @@ export function parseSceneRefFromUrl(searchParams: URLSearchParams): SceneRef {
 
   if (scene) {
     return createWorkspaceRef(scene);
+  }
+
+  return null;
+}
+
+export function resolveInitialSceneRef(searchParams: URLSearchParams): SceneRef | null {
+  const fromUrl = parseSceneRefFromUrl(searchParams);
+  if (fromUrl) {
+    return fromUrl;
+  }
+
+  if (consumeSkipDefaultSceneLoad()) {
+    return null;
   }
 
   return getDefaultSceneRef();

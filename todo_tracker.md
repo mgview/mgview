@@ -22,10 +22,9 @@ Add 3D UI widgets for dragging and rotating objects directly in the scene instea
 
 We have to either ignore Plot commands, or turn them into auto-configured plots in the MGView UI. Otherwise when the UI runs the MG backend, it will launch the plotting program mid-sim and hang the process.
 
-### Editor pane disappears on most UI actions
+### ~~Editor pane disappears on most UI actions~~ (mostly resolved)
 
-Since it's currently a dropdown, it disappears if you do something like drag the resize bar.
-Need to figure out a way to layout the whole "sim editing" tab so that editor, results, etc can be more permanent selections.
+**Done (2026-07):** Sim Editor is a top-level layout pane (`rightRail: 'sim'`), not a tab inside the scene editor rail. Shell split/editor/output layout persists via `mgview-run-*` localStorage. Remaining edge case: if the whole right rail is hidden (`rightRail: 'none'`), 3D selection still re-opens Scene Editor — intentional.
 
 ### Need a version of ODE() that doesn't spew.
 

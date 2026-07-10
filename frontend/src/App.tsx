@@ -4,6 +4,7 @@ import MgLabPage from './components/MgLabPage.tsx';
 import { canPersistScenesToServer } from './api/runtimeMode.ts';
 import DemoNotice from './components/DemoNotice.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
+import WorkspaceNoSceneState from './components/WorkspaceNoSceneState.tsx';
 import WorkspaceOverlays from './components/WorkspaceOverlays.tsx';
 import WorkspaceShell from './components/WorkspaceShell.tsx';
 import { getFrameAtTime } from './core/timeline.ts';
@@ -18,7 +19,7 @@ import { useToasts } from './hooks/useToasts.ts';
 import { useWorkspaceKeyboardShortcuts } from './hooks/useWorkspaceKeyboardShortcuts.ts';
 import { useWorkspaceLayoutSplits } from './hooks/useWorkspaceLayoutSplits.ts';
 import { useWorkspaceShell } from './hooks/useWorkspaceShell.ts';
-import { createSampleRef, getSceneBasePath, parseSceneRefFromUrl } from './core/sceneRef.ts';
+import { createSampleRef, getSceneBasePath, resolveInitialSceneRef } from './core/sceneRef.ts';
 import { groupSampleScenes } from './core/samplesManifest.ts';
 import { useServerWorkspace } from './hooks/useServerWorkspace.ts';
 import { getCurrentAppRoute } from './core/appRoutes.ts';
@@ -40,7 +41,7 @@ function WorkspaceApp() {
   const { dismissErrors, showSuccess, showError } = useToasts();
   const serverWorkspace = useServerWorkspace(showSuccess, showError);
   const initialSceneRef = useMemo(
-    () => parseSceneRefFromUrl(new URLSearchParams(window.location.search)),
+    () => resolveInitialSceneRef(new URLSearchParams(window.location.search)),
     []
   );
   const workspace = useSceneWorkspace(initialSceneRef, { showSuccess, showError });
@@ -412,7 +413,9 @@ function WorkspaceApp() {
           workspaceShellRef={layout.workspaceShellRef}
           workspaceShellStyle={layout.workspaceShellStyle}
         />
-      ) : null}
+      ) : (
+        <WorkspaceNoSceneState />
+      )}
 
       <WorkspaceOverlays
         aboutOpen={aboutOpen}

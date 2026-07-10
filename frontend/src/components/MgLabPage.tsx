@@ -1,10 +1,10 @@
-import { ArrowLeft, Code2, FolderOpen, RotateCcw, Save } from 'lucide-react';
+import { FolderOpen, RotateCcw, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { listLocalFiles } from '../api/localFiles.ts';
-import { getHomePath, inAppLinkProps } from '../core/appRoutes.ts';
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import { useMotionGenesisRun } from '../hooks/useMotionGenesisRun.ts';
 import { useWorkspaceTextFileEditor } from '../hooks/useWorkspaceTextFileEditor.ts';
+import AppModeSwitcher from './AppModeSwitcher.tsx';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import MotionGenesisRunShell from './MotionGenesisRunShell.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
@@ -158,13 +158,19 @@ export default function MgLabPage() {
   }, [handleSave]);
 
   return (
-    <main className="grid h-screen grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden bg-background p-2 text-foreground">
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+    <main className="grid h-screen grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-background p-2 text-foreground">
+      <header className="mb-1.5 flex items-center justify-between gap-3 rounded-md border border-border bg-card px-2 py-1.5">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            <Code2 className="size-3.5" aria-hidden />
-            MG Lab
-          </div>
+          <AppModeSwitcher
+            mode="lab"
+            onBeforeNavigate={() => {
+              if (!fileEditor.hasEdits) {
+                return true;
+              }
+
+              return window.confirm('Switching modes will discard unsaved edits. Continue?');
+            }}
+          />
           <code
             className="min-w-0 flex-1 truncate font-mono text-[0.72rem] text-muted-foreground"
             title={fileEditor.filePath ?? 'No file selected'}
@@ -181,7 +187,7 @@ export default function MgLabPage() {
             </span>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
           <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
             <FolderOpen className="size-3.5" aria-hidden />
             Open File
@@ -210,12 +216,6 @@ export default function MgLabPage() {
           >
             <RotateCcw className="size-3.5" aria-hidden />
             Revert
-          </Button>
-          <Button type="button" variant="outline" size="sm" asChild>
-            <a href={getHomePath()} {...inAppLinkProps}>
-              <ArrowLeft className="size-3.5" aria-hidden />
-              Workspace
-            </a>
           </Button>
         </div>
       </header>

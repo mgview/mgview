@@ -266,12 +266,12 @@ async function loadSimulationWorkspaceState(
   };
 }
 
-export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: WorkspaceNotifications) {
+export function useSceneWorkspace(initialSceneRef: SceneRef | null, notifications?: WorkspaceNotifications) {
   const [sceneInput, setSceneInput] = useState(
-    initialSceneRef.source === 'workspace' ? initialSceneRef.path : ''
+    initialSceneRef?.source === 'workspace' ? initialSceneRef.path : ''
   );
   const [loaded, setLoaded] = useState<LoadedSceneData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialSceneRef !== null);
   const [error, setError] = useState<string | null>(null);
   const [browserListing, setBrowserListing] = useState<FileBrowserListing | null>(null);
   const [browserLoading, setBrowserLoading] = useState(false);
@@ -661,8 +661,12 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
   };
 
   useEffect(() => {
+    if (!initialSceneRef) {
+      return;
+    }
+
     void handleLoad(initialSceneRef, { force: true });
-  }, [initialSceneRef.path, initialSceneRef.source]);
+  }, [initialSceneRef?.path, initialSceneRef?.source]);
 
   useEffect(() => {
     void browseSceneInputDirectory();
