@@ -5,7 +5,7 @@ import { useMotionGenesisRun } from './useMotionGenesisRun.ts';
 import { useSimulationSettingsEditor } from './useSimulationSettingsEditor.ts';
 
 function isLikelyMotionGenesisInputPath(filePath: string): boolean {
-  return /\.(al|txt|in)$/i.test(filePath);
+  return /\.(al|txt)$/i.test(filePath);
 }
 
 interface UseMotionGenesisWorkspaceOptions {
@@ -63,7 +63,7 @@ export function useMotionGenesisWorkspace({
     }
     if (!isLikelyMotionGenesisInputPath(activeScene.simulationSettings)) {
       motionGenesisRun.setError(
-        'Simulation File must point to a Motion Genesis input file with a .al, .txt, or .in extension.'
+        'Simulation File must point to a Motion Genesis input file with a .al or .txt extension.'
       );
       return;
     }

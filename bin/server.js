@@ -789,7 +789,7 @@ StaticServlet.prototype.handlePutFileApi_ = function(req, res) {
 
   const extension = path.extname(filePath).toLowerCase();
   const isJsonSceneFile = extension === '.json';
-  const isMotionGenesisInputFile = extension === '.al' || extension === '.txt' || extension === '.in';
+  const isMotionGenesisInputFile = extension === '.al' || extension === '.txt';
   if (!isJsonSceneFile && !isMotionGenesisInputFile) {
     return this.sendJson_(res, 400, {
       error: 'Only JSON scene files and Motion Genesis input files can be saved through this API.',

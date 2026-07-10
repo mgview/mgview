@@ -25,5 +25,5 @@ export function resolveSimulationFilePath(
 }
 
 export function isMotionGenesisInputPath(filePath: string): boolean {
-  return /\.(al|txt|in)$/i.test(filePath);
+  return /\.(al|txt)$/i.test(filePath);
 }

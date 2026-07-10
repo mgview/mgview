@@ -307,7 +307,7 @@ function normalizeRunOptions(options) {
 }
 
 function isLikelyMotionGenesisInputPath(filePath) {
-  return /\.(al|txt|in)$/i.test(String(filePath || ''));
+  return /\.(al|txt)$/i.test(String(filePath || ''));
 }
 
 function buildAutoQuitInputFile(originalFilePath, runId) {
@@ -659,7 +659,7 @@ function createMotionGenesisRunManager(options) {
     }
 
     if (!isLikelyMotionGenesisInputPath(target.simulationSettings)) {
-      throw new Error('simulationSettings must point to a Motion Genesis input file with a .al, .txt, or .in extension.');
+      throw new Error('simulationSettings must point to a Motion Genesis input file with a .al or .txt extension.');
     }
   }
 

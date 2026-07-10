@@ -582,7 +582,7 @@ test('runner rejects scene json files as simulationSettings', () => {
         workspaceRoot,
       });
     },
-    /simulationSettings must point to a Motion Genesis input file with a \.al, \.txt, or \.in extension\./
+    /simulationSettings must point to a Motion Genesis input file with a \.al or \.txt extension\./
   );
 });
 

@@ -27,7 +27,7 @@ const MIN_OUTPUT_PANEL_WIDTH = 320;
 const MG_LAB_FILE_QUERY_KEY = 'file';
 
 function isMotionGenesisInputPath(filePath: string): boolean {
-  return /\.(al|txt|in)$/i.test(filePath);
+  return /\.(al|txt)$/i.test(filePath);
 }
 
 function readStoredVimMode(): boolean {
@@ -191,7 +191,7 @@ export default function MgLabPage() {
       return;
     }
     if (!isMotionGenesisInputPath(fileEditor.filePath)) {
-      motionGenesisRun.setError('Choose a Motion Genesis input file with a .al, .txt, or .in extension.');
+      motionGenesisRun.setError('Choose a Motion Genesis input file with a .al or .txt extension.');
       return;
     }
     if (fileEditor.saving) {
@@ -527,7 +527,7 @@ export default function MgLabPage() {
             />
           ) : (
             <div className="flex min-h-0 items-center justify-center rounded-md border border-dashed border-border bg-muted/10 px-6 text-center text-sm text-muted-foreground">
-              Open a workspace `.al`, `.txt`, or `.in` file to start editing and running Motion Genesis directly.
+              Open a workspace `.al` or `.txt` file to start editing and running Motion Genesis directly.
             </div>
           )}
         </div>
@@ -607,7 +607,7 @@ export default function MgLabPage() {
       {pickerOpen ? (
         <OverlayPanel
           title="Open Motion Genesis File"
-          subtitle="Pick a workspace .al, .txt, or .in file to edit and run."
+          subtitle="Pick a workspace .al or .txt file to edit and run."
           size="narrow"
           onClose={() => setPickerOpen(false)}
         >
