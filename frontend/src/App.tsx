@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import DocumentationPage from './components/DocumentationPage.tsx';
 import MgLabPage from './components/MgLabPage.tsx';
 import { canPersistScenesToServer } from './api/runtimeMode.ts';
+import ImportSimulationDataDialog from './components/ImportSimulationDataDialog.tsx';
 import DemoNotice from './components/DemoNotice.tsx';
 import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import WorkspaceNoSceneState from './components/WorkspaceNoSceneState.tsx';
@@ -55,7 +56,11 @@ function WorkspaceApp() {
     confirmWorkspaceChange,
     handleBrowse,
     handleCreateScene,
+    handleCreateSimProject,
+    handleImportScenarios,
+    handleImportSimulationEntries,
     handleLinkSimulationSettings,
+    handleSetActiveScenario,
     handleLoad,
     handleWorkspaceChange,
     handleLoadWorkspacePath,
@@ -118,6 +123,7 @@ function WorkspaceApp() {
     browserPath: browserListing?.path,
     handleBrowse,
     handleCreateScene,
+    handleCreateSimProject,
     handleLoadWorkspacePath,
     handleLoadSample,
     handleSaveSceneAs,
@@ -135,9 +141,12 @@ function WorkspaceApp() {
   const motionGenesis = useMotionGenesisWorkspace({
     activeScene,
     canSaveScene,
+    handleImportScenarios,
+    handleImportSimulationEntries,
     handleLinkSimulationSettings,
     handleRefreshSimulationData,
     handleSaveScene,
+    handleSetActiveScenario,
     hasLocalEdits,
     loaded,
     showSuccess,
@@ -145,12 +154,18 @@ function WorkspaceApp() {
 
   const {
     canSaveAnything,
+    confirmImportAsData,
+    confirmImportAsScenarios,
     createAndLinkSimulationFile,
+    dismissImportPrompt,
     handleSaveAll,
     hasUnsavedChanges,
+    importPrompt,
+    importingSimulationData,
     linkSimulationSettings,
     motionGenesisRun,
     runMotionGenesis,
+    setActiveScenario,
     simulationSettingsEditor,
   } = motionGenesis;
 
@@ -314,6 +329,7 @@ function WorkspaceApp() {
         onOpenAbout={() => setAboutOpen(true)}
         onOpenWorkspace={canPersistScenesToServer ? serverWorkspace.openPicker : undefined}
         onOpenCreateOverlay={shell.openCreateOverlay}
+        onOpenCreateSimProjectOverlay={shell.openCreateSimProjectOverlay}
         onOpenLoadOverlay={shell.openLoadOverlay}
         onOpenSamplesOverlay={shell.openSamplesOverlay}
         onOpenDiagnostics={shell.openDiagnostics}
@@ -326,7 +342,10 @@ function WorkspaceApp() {
         onRedo={handleRedo}
         onSave={() => void handleSaveAll()}
         onRevert={handleRevert}
+        onSetActiveScenario={setActiveScenario}
         onUndo={handleUndo}
+        scenarios={activeScene?.scenarios ?? []}
+        activeScenario={activeScene?.activeScenario ?? null}
       />
 
       {showWorkspaceShell ? (
@@ -370,6 +389,9 @@ function WorkspaceApp() {
           onSimFileChange={simulationSettingsEditor.setDraftContent}
           onCreateSimulationFile={createAndLinkSimulationFile}
           onLinkSimulationSettings={linkSimulationSettings}
+          onSetActiveScenario={setActiveScenario}
+          activeScenario={activeScene?.activeScenario ?? null}
+          scenarios={activeScene?.scenarios ?? []}
           onStopMotionGenesis={() => {
             void motionGenesisRun.stopRun();
           }}
@@ -445,6 +467,20 @@ function WorkspaceApp() {
         simulationFiles={simulationFiles}
         simulationLoading={simulationLoading}
       />
+
+      {importPrompt ? (
+        <ImportSimulationDataDialog
+          detections={importPrompt.detections}
+          loading={importingSimulationData}
+          onClose={dismissImportPrompt}
+          onImportAsData={(entries) => {
+            void confirmImportAsData(entries);
+          }}
+          onImportAsScenarios={(detections) => {
+            void confirmImportAsScenarios(detections);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

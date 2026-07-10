@@ -1,6 +1,7 @@
 import AboutOverlay from './AboutOverlay.tsx';
 import DiagnosticsOverlay from './DiagnosticsOverlay.tsx';
 import LoadSceneOverlay from './LoadSceneOverlay.tsx';
+import NewSimProjectOverlay from './NewSimProjectOverlay.tsx';
 import SamplesOverlay from './SamplesOverlay.tsx';
 import SimulationDataOverlay from './SimulationDataOverlay.tsx';
 import WorkspacePickerOverlay from './WorkspacePickerOverlay.tsx';
@@ -157,6 +158,25 @@ export default function WorkspaceOverlays({
           simulationEntryInput={shell.simulationEntryInput}
           simulationLoading={simulationLoading}
           setSimulationEntryInput={shell.setSimulationEntryInput}
+        />
+      ) : null}
+
+      {shell.simProjectDialogOpen ? (
+        <NewSimProjectOverlay
+          browserError={browserError}
+          browserListing={browserListing}
+          browserLoading={browserLoading}
+          errorMessage={shell.simProjectDialogError ?? error}
+          loading={shell.simProjectDialogLoading || loading}
+          onBrowse={(path) => {
+            void handleBrowse(path, 'workspace');
+          }}
+          onClose={shell.closeSimProjectDialog}
+          onCreate={(folderName) => {
+            void shell.handleCreateSimProjectFolder(folderName);
+          }}
+          onCreateFolder={shell.handleCreateFolder}
+          onOpenWorkspace={canPersistScenesToServer ? serverWorkspace.openPicker : undefined}
         />
       ) : null}
 

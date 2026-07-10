@@ -1,22 +1,43 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { listLocalFiles } from '../api/localFiles.ts';
+import type { MotionGenesisRunState } from '../api/localFiles.ts';
 import { combineBrowserPath } from '../core/workspacePaths.ts';
 import { createMotionGenesisSimFile } from '../core/createMotionGenesisSimFile.ts';
 import {
+  buildScenarioFromOdeBasePath,
+  detectCompletedOdeOutputs,
+  discoverSimulationDataEntries,
+  sceneHasVisualizationData,
+} from '../core/sceneScenarios.ts';
+import {
+  getSceneDirectoryPath,
   getSimulationSettingsRelativePath,
   isMotionGenesisInputPath,
   validateSimFileName,
 } from '../core/simulationFilePath.ts';
-import type { NormalizedSceneConfig } from '../core/types.ts';
-import type { LoadedSceneData } from './useSceneWorkspace.ts';
+import type { NormalizedSceneConfig, SceneScenario } from '../core/types.ts';
+import { createSavableScene, type LoadedSceneData } from './useSceneWorkspace.ts';
 import { useMotionGenesisRun } from './useMotionGenesisRun.ts';
 import { useSimulationSettingsEditor } from './useSimulationSettingsEditor.ts';
+
+export type SimulationImportDetection = {
+  odeBasePath: string;
+  simulationDataEntry: string;
+};
+
+export type SimulationImportPrompt = {
+  detections: SimulationImportDetection[];
+};
 
 interface UseMotionGenesisWorkspaceOptions {
   activeScene: NormalizedSceneConfig | null;
   canSaveScene: boolean;
+  handleImportScenarios: (scenarios: SceneScenario[], activeScenarioId: string) => Promise<boolean>;
+  handleImportSimulationEntries: (entries: string[]) => Promise<boolean>;
   handleLinkSimulationSettings: (relativePath: string) => Promise<boolean>;
   handleRefreshSimulationData: (successMessage: string) => Promise<void>;
   handleSaveScene: () => Promise<void>;
+  handleSetActiveScenario: (scenarioId: string) => Promise<boolean>;
   hasLocalEdits: boolean;
   loaded: LoadedSceneData | null;
   showSuccess: (message: string) => void;
@@ -25,24 +46,108 @@ interface UseMotionGenesisWorkspaceOptions {
 export function useMotionGenesisWorkspace({
   activeScene,
   canSaveScene,
+  handleImportScenarios,
+  handleImportSimulationEntries,
   handleLinkSimulationSettings,
   handleRefreshSimulationData,
   handleSaveScene,
+  handleSetActiveScenario,
   hasLocalEdits,
   loaded,
   showSuccess,
 }: UseMotionGenesisWorkspaceOptions) {
-  const handleMotionGenesisSuccess = useCallback(async () => {
-    await handleRefreshSimulationData('Reloaded simulation data after Motion Genesis finished.');
-  }, [handleRefreshSimulationData]);
+  const [importPrompt, setImportPrompt] = useState<SimulationImportPrompt | null>(null);
+  const [importingSimulationData, setImportingSimulationData] = useState(false);
+
+  const handleMotionGenesisSuccess = useCallback(
+    async (run: MotionGenesisRunState) => {
+      if (!loaded || loaded.sceneRef.source !== 'workspace' || !activeScene) {
+        return;
+      }
+
+      const persistedScene = createSavableScene(loaded.rawScene, activeScene);
+      if (sceneHasVisualizationData(persistedScene)) {
+        await handleRefreshSimulationData('Reloaded simulation data after Motion Genesis finished.');
+        return;
+      }
+
+      const odePaths = detectCompletedOdeOutputs(run.output);
+      if (odePaths.length === 0) {
+        return;
+      }
+
+      const sceneDirectory = getSceneDirectoryPath(loaded.sceneRef.path);
+      const detections = await discoverSimulationDataEntries(sceneDirectory, odePaths, (directoryPath) =>
+        listLocalFiles(directoryPath, 'workspace')
+      );
+      if (detections.length === 0) {
+        return;
+      }
+
+      setImportPrompt({ detections });
+    },
+    [activeScene, handleRefreshSimulationData, loaded]
+  );
 
   const motionGenesisRun = useMotionGenesisRun(handleMotionGenesisSuccess);
+
+  const dismissImportPrompt = useCallback(() => {
+    if (!importingSimulationData) {
+      setImportPrompt(null);
+    }
+  }, [importingSimulationData]);
+
+  const confirmImportAsData = useCallback(
+    async (entries: string[]) => {
+      setImportingSimulationData(true);
+      const didImport = await handleImportSimulationEntries(entries);
+      setImportingSimulationData(false);
+      if (didImport) {
+        setImportPrompt(null);
+      }
+    },
+    [handleImportSimulationEntries]
+  );
+
+  const confirmImportAsScenarios = useCallback(
+    async (detections: SimulationImportDetection[]) => {
+      const existingIds: string[] = [];
+      const scenarios = detections.map((detection) => {
+        const scenario = buildScenarioFromOdeBasePath(
+          detection.odeBasePath,
+          detection.simulationDataEntry,
+          existingIds
+        );
+        existingIds.push(scenario.id);
+        return scenario;
+      });
+      const activeScenarioId = scenarios[0]?.id;
+      if (!activeScenarioId) {
+        return;
+      }
+
+      setImportingSimulationData(true);
+      const didImport = await handleImportScenarios(scenarios, activeScenarioId);
+      setImportingSimulationData(false);
+      if (didImport) {
+        setImportPrompt(null);
+      }
+    },
+    [handleImportScenarios]
+  );
 
   const linkSimulationSettings = useCallback(
     async (relativePath: string) => {
       return handleLinkSimulationSettings(relativePath);
     },
     [handleLinkSimulationSettings]
+  );
+
+  const setActiveScenario = useCallback(
+    async (scenarioId: string) => {
+      return handleSetActiveScenario(scenarioId);
+    },
+    [handleSetActiveScenario]
   );
 
   const createAndLinkSimulationFile = useCallback(
@@ -172,12 +277,18 @@ export function useMotionGenesisWorkspace({
 
   return {
     canSaveAnything,
+    confirmImportAsData,
+    confirmImportAsScenarios,
     createAndLinkSimulationFile,
+    dismissImportPrompt,
     handleSaveAll,
     hasUnsavedChanges,
+    importPrompt,
+    importingSimulationData,
     linkSimulationSettings,
     motionGenesisRun,
     runMotionGenesis,
+    setActiveScenario,
     simulationSettingsEditor,
   };
 }

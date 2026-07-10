@@ -6,6 +6,8 @@ const path = require('path');
 
 const {
   createMotionGenesisRunManager,
+  detectOdeOutputPathsFromSimText,
+  ensureOdeOutputDirectories,
   normalizePtyOutput,
   normalizeRunOptions,
   resolveMotionGenesisCommand,
@@ -99,6 +101,29 @@ function spawnWrappedProcessAsPty(command, args, options) {
     },
   };
 }
+
+test('detectOdeOutputPathsFromSimText finds colocated and nested ODE outputs', () => {
+  const simText = [
+    '% comment',
+    'ODE() stable/Data',
+    "ODE(EoM, wx', wy', wz') disk",
+    'ODE() Data',
+  ].join('\n');
+
+  assert.deepEqual(detectOdeOutputPathsFromSimText(simText), ['stable/Data', 'disk', 'Data']);
+});
+
+test('ensureOdeOutputDirectories creates parent folders for nested ODE outputs', () => {
+  const workspaceRoot = makeTempWorkspace();
+  const simulationDirectory = path.join(workspaceRoot, 'new_babyboot');
+  fs.mkdirSync(simulationDirectory, { recursive: true });
+
+  ensureOdeOutputDirectories(simulationDirectory, workspaceRoot, ['stable/Data', 'chaotic/Data']);
+
+  assert.equal(fs.existsSync(path.join(simulationDirectory, 'stable')), true);
+  assert.equal(fs.existsSync(path.join(simulationDirectory, 'chaotic')), true);
+  assert.equal(fs.statSync(path.join(simulationDirectory, 'stable')).isDirectory(), true);
+});
 
 test('resolveMotionGenesisCommand prefers explicit environment override', () => {
   const result = resolveMotionGenesisCommand('/tmp/project', '/tmp/workspace', {

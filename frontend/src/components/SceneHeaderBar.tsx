@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Undo2, Redo2, ChevronDown, Sun, Moon, PanelsTopLeft, TriangleAlert } from 'lucide-react';
 import { canPersistScenesToServer, isStaticHosting } from '../api/runtimeMode.ts';
-import type { NormalizedSceneLayout } from '../core/types.ts';
+import type { NormalizedSceneLayout, SceneScenario } from '../core/types.ts';
 import { DEFAULT_SCENE_LAYOUT } from '../core/workspaceLayout.ts';
 import AppModeSwitcher from './AppModeSwitcher.tsx';
+import ScenarioSelector from './ScenarioSelector.tsx';
 import { useTheme } from './ThemeProvider.tsx';
 import { Button } from './ui/button.tsx';
 import {
@@ -84,6 +85,7 @@ interface SceneHeaderBarProps {
   canRedo: boolean;
   diagnosticsWarningCount: number;
   onOpenCreateOverlay: () => void;
+  onOpenCreateSimProjectOverlay?: () => void;
   onOpenLoadOverlay: () => void;
   onOpenSamplesOverlay: () => void;
   onOpenDiagnostics: () => void;
@@ -96,7 +98,10 @@ interface SceneHeaderBarProps {
   onRedo: () => void;
   onSave: () => void;
   onRevert: () => void;
+  onSetActiveScenario?: (scenarioId: string) => void | Promise<void>;
   onUndo: () => void;
+  scenarios?: SceneScenario[];
+  activeScenario?: string | null;
 }
 
 export default function SceneHeaderBar({
@@ -111,6 +116,7 @@ export default function SceneHeaderBar({
   canRedo,
   diagnosticsWarningCount,
   onOpenCreateOverlay,
+  onOpenCreateSimProjectOverlay,
   onOpenLoadOverlay,
   onOpenSamplesOverlay,
   onOpenDiagnostics,
@@ -123,7 +129,10 @@ export default function SceneHeaderBar({
   onRedo,
   onSave,
   onRevert,
+  onSetActiveScenario,
   onUndo,
+  scenarios = [],
+  activeScenario = null,
 }: SceneHeaderBarProps) {
   const { theme, toggleTheme } = useTheme();
   const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
@@ -225,6 +234,15 @@ export default function SceneHeaderBar({
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+        {scenarios.length > 0 && onSetActiveScenario ? (
+          <ScenarioSelector
+            activeScenario={activeScenario}
+            disabled={loading || saving}
+            onSetActiveScenario={onSetActiveScenario}
+            scenarios={scenarios}
+          />
+        ) : null}
+
         <Button
           type="button"
           variant="ghost"
@@ -416,6 +434,9 @@ export default function SceneHeaderBar({
                   New…
                 </div>
               )}
+              {canPersistScenesToServer && onOpenCreateSimProjectOverlay ? (
+                <DropdownMenuItem onSelect={onOpenCreateSimProjectOverlay}>New Sim Project…</DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem onSelect={onOpenChannels}>Sim Files…</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

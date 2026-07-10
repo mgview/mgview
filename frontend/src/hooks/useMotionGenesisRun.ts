@@ -17,7 +17,7 @@ function shouldAutoSendDefault(run: MotionGenesisRunState | null): boolean {
   return /Enter INPUT value for\s+/u.test(run.output);
 }
 
-export function useMotionGenesisRun(onRunSucceeded?: () => Promise<void> | void) {
+export function useMotionGenesisRun(onRunSucceeded?: (run: MotionGenesisRunState) => Promise<void> | void) {
   const [run, setRun] = useState<MotionGenesisRunState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [input, setInput] = useState('');
@@ -48,7 +48,7 @@ export function useMotionGenesisRun(onRunSucceeded?: () => Promise<void> | void)
           setRun(nextRun);
           if (nextRun.status === 'success' && successHandledRef.current !== nextRun.id) {
             successHandledRef.current = nextRun.id;
-            await onRunSucceeded?.();
+            await onRunSucceeded?.(nextRun);
           }
         })
         .catch((pollError) => {

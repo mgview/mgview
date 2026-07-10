@@ -2,7 +2,7 @@
 
 Align **MG Lab** (`/mgview/lab/`, `MgLabPage.tsx`) with the workspace **Sim Editor** (`MotionGenesisRunPanel.tsx`). Both use the same backend runner and hook layer.
 
-**Status:** Phase 1 (shared shell) and Phase 2 (workspace layout) are **done**. Phase 3 bootstrap is **done** except post-run import nudge and Lab→workspace scene creation. Scenarios policy remains later.
+**Status:** Phase 1–3 are **done** except Lab→workspace scene creation. Scenarios policy and post-run import nudge are **done**.
 
 **Direction:** Lab is the interaction reference; workspace is the data anchor. Converge the runner UI; keep scene-scoped run + post-run data reload in workspace. Lab remains the orphan-sim entry point (no scene required).
 
@@ -78,7 +78,7 @@ Legacy `showEditorRail: false` migrates to `rightRail: 'none'` on load; `true`/a
 
 ## Phase 3 — New sim / project bootstrap ✅
 
-**Done (partial).** Sim file creation and scene linking; Lab create-only; post-run import nudge and "Create scene from sim" still later.
+**Done.** Sim file creation, scene linking, New Sim Project, post-run import nudge, and scenarios. Lab create-only; Lab→workspace scene creation still later.
 
 ### Sim project model
 
@@ -93,24 +93,24 @@ States: **orphan sim** (Lab), **linked sim** (scene + `simulationSettings`), **v
 
 ### Creation flows
 
+- **New Sim Project:** File menu → **New Sim Project…** → folder + colocated `name.json` + `name.txt` → opens with Sim Editor rail.
 - **Add sim to scene:** Configure picker → **New Sim File** → template scaffold → auto-save `simulationSettings` on scene JSON.
 - **Lab:** Open File picker → **New Sim File** → create and open (no scene linking).
-- **New Sim Project** (folder + scene + sim atomically): not built; scene and sim remain independently creatable.
 - **Lab: Create scene from sim** after successful run: not built.
 
 ### MGView sim template
 
 In-repo template: `frontend/src/templates/mgviewSimTemplate.txt` — simple pendulum scaffold with `Input` defaults, `animate` + `ODE()`, no MG `Plot`/`Output` commands. Created via `createTextFile` API (POST, workspace `.al`/`.txt` only).
 
-### Post-run import nudge
+### Post-run import nudge ✅
 
-After successful run, if `simulationData` empty but ODE completed: prompt to import detected outputs (no auto geometry).
+After successful run, if the scene has no `simulationData` / scenarios: prompt to import detected ODE outputs (parses completed `ODE()` blocks, discovers `.N` files on disk). Single output → import as `simulationData`; multiple → **Import as scenarios** or import selected entries. No auto geometry.
 
 ---
 
-## One sim file, many ODE outputs — policy (later)
+## One sim file, many ODE outputs — scenarios ✅
 
-**Default:** one scene per sim file; switch **scenarios** in UI, not by duplicate JSON files.
+**Default:** one scene per sim file; switch **scenarios** in the header and Sim Editor Configure panel.
 
 ```json
 {

@@ -21,6 +21,61 @@ function toWorkspaceRelativePath(filePath, workspaceRoot) {
   return path.relative(path.resolve(workspaceRoot), path.resolve(filePath)).replace(/\\/g, '/');
 }
 
+function detectOdeOutputPathsFromSimText(text) {
+  const results = new Set();
+
+  for (const line of String(text).split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0 || trimmed.startsWith('%')) {
+      continue;
+    }
+
+    const match = trimmed.match(/^ODE\s*\([^)]*\)\s*(.*)$/i);
+    if (!match) {
+      continue;
+    }
+
+    const tail = (match[1] || '').trim();
+    if (tail.length === 0) {
+      results.add('Data');
+      continue;
+    }
+
+    const firstToken = tail.split(/\s+/)[0];
+    if (firstToken) {
+      results.add(firstToken);
+    }
+  }
+
+  return [...results];
+}
+
+function ensureOdeOutputDirectories(simulationDirectory, workspaceRoot, odeOutputPaths) {
+  const directories = new Set();
+
+  for (const outputPath of odeOutputPaths) {
+    const normalized = String(outputPath).replace(/\\/g, '/');
+    const slashIndex = normalized.lastIndexOf('/');
+    if (slashIndex <= 0) {
+      continue;
+    }
+
+    const relativeDir = normalized.slice(0, slashIndex);
+    if (relativeDir.length > 0 && relativeDir !== '.') {
+      directories.add(relativeDir);
+    }
+  }
+
+  for (const relativeDir of directories) {
+    const resolvedDirectory = path.resolve(simulationDirectory, relativeDir);
+    if (!isWithinRoot(resolvedDirectory, workspaceRoot)) {
+      throw new Error(`ODE output directory is outside the workspace: ${relativeDir}`);
+    }
+
+    fs.mkdirSync(resolvedDirectory, { recursive: true });
+  }
+}
+
 function trimOutput(output, limit) {
   if (!Number.isFinite(limit) || limit <= 0 || output.length === 0) {
     return output;
@@ -682,6 +737,12 @@ function createMotionGenesisRunManager(options) {
     const id = crypto.randomUUID();
     const runOptions = normalizeRunOptions(target.options);
     const simulationDirectory = path.dirname(target.settingsFilePath);
+    const simText = fs.readFileSync(target.settingsFilePath, 'utf8');
+    ensureOdeOutputDirectories(
+      simulationDirectory,
+      target.workspaceRoot,
+      detectOdeOutputPathsFromSimText(simText)
+    );
     const commandInfo = resolveMotionGenesisCommand(
       simulationDirectory,
       target.workspaceRoot,
@@ -921,6 +982,8 @@ function createMotionGenesisRunManager(options) {
 module.exports = {
   assertInteractivePtyAvailable,
   createMotionGenesisRunManager,
+  detectOdeOutputPathsFromSimText,
+  ensureOdeOutputDirectories,
   getMotionGenesisCommandCandidates,
   getMotionGenesisRuntimeInfo,
   inspectNodePtyLoad,

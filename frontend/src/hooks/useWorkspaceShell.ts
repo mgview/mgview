@@ -49,6 +49,7 @@ interface UseWorkspaceShellOptions {
   browserPath: string | null | undefined;
   handleBrowse: (path: string, root?: 'workspace' | 'sample') => Promise<void>;
   handleCreateScene: (path: string) => Promise<boolean>;
+  handleCreateSimProject: (folderName: string, parentPath: string) => Promise<boolean>;
   handleLoadWorkspacePath: (path: string, options?: { actionLabel?: string }) => Promise<boolean>;
   handleLoadSample: (path: string, options?: { actionLabel?: string }) => Promise<boolean>;
   handleSaveSceneAs: (path: string) => Promise<boolean>;
@@ -65,6 +66,7 @@ export function useWorkspaceShell({
   browserPath,
   handleBrowse,
   handleCreateScene,
+  handleCreateSimProject,
   handleLoadWorkspacePath,
   handleLoadSample,
   handleSaveSceneAs,
@@ -81,6 +83,9 @@ export function useWorkspaceShell({
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [performanceOverlayOpen, setPerformanceOverlayOpen] = useState(readStoredPerformanceOverlayPreference);
   const [simulationOverlayOpen, setSimulationOverlayOpen] = useState(false);
+  const [simProjectDialogOpen, setSimProjectDialogOpen] = useState(false);
+  const [simProjectDialogError, setSimProjectDialogError] = useState<string | null>(null);
+  const [simProjectDialogLoading, setSimProjectDialogLoading] = useState(false);
   const [simulationEntryInput, setSimulationEntryInput] = useState('');
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
   const [cameraPreview, setCameraPreview] = useState<CameraDraftPreview | null>(null);
@@ -315,6 +320,15 @@ export function useWorkspaceShell({
     }
 
     updateDraftScene((scene) => {
+      if (scene.scenarios.length > 0 && scene.activeScenario) {
+        const scenario = scene.scenarios.find((entry) => entry.id === scene.activeScenario);
+        if (scenario && !scenario.simulationData.includes(trimmedEntry)) {
+          scenario.simulationData.push(trimmedEntry);
+          scene.simulationData = [...scenario.simulationData];
+        }
+        return;
+      }
+
       if (!scene.simulationData.includes(trimmedEntry)) {
         scene.simulationData.push(trimmedEntry);
       }
@@ -329,6 +343,21 @@ export function useWorkspaceShell({
     }
 
     updateDraftScene((scene) => {
+      if (scene.scenarios.length > 0 && scene.activeScenario) {
+        const scenario = scene.scenarios.find((entry) => entry.id === scene.activeScenario);
+        if (!scenario) {
+          return;
+        }
+
+        for (const entry of trimmedEntries) {
+          if (!scenario.simulationData.includes(entry)) {
+            scenario.simulationData.push(entry);
+          }
+        }
+        scene.simulationData = [...scenario.simulationData];
+        return;
+      }
+
       for (const entry of trimmedEntries) {
         if (!scene.simulationData.includes(entry)) {
           scene.simulationData.push(entry);
@@ -340,8 +369,30 @@ export function useWorkspaceShell({
 
   const removeSimulationEntry = (entry: string) => {
     updateDraftScene((scene) => {
+      if (scene.scenarios.length > 0 && scene.activeScenario) {
+        const scenario = scene.scenarios.find((item) => item.id === scene.activeScenario);
+        if (scenario) {
+          scenario.simulationData = scenario.simulationData.filter((value) => value !== entry);
+          scene.simulationData = [...scenario.simulationData];
+        }
+        return;
+      }
+
       scene.simulationData = scene.simulationData.filter((value) => value !== entry);
     });
+  };
+
+  const handleCreateSimProjectFolder = async (folderName: string) => {
+    setSimProjectDialogLoading(true);
+    setSimProjectDialogError(null);
+    const parentPath = browserPath ?? '.';
+    const didCreate = await handleCreateSimProject(folderName, parentPath);
+    if (didCreate) {
+      setSimProjectDialogOpen(false);
+      setSimProjectDialogLoading(false);
+      return;
+    }
+    setSimProjectDialogLoading(false);
   };
 
   return {
@@ -364,6 +415,15 @@ export function useWorkspaceShell({
     leftRailCollapsed,
     loadOverlayOpen,
     openCreateOverlay,
+    openCreateSimProjectOverlay: () => {
+      if (!canPersistScenesToServer) {
+        return;
+      }
+
+      setSimProjectDialogError(null);
+      setSimProjectDialogOpen(true);
+      void handleBrowse(browserPath ?? '.', 'workspace');
+    },
     openDiagnostics: () => setDiagnosticsOpen(true),
     openLoadOverlay,
     openSamplesOverlay,
@@ -377,6 +437,16 @@ export function useWorkspaceShell({
     setSimulationEntryInput,
     simulationEntryInput,
     simulationOverlayOpen,
+    simProjectDialogError,
+    simProjectDialogLoading,
+    simProjectDialogOpen,
+    closeSimProjectDialog: () => {
+      if (!simProjectDialogLoading) {
+        setSimProjectDialogOpen(false);
+        setSimProjectDialogError(null);
+      }
+    },
+    handleCreateSimProjectFolder,
     performanceOverlayOpen,
     updateSceneVector,
     updateSceneVectorPreview,

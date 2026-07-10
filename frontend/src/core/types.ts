@@ -142,10 +142,18 @@ export interface ScenePlotsConfig {
   heightScale?: number;
 }
 
+export interface SceneScenario {
+  id: string;
+  label: string;
+  simulationData: string[];
+}
+
 export interface SceneConfig {
   name?: string;
   simulationData?: string[];
   simulationSettings?: string;
+  scenarios?: SceneScenario[];
+  activeScenario?: string;
   layout?: SceneLayoutConfig;
   newtonianFrame?: string;
   sceneOrigin?: string;
@@ -178,6 +186,8 @@ export interface SceneReferenceContext {
 export interface NormalizedSceneConfig extends Omit<SceneConfig, 'layout'> {
   layout: NormalizedSceneLayout;
   simulationData: string[];
+  scenarios: SceneScenario[];
+  activeScenario: string | null;
   newtonianFrame: string;
   sceneOrigin: string;
   backgroundColor: string;
