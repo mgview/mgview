@@ -44,6 +44,13 @@ export default function ImportSimulationDataDialog({
             <DialogTitle>Import Simulation Data?</DialogTitle>
             <DialogDescription className="mt-0.5">
               Motion Genesis finished with ODE output files. Import them into this scene for playback and plots.
+              {multipleDetections ? (
+                <>
+                  {' '}
+                  Multiple ODE blocks were detected — use <strong>Import as scenarios</strong> so each initial
+                  condition set can be switched independently in the scene.
+                </>
+              ) : null}
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -75,7 +82,6 @@ export default function ImportSimulationDataDialog({
               {multipleDetections ? (
                 <Button
                   type="button"
-                  variant="outline"
                   disabled={loading || selectedEntries.length === 0}
                   onClick={() => {
                     const selected = detections.filter((detection) =>
@@ -84,15 +90,16 @@ export default function ImportSimulationDataDialog({
                     onImportAsScenarios(selected);
                   }}
                 >
-                  Import as scenarios
+                  {loading ? 'Importing…' : 'Import as scenarios'}
                 </Button>
               ) : null}
               <Button
                 type="button"
+                variant={multipleDetections ? 'outline' : 'default'}
                 disabled={loading || selectedEntries.length === 0}
                 onClick={() => onImportAsData(selectedEntries)}
               >
-                {loading ? 'Importing…' : multipleDetections ? 'Import selected' : 'Import'}
+                {loading ? 'Importing…' : multipleDetections ? 'Import selected (flat)' : 'Import'}
               </Button>
             </div>
           </div>

@@ -6,6 +6,7 @@ import { getBasePath, getRelativePath } from '../core/pathUtils.ts';
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
+import ScenarioSelector from './ScenarioSelector.tsx';
 import { Button } from './ui/button.tsx';
 import { Input } from './ui/input.tsx';
 import { Badge } from './ui/badge.tsx';
@@ -39,6 +40,7 @@ interface SimulationDataOverlayProps {
   onBrowse: (path: string) => void;
   onClose: () => void;
   onRemoveSimulationEntry: (entry: string) => void;
+  onSetActiveScenario?: (scenarioId: string) => void | Promise<void>;
   parsedSimulationFiles: ParsedSimulationFile[];
   scenePath: string;
   simulationEntries: string[];
@@ -60,6 +62,7 @@ export default function SimulationDataOverlay({
   onBrowse,
   onClose,
   onRemoveSimulationEntry,
+  onSetActiveScenario,
   parsedSimulationFiles,
   scenePath,
   simulationEntries,
@@ -86,6 +89,11 @@ export default function SimulationDataOverlay({
   };
   const canonicalOrigin = activeScene.referenceContext.sceneOrigin.canonical;
   const canonicalFrame = activeScene.referenceContext.newtonianFrame.canonical;
+  const inScenarioMode = activeScene.scenarios.length > 0;
+  const activeScenario =
+    activeScene.scenarios.find((scenario) => scenario.id === activeScene.activeScenario) ??
+    activeScene.scenarios[0] ??
+    null;
 
   return (
     <OverlayPanel
@@ -95,7 +103,86 @@ export default function SimulationDataOverlay({
       onClose={onClose}
     >
       <div className="grid gap-2">
+        {inScenarioMode ? (
+          <div className="grid gap-2 rounded-md border border-border bg-muted/30 p-2">
+            <p className="text-xs text-muted-foreground">
+              This scene has multiple initial-condition sets. Each scenario links the animation files from one{' '}
+              <code>ODE()</code> block in the sim file. Switch scenarios to change what plays in the 3D view and plots.
+            </p>
+            {onSetActiveScenario ? (
+              <ScenarioSelector
+                activeScenario={activeScene.activeScenario}
+                disabled={simulationLoading}
+                onSetActiveScenario={onSetActiveScenario}
+                scenarios={activeScene.scenarios}
+              />
+            ) : null}
+            <div className="grid gap-1.5">
+              {activeScene.scenarios.map((scenario) => {
+                const isActive = scenario.id === activeScenario?.id;
+                return (
+                  <div
+                    key={scenario.id}
+                    className={cn(
+                      'rounded-sm border px-2 py-1.5',
+                      isActive ? 'border-primary/40 bg-primary/5' : 'border-border bg-background'
+                    )}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium text-foreground">{scenario.label}</div>
+                        <code className="text-[0.68rem] text-muted-foreground">{scenario.id}</code>
+                      </div>
+                      {isActive ? (
+                        <Badge variant="default">Active</Badge>
+                      ) : onSetActiveScenario ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-6"
+                          disabled={simulationLoading}
+                          onClick={() => {
+                            void onSetActiveScenario(scenario.id);
+                          }}
+                        >
+                          Use
+                        </Button>
+                      ) : null}
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {scenario.simulationData.length > 0 ? (
+                        scenario.simulationData.map((entry) => (
+                          <code
+                            key={`${scenario.id}:${entry}`}
+                            className="rounded-sm bg-secondary px-1.5 py-0.5 text-[0.68rem]"
+                          >
+                            {entry}
+                          </code>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No simulation entries.</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : simulationEntries.length > 1 ? (
+          <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-xs text-muted-foreground">
+            Multiple simulation entries are linked at once (flat mode). For sim files with several{' '}
+            <code>ODE()</code> blocks, re-run and choose <strong>Import as scenarios</strong> so each initial
+            condition set can be switched independently.
+          </p>
+        ) : null}
+
         <div className="grid gap-1.5">
+          {inScenarioMode ? (
+            <div className="text-xs font-medium text-foreground">
+              Edit active scenario{activeScenario ? `: ${activeScenario.label}` : ''}
+            </div>
+          ) : null}
           <div className="flex flex-wrap gap-1.5">
             {simulationEntries.length > 0 ? (
               simulationEntries.map((entry) => (
@@ -229,7 +316,9 @@ export default function SimulationDataOverlay({
           <>
             <Separator />
             <div className="grid gap-2">
-              <h3 className="text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">Channels</h3>
+              <h3 className="text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                Channels{inScenarioMode && activeScenario ? ` · ${activeScenario.label}` : ''}
+              </h3>
               <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-xs">
                 <div className="inline-flex items-baseline gap-1">
                   <span className="text-[0.68rem] uppercase text-muted-foreground">Files:</span>

@@ -464,6 +464,7 @@ function WorkspaceApp() {
         serverWorkspace={serverWorkspace}
         setSceneInput={setSceneInput}
         shell={shell}
+        onSetActiveScenario={setActiveScenario}
         simulationFiles={simulationFiles}
         simulationLoading={simulationLoading}
       />
