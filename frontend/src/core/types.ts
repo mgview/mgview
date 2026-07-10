@@ -93,14 +93,27 @@ export interface SceneObject {
 
 export type PlotPanelXMode = 'time' | 'channel';
 
+export type WorkspaceRightRail = 'none' | 'scene' | 'sim';
+
 export interface SceneLayoutConfig {
   showRenderer?: boolean;
   showPlots?: boolean;
+  /** Legacy scenes only — migrated to `rightRail` on load. */
   showEditorRail?: boolean;
+  rightRail?: WorkspaceRightRail;
   focusTarget?: 'renderer' | 'plots' | null;
   visualSplit?: number;
   workspaceSplit?: number;
 }
+
+export type NormalizedSceneLayout = {
+  showRenderer: boolean;
+  showPlots: boolean;
+  rightRail: WorkspaceRightRail;
+  focusTarget: 'renderer' | 'plots' | null;
+  visualSplit: number;
+  workspaceSplit: number;
+};
 
 export interface PlotPanelConfig {
   id?: string;
@@ -162,8 +175,8 @@ export interface SceneReferenceContext {
   authoredNewtonianFrame: string | null;
 }
 
-export interface NormalizedSceneConfig extends SceneConfig {
-  layout: SceneLayoutConfig;
+export interface NormalizedSceneConfig extends Omit<SceneConfig, 'layout'> {
+  layout: NormalizedSceneLayout;
   simulationData: string[];
   newtonianFrame: string;
   sceneOrigin: string;

@@ -34,7 +34,7 @@ test('createSavableScene preserves inferred objects added through the draft scen
   assert.deepEqual(savableScene.layout, {
     showRenderer: false,
     showPlots: true,
-    showEditorRail: false,
+    rightRail: 'none',
     focusTarget: null,
     visualSplit: 0.6,
     workspaceSplit: 0.68,

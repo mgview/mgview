@@ -10,8 +10,7 @@ import {
   type RefObject,
 } from 'react';
 import { DEFAULT_SCENE_LAYOUT } from '../core/workspaceLayout.ts';
-import type { SceneLayoutConfig } from '../core/types.ts';
-import type { NormalizedSceneConfig } from '../core/types.ts';
+import type { NormalizedSceneConfig, NormalizedSceneLayout, WorkspaceRightRail } from '../core/types.ts';
 
 const MIN_RENDERER_PANEL_WIDTH = 320;
 const MIN_PLOTS_PANEL_WIDTH = 320;
@@ -24,10 +23,10 @@ const SPLIT_EPSILON = 0.0001;
 
 interface UseWorkspaceLayoutSplitsOptions {
   loadedScenePath: string | undefined;
-  sceneLayout: SceneLayoutConfig | null;
+  sceneLayout: NormalizedSceneLayout | null;
   showRenderer: boolean;
   showPlots: boolean;
-  showEditorRail: boolean;
+  rightRail: WorkspaceRightRail;
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
 }
 
@@ -36,9 +35,10 @@ export function useWorkspaceLayoutSplits({
   sceneLayout,
   showRenderer,
   showPlots,
-  showEditorRail,
+  rightRail,
   updateDraftScene,
 }: UseWorkspaceLayoutSplitsOptions) {
+  const showRightRail = rightRail !== 'none';
   const showVisualWorkspace = showRenderer || showPlots;
 
   const [visualSplit, setVisualSplit] = useState(sceneLayout?.visualSplit ?? DEFAULT_SCENE_LAYOUT.visualSplit);
@@ -67,7 +67,7 @@ export function useWorkspaceLayoutSplits({
   }, [loadedScenePath, sceneLayout?.visualSplit, sceneLayout?.workspaceSplit]);
 
   const updateSceneLayoutVisibility = useCallback(
-    (key: 'showRenderer' | 'showPlots' | 'showEditorRail', value: boolean) => {
+    (key: 'showRenderer' | 'showPlots', value: boolean) => {
       updateDraftScene((scene) => {
         scene.layout[key] = value;
       });
@@ -75,11 +75,27 @@ export function useWorkspaceLayoutSplits({
     [updateDraftScene]
   );
 
-  const openEditorRailIfClosed = useCallback(() => {
-    if (!showEditorRail) {
-      updateSceneLayoutVisibility('showEditorRail', true);
+  const setRightRail = useCallback(
+    (nextRail: WorkspaceRightRail) => {
+      updateDraftScene((scene) => {
+        scene.layout.rightRail = nextRail;
+      });
+    },
+    [updateDraftScene]
+  );
+
+  const toggleRightRail = useCallback(
+    (targetRail: 'scene' | 'sim') => {
+      setRightRail(rightRail === targetRail ? 'none' : targetRail);
+    },
+    [rightRail, setRightRail]
+  );
+
+  const openSceneEditorRailIfClosed = useCallback(() => {
+    if (rightRail !== 'scene') {
+      setRightRail('scene');
     }
-  }, [showEditorRail, updateSceneLayoutVisibility]);
+  }, [rightRail, setRightRail]);
 
   const commitLayoutSplit = useCallback(
     (key: 'visualSplit' | 'workspaceSplit', value: number) => {
@@ -185,7 +201,7 @@ export function useWorkspaceLayoutSplits({
     let didAdjustVisual = false;
 
     const shellWidth = shell.clientWidth;
-    const hasWorkspaceSplitter = showVisualWorkspace && showEditorRail;
+    const hasWorkspaceSplitter = showVisualWorkspace && showRightRail;
     const visualNeedsDualSplit = showRenderer && showPlots;
     const minimumVisualShellWidth = visualNeedsDualSplit
       ? MIN_RENDERER_PANEL_WIDTH + MIN_PLOTS_PANEL_WIDTH + WORKSPACE_SPLITTER_FOOTPRINT
@@ -245,22 +261,22 @@ export function useWorkspaceLayoutSplits({
   }, [
     clampSplit,
     persistLayoutSplitIfNeeded,
-    showEditorRail,
     showPlots,
     showRenderer,
+    showRightRail,
     showVisualWorkspace,
     visualSplit,
     workspaceSplit,
   ]);
 
   const workspaceShellStyle = useMemo((): CSSProperties => {
-    if (showVisualWorkspace && showEditorRail) {
+    if (showVisualWorkspace && showRightRail) {
       return {
         gridTemplateColumns: `minmax(0, calc((100% - ${WORKSPACE_SPLITTER_FOOTPRINT}px) * ${workspaceSplit})) ${WORKSPACE_SPLITTER_WIDTH}px minmax(${MIN_EDITOR_RAIL_WIDTH}px, calc((100% - ${WORKSPACE_SPLITTER_FOOTPRINT}px) * ${1 - workspaceSplit}))`,
       };
     }
 
-    if (showEditorRail && !showVisualWorkspace) {
+    if (showRightRail && !showVisualWorkspace) {
       return {
         gridTemplateColumns: `minmax(0, 1fr)`,
       };
@@ -269,7 +285,7 @@ export function useWorkspaceLayoutSplits({
     return {
       gridTemplateColumns: 'minmax(0, 1fr)',
     };
-  }, [showEditorRail, showVisualWorkspace, workspaceSplit]);
+  }, [showRightRail, showVisualWorkspace, workspaceSplit]);
 
   const visualShellStyle = useMemo((): CSSProperties => {
     if (showRenderer && showPlots) {
@@ -284,9 +300,11 @@ export function useWorkspaceLayoutSplits({
   }, [showPlots, showRenderer, visualSplit]);
 
   return {
-    openEditorRailIfClosed,
+    openSceneEditorRailIfClosed,
+    setRightRail,
     showVisualWorkspace,
     startSplitterDrag,
+    toggleRightRail,
     updateSceneLayoutVisibility,
     visualShellStyle,
     workspaceShellRef: workspaceShellRef as RefObject<HTMLDivElement>,

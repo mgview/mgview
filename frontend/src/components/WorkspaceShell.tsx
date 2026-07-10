@@ -1,4 +1,5 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import MotionGenesisRunPanel from './MotionGenesisRunPanel.tsx';
 import WorkspaceEditorRail, { type WorkspaceSpanEntry } from './WorkspaceEditorRail.tsx';
 import WorkspaceVisualRegion from './WorkspaceVisualRegion.tsx';
 import type { InspectorEditorMode } from './InspectorDrawer.tsx';
@@ -13,6 +14,7 @@ import type {
   Timeline,
   TimelineFrame,
   VisualType,
+  WorkspaceRightRail,
 } from '../core/types.ts';
 import type { LoadedSceneData } from '../hooks/useSceneWorkspace.ts';
 import type { usePlaybackController } from '../hooks/usePlaybackController.ts';
@@ -42,7 +44,7 @@ interface WorkspaceShellProps {
   onEditorModeChange: (mode: InspectorEditorMode) => void;
   onMotionGenesisInputChange: (value: string) => void;
   onMotionGenesisOptionsChange: (options: MotionGenesisRunOptions) => void;
-  onOpenEditorRail: () => void;
+  onOpenSceneEditorRail: () => void;
   onRunMotionGenesis: () => void | Promise<void>;
   onSelectObject: (objectName: string, visualName: string | null) => void;
   onSelectSpan: (spanName: string, visualName: string | null) => void;
@@ -58,12 +60,12 @@ interface WorkspaceShellProps {
   playback: ReturnType<typeof usePlaybackController>;
   playbackSpeed: number;
   rendererSceneBasePath: string;
+  rightRail: WorkspaceRightRail;
   savePreview: string;
   selectedSpanName: string | null;
   selectedSpanVisualName: string | null;
   setSelectedVisualName: (name: string | null) => void;
   shell: ReturnType<typeof useWorkspaceShell>;
-  showEditorRail: boolean;
   showPlots: boolean;
   showRenderer: boolean;
   showVisualWorkspace: boolean;
@@ -122,7 +124,7 @@ export default function WorkspaceShell({
   onEditorModeChange,
   onMotionGenesisInputChange,
   onMotionGenesisOptionsChange,
-  onOpenEditorRail,
+  onOpenSceneEditorRail,
   onRunMotionGenesis,
   onSelectObject,
   onSelectSpan,
@@ -134,12 +136,12 @@ export default function WorkspaceShell({
   playback,
   playbackSpeed,
   rendererSceneBasePath,
+  rightRail,
   savePreview,
   selectedSpanName,
   selectedSpanVisualName,
   setSelectedVisualName,
   shell,
-  showEditorRail,
   showPlots,
   showRenderer,
   showVisualWorkspace,
@@ -173,9 +175,11 @@ export default function WorkspaceShell({
   workspaceShellRef,
   workspaceShellStyle,
 }: WorkspaceShellProps) {
+  const showRightRail = rightRail !== 'none';
+
   return (
     <div
-      className={`workspace-shell ${!showEditorRail ? 'workspace-shell-no-editor-rail' : ''}`}
+      className={`workspace-shell ${!showRightRail ? 'workspace-shell-no-editor-rail' : ''}`}
       ref={workspaceShellRef}
       style={workspaceShellStyle}
     >
@@ -185,17 +189,17 @@ export default function WorkspaceShell({
           channelNames={channelNames}
           currentFrame={currentFrame}
           onClearSelection={onClearSelection}
-          onOpenEditorRail={onOpenEditorRail}
+          onOpenSceneEditorRail={onOpenSceneEditorRail}
           onSelectObject={onSelectObject}
           onSelectSpan={onSelectSpan}
           onStartSplitterDrag={onStartSplitterDrag}
           playback={playback}
           playbackSpeed={playbackSpeed}
           rendererSceneBasePath={rendererSceneBasePath}
+          rightRail={rightRail}
           selectedObjectName={activeSelectedObject?.name ?? null}
           selectedSpanName={selectedSpanName}
           shell={shell}
-          showEditorRail={showEditorRail}
           showPlots={showPlots}
           showRenderer={showRenderer}
           timeline={timeline}
@@ -205,7 +209,7 @@ export default function WorkspaceShell({
         />
       ) : null}
 
-      {showVisualWorkspace && showEditorRail ? (
+      {showVisualWorkspace && showRightRail ? (
         <div
           className="workspace-horizontal-splitter"
           role="separator"
@@ -215,7 +219,7 @@ export default function WorkspaceShell({
         />
       ) : null}
 
-      {showEditorRail ? (
+      {rightRail === 'scene' ? (
         <WorkspaceEditorRail
           activeScene={activeScene}
           activeSelectedObject={activeSelectedObject}
@@ -226,35 +230,16 @@ export default function WorkspaceShell({
           loaded={loaded}
           liveSelectedSpan={liveSelectedSpan}
           liveSelectedSpanVisual={liveSelectedSpanVisual}
-          motionGenesisError={motionGenesisError}
-          motionGenesisInput={motionGenesisInput}
-          motionGenesisOptions={motionGenesisOptions}
-          motionGenesisRun={motionGenesisRun}
-          motionGenesisSendingInput={motionGenesisSendingInput}
-          motionGenesisStarting={motionGenesisStarting}
-          motionGenesisStopping={motionGenesisStopping}
           objectInspections={objectInspections}
           onBeginSpanCreation={onBeginSpanCreation}
           onEditorModeChange={onEditorModeChange}
-          onMotionGenesisInputChange={onMotionGenesisInputChange}
-          onMotionGenesisOptionsChange={onMotionGenesisOptionsChange}
-          onRunMotionGenesis={onRunMotionGenesis}
           onSelectObject={onSelectObject}
           onSelectSpan={onSelectSpan}
-          onSendMotionGenesisInput={onSendMotionGenesisInput}
-          onSimFileChange={onSimFileChange}
-          onSimulationSettingsChange={onSimulationSettingsChange}
-          onStopMotionGenesis={onStopMotionGenesis}
           savePreview={savePreview}
           selectedSpanName={selectedSpanName}
           selectedSpanVisualName={selectedSpanVisualName}
           setSelectedVisualName={setSelectedVisualName}
           shell={shell}
-          simFileContent={simFileContent}
-          simFileDirty={simFileDirty}
-          simFileError={simFileError}
-          simFileLoading={simFileLoading}
-          simFileReadOnly={simFileReadOnly}
           spanEntries={spanEntries}
           updateDraftScene={updateDraftScene}
           updateDraftScenePreview={updateDraftScenePreview}
@@ -277,11 +262,40 @@ export default function WorkspaceShell({
         />
       ) : null}
 
-      {!showVisualWorkspace && !showEditorRail ? (
+      {rightRail === 'sim' ? (
+        <div className="workspace-editor-rail workspace-sim-rail min-h-0">
+          <MotionGenesisRunPanel
+            canRun={loaded?.sceneRef.source === 'workspace' && Boolean(activeScene?.simulationSettings)}
+            error={motionGenesisError}
+            input={motionGenesisInput}
+            loadedScenePath={loaded?.sceneRef.source === 'workspace' ? loaded.scenePath : null}
+            options={motionGenesisOptions}
+            onInputChange={onMotionGenesisInputChange}
+            onOptionsChange={onMotionGenesisOptionsChange}
+            onSimulationSettingsChange={onSimulationSettingsChange}
+            onRun={onRunMotionGenesis}
+            onSimFileChange={onSimFileChange}
+            onStop={onStopMotionGenesis}
+            onSendInput={onSendMotionGenesisInput}
+            run={motionGenesisRun}
+            simFileContent={simFileContent}
+            simFileDirty={simFileDirty}
+            simFileError={simFileError}
+            simFileLoading={simFileLoading}
+            simFileReadOnly={simFileReadOnly}
+            simulationSettings={activeScene?.simulationSettings}
+            starting={motionGenesisStarting}
+            stopping={motionGenesisStopping}
+            sendingInput={motionGenesisSendingInput}
+          />
+        </div>
+      ) : null}
+
+      {!showVisualWorkspace && !showRightRail ? (
         <section className="workspace-empty-state">
           <p className="text-sm font-medium">All workspace panels are hidden.</p>
           <p className="text-xs text-muted-foreground">
-            Use the Layout menu to show the 3D view, plots, or the editor rail.
+            Use the Layout menu to show the 3D view, plots, scene editor, or sim editor.
           </p>
         </section>
       ) : null}

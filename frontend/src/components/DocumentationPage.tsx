@@ -29,7 +29,8 @@ const shortcutItems = [
   { keys: 'Cmd/Ctrl+Shift+Z', description: 'Redo the latest undone edit.' },
   { keys: 'Cmd/Ctrl+Y', description: 'Redo the latest undone edit.' },
   { keys: 'Alt+L', description: 'Open the Layout menu.' },
-  // { keys: 'Alt+1 / Alt+2 / Alt+3', description: 'Show or hide the 3D View, Plots, and Editor panes.' },
+  { keys: 'Alt+1 / Alt+2', description: 'Show or hide the 3D View and Plots panes.' },
+  { keys: 'Alt+3 / Alt+4', description: 'Show Scene Editor or Sim Editor (mutually exclusive).' },
   { keys: 'Esc', description: 'Close / clear selection.' },
 ] as const;
 
@@ -246,9 +247,10 @@ export default function DocumentationPage() {
                     </span>{' '}
                     in the header (<code>Alt+L</code>) to show or hide the{' '}
                     <span className="font-semibold text-foreground">3D View</span>,{' '}
-                    <span className="font-semibold text-foreground">Plots</span>, and{' '}
-                    <span className="font-semibold text-foreground">Editor</span> panes (
-                    <code>Alt+1</code> / <code>Alt+2</code> / <code>Alt+3</code>).
+                    <span className="font-semibold text-foreground">Plots</span>,{' '}
+                    <span className="font-semibold text-foreground">Scene Editor</span>, and{' '}
+                    <span className="font-semibold text-foreground">Sim Editor</span> panes (
+                    <code>Alt+1</code> / <code>Alt+2</code> / <code>Alt+3</code> / <code>Alt+4</code>).
                   </li>
                   <li>
                     In the editor rail, pick a frame or point under{' '}

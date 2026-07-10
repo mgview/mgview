@@ -425,7 +425,7 @@ export default function MotionGenesisRunShell({
       <Input
         ref={stdinInputRef}
         type="text"
-        className="font-mono"
+        className="font-mono transition-colors focus:border-ring focus:bg-accent focus:outline-none focus:ring-0 focus-visible:ring-0"
         value={input}
         onChange={(event) => onInputChange(event.target.value)}
         onKeyDown={(event) => {
@@ -632,8 +632,15 @@ export default function MotionGenesisRunShell({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className="inline-flex rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="group inline-flex cursor-pointer rounded-md transition-shadow hover:ring-2 hover:ring-ring/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-expanded={showStatusDetails}
+              title={
+                status === 'waiting-input'
+                  ? 'Click to show run output'
+                  : showStatusDetails
+                    ? 'Click to hide run details'
+                    : 'Click for run details'
+              }
               aria-label={
                 status === 'waiting-input'
                   ? `Run status: ${statusLabel}. Click to show run output.`
@@ -641,7 +648,10 @@ export default function MotionGenesisRunShell({
               }
               onClick={handleStatusClick}
             >
-              <Badge variant={statusVariant} className="gap-1 rounded-md px-2 py-1 text-[0.72rem]">
+              <Badge
+                variant={statusVariant}
+                className="gap-1 rounded-md px-2 py-1 text-[0.72rem] transition-colors group-hover:brightness-95 dark:group-hover:brightness-110"
+              >
                 <StatusIcon run={run} />
                 {statusLabel}
               </Badge>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Undo2, Redo2, ChevronDown, Sun, Moon, PanelsTopLeft, TriangleAlert } from 'lucide-react';
 import { canPersistScenesToServer, isStaticHosting } from '../api/runtimeMode.ts';
-import type { SceneLayoutConfig } from '../core/types.ts';
+import type { NormalizedSceneLayout } from '../core/types.ts';
 import { DEFAULT_SCENE_LAYOUT } from '../core/workspaceLayout.ts';
 import { useTheme } from './ThemeProvider.tsx';
 import { Button } from './ui/button.tsx';
@@ -23,21 +23,31 @@ import {
 } from './ui/tooltip.tsx';
 import { cn } from '../lib/utils.ts';
 
-type LayoutPaneKey = 'showRenderer' | 'showPlots' | 'showEditorRail';
+type LayoutToggleKey = 'showRenderer' | 'showPlots';
+type RightRailTarget = 'scene' | 'sim';
 
-const LAYOUT_PANES: ReadonlyArray<{ key: LayoutPaneKey; label: string; shortcut: string }> = [
+const LAYOUT_TOGGLE_PANES: ReadonlyArray<{ key: LayoutToggleKey; label: string; shortcut: string }> = [
   { key: 'showRenderer', label: '3D View', shortcut: '1' },
   { key: 'showPlots', label: 'Plots', shortcut: '2' },
-  { key: 'showEditorRail', label: 'Editor', shortcut: '3' },
 ];
 
-const LAYOUT_PANE_BY_CODE: Record<string, LayoutPaneKey> = {
+const RIGHT_RAIL_PANES: ReadonlyArray<{ target: RightRailTarget; label: string; shortcut: string }> = [
+  { target: 'scene', label: 'Scene Editor', shortcut: '3' },
+  { target: 'sim', label: 'Sim Editor', shortcut: '4' },
+];
+
+const LAYOUT_TOGGLE_BY_CODE: Record<string, LayoutToggleKey> = {
   Digit1: 'showRenderer',
   Numpad1: 'showRenderer',
   Digit2: 'showPlots',
   Numpad2: 'showPlots',
-  Digit3: 'showEditorRail',
-  Numpad3: 'showEditorRail',
+};
+
+const RIGHT_RAIL_BY_CODE: Record<string, RightRailTarget> = {
+  Digit3: 'scene',
+  Numpad3: 'scene',
+  Digit4: 'sim',
+  Numpad4: 'sim',
 };
 
 function isTextEditingTarget(target: EventTarget | null) {
@@ -52,13 +62,17 @@ function isTextEditingTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && target.isContentEditable;
 }
 
-function getLayoutPaneValue(layout: Required<SceneLayoutConfig> | null, key: LayoutPaneKey) {
+function getLayoutToggleValue(layout: NormalizedSceneLayout | null, key: LayoutToggleKey) {
   return layout?.[key] ?? DEFAULT_SCENE_LAYOUT[key];
+}
+
+function getRightRailValue(layout: NormalizedSceneLayout | null) {
+  return layout?.rightRail ?? DEFAULT_SCENE_LAYOUT.rightRail;
 }
 
 interface SceneHeaderBarProps {
   scenePath: string | null;
-  layout: Required<SceneLayoutConfig> | null;
+  layout: NormalizedSceneLayout | null;
   onOpenWorkspace?: () => void;
   onOpenAbout: () => void;
   hasLocalEdits: boolean;
@@ -73,7 +87,8 @@ interface SceneHeaderBarProps {
   onOpenSamplesOverlay: () => void;
   onOpenDiagnostics: () => void;
   onOpenChannels: () => void;
-  onSetLayoutVisibility: (key: 'showRenderer' | 'showPlots' | 'showEditorRail', value: boolean) => void;
+  onSetLayoutVisibility: (key: LayoutToggleKey, value: boolean) => void;
+  onToggleRightRail: (target: RightRailTarget) => void;
   performanceOverlayOpen: boolean;
   onSetPerformanceOverlayOpen: (open: boolean) => void;
   onOpenSaveAsOverlay: () => void;
@@ -100,6 +115,7 @@ export default function SceneHeaderBar({
   onOpenDiagnostics,
   onOpenChannels,
   onSetLayoutVisibility,
+  onToggleRightRail,
   performanceOverlayOpen,
   onSetPerformanceOverlayOpen,
   onOpenSaveAsOverlay,
@@ -148,18 +164,23 @@ export default function SceneHeaderBar({
         return;
       }
 
-      const paneKey = LAYOUT_PANE_BY_CODE[event.code];
-      if (!paneKey) {
+      const toggleKey = LAYOUT_TOGGLE_BY_CODE[event.code];
+      if (toggleKey) {
+        event.preventDefault();
+        onSetLayoutVisibility(toggleKey, !getLayoutToggleValue(layout, toggleKey));
         return;
       }
 
-      event.preventDefault();
-      onSetLayoutVisibility(paneKey, !getLayoutPaneValue(layout, paneKey));
+      const rightRailTarget = RIGHT_RAIL_BY_CODE[event.code];
+      if (rightRailTarget) {
+        event.preventDefault();
+        onToggleRightRail(rightRailTarget);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [layout, onSetLayoutVisibility]);
+  }, [layout, onSetLayoutVisibility, onToggleRightRail]);
 
   return (
     <header className="mb-1.5 flex items-center justify-between gap-3 rounded-md border border-border bg-card px-2 py-1.5">
@@ -233,8 +254,8 @@ export default function SceneHeaderBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52 p-1.5" onCloseAutoFocus={(event) => event.preventDefault()}>
-            {LAYOUT_PANES.map(({ key, label, shortcut }) => {
-              const checked = layout?.[key] ?? false;
+            {LAYOUT_TOGGLE_PANES.map(({ key, label, shortcut }) => {
+              const checked = getLayoutToggleValue(layout, key);
               const inputId = `layout-${key}`;
 
               return (
@@ -257,6 +278,39 @@ export default function SceneHeaderBar({
                 </Label>
               );
             })}
+            <DropdownMenuSeparator />
+            <div role="radiogroup" aria-label="Editor pane" className="grid">
+              {RIGHT_RAIL_PANES.map(({ target, label, shortcut }) => {
+                const checked = getRightRailValue(layout) === target;
+
+                return (
+                  <button
+                    key={target}
+                    type="button"
+                    role="radio"
+                    aria-checked={checked}
+                    className={cn(
+                      'flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent',
+                      checked && 'bg-accent/60'
+                    )}
+                    onPointerDown={(event) => event.preventDefault()}
+                    onClick={() => onToggleRightRail(target)}
+                  >
+                    <span
+                      className={cn(
+                        'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border',
+                        checked ? 'border-primary' : 'border-muted-foreground/50'
+                      )}
+                      aria-hidden
+                    >
+                      {checked ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
+                    </span>
+                    <span className="flex-1">{label}</span>
+                    <span className="text-[0.65rem] text-muted-foreground">Alt+{shortcut}</span>
+                  </button>
+                );
+              })}
+            </div>
             <DropdownMenuSeparator />
             <Label
               htmlFor="layout-renderer-stats"

@@ -266,7 +266,7 @@ function WorkspaceApp() {
   const sceneLayout = activeScene?.layout ?? null;
   const showRenderer = sceneLayout?.showRenderer ?? DEFAULT_SCENE_LAYOUT.showRenderer;
   const showPlots = sceneLayout?.showPlots ?? DEFAULT_SCENE_LAYOUT.showPlots;
-  const showEditorRail = sceneLayout?.showEditorRail ?? DEFAULT_SCENE_LAYOUT.showEditorRail;
+  const rightRail = sceneLayout?.rightRail ?? DEFAULT_SCENE_LAYOUT.rightRail;
   const timelineOwner = showRenderer ? 'renderer' : showPlots ? 'plots' : null;
 
   const layout = useWorkspaceLayoutSplits({
@@ -274,7 +274,7 @@ function WorkspaceApp() {
     sceneLayout,
     showRenderer,
     showPlots,
-    showEditorRail,
+    rightRail,
     updateDraftScene,
   });
 
@@ -316,6 +316,7 @@ function WorkspaceApp() {
         onOpenDiagnostics={shell.openDiagnostics}
         onOpenChannels={shell.openSimulationOverlay}
         onSetLayoutVisibility={layout.updateSceneLayoutVisibility}
+        onToggleRightRail={layout.toggleRightRail}
         performanceOverlayOpen={shell.performanceOverlayOpen}
         onSetPerformanceOverlayOpen={shell.setPerformanceOverlayOpen}
         onOpenSaveAsOverlay={shell.openSaveAsOverlay}
@@ -352,7 +353,7 @@ function WorkspaceApp() {
           onEditorModeChange={selectionState.setEditorMode}
           onMotionGenesisInputChange={motionGenesisRun.setInput}
           onMotionGenesisOptionsChange={motionGenesisRun.setOptions}
-          onOpenEditorRail={layout.openEditorRailIfClosed}
+          onOpenSceneEditorRail={layout.openSceneEditorRailIfClosed}
           onRunMotionGenesis={runMotionGenesis}
           onSelectObject={(objectName, firstVisualName) => {
             selectionState.selectObjectForEditor(objectName, firstVisualName, selectObject);
@@ -377,7 +378,7 @@ function WorkspaceApp() {
           selectedSpanVisualName={selectedSpanVisualResolvedName}
           setSelectedVisualName={setSelectedVisualName}
           shell={shell}
-          showEditorRail={showEditorRail}
+          rightRail={rightRail}
           showPlots={showPlots}
           showRenderer={showRenderer}
           showVisualWorkspace={layout.showVisualWorkspace}

@@ -7,14 +7,12 @@ import type {
   SceneVisual,
   VisualType,
 } from '../core/types.ts';
-import type { MotionGenesisRunOptions } from '../api/localFiles.ts';
 import JsonEditorPanel from './JsonEditorPanel.tsx';
-import MotionGenesisRunPanel from './MotionGenesisRunPanel.tsx';
 import SceneSettingsPanel from './SceneSettingsPanel.tsx';
 import SpanEditorPanel from './SpanEditorPanel.tsx';
 import VisualEditorPanel from './VisualEditorPanel.tsx';
 
-export type InspectorEditorMode = 'visual' | 'scene' | 'json' | 'sim';
+export type InspectorEditorMode = 'visual' | 'scene' | 'json';
 
 interface InspectorDrawerProps {
   activeScene: NormalizedSceneConfig | null;
@@ -46,15 +44,6 @@ interface InspectorDrawerProps {
   createSpanVisual: () => boolean;
   deleteSelectedSpan: () => boolean;
   deleteSelectedSpanVisual: () => boolean;
-  motionGenesisError: string | null;
-  motionGenesisInput: string;
-  motionGenesisRun: import('../api/localFiles.ts').MotionGenesisRunState | null;
-  onMotionGenesisInputChange: (value: string) => void;
-  onMotionGenesisOptionsChange: (options: MotionGenesisRunOptions) => void;
-  onSimulationSettingsChange: (value: string) => void;
-  onRunMotionGenesis: () => void | Promise<void>;
-  onStopMotionGenesis: () => void;
-  onSendMotionGenesisInput: () => void;
   renameSpan: (currentName: string, nextName: string) => boolean;
   renameSpanVisual: (currentName: string, nextName: string) => boolean;
   selectSpan: (spanName: string, firstVisualName: string | null) => void;
@@ -78,16 +67,6 @@ interface InspectorDrawerProps {
   updateSelectedSpanVisualPreview: (updater: (visual: SceneSpanVisual) => void) => void;
   updateSelectedVisual: (updater: (visual: SceneVisual) => void) => void;
   updateSelectedVisualPreview: (updater: (visual: SceneVisual) => void) => void;
-  motionGenesisStarting: boolean;
-  motionGenesisStopping: boolean;
-  motionGenesisSendingInput: boolean;
-  motionGenesisOptions: MotionGenesisRunOptions;
-  onSimFileChange: (value: string) => void;
-  simFileContent: string;
-  simFileDirty: boolean;
-  simFileError: string | null;
-  simFileLoading: boolean;
-  simFileReadOnly: boolean;
 }
 
 export default function InspectorDrawer({
@@ -114,18 +93,6 @@ export default function InspectorDrawer({
   createSpanVisual,
   deleteSelectedSpan,
   deleteSelectedSpanVisual,
-  motionGenesisError,
-  motionGenesisInput,
-  motionGenesisRun,
-  motionGenesisSendingInput,
-  motionGenesisStarting,
-  motionGenesisStopping,
-  onMotionGenesisInputChange,
-  onMotionGenesisOptionsChange,
-  onSimulationSettingsChange,
-  onRunMotionGenesis,
-  onStopMotionGenesis,
-  onSendMotionGenesisInput,
   renameSpan,
   renameSpanVisual,
   selectSpan,
@@ -139,13 +106,6 @@ export default function InspectorDrawer({
   updateSelectedSpanVisualPreview,
   updateSelectedVisual,
   updateSelectedVisualPreview,
-  motionGenesisOptions,
-  onSimFileChange,
-  simFileContent,
-  simFileDirty,
-  simFileError,
-  simFileLoading,
-  simFileReadOnly,
 }: InspectorDrawerProps) {
   if (!loaded) {
     return (
@@ -177,35 +137,6 @@ export default function InspectorDrawer({
 
   if (editorMode === 'json') {
     return <JsonEditorPanel savePreview={savePreview} />;
-  }
-
-  if (editorMode === 'sim') {
-    return (
-      <MotionGenesisRunPanel
-        canRun={loaded.sceneRef.source === 'workspace' && Boolean(activeScene?.simulationSettings)}
-        error={motionGenesisError}
-        input={motionGenesisInput}
-        loadedScenePath={loaded.sceneRef.source === 'workspace' ? loaded.scenePath : null}
-        options={motionGenesisOptions}
-        onInputChange={onMotionGenesisInputChange}
-        onOptionsChange={onMotionGenesisOptionsChange}
-        onSimulationSettingsChange={onSimulationSettingsChange}
-        onRun={onRunMotionGenesis}
-        onSimFileChange={onSimFileChange}
-        onStop={onStopMotionGenesis}
-        onSendInput={onSendMotionGenesisInput}
-        run={motionGenesisRun}
-        simFileContent={simFileContent}
-        simFileDirty={simFileDirty}
-        simFileError={simFileError}
-        simFileLoading={simFileLoading}
-        simFileReadOnly={simFileReadOnly}
-        simulationSettings={activeScene?.simulationSettings}
-        starting={motionGenesisStarting}
-        stopping={motionGenesisStopping}
-        sendingInput={motionGenesisSendingInput}
-      />
-    );
   }
 
   return selectedSpanName ? (
