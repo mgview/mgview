@@ -15,7 +15,7 @@ Syntax 1:  SetMass( mass )
 </PRE></body></html>`;
 
 test('findTopicForWord resolves case-insensitive command names', () => {
-  const index = buildMgHelpIndex(sampleHtml);
+  const index = buildMgHelpIndex(sampleHtml, { commandNames: ['SetMass'] });
   const lookup = buildTopicIdByLowerCase(index);
 
   assert.equal(findTopicForWord(index, lookup, 'setmass')?.id, 'SetMass');

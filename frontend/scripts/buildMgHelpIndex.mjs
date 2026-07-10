@@ -10,6 +10,9 @@
  *   3. MG_HOME or MOTION_GENESIS_HOME (MotionGenesis install folder)
  *   4. Platform default, then ~/MotionGenesis
  *
+ * Command names for syntax highlighting are read from
+ * MGToolbox/MGCommandNamesForTextEditorHighlighting.txt next to the help HTML.
+ *
  * Default source version metadata comes from frontend/package.json.
  * Override source version metadata with MG_HELP_VERSION or --version.
  */
@@ -21,9 +24,18 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const HELP_RELATIVE_SEGMENTS = ['MGToolbox', 'MotionGenesisHelp.html'];
+const COMMAND_NAMES_FILENAME = 'MGCommandNamesForTextEditorHighlighting.txt';
 
 export function helpPathFromInstallDir(installDir) {
   return path.join(installDir, ...HELP_RELATIVE_SEGMENTS);
+}
+
+export function commandNamesPathFromInstallDir(installDir) {
+  return path.join(installDir, 'MGToolbox', COMMAND_NAMES_FILENAME);
+}
+
+export function commandNamesPathFromHelpPath(helpPath) {
+  return path.join(path.dirname(helpPath), COMMAND_NAMES_FILENAME);
 }
 
 export function getMotionGenesisInstallCandidates() {
@@ -315,33 +327,59 @@ function parseIndexAliases(indexHtml) {
   return aliasToId;
 }
 
-export function buildMgHelpIndex(html, options = {}) {
-  const sourceVersion = typeof options.sourceVersion === 'string' ? options.sourceVersion : null;
-  const indexHtml = extractKeywordIndexHtml(html);
-  const aliasToId = parseIndexAliases(indexHtml);
-  const topics = {};
-  const keywords = new Set();
-
-  for (const section of parseSections(html)) {
-    const aliases = [];
-    for (const [alias, topicId] of aliasToId.entries()) {
-      if (topicId === section.id && alias !== section.id && !aliases.includes(alias)) {
-        aliases.push(alias);
-      }
+/**
+ * MG ships MGCommandNamesForTextEditorHighlighting.txt with one command/token per line.
+ * Header lines are MG comments beginning with "% " or "%-".
+ */
+export function parseCommandNamesFile(content) {
+  const names = [];
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      continue;
     }
-    aliases.sort((left, right) => right.length - left.length || left.localeCompare(right));
+    if (/^%[\s-]/.test(trimmed)) {
+      continue;
+    }
+    names.push(trimmed);
+  }
+  return names;
+}
 
-    topics[section.id] = {
-      id: section.id,
-      title: section.title,
-      aliases,
-      purpose: section.purpose,
-      syntax: section.syntax,
-    };
+function buildTopicIdByLowerCase(topics) {
+  const topicIdByLowerCase = new Map();
+  for (const [id, topic] of Object.entries(topics)) {
+    topicIdByLowerCase.set(id.toLowerCase(), id);
+    if (topic.title) {
+      topicIdByLowerCase.set(topic.title.toLowerCase(), id);
+    }
+  }
+  return topicIdByLowerCase;
+}
+
+function buildAliasToIdForCommandNames(commandNames, topics) {
+  const aliasToId = new Map();
+  const topicIdByLowerCase = buildTopicIdByLowerCase(topics);
+
+  for (const name of commandNames) {
+    if (!name || name === '...') {
+      continue;
+    }
+    const topicId = topicIdByLowerCase.get(name.toLowerCase());
+    if (!topicId) {
+      continue;
+    }
+    if (!aliasToId.has(name)) {
+      aliasToId.set(name, topicId);
+    }
   }
 
   addCaseInsensitiveAliases(aliasToId);
+  return aliasToId;
+}
 
+function buildKeywordsFromHelpCatalog(aliasToId, topics) {
+  const keywords = new Set();
   for (const [alias, topicId] of aliasToId.entries()) {
     if (alias === '...') {
       continue;
@@ -353,9 +391,66 @@ export function buildMgHelpIndex(html, options = {}) {
     }
   }
 
-  const sortedKeywords = [...keywords]
+  return [...keywords]
     .filter((keyword) => keyword.length > 0)
     .sort((left, right) => right.length - left.length || left.localeCompare(right));
+}
+
+function buildKeywordsFromCommandNames(commandNames) {
+  return [...new Set(commandNames)]
+    .filter((keyword) => keyword.length > 0 && keyword !== '...')
+    .sort((left, right) => right.length - left.length || left.localeCompare(right));
+}
+
+function populateTopicAliases(topics, aliasToId) {
+  for (const topic of Object.values(topics)) {
+    topic.aliases = [];
+  }
+
+  for (const [alias, topicId] of aliasToId.entries()) {
+    const topic = topics[topicId];
+    if (!topic || alias === topic.id || alias === topic.title) {
+      continue;
+    }
+    if (!topic.aliases.includes(alias)) {
+      topic.aliases.push(alias);
+    }
+  }
+
+  for (const topic of Object.values(topics)) {
+    topic.aliases.sort((left, right) => right.length - left.length || left.localeCompare(right));
+  }
+}
+
+export function buildMgHelpIndex(html, options = {}) {
+  const sourceVersion = typeof options.sourceVersion === 'string' ? options.sourceVersion : null;
+  const commandNames = options.commandNames;
+  const topics = {};
+
+  for (const section of parseSections(html)) {
+    topics[section.id] = {
+      id: section.id,
+      title: section.title,
+      aliases: [],
+      purpose: section.purpose,
+      syntax: section.syntax,
+    };
+  }
+
+  let aliasToId;
+  let keywords;
+
+  if (Array.isArray(commandNames) && commandNames.length > 0) {
+    aliasToId = buildAliasToIdForCommandNames(commandNames, topics);
+    keywords = buildKeywordsFromCommandNames(commandNames);
+  } else {
+    const indexHtml = extractKeywordIndexHtml(html);
+    aliasToId = parseIndexAliases(indexHtml);
+    addCaseInsensitiveAliases(aliasToId);
+    keywords = buildKeywordsFromHelpCatalog(aliasToId, topics);
+  }
+
+  populateTopicAliases(topics, aliasToId);
 
   return {
     version: 1,
@@ -363,7 +458,7 @@ export function buildMgHelpIndex(html, options = {}) {
     topicCount: Object.keys(topics).length,
     topics,
     aliasToId: Object.fromEntries(aliasToId.entries()),
-    keywords: sortedKeywords,
+    keywords,
   };
 }
 
@@ -393,7 +488,17 @@ async function main() {
     }
   }
 
-  const index = buildMgHelpIndex(html, { sourceVersion });
+  const commandNamesPath = commandNamesPathFromHelpPath(helpPath);
+  let commandNames = [];
+  try {
+    commandNames = parseCommandNamesFile(await fs.readFile(commandNamesPath, 'utf8'));
+  } catch (error) {
+    console.warn(
+      `Command names file not found at ${commandNamesPath}; falling back to help HTML keyword catalog.`,
+    );
+  }
+
+  const index = buildMgHelpIndex(html, { sourceVersion, commandNames });
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.writeFile(outputPath, `${JSON.stringify(index, null, 2)}\n`, 'utf8');
   await fs.mkdir(path.dirname(publicHelpPath), { recursive: true });
