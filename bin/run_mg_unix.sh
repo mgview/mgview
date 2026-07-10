@@ -3,6 +3,19 @@ BIN_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 INVOCATION_DIR=$(pwd)
 source "$BIN_DIR/colors.sh"
 
+pause_before_exit() {
+  if [[ -t 0 ]]; then
+    echo
+    read -r -p "Press Enter to close this window..."
+  fi
+}
+
+die() {
+  local code="${1:-1}"
+  pause_before_exit
+  exit "$code"
+}
+
 PORT=8000
 OPEN_BROWSER=1
 WORKSPACE_DIR=""
@@ -51,7 +64,7 @@ while [[ $# -gt 0 ]]; do
       if [[ -z "${2:-}" ]]; then
         echo -e "${C_RED_BOLD}Error: --port requires a value.${C_DEFAULT}" >&2
         usage >&2
-        exit 1
+        die 1
       fi
       PORT="$2"
       shift 2
@@ -60,11 +73,11 @@ while [[ $# -gt 0 ]]; do
       if [[ -z "${2:-}" ]]; then
         echo -e "${C_RED_BOLD}Error: --workspace requires a value.${C_DEFAULT}" >&2
         usage >&2
-        exit 1
+        die 1
       fi
       if ! WORKSPACE_DIR="$(resolve_workspace_path "$2")"; then
         echo -e "${C_RED_BOLD}Error: workspace directory not found: $2${C_DEFAULT}" >&2
-        exit 1
+        die 1
       fi
       shift 2
       ;;
@@ -87,14 +100,14 @@ while [[ $# -gt 0 ]]; do
     *)
       echo -e "${C_RED_BOLD}Unknown option: $1${C_DEFAULT}" >&2
       usage >&2
-      exit 1
+      die 1
       ;;
   esac
 done
 
 if ! is_valid_port "$PORT"; then
   echo -e "${C_RED_BOLD}Error: invalid port '${PORT}' (use 1–65535).${C_DEFAULT}" >&2
-  exit 1
+  die 1
 fi
 
 MGVIEW_PARENT_DIR=$( cd "$BIN_DIR/../.." && pwd )
@@ -122,8 +135,8 @@ else
   echo -e "${C_RED_BOLD}Unable to find Node.js on your PATH.${C_DEFAULT}"
   echo -e "${C_YELLOW}Install the official Node.js LTS release from:${C_DEFAULT}"
   echo -e "${C_GREEN_BOLD}https://nodejs.org/en/download${C_DEFAULT}"
-  echo -e "${C_YELLOW}Then run this script again.${C_DEFAULT}"
-  exit 1
+  echo -e "${C_YELLOW}After installing Node.js, close this window and run MGView again.${C_DEFAULT}"
+  die 1
 fi
 
 # Go up a level
@@ -168,3 +181,8 @@ function cleanup {
 
 trap cleanup EXIT
 wait "$SERVER_PID"
+wait_status=$?
+if [[ $wait_status -ne 0 ]]; then
+  pause_before_exit
+fi
+exit "$wait_status"
