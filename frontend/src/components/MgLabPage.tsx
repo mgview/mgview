@@ -10,6 +10,7 @@ import { cn } from '../lib/utils.ts';
 import CodeEditor from './CodeEditor.tsx';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import MotionGenesisExecutableOverlay from './MotionGenesisExecutableOverlay.tsx';
+import MotionGenesisRunOutput from './MotionGenesisRunOutput.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
 import { Badge } from './ui/badge.tsx';
 import { Button } from './ui/button.tsx';
@@ -24,125 +25,6 @@ const LAB_SPLITTER_FOOTPRINT = LAB_SPLITTER_WIDTH + LAB_SPLITTER_GAP * 2;
 const MIN_EDITOR_PANEL_WIDTH = 320;
 const MIN_OUTPUT_PANEL_WIDTH = 320;
 const MG_LAB_FILE_QUERY_KEY = 'file';
-const ODE_BLOCK_AUTO_COLLAPSE_LINE_COUNT = 8;
-
-type OutputLineTone = 'default' | 'comment' | 'generated' | 'input' | 'ode-header' | 'ode-data';
-
-type OdeBlockLine = {
-  key: string;
-  line: string;
-  tone: OutputLineTone;
-};
-
-type OutputSegment =
-  | {
-      type: 'line';
-      key: string;
-      line: string;
-      tone: OutputLineTone;
-    }
-  | {
-      type: 'ode-block';
-      key: string;
-      commandLine: string;
-      lines: OdeBlockLine[];
-      collapsedByDefault: boolean;
-    };
-
-function getOutputLineTone(line: string): OutputLineTone {
-  const trimmed = line.trimStart();
-  if (/^\(\d+\)\s*%/.test(trimmed)) {
-    return 'comment';
-  }
-  if (trimmed.startsWith('->')) {
-    return 'generated';
-  }
-  if (/^\(\d+\)/.test(trimmed)) {
-    return 'input';
-  }
-  return 'default';
-}
-
-function getOdeBlockLineTone(line: string): OutputLineTone {
-  const trimmed = line.trimStart();
-  if (trimmed.startsWith('%')) {
-    return 'comment';
-  }
-  if (/^[+\-]?\d\.\d+E[+\-]\d+/.test(trimmed)) {
-    return 'ode-data';
-  }
-  if (trimmed.length > 0) {
-    return 'ode-header';
-  }
-  return 'default';
-}
-
-function parseOutputSegments(output: string): OutputSegment[] {
-  const lines = output.split('\n');
-  const segments: OutputSegment[] = [];
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index] ?? '';
-    const trimmed = line.trimStart();
-
-    if (/^\(\d+\)\s+ODE\(\)/.test(trimmed)) {
-      const blockLines: OdeBlockLine[] = [];
-      let cursor = index + 1;
-      while (cursor < lines.length) {
-        const nextLine = lines[cursor] ?? '';
-        if (/^ODE completed\b/.test(nextLine.trimStart())) {
-          break;
-        }
-        blockLines.push({
-          key: `ode-${index}-${cursor}`,
-          line: nextLine,
-          tone: getOdeBlockLineTone(nextLine),
-        });
-        cursor += 1;
-      }
-
-      if (blockLines.length > 0) {
-        segments.push({
-          type: 'ode-block',
-          key: `ode-${index}`,
-          commandLine: line,
-          lines: blockLines,
-          collapsedByDefault: blockLines.length >= ODE_BLOCK_AUTO_COLLAPSE_LINE_COUNT,
-        });
-        index = cursor - 1;
-        continue;
-      }
-    }
-
-    segments.push({
-      type: 'line',
-      key: `line-${index}-${line}`,
-      line,
-      tone: getOutputLineTone(line),
-    });
-  }
-
-  return segments;
-}
-
-function getToneClassName(tone: OutputLineTone): string {
-  if (tone === 'comment') {
-    return 'text-emerald-700 dark:text-emerald-300';
-  }
-  if (tone === 'generated') {
-    return 'text-sky-700 dark:text-sky-300';
-  }
-  if (tone === 'input') {
-    return 'text-amber-800 dark:text-amber-100';
-  }
-  if (tone === 'ode-header') {
-    return 'text-violet-700 dark:text-violet-200';
-  }
-  if (tone === 'ode-data') {
-    return 'text-cyan-700 dark:text-cyan-100';
-  }
-  return 'text-foreground';
-}
 
 function isMotionGenesisInputPath(filePath: string): boolean {
   return /\.(al|txt|in)$/i.test(filePath);
@@ -185,10 +67,8 @@ export default function MgLabPage() {
   const [vimMode, setVimMode] = useState(readStoredVimMode);
   const [contentSplit, setContentSplit] = useState(0.58);
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
-  const [collapsedOutputBlocks, setCollapsedOutputBlocks] = useState<Record<string, boolean>>({});
   const outputRef = useRef<HTMLDivElement | null>(null);
   const contentSectionRef = useRef<HTMLElement | null>(null);
-  const outputAutoFollowRef = useRef(true);
 
   const fileEditor = useWorkspaceTextFileEditor({ filePath });
   const motionGenesisRun = useMotionGenesisRun();
@@ -348,43 +228,6 @@ export default function MgLabPage() {
     ) : (
       <SquareTerminal className={cn('h-3.5 w-3.5', status === 'running' && 'animate-spin')} />
     );
-
-  const outputSegments = useMemo(() => {
-    return parseOutputSegments(run?.output ?? '');
-  }, [run?.output]);
-
-  useEffect(() => {
-    setCollapsedOutputBlocks((current) => {
-      let changed = false;
-      const next = { ...current };
-
-      for (const segment of outputSegments) {
-        if (segment.type !== 'ode-block' || segment.key in next) {
-          continue;
-        }
-        next[segment.key] = segment.collapsedByDefault;
-        changed = true;
-      }
-
-      return changed ? next : current;
-    });
-  }, [outputSegments]);
-
-  const toggleOutputBlock = useCallback((key: string) => {
-    setCollapsedOutputBlocks((current) => ({
-      ...current,
-      [key]: !current[key],
-    }));
-  }, []);
-
-  useEffect(() => {
-    const outputElement = outputRef.current;
-    if (!outputElement || !outputAutoFollowRef.current) {
-      return;
-    }
-
-    outputElement.scrollTop = outputElement.scrollHeight;
-  }, [run?.output]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
@@ -731,54 +574,7 @@ export default function MgLabPage() {
               </Button>
             </div>
           </div>
-          <div
-            ref={outputRef}
-            className="min-h-0 w-full overflow-auto rounded-md border border-border bg-background px-3 py-2 font-mono text-xs leading-5 text-foreground"
-            onScroll={(event) => {
-              const element = event.currentTarget;
-              const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
-              outputAutoFollowRef.current = distanceFromBottom <= 12;
-            }}
-          >
-            <div className="whitespace-pre-wrap break-all hyphens-none">
-              {outputSegments.map((segment) => {
-                if (segment.type === 'line') {
-                  return (
-                    <span key={segment.key} className={cn('block', getToneClassName(segment.tone))}>
-                      {segment.line.length > 0 ? segment.line : ' '}
-                    </span>
-                  );
-                }
-
-                const collapsed = collapsedOutputBlocks[segment.key] ?? segment.collapsedByDefault;
-                return (
-                  <div key={segment.key} className="mb-1 rounded-md border border-border/70 bg-muted/10">
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between gap-3 px-2 py-1 text-left text-[11px] text-muted-foreground transition-colors hover:bg-muted/20"
-                      onClick={() => toggleOutputBlock(segment.key)}
-                    >
-                      <span className={cn('min-w-0 flex-1 whitespace-pre-wrap break-all hyphens-none', getToneClassName('input'))}>
-                        {segment.commandLine}
-                      </span>
-                      <span className="shrink-0 uppercase tracking-wide">
-                        {collapsed ? `Show ${segment.lines.length} lines` : 'Hide ODE data'}
-                      </span>
-                    </button>
-                    {!collapsed ? (
-                      <div className="border-t border-border/60 px-2 py-1">
-                        {segment.lines.map((line) => (
-                          <span key={line.key} className={cn('block', getToneClassName(line.tone))}>
-                            {line.line.length > 0 ? line.line : ' '}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <MotionGenesisRunOutput ref={outputRef} output={run?.output ?? ''} />
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-t border-border/70 pt-2">
             <Input
               type="text"

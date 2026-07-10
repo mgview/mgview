@@ -27,6 +27,7 @@ import { Input } from './ui/input.tsx';
 import { useMotionGenesisRuntime } from '../hooks/useMotionGenesisRuntime.ts';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import MotionGenesisExecutableOverlay from './MotionGenesisExecutableOverlay.tsx';
+import MotionGenesisRunOutput from './MotionGenesisRunOutput.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
 import { Separator } from './ui/separator.tsx';
 
@@ -151,7 +152,7 @@ export default function MotionGenesisRunPanel({
   const flyoutRef = useRef<HTMLDivElement | null>(null);
   const editFlyoutRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
-  const outputRef = useRef<HTMLTextAreaElement | null>(null);
+  const outputRef = useRef<HTMLDivElement | null>(null);
 
   const runActive = run?.status === 'running' || run?.status === 'waiting-input';
   const runDisabledReason = !loadedScenePath
@@ -576,13 +577,7 @@ export default function MotionGenesisRunPanel({
             <ArrowDownToLine className="h-3.5 w-3.5" />
           </Button>
         </div>
-        <textarea
-          ref={outputRef}
-          className="h-full min-h-0 w-full resize-none overflow-x-auto rounded-md border border-border bg-background py-2 pl-3 pr-10 font-mono text-xs leading-5 whitespace-pre-wrap break-all hyphens-none text-foreground"
-          readOnly
-          spellCheck={false}
-          value={output}
-        />
+        <MotionGenesisRunOutput ref={outputRef} output={output} className="h-full pr-10" />
         </div>
       )}
 

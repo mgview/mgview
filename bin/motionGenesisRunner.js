@@ -74,6 +74,13 @@ function isMgStaticScreenLine(line) {
   if (/^█{10,}$/.test(trimmed)) {
     return true;
   }
+  // macOS MotionGenesis banners use '+' borders instead of solid blocks.
+  if (/^\+\+/.test(text)) {
+    return true;
+  }
+  if (/^\+{10,}$/.test(trimmed)) {
+    return true;
+  }
   if (/^[-=]{10,}$/.test(trimmed)) {
     return true;
   }

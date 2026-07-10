@@ -238,6 +238,23 @@ test('normalizePtyOutput collapses PTY newline translation to Unix newlines', ()
     ),
     '-------------------------------------------------------------------------------\nNote: Educational use ONLY.'
   );
+  assert.equal(
+    normalizePtyOutput(
+      [
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++',
+        '++     MotionGenesis Kane 6.6: Symbolic solutions for forces and motion.     ++',
+        '++                Advanced Research version. January 13, 2026                ++',
+        '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++',
+      ].join('\n'),
+      80
+    ),
+    [
+      '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++',
+      '++     MotionGenesis Kane 6.6: Symbolic solutions for forces and motion.     ++',
+      '++                Advanced Research version. January 13, 2026                ++',
+      '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++',
+    ].join('\n')
+  );
 });
 
 test('runner normalizes PTY output split across stdout chunks', () => {
