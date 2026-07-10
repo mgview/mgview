@@ -31,6 +31,14 @@ export function useWorkspaceKeyboardShortcuts({
   simFileSaving,
 }: UseWorkspaceKeyboardShortcutsOptions) {
   useEffect(() => {
+    const isMonacoEditorContext = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) {
+        return document.activeElement instanceof Element && Boolean(document.activeElement.closest('.monaco-editor'));
+      }
+
+      return Boolean(target.closest('.monaco-editor'));
+    };
+
     const isTextEditingTarget = (target: EventTarget | null) => {
       if (target instanceof HTMLTextAreaElement) {
         return true;
@@ -120,6 +128,10 @@ export function useWorkspaceKeyboardShortcuts({
       }
 
       if (event.defaultPrevented || event.repeat || event.code !== 'Space') {
+        return;
+      }
+
+      if (isMonacoEditorContext(target)) {
         return;
       }
 

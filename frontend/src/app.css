@@ -72,6 +72,12 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.workspace-content-panel-sim {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 .workspace-panel-stack {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;

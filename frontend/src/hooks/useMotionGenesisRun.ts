@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MotionGenesisRunOptions, MotionGenesisRunState } from '../api/localFiles.ts';
 import {
   getMotionGenesisRun,
@@ -7,13 +7,7 @@ import {
   startMotionGenesisRun,
   stopMotionGenesisRun,
 } from '../api/localFiles.ts';
-
-const DEFAULT_RUN_OPTIONS: MotionGenesisRunOptions = {
-  autoQuit: true,
-  autoDefaultValues: false,
-  debug: false,
-  scrollbackLimit: 0,
-};
+import { persistRunOptions, readStoredRunOptions } from './useMotionGenesisRunPreferences.ts';
 
 function shouldAutoSendDefault(run: MotionGenesisRunState | null): boolean {
   if (!run || !run.options.autoDefaultValues || !run.canSendInput || run.status !== 'waiting-input') {
@@ -27,7 +21,11 @@ export function useMotionGenesisRun(onRunSucceeded?: () => Promise<void> | void)
   const [run, setRun] = useState<MotionGenesisRunState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [input, setInput] = useState('');
-  const [options, setOptions] = useState<MotionGenesisRunOptions>(DEFAULT_RUN_OPTIONS);
+  const [options, setOptionsState] = useState<MotionGenesisRunOptions>(readStoredRunOptions);
+  const setOptions = useCallback((nextOptions: MotionGenesisRunOptions) => {
+    setOptionsState(nextOptions);
+    persistRunOptions(nextOptions);
+  }, []);
   const [starting, setStarting] = useState(false);
   const [sendingInput, setSendingInput] = useState(false);
   const [stopping, setStopping] = useState(false);

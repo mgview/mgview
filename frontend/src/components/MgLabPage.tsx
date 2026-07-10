@@ -1,56 +1,20 @@
-import { ArrowDownToLine, ArrowLeft, ArrowUpToLine, CheckCircle2, Code2, FolderOpen, RotateCcw, Save, SquareTerminal, TriangleAlert } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { ArrowLeft, Code2, FolderOpen, RotateCcw, Save } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { listLocalFiles } from '../api/localFiles.ts';
 import { getHomePath, inAppLinkProps } from '../core/appRoutes.ts';
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import { useMotionGenesisRun } from '../hooks/useMotionGenesisRun.ts';
-import { useMotionGenesisRuntime } from '../hooks/useMotionGenesisRuntime.ts';
 import { useWorkspaceTextFileEditor } from '../hooks/useWorkspaceTextFileEditor.ts';
-import { cn } from '../lib/utils.ts';
-import CodeEditor from './CodeEditor.tsx';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
-import MotionGenesisExecutableOverlay from './MotionGenesisExecutableOverlay.tsx';
-import MotionGenesisRunOutput from './MotionGenesisRunOutput.tsx';
+import MotionGenesisRunShell from './MotionGenesisRunShell.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
-import { Badge } from './ui/badge.tsx';
 import { Button } from './ui/button.tsx';
-import { Checkbox } from './ui/checkbox.tsx';
-import { Input } from './ui/input.tsx';
 import { Separator } from './ui/separator.tsx';
 
-const VIM_MODE_STORAGE_KEY = 'mgview-lab-editor-vim-mode';
-const LAB_SPLITTER_WIDTH = 8;
-const LAB_SPLITTER_GAP = 8;
-const LAB_SPLITTER_FOOTPRINT = LAB_SPLITTER_WIDTH + LAB_SPLITTER_GAP * 2;
-const MIN_EDITOR_PANEL_WIDTH = 320;
-const MIN_OUTPUT_PANEL_WIDTH = 320;
 const MG_LAB_FILE_QUERY_KEY = 'file';
 
 function isMotionGenesisInputPath(filePath: string): boolean {
   return /\.(al|txt)$/i.test(filePath);
-}
-
-function readStoredVimMode(): boolean {
-  try {
-    return window.localStorage.getItem(VIM_MODE_STORAGE_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function getStatusVariant(
-  status: 'running' | 'waiting-input' | 'success' | 'failed' | 'idle'
-): 'outline' | 'primary' | 'warning' | 'destructive' {
-  if (status === 'waiting-input') {
-    return 'warning';
-  }
-  if (status === 'success') {
-    return 'primary';
-  }
-  if (status === 'failed') {
-    return 'destructive';
-  }
-  return 'outline';
 }
 
 export default function MgLabPage() {
@@ -64,36 +28,9 @@ export default function MgLabPage() {
   const [browserError, setBrowserError] = useState<string | null>(null);
   const [browserLoading, setBrowserLoading] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
-  const [vimMode, setVimMode] = useState(readStoredVimMode);
-  const [contentSplit, setContentSplit] = useState(0.58);
-  const [isDesktopLayout, setIsDesktopLayout] = useState(false);
-  const outputRef = useRef<HTMLDivElement | null>(null);
-  const contentSectionRef = useRef<HTMLElement | null>(null);
 
   const fileEditor = useWorkspaceTextFileEditor({ filePath });
   const motionGenesisRun = useMotionGenesisRun();
-  const motionGenesisRuntime = useMotionGenesisRuntime();
-  const run = motionGenesisRun.run;
-  const runActive = run?.status === 'running' || run?.status === 'waiting-input';
-  const status = run?.status ?? 'idle';
-  const statusLabel = useMemo(() => {
-    if (status === 'waiting-input') {
-      return 'Waiting for input';
-    }
-    if (status === 'success') {
-      return 'Success';
-    }
-    if (status === 'failed') {
-      return 'Failed';
-    }
-    if (status === 'running') {
-      return 'Running';
-    }
-    return 'Idle';
-  }, [status]);
-
-  const resolvedCommand = run?.command ?? motionGenesisRuntime.runtimeInfo?.command ?? 'Not configured';
-  const ptySetupError = motionGenesisRuntime.runtimeInfo?.ptyError ?? null;
 
   useEffect(() => {
     if (!fileEditor.hasEdits) {
@@ -220,140 +157,29 @@ export default function MgLabPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSave]);
 
-  const statusIcon =
-    status === 'success' ? (
-      <CheckCircle2 className="h-3.5 w-3.5" />
-    ) : status === 'failed' || status === 'waiting-input' ? (
-      <TriangleAlert className="h-3.5 w-3.5" />
-    ) : (
-      <SquareTerminal className={cn('h-3.5 w-3.5', status === 'running' && 'animate-spin')} />
-    );
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    const updateDesktopLayout = () => {
-      setIsDesktopLayout(mediaQuery.matches);
-    };
-
-    updateDesktopLayout();
-    mediaQuery.addEventListener('change', updateDesktopLayout);
-    return () => mediaQuery.removeEventListener('change', updateDesktopLayout);
-  }, []);
-
-  const clampContentSplit = useCallback((value: number, containerWidth: number) => {
-    const availableWidth = containerWidth - LAB_SPLITTER_FOOTPRINT;
-    if (availableWidth <= 0) {
-      return 0.5;
-    }
-
-    const minimum = MIN_EDITOR_PANEL_WIDTH / availableWidth;
-    const maximum = 1 - MIN_OUTPUT_PANEL_WIDTH / availableWidth;
-    if (maximum <= minimum) {
-      return 0.5;
-    }
-
-    return Math.min(maximum, Math.max(minimum, value));
-  }, []);
-
-  useEffect(() => {
-    if (!isDesktopLayout) {
-      return;
-    }
-
-    const updateClamp = () => {
-      const container = contentSectionRef.current;
-      if (!container) {
-        return;
-      }
-      setContentSplit((current) => clampContentSplit(current, container.clientWidth));
-    };
-
-    updateClamp();
-    window.addEventListener('resize', updateClamp);
-    return () => window.removeEventListener('resize', updateClamp);
-  }, [clampContentSplit, isDesktopLayout]);
-
-  const startContentSplitDrag = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (!isDesktopLayout) {
-        return;
-      }
-
-      const container = contentSectionRef.current;
-      if (!container) {
-        return;
-      }
-
-      event.preventDefault();
-      event.currentTarget.setPointerCapture(event.pointerId);
-      const bounds = container.getBoundingClientRect();
-      const availableWidth = bounds.width - LAB_SPLITTER_FOOTPRINT;
-      if (availableWidth <= 0) {
-        return;
-      }
-
-      document.body.classList.add('workspace-splitter-dragging');
-
-      const updateValue = (clientX: number) => {
-        const rawValue = (clientX - bounds.left - LAB_SPLITTER_FOOTPRINT / 2) / availableWidth;
-        setContentSplit(clampContentSplit(rawValue, bounds.width));
-      };
-
-      updateValue(event.clientX);
-
-      const handlePointerMove = (moveEvent: PointerEvent) => {
-        updateValue(moveEvent.clientX);
-      };
-
-      const finishDrag = () => {
-        window.removeEventListener('pointermove', handlePointerMove);
-        window.removeEventListener('pointerup', finishDrag);
-        window.removeEventListener('pointercancel', finishDrag);
-        document.body.classList.remove('workspace-splitter-dragging');
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          event.currentTarget.releasePointerCapture(event.pointerId);
-        }
-      };
-
-      window.addEventListener('pointermove', handlePointerMove);
-      window.addEventListener('pointerup', finishDrag);
-      window.addEventListener('pointercancel', finishDrag);
-    },
-    [clampContentSplit, isDesktopLayout]
-  );
-
-  const contentSectionStyle = useMemo((): CSSProperties | undefined => {
-    if (!isDesktopLayout) {
-      return undefined;
-    }
-
-    return {
-      gridTemplateColumns: `minmax(${MIN_EDITOR_PANEL_WIDTH}px, calc((100% - ${LAB_SPLITTER_FOOTPRINT}px) * ${contentSplit})) ${LAB_SPLITTER_WIDTH}px minmax(${MIN_OUTPUT_PANEL_WIDTH}px, calc((100% - ${LAB_SPLITTER_FOOTPRINT}px) * ${1 - contentSplit}))`,
-    };
-  }, [contentSplit, isDesktopLayout]);
-
   return (
-    <main className="grid h-screen grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-2 overflow-hidden bg-background p-2 text-foreground">
+    <main className="grid h-screen grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden bg-background p-2 text-foreground">
       <header className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
-        <div className="min-w-0 space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              <Code2 className="size-3.5" aria-hidden />
-              MG Lab
-            </div>
-            <Badge variant={getStatusVariant(status)} className="gap-1 rounded-md px-2 py-1 text-[0.72rem]">
-              {statusIcon}
-              {statusLabel}
-            </Badge>
-            {run?.canSendInput ? (
-              <Badge variant="warning" className="rounded-md px-2 py-1 text-[0.72rem]">
-                Interactive
-              </Badge>
-            ) : null}
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            <Code2 className="size-3.5" aria-hidden />
+            MG Lab
           </div>
-          <p className="text-sm text-muted-foreground">
-            Open a Motion Genesis file directly, edit it, save it, and run it without loading a scene.
-          </p>
+          <code
+            className="min-w-0 flex-1 truncate font-mono text-[0.72rem] text-muted-foreground"
+            title={fileEditor.filePath ?? 'No file selected'}
+          >
+            {fileEditor.filePath ?? '(no file selected)'}
+          </code>
+          {fileEditor.hasEdits ? (
+            <span
+              className="shrink-0 text-lg leading-none text-warning"
+              title="Unsaved changes"
+              aria-label="Unsaved changes"
+            >
+              •
+            </span>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
@@ -385,12 +211,6 @@ export default function MgLabPage() {
             <RotateCcw className="size-3.5" aria-hidden />
             Revert
           </Button>
-          <Button type="button" size="sm" disabled={!fileEditor.filePath || motionGenesisRun.starting || runActive} onClick={handleRun}>
-            {motionGenesisRun.starting ? 'Running…' : 'Run'}
-          </Button>
-          <Button type="button" variant="outline" size="sm" disabled={!runActive || motionGenesisRun.stopping} onClick={motionGenesisRun.stopRun}>
-            {motionGenesisRun.stopping ? 'Stopping…' : 'Stop'}
-          </Button>
           <Button type="button" variant="outline" size="sm" asChild>
             <a href={getHomePath()} {...inAppLinkProps}>
               <ArrowLeft className="size-3.5" aria-hidden />
@@ -400,209 +220,36 @@ export default function MgLabPage() {
         </div>
       </header>
 
-      <section className="grid gap-2 rounded-xl border border-border bg-card px-4 py-3 shadow-sm lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div className="grid gap-1 text-sm">
-          <div className="min-w-0">
-            <span className="text-muted-foreground">File: </span>
-            <code className="break-all text-foreground">{fileEditor.filePath ?? 'No file selected'}</code>
-            {fileEditor.hasEdits ? <span className="ml-2 text-warning">Unsaved changes</span> : null}
-          </div>
-          <div className="min-w-0">
-            <span className="text-muted-foreground">Command: </span>
-            <button
-              type="button"
-              className="rounded-sm text-left underline decoration-dotted underline-offset-4 transition-colors hover:text-primary"
-              onClick={motionGenesisRuntime.openPicker}
-            >
-              <code className="break-all text-foreground">{resolvedCommand}</code>
-            </button>
-          </div>
-          {ptySetupError ? (
-            <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-destructive">{ptySetupError}</pre>
-          ) : null}
-          {motionGenesisRun.error ? <p className="text-xs text-destructive">{motionGenesisRun.error}</p> : null}
-          {fileEditor.error ? <p className="text-xs text-destructive">{fileEditor.error}</p> : null}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={motionGenesisRun.options.autoQuit}
-              onCheckedChange={(checked) =>
-                motionGenesisRun.setOptions({ ...motionGenesisRun.options, autoQuit: checked === true })
-              }
-            />
-            <span className="text-foreground">Auto-quit</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={motionGenesisRun.options.autoDefaultValues}
-              onCheckedChange={(checked) =>
-                motionGenesisRun.setOptions({ ...motionGenesisRun.options, autoDefaultValues: checked === true })
-              }
-            />
-            <span className="text-foreground">Auto defaults</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={motionGenesisRun.options.debug}
-              onCheckedChange={(checked) =>
-                motionGenesisRun.setOptions({ ...motionGenesisRun.options, debug: checked === true })
-              }
-            />
-            <span className="text-foreground">Debug output</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <span className="text-foreground">Scrollback</span>
-            <Input
-              type="number"
-              min="0"
-              step="10"
-              inputMode="numeric"
-              className="h-8 w-28"
-              value={String(motionGenesisRun.options.scrollbackLimit)}
-              onChange={(event) => {
-                const nextValue = event.target.value.trim();
-                const parsed = nextValue.length === 0 ? 0 : Number.parseInt(nextValue, 10);
-                motionGenesisRun.setOptions({
-                  ...motionGenesisRun.options,
-                  scrollbackLimit: Number.isFinite(parsed) && parsed >= 0 ? parsed : 0,
-                });
-              }}
-            />
-            <span className="text-[11px]">lines, `0` = all</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={vimMode}
-              disabled={fileEditor.loading || !fileEditor.filePath}
-              onCheckedChange={(checked) => {
-                const nextValue = checked === true;
-                setVimMode(nextValue);
-                try {
-                  window.localStorage.setItem(VIM_MODE_STORAGE_KEY, String(nextValue));
-                } catch {
-                  // Ignore storage failures.
-                }
-              }}
-            />
-            <span className="text-foreground">Vim</span>
-          </label>
-        </div>
-      </section>
-
-      <section
-        ref={contentSectionRef}
-        className="grid min-h-0 gap-2"
-        style={contentSectionStyle}
-      >
-        <div className="relative grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)] rounded-xl border border-border bg-card p-2 shadow-sm">
-          {runActive ? (
-            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
-              <div
-                className={cn(
-                  'inline-flex items-center gap-3 rounded-full border px-4 py-2 font-mono text-xs font-semibold uppercase tracking-[0.18em] shadow-lg backdrop-blur',
-                  status === 'waiting-input'
-                    ? 'border-amber-700/35 bg-amber-100/92 text-amber-950 dark:border-amber-400/60 dark:bg-amber-500/15 dark:text-amber-100'
-                    : 'border-sky-700/35 bg-sky-100/92 text-sky-950 dark:border-sky-400/60 dark:bg-sky-500/15 dark:text-sky-100'
-                )}
-              >
-                <SquareTerminal className={cn('h-4 w-4', status === 'running' && 'animate-spin')} />
-                <span>{status === 'waiting-input' ? 'Waiting For Input' : 'Running'}</span>
-              </div>
-            </div>
-          ) : null}
-          {fileEditor.loading ? (
-            <div className="flex min-h-0 items-center justify-center rounded-md border border-border bg-background text-sm text-muted-foreground">
-              Loading Motion Genesis file…
-            </div>
-          ) : fileEditor.filePath ? (
-            <CodeEditor
-              className={cn('min-h-0 transition-[filter,opacity] duration-150', runActive && 'opacity-55 grayscale-[0.2]')}
-              onChange={fileEditor.setDraftContent}
-              onRun={handleRun}
-              readOnly={runActive}
-              value={fileEditor.draftContent}
-              vimMode={vimMode}
-            />
-          ) : (
-            <div className="flex min-h-0 items-center justify-center rounded-md border border-dashed border-border bg-muted/10 px-6 text-center text-sm text-muted-foreground">
-              Open a workspace `.al` or `.txt` file to start editing and running Motion Genesis directly.
-            </div>
-          )}
-        </div>
-
-        <div
-          role="separator"
-          aria-label="Resize editor and output"
-          aria-orientation="vertical"
-          className="workspace-horizontal-splitter hidden lg:block"
-          onPointerDown={startContentSplitDrag}
-        />
-
-        <div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 rounded-xl border border-border bg-card p-2 shadow-sm">
-          <div className="flex items-center justify-between gap-2 px-1">
-            <div className="text-xs uppercase tracking-wide text-muted-foreground">Run Output</div>
-            <div className="flex gap-1">
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="h-7 w-7"
-                aria-label="Scroll to top"
-                onClick={() => {
-                  if (outputRef.current) {
-                    outputRef.current.scrollTop = 0;
-                  }
-                }}
-              >
-                <ArrowUpToLine className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="h-7 w-7"
-                aria-label="Scroll to bottom"
-                onClick={() => {
-                  if (outputRef.current) {
-                    outputRef.current.scrollTop = outputRef.current.scrollHeight;
-                  }
-                }}
-              >
-                <ArrowDownToLine className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-          <MotionGenesisRunOutput ref={outputRef} output={run?.output ?? ''} />
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-t border-border/70 pt-2">
-            <Input
-              type="text"
-              className="font-mono"
-              value={motionGenesisRun.input}
-              onChange={(event) => motionGenesisRun.setInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
-                  void motionGenesisRun.submitInput();
-                }
-              }}
-              placeholder="Send one line of input to the running Motion Genesis process"
-              disabled={!run?.canSendInput || motionGenesisRun.sendingInput}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!run?.canSendInput || motionGenesisRun.sendingInput}
-              onClick={() => {
-                void motionGenesisRun.submitInput();
-              }}
-            >
-              {motionGenesisRun.sendingInput ? 'Sending…' : 'Send'}
-            </Button>
-          </div>
-        </div>
-      </section>
+      <MotionGenesisRunShell
+        className="h-full min-h-0"
+        run={motionGenesisRun.run}
+        error={motionGenesisRun.error}
+        input={motionGenesisRun.input}
+        options={motionGenesisRun.options}
+        starting={motionGenesisRun.starting}
+        stopping={motionGenesisRun.stopping}
+        sendingInput={motionGenesisRun.sendingInput}
+        canRun={Boolean(fileEditor.filePath)}
+        runButtonLabel="Run"
+        onInputChange={motionGenesisRun.setInput}
+        onOptionsChange={motionGenesisRun.setOptions}
+        onRun={handleRun}
+        onStop={() => {
+          void motionGenesisRun.stopRun();
+        }}
+        onSendInput={() => {
+          void motionGenesisRun.submitInput();
+        }}
+        editorValue={fileEditor.draftContent}
+        onEditorChange={fileEditor.setDraftContent}
+        editorLoading={fileEditor.loading}
+        editorError={fileEditor.error}
+        editorFilePath={fileEditor.filePath}
+        editorEmptyMessage="Open a workspace `.al` or `.txt` file to start editing and running Motion Genesis directly."
+        onEditorRun={handleRun}
+        canOpenExecutablePicker
+        defaultLayoutMode="split"
+      />
 
       {pickerOpen ? (
         <OverlayPanel
@@ -657,24 +304,6 @@ export default function MgLabPage() {
             </div>
           </div>
         </OverlayPanel>
-      ) : null}
-
-      {motionGenesisRuntime.pickerOpen ? (
-        <MotionGenesisExecutableOverlay
-          draftExecutablePath={motionGenesisRuntime.draftExecutablePath}
-          errorMessage={motionGenesisRuntime.error}
-          runtimeInfo={motionGenesisRuntime.runtimeInfo}
-          saving={motionGenesisRuntime.saving}
-          onApply={() => {
-            void motionGenesisRuntime.applyExecutablePath();
-          }}
-          onClearConfigured={() => {
-            void motionGenesisRuntime.clearConfiguredExecutable();
-          }}
-          onClose={motionGenesisRuntime.closePicker}
-          onDraftChange={motionGenesisRuntime.setDraftExecutablePath}
-          onSelectCandidate={motionGenesisRuntime.selectCandidate}
-        />
       ) : null}
     </main>
   );

@@ -1,6 +1,6 @@
 # MG Lab vs Workspace Run Sim — Plan of Record
 
-Align **MG Lab** (`/mgview/lab/`, `MgLabPage.tsx`) with the workspace **Run Sim** panel (`MotionGenesisRunPanel.tsx`). Both use the same backend runner and hook layer; UI and some behaviors diverge today.
+Align **MG Lab** (`/mgview/lab/`, `MgLabPage.tsx`) with the workspace **Run Sim** panel (`MotionGenesisRunPanel.tsx`). Both use the same backend runner and hook layer; **Phase 1 runner UI is complete** — shared shell + prefs. Remaining work is Phase 3 (bootstrap) and scenarios policy.
 
 **Direction:** Lab is the interaction reference; workspace is the data anchor. Converge the runner UI; keep scene-scoped run + post-run data reload in workspace. Lab remains the orphan-sim entry point (no scene required).
 
@@ -9,7 +9,9 @@ Align **MG Lab** (`/mgview/lab/`, `MgLabPage.tsx`) with the workspace **Run Sim*
 ```
 bin/motionGenesisRunner.js
         │ HTTP API
-useMotionGenesisRun()          ← one instance per route today; options not shared
+useMotionGenesisRun()          ← one instance per route; run options via shared localStorage
+        │
+MotionGenesisRunShell          ← layout/vim prefs via useMotionGenesisRunPreferences()
         │
    MgLabPage                    MotionGenesisRunPanel
    beginFileRun()               beginRun() via useMotionGenesisWorkspace
@@ -17,6 +19,8 @@ useMotionGenesisRun()          ← one instance per route today; options not sha
 
 | File | Role |
 |------|------|
+| `MotionGenesisRunShell.tsx` | Shared run UI (layout, configure, editor, output, stdin) |
+| `useMotionGenesisRunPreferences.ts` | Shared `mgview-run-*` localStorage prefs |
 | `MgLabPage.tsx` | Standalone lab: open/edit/run any workspace MG file |
 | `MotionGenesisRunPanel.tsx` | Workspace panel: run sim tied to loaded scene |
 | `MotionGenesisRunOutput.tsx` | Shared output renderer |
@@ -25,42 +29,40 @@ useMotionGenesisRun()          ← one instance per route today; options not sha
 
 ---
 
-## Phase 1 — Shared run shell + preferences
+## Phase 1 — Shared run shell + preferences ✅
 
-Extract **`MotionGenesisRunShell`** used by Lab and workspace. Merge layout, configure/status UI, and localStorage prefs in one pass — no reason to split; prefs are a few keys and belong in the same component/hook.
+**Done.** `MotionGenesisRunShell` + `useMotionGenesisRunPreferences`; both routes are thin wrappers.
 
 **Persist in localStorage** (`mgview-run-*`):
 
 - Run options: `autoQuit`, `autoDefaultValues`, `debug`, `scrollbackLimit`
 - Vim mode (replace `mgview-lab-editor-vim-mode` + `mgview-sim-editor-vim-mode`)
-- Layout mode: `split` | `tabs` | `output-only`
+- Layout mode: `split` | `editor` | `output-only` (legacy stored `tabs` → `editor`)
 - Split ratio (when in split mode)
 
 **Layout modes:**
 
 - **Split** — resizable editor \| output (Lab default; min panel width 320px; lg+ breakpoint for horizontal split, stacked on narrow).
-- **Tabs** — Edit \| Output (workspace default on narrow rails).
+- **Editor** — editor only (workspace default on narrow rails).
 - **Output-only** — optional.
 
-Consider lifting run options into `useMotionGenesisRun` or a small `useMotionGenesisRunPreferences` hook so both routes read the same store on init.
-
-### What goes in the shared shell (union of both routes)
+### Shell surface (union of both routes)
 
 | Area | Include | Source / note |
 |------|---------|---------------|
 | **Status** | Badge (idle/running/waiting/success/failed), Interactive badge | both |
 | **Actions** | Run, Stop | both; label prop: `"Run"` vs `"Run Sim"` |
-| **Configure** | auto-quit, auto-defaults, debug, **scrollback** | Lab has scrollback; workspace lacks it — add |
+| **Configure** | auto-quit, auto-defaults, debug, scrollback | both |
 | **Configure** | Vim toggle | both |
 | **Configure** | Motion Genesis executable path (click → picker) | both; `canOpenExecutablePicker` prop (Lab always true; workspace gated by `canPersistScenesToServer`) |
 | **Configure** | PTY setup error | both |
-| **Status panel** | Exit code, PID, exact command line, command, CWD, workspace root, started/ended, command source | workspace today; **add to Lab** |
+| **Status panel** | Exit code, PID, exact command line, command, CWD, workspace root, started/ended, command source | both |
 | **Status panel** | Scene path, scene file path | workspace only; pass when scene-scoped run |
 | **Editor** | `CodeEditor`, loading/empty states, dirty indicator | both |
-| **Editor** | `readOnly` + dim + centered overlay while running/waiting-input | Lab today; **add to workspace** |
+| **Editor** | `readOnly` + dim + centered overlay while running/waiting-input | both |
 | **Editor** | Cmd/Ctrl+Enter or editor `onRun` shortcut | both |
 | **Output** | `MotionGenesisRunOutput`, scroll top/bottom | both; unify on header buttons (Lab style) |
-| **Stdin** | Input + Send, Enter to submit | **always visible** (Lab behavior); not hidden in edit/tab mode |
+| **Stdin** | Input + Send, Enter to submit | split + output-only layouts; hidden in editor-only mode |
 | **Errors** | Run error line | both |
 
 Already shared (do not duplicate): `MotionGenesisRunOutput`, `parseMotionGenesisOutput`, `MotionGenesisExecutableOverlay`.
@@ -89,9 +91,9 @@ Shell accepts props/callbacks for editor content (`value`, `onChange`, `readOnly
 
 ### Removed / replaced
 
-- Workspace **Edit flyout that replaces output** → tabs or split inside shell
-- Workspace **stdin hidden when editing** → dropped
-- Duplicate configure UI (Lab inline bar vs workspace flyout) → one Configure surface in shell (inline section or collapsible; not route-specific flyouts)
+- Workspace **Edit flyout that replaces output** → shell layout toggles (split / editor / output-only)
+- Workspace **stdin in edit flyout** → dropped; stdin lives with output panel
+- Duplicate configure UI → one Configure surface in shell
 
 ---
 
@@ -195,19 +197,9 @@ Existing multi-JSON layouts keep working unchanged:
 
 ---
 
-## Parity audit (current gaps → Phase 1)
+## Phase 1 parity — closed
 
-| Gap | Lab | Workspace | Fixed by |
-|-----|-----|-----------|----------|
-| Scrollback UI | yes | no | Phase 1 |
-| Editor locked during run | yes | no | Phase 1 |
-| Run metadata (PID, exit code, cmdline) | no | yes | Phase 1 (add to Lab) |
-| Revert in run UI | yes | scene header only | optional |
-| Shared run options / vim | no | no | Phase 1 |
-| Split editor + output | yes | flyout replaces output | Phase 1 |
-| Stdin while editing | yes | hidden in Edit flyout | Phase 1 |
-| Post-run data reload | no | yes | intentional (wrapper) |
-| Executable picker gating | always | server mode only | Phase 1 (`canOpenExecutablePicker`) |
+All Phase 1 gaps resolved. Still intentional: revert in scene header (workspace), post-run data reload (wrapper only), `canOpenExecutablePicker` gating.
 
 Shared output behavior (ODE block collapse, PTY normalization): `parseMotionGenesisOutput.ts`, `MotionGenesisRunOutput.tsx`. Tests: `parseMotionGenesisOutput.test.ts`, `motionGenesisRunner.test.js`.
 

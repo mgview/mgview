@@ -1,21 +1,90 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { ArrowDownToLine, ArrowUpToLine, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
+import type { MotionGenesisRunStatus } from '../api/localFiles.ts';
 import {
   getMotionGenesisOutputToneClassName,
   parseMotionGenesisOutput,
 } from '../core/parseMotionGenesisOutput.ts';
 import { cn } from '../lib/utils.ts';
+import { Button } from './ui/button.tsx';
 
 type MotionGenesisRunOutputProps = {
   output: string;
   className?: string;
   autoFollow?: boolean;
+  runId?: string | null;
+  runStatus?: MotionGenesisRunStatus | 'idle';
+  showToolbar?: boolean;
+  waitingInputOverlay?: ReactNode;
 };
 
+function getLastOdeBlockKey(segments: ReturnType<typeof parseMotionGenesisOutput>): string | null {
+  for (let index = segments.length - 1; index >= 0; index -= 1) {
+    const segment = segments[index];
+    if (segment?.type === 'ode-block') {
+      return segment.key;
+    }
+  }
+  return null;
+}
+
+function isOdeBlockCollapsed(
+  segment: Extract<ReturnType<typeof parseMotionGenesisOutput>[number], { type: 'ode-block' }>,
+  collapsedOutputBlocks: Record<string, boolean>
+): boolean {
+  return collapsedOutputBlocks[segment.key] ?? segment.collapsedByDefault;
+}
+
+function applyParserCollapseDefaults(
+  segments: ReturnType<typeof parseMotionGenesisOutput>,
+  current: Record<string, boolean>
+): Record<string, boolean> {
+  const next = { ...current };
+  for (const segment of segments) {
+    if (segment.type !== 'ode-block') {
+      continue;
+    }
+    next[segment.key] = segment.collapsedByDefault;
+  }
+  return next;
+}
+
 const MotionGenesisRunOutput = forwardRef<HTMLDivElement, MotionGenesisRunOutputProps>(
-  function MotionGenesisRunOutput({ output, className, autoFollow = true }, ref) {
+  function MotionGenesisRunOutput(
+    {
+      output,
+      className,
+      autoFollow = true,
+      runId = null,
+      runStatus = 'idle',
+      showToolbar = false,
+      waitingInputOverlay = null,
+    },
+    ref
+  ) {
     const [collapsedOutputBlocks, setCollapsedOutputBlocks] = useState<Record<string, boolean>>({});
     const outputAutoFollowRef = useRef(true);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const prevRunStatusRef = useRef(runStatus);
     const outputSegments = useMemo(() => parseMotionGenesisOutput(output), [output]);
+    const lastOdeBlockKey = useMemo(() => getLastOdeBlockKey(outputSegments), [outputSegments]);
+    const odeBlockSegments = useMemo(
+      () => outputSegments.filter((segment) => segment.type === 'ode-block'),
+      [outputSegments]
+    );
+
+    const allOdeBlocksCollapsed = useMemo(() => {
+      if (odeBlockSegments.length === 0) {
+        return false;
+      }
+      return odeBlockSegments.every((segment) => isOdeBlockCollapsed(segment, collapsedOutputBlocks));
+    }, [collapsedOutputBlocks, odeBlockSegments]);
+
+    useEffect(() => {
+      setCollapsedOutputBlocks({});
+      prevRunStatusRef.current = 'idle';
+    }, [runId]);
 
     useEffect(() => {
       setCollapsedOutputBlocks((current) => {
@@ -34,11 +103,69 @@ const MotionGenesisRunOutput = forwardRef<HTMLDivElement, MotionGenesisRunOutput
       });
     }, [outputSegments]);
 
-    const toggleOutputBlock = useCallback((key: string) => {
-      setCollapsedOutputBlocks((current) => ({
-        ...current,
-        [key]: !current[key],
-      }));
+    useEffect(() => {
+      const previousStatus = prevRunStatusRef.current;
+      prevRunStatusRef.current = runStatus;
+
+      if (runStatus === 'waiting-input' && previousStatus !== 'waiting-input') {
+        setCollapsedOutputBlocks((current) => {
+          const next = applyParserCollapseDefaults(outputSegments, current);
+          if (lastOdeBlockKey) {
+            next[lastOdeBlockKey] = false;
+          }
+          return next;
+        });
+        return;
+      }
+
+      const runEnded =
+        (previousStatus === 'running' || previousStatus === 'waiting-input') &&
+        (runStatus === 'success' || runStatus === 'failed');
+
+      const waitingEnded = previousStatus === 'waiting-input' && runStatus === 'running';
+
+      if (runEnded || waitingEnded) {
+        setCollapsedOutputBlocks((current) => applyParserCollapseDefaults(outputSegments, current));
+      }
+    }, [lastOdeBlockKey, outputSegments, runStatus]);
+
+    const toggleOutputBlock = useCallback(
+      (key: string) => {
+        setCollapsedOutputBlocks((current) => {
+          const segment = odeBlockSegments.find((entry) => entry.key === key);
+          const collapsed = segment ? isOdeBlockCollapsed(segment, current) : true;
+          return {
+            ...current,
+            [key]: !collapsed,
+          };
+        });
+      },
+      [odeBlockSegments]
+    );
+
+    const toggleAllOdeBlocks = useCallback(() => {
+      const collapse = !allOdeBlocksCollapsed;
+      setCollapsedOutputBlocks((current) => {
+        const next = { ...current };
+        for (const segment of odeBlockSegments) {
+          next[segment.key] = collapse;
+        }
+        return next;
+      });
+    }, [allOdeBlocksCollapsed, odeBlockSegments]);
+
+    const scrollToTop = useCallback(() => {
+      const outputElement = scrollRef.current;
+      if (outputElement) {
+        outputElement.scrollTop = 0;
+      }
+    }, []);
+
+    const scrollToBottom = useCallback(() => {
+      const outputElement = scrollRef.current;
+      if (outputElement) {
+        outputElement.scrollTop = outputElement.scrollHeight;
+      }
     }, []);
 
     useEffect(() => {
@@ -46,20 +173,46 @@ const MotionGenesisRunOutput = forwardRef<HTMLDivElement, MotionGenesisRunOutput
         return;
       }
 
-      const outputElement = typeof ref === 'function' ? null : ref?.current;
-      if (!outputElement || !outputAutoFollowRef.current) {
+      const outputElement = scrollRef.current;
+      const content = contentRef.current;
+      if (!outputElement || !content) {
         return;
       }
 
-      outputElement.scrollTop = outputElement.scrollHeight;
-    }, [autoFollow, output, ref]);
+      const followBottom = () => {
+        if (!outputAutoFollowRef.current) {
+          return;
+        }
+        outputElement.scrollTop = outputElement.scrollHeight;
+      };
 
-    return (
+      const observer = new ResizeObserver(() => {
+        followBottom();
+      });
+      observer.observe(content);
+      followBottom();
+
+      return () => observer.disconnect();
+    }, [autoFollow, output]);
+
+    const assignScrollRef = useCallback(
+      (node: HTMLDivElement | null) => {
+        scrollRef.current = node;
+        if (typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          ref.current = node;
+        }
+      },
+      [ref]
+    );
+
+    const outputBody = (
       <div
-        ref={ref}
+        ref={assignScrollRef}
         className={cn(
-          'min-h-0 w-full overflow-auto rounded-md border border-border bg-background px-3 py-2 font-mono text-xs leading-5 text-foreground',
-          className
+          'h-full min-h-0 w-full overflow-auto rounded-md border border-border bg-background px-3 py-2 font-mono text-xs leading-5 text-foreground',
+          !showToolbar && className
         )}
         onScroll={(event) => {
           const element = event.currentTarget;
@@ -67,7 +220,7 @@ const MotionGenesisRunOutput = forwardRef<HTMLDivElement, MotionGenesisRunOutput
           outputAutoFollowRef.current = distanceFromBottom <= 12;
         }}
       >
-        <div className="whitespace-pre-wrap break-all hyphens-none">
+        <div ref={contentRef} className="whitespace-pre-wrap break-all hyphens-none">
           {outputSegments.map((segment) => {
             if (segment.type === 'line') {
               return (
@@ -80,7 +233,7 @@ const MotionGenesisRunOutput = forwardRef<HTMLDivElement, MotionGenesisRunOutput
               );
             }
 
-            const collapsed = collapsedOutputBlocks[segment.key] ?? segment.collapsedByDefault;
+            const collapsed = isOdeBlockCollapsed(segment, collapsedOutputBlocks);
             return (
               <div key={segment.key} className="mb-1 rounded-md border border-border/70 bg-muted/10">
                 <button
@@ -115,6 +268,67 @@ const MotionGenesisRunOutput = forwardRef<HTMLDivElement, MotionGenesisRunOutput
               </div>
             );
           })}
+        </div>
+      </div>
+    );
+
+    if (!showToolbar) {
+      return outputBody;
+    }
+
+    return (
+      <div className={cn('grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden', className)}>
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Run Output</div>
+          <div className="flex flex-wrap items-center gap-1">
+            {odeBlockSegments.length > 0 ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1 px-2 text-[0.68rem]"
+                onClick={toggleAllOdeBlocks}
+              >
+                {allOdeBlocksCollapsed ? (
+                  <>
+                    <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden />
+                    Expand all
+                  </>
+                ) : (
+                  <>
+                    <ChevronsDownUp className="h-3.5 w-3.5" aria-hidden />
+                    Collapse all
+                  </>
+                )}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 gap-1 px-2 text-[0.68rem]"
+              aria-label="Scroll to top"
+              onClick={scrollToTop}
+            >
+              <ArrowUpToLine className="h-3.5 w-3.5" aria-hidden />
+              Top
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 gap-1 px-2 text-[0.68rem]"
+              aria-label="Scroll to bottom"
+              onClick={scrollToBottom}
+            >
+              <ArrowDownToLine className="h-3.5 w-3.5" aria-hidden />
+              Bottom
+            </Button>
+          </div>
+        </div>
+        <div className="relative h-full min-h-0 overflow-hidden">
+          {outputBody}
+          {waitingInputOverlay}
         </div>
       </div>
     );

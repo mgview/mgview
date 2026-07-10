@@ -188,8 +188,16 @@ export default function WorkspaceEditorRail({
             </div>
           ) : null}
 
-          <div className="workspace-content-panel">
-            <div className="h-full min-h-0 overflow-auto pr-0.5">
+          <div
+            className={`workspace-content-panel${editorMode === 'sim' ? ' workspace-content-panel-sim' : ''}`}
+          >
+            <div
+              className={
+                editorMode === 'sim'
+                  ? 'h-full min-h-0 overflow-hidden'
+                  : 'h-full min-h-0 overflow-auto pr-0.5'
+              }
+            >
               <InspectorDrawer
                 activeScene={activeScene}
                 cameraPreview={shell.cameraPreview}
