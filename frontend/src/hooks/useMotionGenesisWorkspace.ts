@@ -1,33 +1,36 @@
 import { useCallback, useEffect } from 'react';
+import { combineBrowserPath } from '../core/workspacePaths.ts';
+import { createMotionGenesisSimFile } from '../core/createMotionGenesisSimFile.ts';
+import {
+  getSimulationSettingsRelativePath,
+  isMotionGenesisInputPath,
+  validateSimFileName,
+} from '../core/simulationFilePath.ts';
 import type { NormalizedSceneConfig } from '../core/types.ts';
 import type { LoadedSceneData } from './useSceneWorkspace.ts';
 import { useMotionGenesisRun } from './useMotionGenesisRun.ts';
 import { useSimulationSettingsEditor } from './useSimulationSettingsEditor.ts';
 
-function isLikelyMotionGenesisInputPath(filePath: string): boolean {
-  return /\.(al|txt)$/i.test(filePath);
-}
-
 interface UseMotionGenesisWorkspaceOptions {
   activeScene: NormalizedSceneConfig | null;
   canSaveScene: boolean;
+  handleLinkSimulationSettings: (relativePath: string) => Promise<boolean>;
   handleRefreshSimulationData: (successMessage: string) => Promise<void>;
   handleSaveScene: () => Promise<void>;
   hasLocalEdits: boolean;
   loaded: LoadedSceneData | null;
   showSuccess: (message: string) => void;
-  updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
 }
 
 export function useMotionGenesisWorkspace({
   activeScene,
   canSaveScene,
+  handleLinkSimulationSettings,
   handleRefreshSimulationData,
   handleSaveScene,
   hasLocalEdits,
   loaded,
   showSuccess,
-  updateDraftScene,
 }: UseMotionGenesisWorkspaceOptions) {
   const handleMotionGenesisSuccess = useCallback(async () => {
     await handleRefreshSimulationData('Reloaded simulation data after Motion Genesis finished.');
@@ -35,19 +38,55 @@ export function useMotionGenesisWorkspace({
 
   const motionGenesisRun = useMotionGenesisRun(handleMotionGenesisSuccess);
 
-  const handleSimulationSettingsChange = useCallback(
-    (value: string) => {
-      updateDraftScene((scene) => {
-        const trimmedValue = value.trim();
-        if (trimmedValue.length > 0) {
-          scene.simulationSettings = trimmedValue;
-          return;
-        }
-
-        delete scene.simulationSettings;
-      });
+  const linkSimulationSettings = useCallback(
+    async (relativePath: string) => {
+      return handleLinkSimulationSettings(relativePath);
     },
-    [updateDraftScene]
+    [handleLinkSimulationSettings]
+  );
+
+  const createAndLinkSimulationFile = useCallback(
+    async (directoryPath: string, fileName: string): Promise<boolean> => {
+      if (!loaded || loaded.sceneRef.source !== 'workspace') {
+        motionGenesisRun.setError('Load a workspace scene before creating a simulation file.');
+        return false;
+      }
+
+      const validationError = validateSimFileName(fileName);
+      if (validationError) {
+        motionGenesisRun.setError(validationError);
+        return false;
+      }
+
+      const simulationFilePath = combineBrowserPath(
+        directoryPath === '.' ? null : directoryPath,
+        fileName.trim()
+      );
+      const relativeSettingsPath = getSimulationSettingsRelativePath(
+        loaded.sceneRef.path,
+        simulationFilePath
+      );
+      if (!relativeSettingsPath) {
+        motionGenesisRun.setError('Could not resolve the simulation file path relative to this scene.');
+        return false;
+      }
+
+      try {
+        await createMotionGenesisSimFile(simulationFilePath);
+      } catch (createError) {
+        motionGenesisRun.setError(
+          createError instanceof Error ? createError.message : 'Could not create simulation file.'
+        );
+        return false;
+      }
+
+      const didLink = await handleLinkSimulationSettings(relativeSettingsPath);
+      if (didLink) {
+        showSuccess(`Created simulation file ${simulationFilePath}`);
+      }
+      return didLink;
+    },
+    [handleLinkSimulationSettings, loaded, motionGenesisRun, showSuccess]
   );
 
   const simulationSettingsEditor = useSimulationSettingsEditor({
@@ -61,7 +100,7 @@ export function useMotionGenesisWorkspace({
       motionGenesisRun.setError('Load a workspace scene with simulationSettings before running Motion Genesis.');
       return;
     }
-    if (!isLikelyMotionGenesisInputPath(activeScene.simulationSettings)) {
+    if (!isMotionGenesisInputPath(activeScene.simulationSettings)) {
       motionGenesisRun.setError(
         'Simulation File must point to a Motion Genesis input file with a .al or .txt extension.'
       );
@@ -133,9 +172,10 @@ export function useMotionGenesisWorkspace({
 
   return {
     canSaveAnything,
+    createAndLinkSimulationFile,
     handleSaveAll,
-    handleSimulationSettingsChange,
     hasUnsavedChanges,
+    linkSimulationSettings,
     motionGenesisRun,
     runMotionGenesis,
     simulationSettingsEditor,

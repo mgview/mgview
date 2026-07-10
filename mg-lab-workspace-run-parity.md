@@ -2,7 +2,7 @@
 
 Align **MG Lab** (`/mgview/lab/`, `MgLabPage.tsx`) with the workspace **Sim Editor** (`MotionGenesisRunPanel.tsx`). Both use the same backend runner and hook layer.
 
-**Status:** Phase 1 (shared shell) and Phase 2 (workspace layout) are **done**. Remaining: Phase 3 (bootstrap) and scenarios policy.
+**Status:** Phase 1 (shared shell) and Phase 2 (workspace layout) are **done**. Phase 3 bootstrap is **done** except post-run import nudge and Lab→workspace scene creation. Scenarios policy remains later.
 
 **Direction:** Lab is the interaction reference; workspace is the data anchor. Converge the runner UI; keep scene-scoped run + post-run data reload in workspace. Lab remains the orphan-sim entry point (no scene required).
 
@@ -76,7 +76,9 @@ Legacy `showEditorRail: false` migrates to `rightRail: 'none'` on load; `true`/a
 
 ---
 
-## Phase 3 — New sim / project bootstrap (later)
+## Phase 3 — New sim / project bootstrap ✅
+
+**Done (partial).** Sim file creation and scene linking; Lab create-only; post-run import nudge and "Create scene from sim" still later.
 
 ### Sim project model
 
@@ -89,15 +91,16 @@ my_project/
 
 States: **orphan sim** (Lab), **linked sim** (scene + `simulationSettings`), **visualized sim** (+ `simulationData`).
 
-### Creation flows (not built)
+### Creation flows
 
-- **New Sim Project:** folder + name → `scene.json` + sim file → open Sim Editor.
-- **Add sim to scene:** Configure picker + **Create new sim file…**
-- **Lab:** optional **Create scene from sim** after successful run.
+- **Add sim to scene:** Configure picker → **New Sim File** → template scaffold → auto-save `simulationSettings` on scene JSON.
+- **Lab:** Open File picker → **New Sim File** → create and open (no scene linking).
+- **New Sim Project** (folder + scene + sim atomically): not built; scene and sim remain independently creatable.
+- **Lab: Create scene from sim** after successful run: not built.
 
 ### MGView sim template
 
-In-repo template (e.g. `frontend/src/templates/mgviewSimTemplate.txt`): minimal scaffold, `Input` defaults, `animate` + `ODE()`, no MG `Plot`/`Output` commands.
+In-repo template: `frontend/src/templates/mgviewSimTemplate.txt` — simple pendulum scaffold with `Input` defaults, `animate` + `ODE()`, no MG `Plot`/`Output` commands. Created via `createTextFile` API (POST, workspace `.al`/`.txt` only).
 
 ### Post-run import nudge
 

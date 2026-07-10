@@ -420,7 +420,13 @@ StaticServlet.prototype.handlePostFileApi_ = function(req, res) {
   }
 
   if (path.extname(filePath).toLowerCase() !== '.json') {
-    return this.sendJson_(res, 400, { error: 'Only JSON scene files can be created through this API.' });
+    const extension = path.extname(filePath).toLowerCase();
+    const isMotionGenesisInput = extension === '.al' || extension === '.txt';
+    if (!isMotionGenesisInput) {
+      return this.sendJson_(res, 400, { error: 'Only JSON scene files or Motion Genesis .al/.txt files can be created through this API.' });
+    }
+
+    return this.createTextFileAtPath_(req, res, filePath, apiRoot);
   }
 
   const parentDirectory = path.dirname(filePath);
@@ -457,6 +463,50 @@ StaticServlet.prototype.handlePostFileApi_ = function(req, res) {
 
         const serialized = JSON.stringify(parsed, null, 2) + '\n';
         fs.writeFile(filePath, serialized, { encoding: 'utf8', flag: 'wx' }, (writeError) => {
+          if (writeError) {
+            if (writeError.code === 'EEXIST') {
+              return this.sendJson_(res, 409, { error: 'File already exists.' });
+            }
+            return this.sendJson_(res, 500, { error: 'Could not create file.' });
+          }
+
+          this.sendJson_(res, 201, {
+            ok: true,
+            path: this.normalizeRelativePath_(filePath, apiRoot),
+          });
+        });
+      });
+    });
+  });
+};
+
+StaticServlet.prototype.createTextFileAtPath_ = function(req, res, filePath, apiRoot) {
+  const parentDirectory = path.dirname(filePath);
+  fs.stat(parentDirectory, (parentError, parentStat) => {
+    if (parentError) {
+      return this.sendJson_(res, 404, { error: 'Parent directory not found.' });
+    }
+    if (!parentStat.isDirectory()) {
+      return this.sendJson_(res, 400, { error: 'Parent path is not a directory.' });
+    }
+
+    fs.stat(filePath, (statError, stat) => {
+      if (!statError && stat.isFile()) {
+        return this.sendJson_(res, 409, { error: 'File already exists.' });
+      }
+      if (!statError) {
+        return this.sendJson_(res, 400, { error: 'Requested path is not a file.' });
+      }
+      if (statError.code !== 'ENOENT') {
+        return this.sendJson_(res, 500, { error: 'Could not inspect target file.' });
+      }
+
+      this.readRequestBody_(req, (bodyError, body) => {
+        if (bodyError) {
+          return this.sendJson_(res, 500, { error: 'Could not read request body.' });
+        }
+
+        fs.writeFile(filePath, body, { encoding: 'utf8', flag: 'wx' }, (writeError) => {
           if (writeError) {
             if (writeError.code === 'EEXIST') {
               return this.sendJson_(res, 409, { error: 'File already exists.' });

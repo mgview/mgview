@@ -24,6 +24,7 @@ export const loadTextFile = impl.loadTextFile;
 export const saveSceneJson = impl.saveSceneJson;
 export const saveTextFile = impl.saveTextFile;
 export const createSceneJson = impl.createSceneJson;
+export const createTextFile = impl.createTextFile;
 export const startMotionGenesisRun = impl.startMotionGenesisRun;
 export const startMotionGenesisFileRun = impl.startMotionGenesisFileRun;
 export const getMotionGenesisRun = impl.getMotionGenesisRun;

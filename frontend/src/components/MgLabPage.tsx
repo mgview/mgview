@@ -1,12 +1,17 @@
 import { FolderOpen, RotateCcw, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { listLocalFiles } from '../api/localFiles.ts';
+import { canPersistScenesToServer } from '../api/runtimeMode.ts';
+import { createMotionGenesisSimFile } from '../core/createMotionGenesisSimFile.ts';
+import { combineBrowserPath } from '../core/workspacePaths.ts';
+import { validateSimFileName } from '../core/simulationFilePath.ts';
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import { useMotionGenesisRun } from '../hooks/useMotionGenesisRun.ts';
 import { useWorkspaceTextFileEditor } from '../hooks/useWorkspaceTextFileEditor.ts';
 import AppModeSwitcher from './AppModeSwitcher.tsx';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import MotionGenesisRunShell from './MotionGenesisRunShell.tsx';
+import NewSimFileDialog from './NewSimFileDialog.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
 import { Button } from './ui/button.tsx';
 import { Separator } from './ui/separator.tsx';
@@ -28,6 +33,9 @@ export default function MgLabPage() {
   const [browserError, setBrowserError] = useState<string | null>(null);
   const [browserLoading, setBrowserLoading] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [newSimDialogOpen, setNewSimDialogOpen] = useState(false);
+  const [newSimDialogError, setNewSimDialogError] = useState<string | null>(null);
+  const [newSimDialogLoading, setNewSimDialogLoading] = useState(false);
 
   const fileEditor = useWorkspaceTextFileEditor({ filePath });
   const motionGenesisRun = useMotionGenesisRun();
@@ -157,6 +165,49 @@ export default function MgLabPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSave]);
 
+  const currentBrowserPath = browserListing?.path ?? getDirectoryPath(filePath ?? '.');
+  const currentBrowserLabel =
+    currentBrowserPath === '.' ? 'workspace/' : `workspace/${currentBrowserPath}/`;
+
+  const handleCreateSimulationFile = useCallback(
+    async (name: string) => {
+      if (!canPersistScenesToServer) {
+        setNewSimDialogError('Simulation files can only be created with the local MGView server.');
+        return;
+      }
+
+      const validationError = validateSimFileName(name);
+      if (validationError) {
+        setNewSimDialogError(validationError);
+        return;
+      }
+
+      const simulationFilePath = combineBrowserPath(
+        currentBrowserPath === '.' ? null : currentBrowserPath,
+        name.trim()
+      );
+
+      setNewSimDialogLoading(true);
+      setNewSimDialogError(null);
+
+      try {
+        await createMotionGenesisSimFile(simulationFilePath);
+        if (!openFile(simulationFilePath)) {
+          return;
+        }
+        setNewSimDialogOpen(false);
+        await browse(currentBrowserPath);
+      } catch (createError) {
+        setNewSimDialogError(
+          createError instanceof Error ? createError.message : 'Could not create simulation file.'
+        );
+      } finally {
+        setNewSimDialogLoading(false);
+      }
+    },
+    [browse, currentBrowserPath, openFile]
+  );
+
   return (
     <main className="grid h-screen grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-background p-2 text-foreground">
       <header className="mb-1.5 flex items-center justify-between gap-3 rounded-md border border-border bg-card px-2 py-1.5">
@@ -281,6 +332,21 @@ export default function MgLabPage() {
               hideTitle
               sceneInput={fileEditor.filePath ?? '.'}
               selectedPaths={selectedPath ? [selectedPath] : []}
+              titleActions={
+                canPersistScenesToServer ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setNewSimDialogError(null);
+                      setNewSimDialogOpen(true);
+                    }}
+                  >
+                    New Sim File
+                  </Button>
+                ) : undefined
+              }
               onBrowse={(path) => {
                 void browse(path);
               }}
@@ -304,6 +370,24 @@ export default function MgLabPage() {
             </div>
           </div>
         </OverlayPanel>
+      ) : null}
+
+      {newSimDialogOpen ? (
+        <NewSimFileDialog
+          currentPath={currentBrowserLabel}
+          defaultName="new_sim.txt"
+          errorMessage={newSimDialogError}
+          loading={newSimDialogLoading}
+          onClose={() => {
+            if (!newSimDialogLoading) {
+              setNewSimDialogOpen(false);
+              setNewSimDialogError(null);
+            }
+          }}
+          onCreate={(name) => {
+            void handleCreateSimulationFile(name);
+          }}
+        />
       ) : null}
     </main>
   );

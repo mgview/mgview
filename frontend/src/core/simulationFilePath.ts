@@ -1,4 +1,4 @@
-import { getBasePath, normalizeWorkspaceRelativePath } from './pathUtils.ts';
+import { getBasePath, getRelativePath, normalizeWorkspaceRelativePath } from './pathUtils.ts';
 
 export function getSceneDirectoryPath(scenePath: string | null): string {
   if (!scenePath) {
@@ -26,4 +26,41 @@ export function resolveSimulationFilePath(
 
 export function isMotionGenesisInputPath(filePath: string): boolean {
   return /\.(al|txt)$/i.test(filePath);
+}
+
+export function defaultSimFileNameForScene(scenePath: string): string {
+  const normalizedPath = scenePath.replace(/\\/g, '/');
+  const fileName = normalizedPath.split('/').pop() ?? normalizedPath;
+  const stem = fileName.replace(/\.json$/i, '') || 'new_scene';
+  return `${stem}.txt`;
+}
+
+export function validateSimFileName(name: string): string | null {
+  const trimmedName = name.trim();
+  if (trimmedName.length === 0) {
+    return 'Enter a simulation file name.';
+  }
+  if (trimmedName.includes('/') || trimmedName.includes('\\')) {
+    return 'File names cannot include slashes.';
+  }
+  if (trimmedName === '..' || trimmedName.includes('..')) {
+    return 'File names cannot include "..".';
+  }
+  if (trimmedName.startsWith('.')) {
+    return 'File names cannot start with ".".';
+  }
+  if (!isMotionGenesisInputPath(trimmedName)) {
+    return 'Simulation files must end in .al or .txt.';
+  }
+  return null;
+}
+
+export function getSimulationSettingsRelativePath(
+  scenePath: string,
+  simulationFilePath: string
+): string | null {
+  const sceneDirectoryPath = getSceneDirectoryPath(scenePath);
+  const normalizedSceneDirectory =
+    sceneDirectoryPath === '.' ? '' : sceneDirectoryPath.replace(/\/$/, '');
+  return getRelativePath(normalizedSceneDirectory, simulationFilePath);
 }

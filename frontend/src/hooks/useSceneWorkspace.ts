@@ -27,6 +27,7 @@ import { parseSimulationText } from '../core/parseSimulationText.ts';
 import { createSceneDocument } from '../core/sceneDocument.ts';
 import { buildObjectInspections, collectSceneDiagnostics } from '../core/sceneInspector.ts';
 import { inferCanonicalNewtonianFrame, inferCanonicalSceneOrigin } from '../core/simulationChannels.ts';
+import { isMotionGenesisInputPath } from '../core/simulationFilePath.ts';
 import { buildTimeline } from '../core/timeline.ts';
 import { useUndoRedo } from './useUndoRedo.ts';
 import type {
@@ -594,6 +595,50 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
     }
   };
 
+  const handleLinkSimulationSettings = async (relativePath: string): Promise<boolean> => {
+    const trimmedPath = relativePath.trim();
+    if (!canSaveScene || !loaded || !draftScene) {
+      reportError('Load a workspace scene before linking a simulation file.');
+      return false;
+    }
+    if (trimmedPath.length === 0) {
+      reportError('Choose a simulation file path.');
+      return false;
+    }
+    if (!isMotionGenesisInputPath(trimmedPath)) {
+      reportError('Simulation settings must point to a Motion Genesis input file with a .al or .txt extension.');
+      return false;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const nextDraft = cloneScene(draftScene);
+      nextDraft.simulationSettings = trimmedPath;
+      const savedScene = createSavableScene(loaded.rawScene, nextDraft);
+      await saveSceneJson(loaded.sceneRef, savedScene);
+      const nextSimulationState = simulationState ?? {
+        simulationFiles: loaded.simulationFiles,
+        timeline: loaded.timeline,
+        channelNames: loaded.channelNames,
+        parsedSimulationFiles: loaded.parsedSimulationFiles,
+        fileErrors: loaded.fileErrors,
+      };
+      const nextLoaded = buildLoadedSceneData(savedScene, loaded.sceneRef, nextSimulationState);
+      setLoaded(nextLoaded);
+      setSimulationState(nextSimulationState);
+      replaceDraftScene(cloneScene(nextLoaded.scene));
+      reportSuccess(`Linked simulation file ${trimmedPath}`);
+      return true;
+    } catch (linkError) {
+      reportError(linkError instanceof Error ? linkError.message : 'Could not link simulation file.');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSaveScene = async () => {
     if (!canSaveScene || !loaded || !draftScene) {
       return;
@@ -740,6 +785,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
     error,
     handleBrowse,
     handleCreateScene,
+    handleLinkSimulationSettings,
     handleLoad,
     handleLoadWorkspacePath,
     handleWorkspaceChange,

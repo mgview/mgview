@@ -3,6 +3,7 @@ import { listLocalFiles, type FileBrowserListing, type MotionGenesisRunOptions, 
 import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 import { getBasePath, getRelativePath } from '../core/pathUtils.ts';
 import {
+  defaultSimFileNameForScene,
   getSceneDirectoryPath,
   isMotionGenesisInputPath,
   resolveSimulationFilePath,
@@ -10,6 +11,7 @@ import {
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import MotionGenesisRunShell from './MotionGenesisRunShell.tsx';
+import NewSimFileDialog from './NewSimFileDialog.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
 import { Button } from './ui/button.tsx';
 import { Separator } from './ui/separator.tsx';
@@ -20,9 +22,10 @@ interface MotionGenesisRunPanelProps {
   input: string;
   loadedScenePath: string | null;
   options: MotionGenesisRunOptions;
+  onCreateSimulationFile: (directoryPath: string, fileName: string) => Promise<boolean>;
   onInputChange: (value: string) => void;
   onOptionsChange: (nextOptions: MotionGenesisRunOptions) => void;
-  onSimulationSettingsChange: (value: string) => void;
+  onLinkSimulationSettings: (relativePath: string) => Promise<boolean>;
   onRun: () => void | Promise<void>;
   onSimFileChange: (value: string) => void;
   onStop: () => void;
@@ -45,9 +48,10 @@ export default function MotionGenesisRunPanel({
   input,
   loadedScenePath,
   options,
+  onCreateSimulationFile,
   onInputChange,
   onOptionsChange,
-  onSimulationSettingsChange,
+  onLinkSimulationSettings,
   onRun,
   onSimFileChange,
   onStop,
@@ -68,6 +72,10 @@ export default function MotionGenesisRunPanel({
   const [browserError, setBrowserError] = useState<string | null>(null);
   const [browserLoading, setBrowserLoading] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [pickerActionLoading, setPickerActionLoading] = useState(false);
+  const [newSimDialogOpen, setNewSimDialogOpen] = useState(false);
+  const [newSimDialogError, setNewSimDialogError] = useState<string | null>(null);
+  const [newSimDialogLoading, setNewSimDialogLoading] = useState(false);
 
   const runDisabledReason = !loadedScenePath
     ? 'Load a workspace scene to run Motion Genesis.'
@@ -86,6 +94,11 @@ export default function MotionGenesisRunPanel({
 
     return getRelativePath(getBasePath(loadedScenePath), selectedPath);
   }, [loadedScenePath, selectedPath]);
+  const currentBrowserPath = browserListing?.path ?? sceneDirectoryPath;
+  const currentBrowserLabel =
+    currentBrowserPath === '.' ? 'workspace/' : `workspace/${currentBrowserPath}/`;
+  const defaultSimFileName = loadedScenePath ? defaultSimFileNameForScene(loadedScenePath) : 'my_sim.txt';
+  const canCreateSimulationFile = canPersistScenesToServer && loadedScenePath !== null;
 
   const browse = async (path: string) => {
     setBrowserLoading(true);
@@ -102,16 +115,25 @@ export default function MotionGenesisRunPanel({
   };
 
   const closeSimulationFilePicker = () => {
+    if (pickerActionLoading || newSimDialogLoading) {
+      return;
+    }
     setPickerOpen(false);
+    setNewSimDialogOpen(false);
+    setNewSimDialogError(null);
   };
 
-  const applySelectedSimulationPath = (relativePath: string | null) => {
-    if (!relativePath) {
+  const applySelectedSimulationPath = async (relativePath: string | null) => {
+    if (!relativePath || pickerActionLoading) {
       return;
     }
 
-    onSimulationSettingsChange(relativePath);
-    closeSimulationFilePicker();
+    setPickerActionLoading(true);
+    const didLink = await onLinkSimulationSettings(relativePath);
+    setPickerActionLoading(false);
+    if (didLink) {
+      closeSimulationFilePicker();
+    }
   };
 
   useEffect(() => {
@@ -129,6 +151,20 @@ export default function MotionGenesisRunPanel({
     }
     await onRun();
   }, [canRun, onRun, starting]);
+
+  const handleCreateSimulationFile = async (fileName: string) => {
+    setNewSimDialogLoading(true);
+    setNewSimDialogError(null);
+    const didCreate = await onCreateSimulationFile(currentBrowserPath, fileName);
+    if (didCreate) {
+      setNewSimDialogOpen(false);
+      setNewSimDialogLoading(false);
+      closeSimulationFilePicker();
+      return;
+    }
+    setNewSimDialogLoading(false);
+    setNewSimDialogError(error ?? 'Could not create simulation file.');
+  };
 
   const configureExtras = (
     <div className="grid gap-1.5 text-xs">
@@ -219,12 +255,30 @@ export default function MotionGenesisRunPanel({
               hideTitle
               sceneInput={loadedScenePath ?? sceneDirectoryPath}
               selectedPaths={selectedPath ? [selectedPath] : []}
+              titleActions={
+                canCreateSimulationFile ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={pickerActionLoading}
+                    onClick={() => {
+                      setNewSimDialogError(null);
+                      setNewSimDialogOpen(true);
+                    }}
+                  >
+                    New Sim File
+                  </Button>
+                ) : undefined
+              }
               onBrowse={(path) => {
                 void browse(path);
               }}
               onOpenFile={(path) => {
                 setSelectedPath(path);
-                applySelectedSimulationPath(getRelativePath(getBasePath(loadedScenePath ?? ''), path));
+                void applySelectedSimulationPath(
+                  getRelativePath(getBasePath(loadedScenePath ?? ''), path)
+                );
               }}
               onSelectFile={(path) => {
                 setSelectedPath(path);
@@ -233,21 +287,44 @@ export default function MotionGenesisRunPanel({
             />
 
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={closeSimulationFilePicker}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeSimulationFilePicker}
+                disabled={pickerActionLoading}
+              >
                 Cancel
               </Button>
               <Button
                 type="button"
-                disabled={!selectedRelativePath}
+                disabled={!selectedRelativePath || pickerActionLoading}
                 onClick={() => {
-                  applySelectedSimulationPath(selectedRelativePath);
+                  void applySelectedSimulationPath(selectedRelativePath);
                 }}
               >
-                Select
+                {pickerActionLoading ? 'Linking…' : 'Select'}
               </Button>
             </div>
           </div>
         </OverlayPanel>
+      ) : null}
+
+      {newSimDialogOpen ? (
+        <NewSimFileDialog
+          currentPath={currentBrowserLabel}
+          defaultName={defaultSimFileName}
+          errorMessage={newSimDialogError}
+          loading={newSimDialogLoading}
+          onClose={() => {
+            if (!newSimDialogLoading) {
+              setNewSimDialogOpen(false);
+              setNewSimDialogError(null);
+            }
+          }}
+          onCreate={(name) => {
+            void handleCreateSimulationFile(name);
+          }}
+        />
       ) : null}
     </div>
   );

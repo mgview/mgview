@@ -55,6 +55,7 @@ function WorkspaceApp() {
     confirmWorkspaceChange,
     handleBrowse,
     handleCreateScene,
+    handleLinkSimulationSettings,
     handleLoad,
     handleWorkspaceChange,
     handleLoadWorkspacePath,
@@ -134,19 +135,20 @@ function WorkspaceApp() {
   const motionGenesis = useMotionGenesisWorkspace({
     activeScene,
     canSaveScene,
+    handleLinkSimulationSettings,
     handleRefreshSimulationData,
     handleSaveScene,
     hasLocalEdits,
     loaded,
     showSuccess,
-    updateDraftScene,
   });
 
   const {
     canSaveAnything,
+    createAndLinkSimulationFile,
     handleSaveAll,
-    handleSimulationSettingsChange,
     hasUnsavedChanges,
+    linkSimulationSettings,
     motionGenesisRun,
     runMotionGenesis,
     simulationSettingsEditor,
@@ -366,7 +368,8 @@ function WorkspaceApp() {
             void motionGenesisRun.submitInput();
           }}
           onSimFileChange={simulationSettingsEditor.setDraftContent}
-          onSimulationSettingsChange={handleSimulationSettingsChange}
+          onCreateSimulationFile={createAndLinkSimulationFile}
+          onLinkSimulationSettings={linkSimulationSettings}
           onStopMotionGenesis={() => {
             void motionGenesisRun.stopRun();
           }}

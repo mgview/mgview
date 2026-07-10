@@ -95,6 +95,10 @@ export async function createSceneJson(sceneRef: SceneRef, scene: SceneConfig): P
   downloadJson(resolveApiFilePath(sceneRef), scene);
 }
 
+export async function createTextFile(_filePath: string, _contents: string): Promise<void> {
+  throw new Error('Workspace files can only be created with the local MGView server.');
+}
+
 export async function startMotionGenesisRun(
   scenePath: string,
   simulationSettings: string,
