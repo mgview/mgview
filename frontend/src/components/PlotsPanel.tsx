@@ -4,6 +4,7 @@ import { extractPlotPanelData } from "../core/plotSeries.ts";
 import { mergePlotAxisFields } from "../core/plotAxisConfig.ts";
 import {
   createEmptyPlotPanel,
+  createPlotPanelId,
   normalizePlotHeightScale,
   normalizeStoredChannelScale,
   normalizeStoredPlotHeightScale,
@@ -60,9 +61,32 @@ export default function PlotsPanel({
   const currentTimeRef = useRef(currentTime);
   const panelCountRef = useRef(panels.length);
   const panelElementRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const scrollAnchorAfterMoveRef = useRef<{ panelId: string; offsetTop: number } | null>(null);
   currentTimeRef.current = currentTime;
 
+  const panelOrderKey = useMemo(
+    () => panels.map((panel) => panel.id ?? "").join("\0"),
+    [panels],
+  );
+
   useLayoutEffect(() => {
+    const scrollAnchor = scrollAnchorAfterMoveRef.current;
+    if (scrollAnchor) {
+      scrollAnchorAfterMoveRef.current = null;
+      const container = scrollContainerRef.current;
+      if (container) {
+        const movedPanelIndex = panels.findIndex((panel) => panel.id === scrollAnchor.panelId);
+        const wrapper =
+          movedPanelIndex >= 0 ? panelElementRefs.current[movedPanelIndex] : null;
+        if (wrapper) {
+          container.scrollTop = wrapper.offsetTop - scrollAnchor.offsetTop;
+        }
+      }
+      panelCountRef.current = panels.length;
+      return;
+    }
+
     if (panels.length > panelCountRef.current) {
       const newPanelIndex = panels.length - 1;
       panelElementRefs.current[newPanelIndex]?.scrollIntoView({
@@ -72,7 +96,7 @@ export default function PlotsPanel({
     }
 
     panelCountRef.current = panels.length;
-  }, [panels.length]);
+  }, [panelOrderKey, panels.length]);
 
   const panelDataList = useMemo(
     () =>
@@ -112,6 +136,35 @@ export default function PlotsPanel({
         ...scene.plots,
         panels: scene.plots.panels.filter((_, index) => index !== panelIndex),
       };
+    });
+  };
+
+  const movePanel = (panelIndex: number, direction: -1 | 1) => {
+    const nextIndex = panelIndex + direction;
+    if (nextIndex < 0 || nextIndex >= panels.length) {
+      return;
+    }
+
+    const panel = panels[panelIndex];
+    const container = scrollContainerRef.current;
+    const wrapper = panelElementRefs.current[panelIndex];
+    const panelId = panel?.id ?? createPlotPanelId();
+    if (panel && container && wrapper) {
+      scrollAnchorAfterMoveRef.current = {
+        panelId,
+        offsetTop: wrapper.offsetTop - container.scrollTop,
+      };
+    }
+
+    updateDraftScene((scene) => {
+      const nextPanels = [...scene.plots.panels];
+      const [movedPanel] = nextPanels.splice(panelIndex, 1);
+      if (!movedPanel) {
+        return;
+      }
+      const panelWithId = movedPanel.id ? movedPanel : { ...movedPanel, id: panelId };
+      nextPanels.splice(nextIndex, 0, panelWithId);
+      scene.plots = { ...scene.plots, panels: nextPanels };
     });
   };
 
@@ -163,7 +216,7 @@ export default function PlotsPanel({
         ) : null}
       </div>
 
-      <div className="min-h-0 overflow-auto pr-0.5">
+      <div ref={scrollContainerRef} className="min-h-0 overflow-auto [overflow-anchor:none] pr-0.5">
         {panels.length === 0 ? (
           <div className="rounded-md border border-dashed border-border px-3 py-8 text-center text-xs text-muted-foreground">
             No plot panels yet. Add a panel and chart channels vs time (t) or vs
@@ -171,15 +224,17 @@ export default function PlotsPanel({
           </div>
         ) : (
           <div className="grid gap-3">
-            {panels.map((panel, panelIndex) => (
-              <div
-                key={`plot-panel-${panelIndex}`}
-                ref={(element) => {
-                  panelElementRefs.current[panelIndex] = element;
-                }}
-                className="grid gap-2"
-              >
-                <PlotPanel
+            {panels.map((panel, panelIndex) => {
+              const panelKey = panel.id ?? `plot-panel-${panelIndex}`;
+
+              return (
+                <div
+                  key={panelKey}
+                  ref={(element) => {
+                    panelElementRefs.current[panelIndex] = element;
+                  }}
+                >
+                  <PlotPanel
                   title={panel.title}
                   xMode={panel.xMode ?? "time"}
                   xChannel={panel.xChannel}
@@ -357,9 +412,14 @@ export default function PlotsPanel({
                     );
                   }}
                   onRemove={() => removePanel(panelIndex)}
+                  canMoveUp={panelIndex > 0}
+                  canMoveDown={panelIndex < panels.length - 1}
+                  onMoveUp={() => movePanel(panelIndex, -1)}
+                  onMoveDown={() => movePanel(panelIndex, 1)}
                 />
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

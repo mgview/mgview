@@ -111,12 +111,12 @@ function getStatusVariant(
 function StatusIcon({ run }: { run: MotionGenesisRunState | null }) {
   const status = run?.status ?? 'idle';
   if (status === 'success') {
-    return <CheckCircle2 className="h-3.5 w-3.5" />;
+    return <CheckCircle2 className="h-3 w-3" />;
   }
   if (status === 'failed' || status === 'waiting-input') {
-    return <TriangleAlert className="h-3.5 w-3.5" />;
+    return <TriangleAlert className="h-3 w-3" />;
   }
-  return <SquareTerminal className={cn('h-3.5 w-3.5', status === 'running' && 'animate-spin')} />;
+  return <SquareTerminal className={cn('h-3 w-3', status === 'running' && 'animate-spin')} />;
 }
 
 export default function MotionGenesisRunShell({
@@ -627,12 +627,12 @@ export default function MotionGenesisRunShell({
 
   return (
     <div className={cn('grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2', className)}>
-      <div className="grid gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
+      <div className="grid gap-1.5 rounded-xl border border-border bg-card px-2.5 py-1.5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
-              className="group inline-flex cursor-pointer rounded-md transition-shadow hover:ring-2 hover:ring-ring/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="group inline-flex h-6 cursor-pointer items-center rounded-md transition-shadow hover:ring-2 hover:ring-ring/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-expanded={showStatusDetails}
               title={
                 status === 'waiting-input'
@@ -650,14 +650,14 @@ export default function MotionGenesisRunShell({
             >
               <Badge
                 variant={statusVariant}
-                className="gap-1 rounded-md px-2 py-1 text-[0.72rem] transition-colors group-hover:brightness-95 dark:group-hover:brightness-110"
+                className="h-6 gap-1 rounded-md px-2 py-0 text-[0.72rem] transition-colors group-hover:brightness-95 dark:group-hover:brightness-110"
               >
                 <StatusIcon run={run} />
                 {statusLabel}
               </Badge>
             </button>
             {run?.canSendInput ? (
-              <Badge variant="warning" className="rounded-md px-2 py-1 text-[0.72rem]">
+              <Badge variant="warning" className="h-6 rounded-md px-2 py-0 text-[0.72rem]">
                 Interactive
               </Badge>
             ) : null}
@@ -669,39 +669,39 @@ export default function MotionGenesisRunShell({
               variant={showConfigure ? 'default' : 'outline'}
               onClick={() => setShowConfigure((current) => !current)}
             >
-              <Settings2 className="h-3.5 w-3.5" />
+              <Settings2 className="h-3 w-3" />
               Configure
             </Button>
-            <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
+            <div className="inline-flex h-6 items-center gap-0.5 rounded-md border border-border p-0.5">
               <Button
                 type="button"
-                size="icon"
+                size="sm"
                 variant={layoutMode === 'split' ? 'default' : 'ghost'}
-                className="h-7 w-7"
+                className="h-5 w-5 p-0"
                 aria-label="Split layout"
                 onClick={() => chooseLayoutMode('split')}
               >
-                <Columns2 className="h-3.5 w-3.5" />
+                <Columns2 className="h-3 w-3" />
               </Button>
               <Button
                 type="button"
-                size="icon"
+                size="sm"
                 variant={layoutMode === 'editor' ? 'default' : 'ghost'}
-                className="h-7 w-7"
+                className="h-5 w-5 p-0"
                 aria-label="Editor only"
                 onClick={() => chooseLayoutMode('editor')}
               >
-                <FileText className="h-3.5 w-3.5" />
+                <FileText className="h-3 w-3" />
               </Button>
               <Button
                 type="button"
-                size="icon"
+                size="sm"
                 variant={layoutMode === 'output-only' ? 'default' : 'ghost'}
-                className="h-7 w-7"
+                className="h-5 w-5 p-0"
                 aria-label="Run output only"
                 onClick={() => chooseLayoutMode('output-only')}
               >
-                <SquareTerminal className="h-3.5 w-3.5" />
+                <SquareTerminal className="h-3 w-3" />
               </Button>
             </div>
             <Button type="button" variant="outline" size="sm" disabled={!runActive || stopping} onClick={onStop}>

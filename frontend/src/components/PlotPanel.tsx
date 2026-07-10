@@ -1,7 +1,7 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
-import { ArrowLeftRight, Focus, ListOrdered, Settings, Square, X } from 'lucide-react';
+import { ArrowLeftRight, Check, ChevronDown, ChevronUp, Focus, ListOrdered, Settings, Square, Trash2 } from 'lucide-react';
 import {
   buildPersistedPlotAxisFields,
   computeFullPlotAxisLimits,
@@ -236,6 +236,10 @@ interface PlotPanelProps {
   onChangeAxisView: (fields: PersistedPlotAxisFields | null) => void;
   onSwapXyChannels: () => void;
   onRemove: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }
 
 function PlotPanel({
@@ -266,6 +270,10 @@ function PlotPanel({
   onChangeAxisView,
   onSwapXyChannels,
   onRemove,
+  canMoveUp = false,
+  canMoveDown = false,
+  onMoveUp,
+  onMoveDown,
 }: PlotPanelProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -1546,16 +1554,44 @@ function PlotPanel({
             ) : null}
           </>
         ) : null}
+        {onMoveUp && onMoveDown ? (
+          <div
+            className="inline-flex h-7 w-7 shrink-0 flex-col overflow-hidden rounded-md border border-input bg-background"
+            role="group"
+            aria-label={`Reorder ${panelLabel}`}
+          >
+            <button
+              type="button"
+              className="flex min-h-0 flex-1 items-center justify-center text-foreground transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+              disabled={!canMoveUp}
+              onClick={onMoveUp}
+              aria-label={`Move ${panelLabel} up`}
+              title={`Move ${panelLabel} up`}
+            >
+              <ChevronUp className="h-2.5 w-2.5" />
+            </button>
+            <button
+              type="button"
+              className="flex min-h-0 flex-1 items-center justify-center border-t border-input text-foreground transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+              disabled={!canMoveDown}
+              onClick={onMoveDown}
+              aria-label={`Move ${panelLabel} down`}
+              title={`Move ${panelLabel} down`}
+            >
+              <ChevronDown className="h-2.5 w-2.5" />
+            </button>
+          </div>
+        ) : null}
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="h-7 w-7"
+          className="h-7 w-7 shrink-0"
           onClick={onRemove}
-          aria-label={`Remove ${panelLabel}`}
-          title={`Remove ${panelLabel}`}
+          aria-label={`Delete ${panelLabel}`}
+          title={`Delete ${panelLabel}`}
         >
-          <X className="h-3.5 w-3.5" />
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
 
@@ -1685,6 +1721,17 @@ function PlotPanel({
             <span className="text-[0.68rem] text-muted-foreground">
               {"Shift-drag to zoom X and Y; right-drag (two-finger drag) to pan."}
             </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="ml-auto h-7 w-7 shrink-0"
+              onClick={() => setShowSettings(false)}
+              aria-label="Done configuring plot"
+              title="Done"
+            >
+              <Check className="h-3.5 w-3.5" />
+            </Button>
           </div>
           {!zoomToFitActive && plotLimits ? (
             <div className="grid gap-2 border-t border-border/60 pt-2 sm:grid-cols-2">
