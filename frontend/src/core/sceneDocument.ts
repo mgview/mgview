@@ -2,7 +2,7 @@ import { inferObjectsFromChannels } from './inferObjects.ts';
 import { DEFAULT_TEXT_MATERIAL } from './materialPresets.ts';
 import { normalizePlotsConfig } from './plotsConfig.ts';
 import { inferSceneReferenceContext } from './simulationChannels.ts';
-import { getEffectiveSimulationData, normalizeScenarios, resolveActiveScenario } from './sceneScenarios.ts';
+import { ensureScenarios, resolveActiveScenario } from './sceneScenarios.ts';
 import { normalizeSceneLayout } from './workspaceLayout.ts';
 import type {
   NormalizedSceneConfig,
@@ -114,12 +114,15 @@ function addEmptyDefaults(scene: SceneConfig, channelNames: string[]): Normalize
     }
   }
 
+  const { scenarios, activeScenario } = ensureScenarios(scene);
+  const activeScenarioData = resolveActiveScenario(scenarios, activeScenario)?.simulationData ?? [];
+
   return {
     ...scene,
     layout: normalizeSceneLayout(scene.layout),
-    scenarios: normalizeScenarios(scene.scenarios),
-    activeScenario: resolveActiveScenario(normalizeScenarios(scene.scenarios), scene.activeScenario)?.id ?? null,
-    simulationData: getEffectiveSimulationData(scene),
+    scenarios,
+    activeScenario,
+    simulationData: [...activeScenarioData],
     newtonianFrame,
     sceneOrigin,
     backgroundColor: scene.backgroundColor ?? '#e0f0ff',

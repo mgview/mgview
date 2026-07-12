@@ -1,8 +1,37 @@
 import type { FileBrowserListing } from '../api/localFiles.ts';
 import type { SceneConfig, SceneScenario } from './types.ts';
 
+export const DEFAULT_SCENARIO_ID = 'default';
+export const DEFAULT_SCENARIO_LABEL = 'Default';
+
 export function hasScenarioMode(scene: Pick<SceneConfig, 'scenarios'>): boolean {
   return Array.isArray(scene.scenarios) && scene.scenarios.length > 0;
+}
+
+export function ensureScenarios(
+  scene: Pick<SceneConfig, 'scenarios' | 'simulationData' | 'activeScenario'>
+): { scenarios: SceneScenario[]; activeScenario: string } {
+  const normalized = normalizeScenarios(scene.scenarios);
+  if (normalized.length > 0) {
+    const active = resolveActiveScenario(normalized, scene.activeScenario);
+    return {
+      scenarios: normalized,
+      activeScenario: active?.id ?? DEFAULT_SCENARIO_ID,
+    };
+  }
+
+  const defaultScenario: SceneScenario = {
+    id: DEFAULT_SCENARIO_ID,
+    label: DEFAULT_SCENARIO_LABEL,
+    simulationData: (scene.simulationData ?? [])
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0),
+  };
+
+  return {
+    scenarios: [defaultScenario],
+    activeScenario: DEFAULT_SCENARIO_ID,
+  };
 }
 
 export function resolveActiveScenario(

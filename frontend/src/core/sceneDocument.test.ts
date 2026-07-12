@@ -49,6 +49,22 @@ test('simulation file expansion matches legacy numeric range behavior', () => {
   );
 });
 
+test('scene normalization synthesizes Default scenario for legacy scenes', () => {
+  const document = createSceneDocument({
+    simulationData: ['demo.1', 'demo.2'],
+    objects: {
+      N: { type: 'frame', visual: {} },
+    },
+  });
+
+  assert.equal(document.scenarios.length, 1);
+  assert.equal(document.scenarios[0]?.id, 'default');
+  assert.equal(document.scenarios[0]?.label, 'Default');
+  assert.deepEqual(document.scenarios[0]?.simulationData, ['demo.1', 'demo.2']);
+  assert.equal(document.activeScenario, 'default');
+  assert.deepEqual(document.simulationData, ['demo.1', 'demo.2']);
+});
+
 test('scene normalization adds legacy defaults and generated visuals', async () => {
   const scene = {
     ...(await readSceneFixture('default.json')),

@@ -112,6 +112,14 @@ export function useWorkspaceKeyboardShortcuts({
         return;
       }
 
+      if (hasModifier && !isTextEditing && event.key.toLowerCase() === 'o') {
+        event.preventDefault();
+        if (!loading && !saving && !simFileSaving) {
+          shell.openLoadOverlay();
+        }
+        return;
+      }
+
       if (hasModifier && event.key.toLowerCase() === 's') {
         event.preventDefault();
         if (
@@ -168,6 +176,7 @@ export function useWorkspaceKeyboardShortcuts({
     selectionState,
     shell.diagnosticsOpen,
     shell.loadOverlayOpen,
+    shell.openLoadOverlay,
     shell.samplesOverlayOpen,
     shell.simulationOverlayOpen,
     simFileSaving,

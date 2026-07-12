@@ -6,8 +6,11 @@ import {
   buildScenarioFromSimulationDataEntry,
   detectCompletedOdeOutputs,
   discoverSimulationDataEntryFromListing,
+  ensureScenarios,
   getEffectiveSimulationData,
   slugifyScenarioId,
+  DEFAULT_SCENARIO_ID,
+  DEFAULT_SCENARIO_LABEL,
 } from './sceneScenarios.ts';
 
 test('detectCompletedOdeOutputs finds completed ODE base paths', () => {
@@ -34,6 +37,31 @@ test('discoverSimulationDataEntryFromListing prefers animate file ranges', () =>
   });
 
   assert.equal(entry, 'stable/Data.2:3');
+});
+
+test('ensureScenarios synthesizes Default from legacy scene-level simulationData', () => {
+  const result = ensureScenarios({
+    simulationData: ['stable/Data.2:3', 'chaotic/Data.2:3'],
+  });
+
+  assert.equal(result.scenarios.length, 1);
+  assert.equal(result.scenarios[0]?.id, DEFAULT_SCENARIO_ID);
+  assert.equal(result.scenarios[0]?.label, DEFAULT_SCENARIO_LABEL);
+  assert.deepEqual(result.scenarios[0]?.simulationData, ['stable/Data.2:3', 'chaotic/Data.2:3']);
+  assert.equal(result.activeScenario, DEFAULT_SCENARIO_ID);
+});
+
+test('ensureScenarios preserves existing scenarios and active selection', () => {
+  const result = ensureScenarios({
+    scenarios: [
+      { id: 'stable', label: 'Stable', simulationData: ['stable/Data.2:3'] },
+      { id: 'chaotic', label: 'Chaotic', simulationData: ['chaotic/Data.2:3'] },
+    ],
+    activeScenario: 'chaotic',
+  });
+
+  assert.equal(result.scenarios.length, 2);
+  assert.equal(result.activeScenario, 'chaotic');
 });
 
 test('getEffectiveSimulationData resolves active scenario entries', () => {

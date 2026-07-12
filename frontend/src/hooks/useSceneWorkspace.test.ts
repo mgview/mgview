@@ -45,10 +45,14 @@ test('createSavableScene preserves inferred objects added through the draft scen
   assert.equal(savableScene.sceneOrigin, undefined);
 });
 
-test('createNewSceneTemplate derives a scene name and starts without simulation files', () => {
+test('createNewSceneTemplate derives a scene name and includes a Default scenario', () => {
   const template = createNewSceneTemplate('projects/demo/my_scene.json');
 
   assert.equal(template.name, 'my_scene');
+  assert.equal(template.scenarios?.length, 1);
+  assert.equal(template.scenarios?.[0]?.id, 'default');
+  assert.equal(template.scenarios?.[0]?.label, 'Default');
+  assert.equal(template.activeScenario, 'default');
   assert.deepEqual(template.simulationData, []);
   assert.equal(template.newtonianFrame, undefined);
   assert.equal(template.sceneOrigin, undefined);

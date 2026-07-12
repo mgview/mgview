@@ -12,14 +12,11 @@ import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import MotionGenesisRunShell from './MotionGenesisRunShell.tsx';
 import NewSimFileDialog from './NewSimFileDialog.tsx';
-import ScenarioSelector from './ScenarioSelector.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
 import { Button } from './ui/button.tsx';
 import { Separator } from './ui/separator.tsx';
-import type { SceneScenario } from '../core/types.ts';
 
 interface MotionGenesisRunPanelProps {
-  activeScenario: string | null;
   canRun: boolean;
   error: string | null;
   input: string;
@@ -30,7 +27,6 @@ interface MotionGenesisRunPanelProps {
   onOptionsChange: (nextOptions: MotionGenesisRunOptions) => void;
   onLinkSimulationSettings: (relativePath: string) => Promise<boolean>;
   onRun: () => void | Promise<void>;
-  onSetActiveScenario: (scenarioId: string) => void | Promise<void>;
   onSimFileChange: (value: string) => void;
   onStop: () => void;
   onSendInput: () => void;
@@ -41,14 +37,12 @@ interface MotionGenesisRunPanelProps {
   simFileLoading: boolean;
   simFileReadOnly: boolean;
   simulationSettings: string | null | undefined;
-  scenarios: SceneScenario[];
   starting: boolean;
   stopping: boolean;
   sendingInput: boolean;
 }
 
 export default function MotionGenesisRunPanel({
-  activeScenario,
   canRun,
   error,
   input,
@@ -59,7 +53,6 @@ export default function MotionGenesisRunPanel({
   onOptionsChange,
   onLinkSimulationSettings,
   onRun,
-  onSetActiveScenario,
   onSimFileChange,
   onStop,
   onSendInput,
@@ -70,7 +63,6 @@ export default function MotionGenesisRunPanel({
   simFileLoading,
   simFileReadOnly,
   simulationSettings,
-  scenarios,
   starting,
   stopping,
   sendingInput,
@@ -177,9 +169,6 @@ export default function MotionGenesisRunPanel({
   const configureExtras = (
     <div className="grid gap-1.5 text-xs">
       <div className="text-muted-foreground">
-        Scene: <code className="text-foreground">{loadedScenePath ?? 'No workspace scene loaded'}</code>
-      </div>
-      <div className="text-muted-foreground">
         Simulation file:{' '}
         <button
           type="button"
@@ -193,17 +182,6 @@ export default function MotionGenesisRunPanel({
           {simFileDirty ? <span className="text-warning"> • unsaved</span> : null}
         </button>
       </div>
-      {scenarios.length > 0 ? (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <span>Scenario:</span>
-          <ScenarioSelector
-            activeScenario={activeScenario}
-            disabled={pickerActionLoading || starting}
-            onSetActiveScenario={onSetActiveScenario}
-            scenarios={scenarios}
-          />
-        </div>
-      ) : null}
     </div>
   );
 

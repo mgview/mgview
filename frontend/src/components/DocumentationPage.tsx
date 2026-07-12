@@ -24,6 +24,7 @@ function GitHubIcon({ className }: { className?: string }) {
 
 const shortcutItems = [
   { keys: 'Space', description: 'Play or pause the active timeline.' },
+  { keys: 'Cmd/Ctrl+O', description: 'Open the workspace load dialog.' },
   { keys: 'Cmd/Ctrl+S', description: 'Save the current scene when save is available.' },
   { keys: 'Cmd/Ctrl+Z', description: 'Undo the latest scene edit.' },
   { keys: 'Cmd/Ctrl+Shift+Z', description: 'Redo the latest undone edit.' },
@@ -230,8 +231,8 @@ export default function DocumentationPage() {
                 <h3 className="text-sm font-semibold text-foreground">Explore the UI</h3>
                 <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
                   <li>
-                    Open the <span className="font-semibold text-foreground">Load</span> menu (chevron
-                    next to the button) and choose <code>Samples…</code> to try bundled demos.
+                    Open the <span className="font-semibold text-foreground">Scene</span> menu and choose{' '}
+                    <code>Examples…</code> to try bundled demos.
                   </li>
                   <li>
                     Press <code>Space</code> to play or pause the timeline.
@@ -281,12 +282,12 @@ export default function DocumentationPage() {
                     below if channels are missing.
                   </li>
                   <li>
-                    In the <span className="font-semibold text-foreground">Load</span> menu, choose{' '}
+                    In the <span className="font-semibold text-foreground">Scene</span> menu, choose{' '}
                     <code>New…</code>, browse to the folder where your sim files live, enter a scene name
                     (such as <code>my_scene.json</code>), and click <code>Create</code>.
                   </li>
                   <li>
-                    Choose <code>Sim Files…</code> from the same menu, select one or more data files in
+                    Open the scenario dropdown and choose <code>Edit Sim Data</code>, then select one or more data files in
                     the browser, click <code>Add</code>, then confirm the parsed channels at the bottom of
                     the dialog (file count, channel list, inferred origin and Newtonian frame).
                   </li>
@@ -303,7 +304,7 @@ export default function DocumentationPage() {
                     visualize.
                   </li>
                   <li>
-                    Remember to <code>Save</code> (<code>Cmd/Ctrl+S</code>) to write your scene changes to disk.
+                    Remember to <code>Save all</code> (<code>Cmd/Ctrl+S</code>) to write your scene changes to disk.
                   </li>
                 </ul>
               </div>

@@ -52,7 +52,6 @@ interface WorkspaceShellProps {
   onSimFileChange: (value: string) => void;
   onCreateSimulationFile: (directoryPath: string, fileName: string) => Promise<boolean>;
   onLinkSimulationSettings: (relativePath: string) => Promise<boolean>;
-  onSetActiveScenario: (scenarioId: string) => void | Promise<void>;
   onStopMotionGenesis: () => void;
   onStartSplitterDrag: (
     splitter: 'visual' | 'workspace',
@@ -76,8 +75,6 @@ interface WorkspaceShellProps {
   simFileError: string | null;
   simFileLoading: boolean;
   simFileReadOnly: boolean;
-  activeScenario: string | null;
-  scenarios: NormalizedSceneConfig['scenarios'];
   spanEntries: WorkspaceSpanEntry[];
   timeline: Timeline;
   timelineOwner: 'renderer' | 'plots' | null;
@@ -136,7 +133,6 @@ export default function WorkspaceShell({
   onSimFileChange,
   onCreateSimulationFile,
   onLinkSimulationSettings,
-  onSetActiveScenario,
   onStopMotionGenesis,
   onStartSplitterDrag,
   playback,
@@ -156,8 +152,6 @@ export default function WorkspaceShell({
   simFileError,
   simFileLoading,
   simFileReadOnly,
-  activeScenario,
-  scenarios,
   spanEntries,
   timeline,
   timelineOwner,
@@ -273,7 +267,6 @@ export default function WorkspaceShell({
       {rightRail === 'sim' ? (
         <div className="workspace-editor-rail workspace-sim-rail min-h-0">
           <MotionGenesisRunPanel
-            activeScenario={activeScenario}
             canRun={loaded?.sceneRef.source === 'workspace' && Boolean(activeScene?.simulationSettings)}
             error={motionGenesisError}
             input={motionGenesisInput}
@@ -284,7 +277,6 @@ export default function WorkspaceShell({
             onCreateSimulationFile={onCreateSimulationFile}
             onLinkSimulationSettings={onLinkSimulationSettings}
             onRun={onRunMotionGenesis}
-            onSetActiveScenario={onSetActiveScenario}
             onSimFileChange={onSimFileChange}
             onStop={onStopMotionGenesis}
             onSendInput={onSendMotionGenesisInput}
@@ -295,7 +287,6 @@ export default function WorkspaceShell({
             simFileLoading={simFileLoading}
             simFileReadOnly={simFileReadOnly}
             simulationSettings={activeScene?.simulationSettings}
-            scenarios={scenarios}
             starting={motionGenesisStarting}
             stopping={motionGenesisStopping}
             sendingInput={motionGenesisSendingInput}

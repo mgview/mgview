@@ -56,7 +56,6 @@ function WorkspaceApp() {
     confirmWorkspaceChange,
     handleBrowse,
     handleCreateScene,
-    handleCreateSimProject,
     handleImportScenarios,
     handleImportSimulationEntries,
     handleLinkSimulationSettings,
@@ -126,7 +125,6 @@ function WorkspaceApp() {
     browserPath: browserListing?.path,
     handleBrowse,
     handleCreateScene,
-    handleCreateSimProject,
     handleLoadWorkspacePath,
     handleLoadSample,
     handleSaveSceneAs,
@@ -332,7 +330,6 @@ function WorkspaceApp() {
         onOpenAbout={() => setAboutOpen(true)}
         onOpenWorkspace={canPersistScenesToServer ? serverWorkspace.openPicker : undefined}
         onOpenCreateOverlay={shell.openCreateOverlay}
-        onOpenCreateSimProjectOverlay={shell.openCreateSimProjectOverlay}
         onOpenLoadOverlay={shell.openLoadOverlay}
         onOpenSamplesOverlay={shell.openSamplesOverlay}
         onOpenDiagnostics={shell.openDiagnostics}
@@ -392,9 +389,6 @@ function WorkspaceApp() {
           onSimFileChange={simulationSettingsEditor.setDraftContent}
           onCreateSimulationFile={createAndLinkSimulationFile}
           onLinkSimulationSettings={linkSimulationSettings}
-          onSetActiveScenario={setActiveScenario}
-          activeScenario={activeScene?.activeScenario ?? null}
-          scenarios={activeScene?.scenarios ?? []}
           onStopMotionGenesis={() => {
             void motionGenesisRun.stopRun();
           }}
