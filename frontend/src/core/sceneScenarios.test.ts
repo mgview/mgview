@@ -11,7 +11,21 @@ import {
   slugifyScenarioId,
   DEFAULT_SCENARIO_ID,
   DEFAULT_SCENARIO_LABEL,
+  nextSimDataLabel,
 } from './sceneScenarios.ts';
+
+test('nextSimDataLabel picks the lowest unused Sim Data number', () => {
+  assert.equal(nextSimDataLabel([]), 'Sim Data 1');
+  assert.equal(nextSimDataLabel([{ label: 'Default' }]), 'Sim Data 1');
+  assert.equal(
+    nextSimDataLabel([{ label: 'Default' }, { label: 'Sim Data 1' }]),
+    'Sim Data 2'
+  );
+  assert.equal(
+    nextSimDataLabel([{ label: 'Sim Data 1' }, { label: 'Sim Data 3' }]),
+    'Sim Data 2'
+  );
+});
 
 test('detectCompletedOdeOutputs finds completed ODE base paths', () => {
   const output = [
@@ -47,7 +61,12 @@ test('ensureScenarios synthesizes Default from legacy scene-level simulationData
   assert.equal(result.scenarios.length, 1);
   assert.equal(result.scenarios[0]?.id, DEFAULT_SCENARIO_ID);
   assert.equal(result.scenarios[0]?.label, DEFAULT_SCENARIO_LABEL);
-  assert.deepEqual(result.scenarios[0]?.simulationData, ['stable/Data.2:3', 'chaotic/Data.2:3']);
+  assert.deepEqual(result.scenarios[0]?.simulationData, [
+    'stable/Data.2',
+    'stable/Data.3',
+    'chaotic/Data.2',
+    'chaotic/Data.3',
+  ]);
   assert.equal(result.activeScenario, DEFAULT_SCENARIO_ID);
 });
 
@@ -73,7 +92,7 @@ test('getEffectiveSimulationData resolves active scenario entries', () => {
     activeScenario: 'chaotic',
   };
 
-  assert.deepEqual(getEffectiveSimulationData(scene), ['chaotic/Data.2:3']);
+  assert.deepEqual(getEffectiveSimulationData(scene), ['chaotic/Data.2', 'chaotic/Data.3']);
 });
 
 test('buildScenarioFromOdeBasePath creates unique scenario ids and uses parent folder labels', () => {
@@ -91,5 +110,5 @@ test('buildScenarioFromSimulationDataEntry infers labels from simulation paths',
   const scenario = buildScenarioFromSimulationDataEntry('chaotic/Data.2:3', []);
   assert.equal(scenario.id, 'chaotic');
   assert.equal(scenario.label, 'Chaotic');
-  assert.deepEqual(scenario.simulationData, ['chaotic/Data.2:3']);
+  assert.deepEqual(scenario.simulationData, ['chaotic/Data.2', 'chaotic/Data.3']);
 });

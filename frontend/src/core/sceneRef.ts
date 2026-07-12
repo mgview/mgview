@@ -1,5 +1,5 @@
 import { consumeSkipDefaultSceneLoad } from './appRoutes.ts';
-import { getBasePath } from './pathUtils.ts';
+import { getBasePath, getRelativePath } from './pathUtils.ts';
 
 export type SceneRef =
   | { source: 'sample'; path: string }
@@ -119,6 +119,21 @@ export function getSceneBasePath(ref: SceneRef): string {
   const apiPath = resolveApiFilePath(ref);
   const base = getBasePath(apiPath);
   return base.endsWith('/') ? base : `${base}/`;
+}
+
+export function resolveBrowserListingPath(listingPath: string, root: ApiRoot): string {
+  const normalized = normalizeRefPath(listingPath);
+  if (root === 'sample') {
+    return normalized === '.' || normalized.length === 0 ? 'samples/' : `samples/${normalized}`;
+  }
+  return normalized === '.' ? '.' : normalized;
+}
+
+export function relativeSimulationPathFromBrowser(sceneRef: SceneRef, browserPath: string): string {
+  return getRelativePath(
+    getSceneBasePath(sceneRef),
+    resolveBrowserListingPath(browserPath, getApiRoot(sceneRef))
+  );
 }
 
 export function getSceneDirectory(ref: SceneRef): string {

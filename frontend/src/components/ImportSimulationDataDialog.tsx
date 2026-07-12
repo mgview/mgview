@@ -47,8 +47,8 @@ export default function ImportSimulationDataDialog({
               {multipleDetections ? (
                 <>
                   {' '}
-                  Multiple ODE blocks were detected — use <strong>Import as scenarios</strong> so each initial
-                  condition set can be switched independently in the scene.
+                  Multiple ODE blocks were detected — use <strong>Import separately</strong> so each initial
+                  condition set can be switched independently via the Sim Data dropdown.
                 </>
               ) : null}
             </DialogDescription>
@@ -90,7 +90,7 @@ export default function ImportSimulationDataDialog({
                     onImportAsScenarios(selected);
                   }}
                 >
-                  {loading ? 'Importing…' : 'Import as scenarios'}
+                  {loading ? 'Importing…' : 'Import separately'}
                 </Button>
               ) : null}
               <Button

@@ -1,8 +1,18 @@
 import type { FileBrowserListing } from '../api/localFiles.ts';
 import type { SceneConfig, SceneScenario } from './types.ts';
+import { expandSimulationDataEntries } from './expandSimulationFiles.ts';
 
 export const DEFAULT_SCENARIO_ID = 'default';
 export const DEFAULT_SCENARIO_LABEL = 'Default';
+
+export function nextSimDataLabel(scenarios: Array<Pick<SceneScenario, 'label'>>): string {
+  const labels = new Set(scenarios.map((scenario) => scenario.label.trim()));
+  let number = 1;
+  while (labels.has(`Sim Data ${number}`)) {
+    number += 1;
+  }
+  return `Sim Data ${number}`;
+}
 
 export function hasScenarioMode(scene: Pick<SceneConfig, 'scenarios'>): boolean {
   return Array.isArray(scene.scenarios) && scene.scenarios.length > 0;
@@ -23,9 +33,11 @@ export function ensureScenarios(
   const defaultScenario: SceneScenario = {
     id: DEFAULT_SCENARIO_ID,
     label: DEFAULT_SCENARIO_LABEL,
-    simulationData: (scene.simulationData ?? [])
-      .map((entry) => entry.trim())
-      .filter((entry) => entry.length > 0),
+    simulationData: expandSimulationDataEntries(
+      (scene.simulationData ?? [])
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0)
+    ),
   };
 
   return {
@@ -56,10 +68,10 @@ export function resolveActiveScenario(
 export function getEffectiveSimulationData(scene: SceneConfig): string[] {
   if (hasScenarioMode(scene)) {
     const active = resolveActiveScenario(scene.scenarios ?? [], scene.activeScenario);
-    return active ? [...active.simulationData] : [];
+    return active ? expandSimulationDataEntries(active.simulationData) : [];
   }
 
-  return [...(scene.simulationData ?? [])];
+  return expandSimulationDataEntries(scene.simulationData ?? []);
 }
 
 export function normalizeScenarios(scenarios: SceneScenario[] | undefined): SceneScenario[] {
@@ -71,9 +83,11 @@ export function normalizeScenarios(scenarios: SceneScenario[] | undefined): Scen
     .map((scenario) => ({
       id: scenario.id.trim(),
       label: scenario.label.trim(),
-      simulationData: scenario.simulationData
-        .map((entry) => entry.trim())
-        .filter((entry) => entry.length > 0),
+      simulationData: expandSimulationDataEntries(
+        scenario.simulationData
+          .map((entry) => entry.trim())
+          .filter((entry) => entry.length > 0)
+      ),
     }))
     .filter((scenario) => scenario.id.length > 0 && scenario.label.length > 0);
 }
@@ -217,7 +231,7 @@ export function buildScenarioFromOdeBasePath(
   return {
     id,
     label,
-    simulationData: [simulationDataEntry],
+    simulationData: expandSimulationDataEntries([simulationDataEntry]),
   };
 }
 

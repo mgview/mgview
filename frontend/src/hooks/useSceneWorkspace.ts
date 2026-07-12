@@ -8,7 +8,7 @@ import {
   saveSceneJson,
   type FileBrowserListing,
 } from '../api/localFiles.ts';
-import { expandSimulationFiles } from '../core/expandSimulationFiles.ts';
+import { expandSimulationFiles, expandSimulationDataEntries } from '../core/expandSimulationFiles.ts';
 import { getBasePath } from '../core/pathUtils.ts';
 import {
   clearSceneRefFromUrl,
@@ -33,6 +33,7 @@ import { DEFAULT_SCENE_LAYOUT } from '../core/workspaceLayout.ts';
 import {
   DEFAULT_SCENARIO_ID,
   DEFAULT_SCENARIO_LABEL,
+  nextSimDataLabel,
   uniqueScenarioId,
 } from '../core/sceneScenarios.ts';
 import { useUndoRedo } from './useUndoRedo.ts';
@@ -686,14 +687,14 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
 
     const scenario = draftScene.scenarios.find((entry) => entry.id === scenarioId);
     if (!scenario) {
-      reportError(`Unknown scenario: ${scenarioId}`);
+      reportError(`Unknown sim data set: ${scenarioId}`);
       return false;
     }
 
     return persistDraftVisualization((draft) => {
       draft.activeScenario = scenarioId;
       draft.simulationData = [...scenario.simulationData];
-    }, `Switched to scenario ${scenario.label}`);
+    }, `Switched to sim data ${scenario.label}`);
   };
 
   const handleImportSimulationEntries = async (entries: string[]): Promise<boolean> => {
@@ -709,7 +710,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
         return;
       }
 
-      active.simulationData = trimmedEntries;
+      active.simulationData = expandSimulationDataEntries(trimmedEntries);
       draft.simulationData = [...active.simulationData];
     }, `Imported simulation data ${trimmedEntries.join(', ')}`);
   };
@@ -732,7 +733,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
       draft.scenarios = structuredClone(scenarios);
       draft.activeScenario = activeScenario.id;
       draft.simulationData = [...activeScenario.simulationData];
-    }, `Imported ${scenarios.length} scenario${scenarios.length === 1 ? '' : 's'}`);
+    }, `Imported ${scenarios.length} sim data set${scenarios.length === 1 ? '' : 's'}`);
   };
 
   const handleUpdateScenarioLabel = async (scenarioId: string, label: string): Promise<boolean> => {
@@ -741,13 +742,13 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
       return false;
     }
     if (trimmedLabel.length === 0) {
-      reportError('Scenario name cannot be empty.');
+      reportError('Sim data name cannot be empty.');
       return false;
     }
 
     const scenario = draftScene.scenarios.find((entry) => entry.id === scenarioId);
     if (!scenario) {
-      reportError(`Unknown scenario: ${scenarioId}`);
+      reportError(`Unknown sim data set: ${scenarioId}`);
       return false;
     }
 
@@ -756,7 +757,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
       if (target) {
         target.label = trimmedLabel;
       }
-    }, `Renamed scenario to ${trimmedLabel}`);
+    }, `Renamed sim data to ${trimmedLabel}`);
   };
 
   const handleAddScenario = async (label?: string): Promise<boolean> => {
@@ -764,9 +765,9 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
       return false;
     }
 
-    const trimmedLabel = label?.trim() ?? 'New scenario';
+    const trimmedLabel = label?.trim() ?? nextSimDataLabel(draftScene.scenarios);
     if (trimmedLabel.length === 0) {
-      reportError('Scenario name cannot be empty.');
+      reportError('Sim data name cannot be empty.');
       return false;
     }
     const nextDraft = cloneScene(draftScene);
@@ -780,7 +781,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
     nextDraft.activeScenario = newScenario.id;
     nextDraft.simulationData = [...newScenario.simulationData];
 
-    return persistDraftState(nextDraft, `Added scenario ${trimmedLabel}`);
+    return persistDraftState(nextDraft, `Added sim data ${trimmedLabel}`);
   };
 
   const handleRemoveScenario = async (scenarioId: string): Promise<boolean> => {
@@ -789,13 +790,13 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
     }
 
     if (draftScene.scenarios.length <= 1) {
-      reportError('Cannot remove the last scenario.');
+      reportError('Cannot remove the last sim data set.');
       return false;
     }
 
     const scenario = draftScene.scenarios.find((entry) => entry.id === scenarioId);
     if (!scenario) {
-      reportError(`Unknown scenario: ${scenarioId}`);
+      reportError(`Unknown sim data set: ${scenarioId}`);
       return false;
     }
 
@@ -812,7 +813,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
     nextDraft.activeScenario = nextActive.id;
     nextDraft.simulationData = [...nextActive.simulationData];
 
-    return persistDraftState(nextDraft, `Removed scenario ${scenario.label}`);
+    return persistDraftState(nextDraft, `Removed sim data ${scenario.label}`);
   };
 
   const handleSaveScene = async () => {

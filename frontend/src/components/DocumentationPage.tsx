@@ -287,7 +287,7 @@ export default function DocumentationPage() {
                     (such as <code>my_scene.json</code>), and click <code>Create</code>.
                   </li>
                   <li>
-                    Open the scenario dropdown and choose <code>Edit Sim Data</code>, then select one or more data files in
+                    Open the <code>Sim Data</code> dropdown and choose <code>Edit Sim Data</code>, then select one or more data files in
                     the browser, click <code>Add</code>, then confirm the parsed channels at the bottom of
                     the dialog (file count, channel list, inferred origin and Newtonian frame).
                   </li>

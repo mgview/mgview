@@ -159,11 +159,13 @@ export default function WorkspaceOverlays({
           }}
           onClose={shell.closeSimulationOverlay}
           onRemoveSimulationEntry={shell.removeSimulationEntry}
+          onClearSimulationEntries={shell.clearSimulationEntries}
           onSetActiveScenario={onSetActiveScenario}
           onUpdateScenarioLabel={onUpdateScenarioLabel}
           onAddScenario={onAddScenario}
           onRemoveScenario={onRemoveScenario}
           parsedSimulationFiles={parsedSimulationFiles}
+          sceneRef={loaded.sceneRef}
           scenePath={loaded.scenePath}
           simulationEntries={draftScene.simulationData}
           simulationEntryInput={shell.simulationEntryInput}

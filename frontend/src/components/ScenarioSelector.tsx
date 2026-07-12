@@ -18,6 +18,7 @@ interface ScenarioSelectorProps {
   onEditSimData?: () => void;
   onSetActiveScenario: (scenarioId: string) => void | Promise<void>;
   scenarios: SceneScenario[];
+  triggerMode?: 'header' | 'name-only';
 }
 
 export default function ScenarioSelector({
@@ -28,6 +29,7 @@ export default function ScenarioSelector({
   onEditSimData,
   onSetActiveScenario,
   scenarios,
+  triggerMode = 'header',
 }: ScenarioSelectorProps) {
   const active =
     scenarios.find((scenario) => scenario.id === activeScenario) ?? scenarios[0] ?? null;
@@ -35,11 +37,13 @@ export default function ScenarioSelector({
     return null;
   }
 
+  const triggerLabel = triggerMode === 'header' ? `Sim Data: ${active.label}` : active.label;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button type="button" size="sm" variant="outline" className="h-7 max-w-[12rem] gap-1 text-xs" disabled={disabled}>
-          <span className="truncate">Scenario: {active.label}</span>
+          <span className="truncate">{triggerLabel}</span>
           <ChevronDown className="h-3 w-3 shrink-0 opacity-60" aria-hidden />
         </Button>
       </DropdownMenuTrigger>

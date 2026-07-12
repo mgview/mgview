@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 import { createSceneDocument, DEFAULT_POINT_MARKER_WORKSPACE_FRACTION } from './sceneDocument.ts';
 import { buildObjectInspections, collectSceneDiagnostics } from './sceneInspector.ts';
-import { expandSimulationFiles } from './expandSimulationFiles.ts';
+import { expandSimulationDataEntries, expandSimulationFiles } from './expandSimulationFiles.ts';
 import { getBasePath, getFileExtension, getRelativePath, normalizeWorkspaceRelativePath } from './pathUtils.ts';
 import type { SceneConfig } from './types.ts';
 
@@ -30,6 +30,12 @@ test('path helpers preserve MGView-style relative paths', () => {
 });
 
 test('simulation file expansion matches legacy numeric range behavior', () => {
+  assert.deepEqual(expandSimulationDataEntries(['particle_pendulum.1:3']), [
+    'particle_pendulum.1',
+    'particle_pendulum.2',
+    'particle_pendulum.3',
+  ]);
+
   assert.deepEqual(
     expandSimulationFiles(['particle_pendulum.1:3'], 'samples/particle_pendulum/'),
     [
