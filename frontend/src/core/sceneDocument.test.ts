@@ -302,3 +302,26 @@ test('scene inspector warns about mixed origins and objects missing sim data', a
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('will not render')));
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('Could not parse simulation file')));
 });
+
+test('scene inspector does not warn about missing simulationData when scenarios are linked', () => {
+  const scene = {
+    scenarios: [
+      { id: 'stable', label: 'Stable', simulationData: ['stable/Data.2:3'] },
+      { id: 'chaotic', label: 'Chaotic', simulationData: ['chaotic/Data.2:3'] },
+    ],
+    activeScenario: 'stable',
+    objects: {},
+  };
+  const document = createSceneDocument(scene, ['P_No_Q[1]']);
+  const diagnostics = collectSceneDiagnostics(
+    scene,
+    document,
+    ['stable/Data.2', 'stable/Data.3'],
+    ['P_No_Q[1]']
+  );
+
+  assert.equal(
+    diagnostics.some((diagnostic) => diagnostic.message.includes('does not list any simulation data entries')),
+    false
+  );
+});

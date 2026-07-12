@@ -58,14 +58,52 @@ export function slugifyScenarioId(value: string): string {
   return normalized.length > 0 ? normalized : 'scenario';
 }
 
-export function labelFromOdeBasePath(odeBasePath: string): string {
-  const pieces = odeBasePath.replace(/\\/g, '/').split('/').filter((piece) => piece.length > 0);
-  const last = pieces[pieces.length - 1] ?? odeBasePath;
-  return last
+const GENERIC_ODE_FILE_STEMS = new Set(['data', 'output', 'results', 'out', 'ode']);
+
+function titleCaseWords(value: string): string {
+  return value
     .split(/[_-]+/)
     .filter((piece) => piece.length > 0)
     .map((piece) => piece.charAt(0).toUpperCase() + piece.slice(1))
     .join(' ');
+}
+
+function splitOdeBasePathPieces(odeBasePath: string): { directory: string; fileStem: string; parentStem: string | null } {
+  const pieces = odeBasePath.replace(/\\/g, '/').replace(/\/+$/g, '').split('/').filter((piece) => piece.length > 0);
+  const fileStem = pieces[pieces.length - 1] ?? odeBasePath;
+  const parentStem = pieces.length > 1 ? pieces[pieces.length - 2] ?? null : null;
+  const directory =
+    pieces.length > 1 ? pieces.slice(0, -1).join('/') : '.';
+
+  return { directory, fileStem, parentStem };
+}
+
+export function scenarioIdentityFromOdeBasePath(odeBasePath: string): { idBase: string; label: string } {
+  const { fileStem, parentStem } = splitOdeBasePathPieces(odeBasePath);
+  if (parentStem && GENERIC_ODE_FILE_STEMS.has(fileStem.toLowerCase())) {
+    return { idBase: parentStem, label: titleCaseWords(parentStem) };
+  }
+
+  return { idBase: fileStem, label: titleCaseWords(fileStem) };
+}
+
+export function labelFromOdeBasePath(odeBasePath: string): string {
+  return scenarioIdentityFromOdeBasePath(odeBasePath).label;
+}
+
+export function stripSimulationDataSuffix(entry: string): string {
+  return entry.trim().replace(/\.(\d+)(:\d+)?$/, '');
+}
+
+export function uniqueScenarioId(idBase: string, existingIds: string[]): string {
+  const baseId = slugifyScenarioId(idBase);
+  let id = baseId;
+  let suffix = 2;
+  while (existingIds.includes(id)) {
+    id = `${baseId}_${suffix}`;
+    suffix += 1;
+  }
+  return id;
 }
 
 export function detectCompletedOdeOutputs(output: string): string[] {
@@ -103,16 +141,8 @@ export function detectCompletedOdeOutputs(output: string): string[] {
 }
 
 function splitOdeBasePath(odeBasePath: string): { directory: string; fileStem: string } {
-  const normalized = odeBasePath.replace(/\\/g, '/').replace(/\/+$/g, '');
-  const slashIndex = normalized.lastIndexOf('/');
-  if (slashIndex === -1) {
-    return { directory: '.', fileStem: normalized };
-  }
-
-  return {
-    directory: normalized.slice(0, slashIndex) || '.',
-    fileStem: normalized.slice(slashIndex + 1),
-  };
+  const { directory, fileStem } = splitOdeBasePathPieces(odeBasePath);
+  return { directory, fileStem };
 }
 
 function escapeRegExp(value: string): string {
@@ -152,19 +182,22 @@ export function buildScenarioFromOdeBasePath(
   simulationDataEntry: string,
   existingIds: string[]
 ): SceneScenario {
-  const baseId = slugifyScenarioId(odeBasePath);
-  let id = baseId;
-  let suffix = 2;
-  while (existingIds.includes(id)) {
-    id = `${baseId}_${suffix}`;
-    suffix += 1;
-  }
+  const { idBase, label } = scenarioIdentityFromOdeBasePath(odeBasePath);
+  const id = uniqueScenarioId(idBase, existingIds);
 
   return {
     id,
-    label: labelFromOdeBasePath(odeBasePath),
+    label,
     simulationData: [simulationDataEntry],
   };
+}
+
+export function buildScenarioFromSimulationDataEntry(
+  simulationDataEntry: string,
+  existingIds: string[]
+): SceneScenario {
+  const odeBasePath = stripSimulationDataSuffix(simulationDataEntry);
+  return buildScenarioFromOdeBasePath(odeBasePath, simulationDataEntry.trim(), existingIds);
 }
 
 export function sceneHasVisualizationData(scene: SceneConfig): boolean {

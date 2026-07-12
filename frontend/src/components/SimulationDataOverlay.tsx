@@ -1,12 +1,11 @@
-import { useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import { useMemo, useState, type KeyboardEvent } from 'react';
+import { Pencil, Trash2, X } from 'lucide-react';
 import type { FileBrowserListing } from '../api/localFiles.ts';
 import type { NormalizedSceneConfig, ParsedSimulationFile } from '../core/types.ts';
 import { getBasePath, getRelativePath } from '../core/pathUtils.ts';
 import { getDirectoryPath } from '../hooks/useSceneWorkspace.ts';
 import LocalFileBrowser from './LocalFileBrowser.tsx';
 import OverlayPanel from './OverlayPanel.tsx';
-import ScenarioSelector from './ScenarioSelector.tsx';
 import { Button } from './ui/button.tsx';
 import { Input } from './ui/input.tsx';
 import { Badge } from './ui/badge.tsx';
@@ -27,6 +26,74 @@ function splitFilePath(filePath: string): { directory: string; fileName: string 
 
 const PREVIEW_CHANNEL_COUNT = 5;
 
+function ScenarioLabelEditor({
+  disabled,
+  label,
+  onSave,
+}: {
+  disabled?: boolean;
+  label: string;
+  onSave: (label: string) => void | Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draftLabel, setDraftLabel] = useState(label);
+
+  const commit = () => {
+    const trimmed = draftLabel.trim();
+    if (trimmed.length === 0) {
+      setDraftLabel(label);
+      setEditing(false);
+      return;
+    }
+    if (trimmed !== label) {
+      void onSave(trimmed);
+    }
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <Input
+        autoFocus
+        value={draftLabel}
+        disabled={disabled}
+        className="h-6 text-xs"
+        onChange={(event) => setDraftLabel(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+          if (event.key === 'Enter') {
+            commit();
+          }
+          if (event.key === 'Escape') {
+            setDraftLabel(label);
+            setEditing(false);
+          }
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="flex min-w-0 items-center gap-1">
+      <div className="truncate text-xs font-medium text-foreground">{label}</div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-5 w-5 shrink-0"
+        disabled={disabled}
+        aria-label={`Rename ${label}`}
+        onClick={() => {
+          setDraftLabel(label);
+          setEditing(true);
+        }}
+      >
+        <Pencil className="h-3 w-3" />
+      </Button>
+    </div>
+  );
+}
+
 interface SimulationDataOverlayProps {
   activeScene: NormalizedSceneConfig;
   browserError: string | null;
@@ -41,6 +108,9 @@ interface SimulationDataOverlayProps {
   onClose: () => void;
   onRemoveSimulationEntry: (entry: string) => void;
   onSetActiveScenario?: (scenarioId: string) => void | Promise<void>;
+  onUpdateScenarioLabel?: (scenarioId: string, label: string) => void | Promise<void>;
+  onAddScenario?: () => void | Promise<void>;
+  onRemoveScenario?: (scenarioId: string) => void | Promise<void>;
   parsedSimulationFiles: ParsedSimulationFile[];
   scenePath: string;
   simulationEntries: string[];
@@ -63,6 +133,9 @@ export default function SimulationDataOverlay({
   onClose,
   onRemoveSimulationEntry,
   onSetActiveScenario,
+  onUpdateScenarioLabel,
+  onAddScenario,
+  onRemoveScenario,
   parsedSimulationFiles,
   scenePath,
   simulationEntries,
@@ -103,20 +176,29 @@ export default function SimulationDataOverlay({
       onClose={onClose}
     >
       <div className="grid gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {onAddScenario ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              disabled={simulationLoading}
+              onClick={() => {
+                void onAddScenario();
+              }}
+            >
+              Add scenario
+            </Button>
+          ) : null}
+        </div>
+
         {inScenarioMode ? (
           <div className="grid gap-2 rounded-md border border-border bg-muted/30 p-2">
             <p className="text-xs text-muted-foreground">
-              This scene has multiple initial-condition sets. Each scenario links the animation files from one{' '}
-              <code>ODE()</code> block in the sim file. Switch scenarios to change what plays in the 3D view and plots.
+              Each scenario is one initial-condition set. Use the header dropdown to switch what plays in the 3D
+              view. Link simulation files to the active scenario using browse or path entry below.
             </p>
-            {onSetActiveScenario ? (
-              <ScenarioSelector
-                activeScenario={activeScene.activeScenario}
-                disabled={simulationLoading}
-                onSetActiveScenario={onSetActiveScenario}
-                scenarios={activeScene.scenarios}
-              />
-            ) : null}
             <div className="grid gap-1.5">
               {activeScene.scenarios.map((scenario) => {
                 const isActive = scenario.id === activeScenario?.id;
@@ -129,39 +211,85 @@ export default function SimulationDataOverlay({
                     )}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-xs font-medium text-foreground">{scenario.label}</div>
-                        <code className="text-[0.68rem] text-muted-foreground">{scenario.id}</code>
+                      <div className="min-w-0 flex-1">
+                        {onUpdateScenarioLabel ? (
+                          <ScenarioLabelEditor
+                            disabled={simulationLoading}
+                            label={scenario.label}
+                            onSave={(nextLabel) => onUpdateScenarioLabel(scenario.id, nextLabel)}
+                          />
+                        ) : (
+                          <div className="text-xs font-medium text-foreground">{scenario.label}</div>
+                        )}
                       </div>
-                      {isActive ? (
-                        <Badge variant="default">Active</Badge>
-                      ) : onSetActiveScenario ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-6"
-                          disabled={simulationLoading}
-                          onClick={() => {
-                            void onSetActiveScenario(scenario.id);
-                          }}
-                        >
-                          Use
-                        </Button>
-                      ) : null}
+                      <div className="flex items-center gap-1">
+                        {isActive ? (
+                          <Badge variant="default">Active</Badge>
+                        ) : onSetActiveScenario ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-6"
+                            disabled={simulationLoading}
+                            onClick={() => {
+                              void onSetActiveScenario(scenario.id);
+                            }}
+                          >
+                            Use
+                          </Button>
+                        ) : null}
+                        {onRemoveScenario && activeScene.scenarios.length > 1 ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-muted-foreground"
+                            disabled={simulationLoading}
+                            aria-label={`Remove ${scenario.label}`}
+                            onClick={() => {
+                              void onRemoveScenario(scenario.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {scenario.simulationData.length > 0 ? (
-                        scenario.simulationData.map((entry) => (
-                          <code
-                            key={`${scenario.id}:${entry}`}
-                            className="rounded-sm bg-secondary px-1.5 py-0.5 text-[0.68rem]"
-                          >
-                            {entry}
-                          </code>
-                        ))
+                        scenario.simulationData.map((entry) =>
+                          isActive ? (
+                            <span
+                              key={`${scenario.id}:${entry}`}
+                              className="inline-flex items-center gap-0.5 rounded-sm bg-secondary px-1.5 py-0.5 text-[0.68rem]"
+                            >
+                              <code>{entry}</code>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4"
+                                disabled={simulationLoading}
+                                onClick={() => onRemoveSimulationEntry(entry)}
+                                aria-label={`Remove ${entry}`}
+                              >
+                                <X className="h-2.5 w-2.5" />
+                              </Button>
+                            </span>
+                          ) : (
+                            <code
+                              key={`${scenario.id}:${entry}`}
+                              className="rounded-sm bg-secondary px-1.5 py-0.5 text-[0.68rem]"
+                            >
+                              {entry}
+                            </code>
+                          )
+                        )
                       ) : (
-                        <span className="text-xs text-muted-foreground">No simulation entries.</span>
+                        <span className="text-xs text-muted-foreground">
+                          {isActive ? 'No simulation entries — browse or enter a path below.' : 'No simulation entries.'}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -169,53 +297,52 @@ export default function SimulationDataOverlay({
               })}
             </div>
           </div>
-        ) : simulationEntries.length > 1 ? (
-          <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-xs text-muted-foreground">
-            Multiple simulation entries are linked at once (flat mode). For sim files with several{' '}
-            <code>ODE()</code> blocks, re-run and choose <strong>Import as scenarios</strong> so each initial
-            condition set can be switched independently.
-          </p>
         ) : null}
 
         <div className="grid gap-1.5">
-          {inScenarioMode ? (
-            <div className="text-xs font-medium text-foreground">
-              Edit active scenario{activeScenario ? `: ${activeScenario.label}` : ''}
+          {!inScenarioMode ? (
+            <>
+              <div className="flex flex-wrap gap-1.5">
+                {simulationEntries.length > 0 ? (
+                  simulationEntries.map((entry) => (
+                    <span key={entry} className="inline-flex items-center gap-0.5 rounded-sm bg-secondary px-1.5 py-0.5 text-xs">
+                      <code>{entry}</code>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => onRemoveSimulationEntry(entry)}
+                        aria-label={`Remove ${entry}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-muted-foreground">No simulation entries.</span>
+                )}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit"
+                onClick={() => setManualEntryExpanded((current) => !current)}
+              >
+                {manualEntryExpanded ? 'Hide path entry' : 'Enter path…'}
+              </Button>
+            </>
+          ) : (
+            <div className="text-xs text-muted-foreground">
+              {activeScenario
+                ? `Adding files below links them to the active scenario (${activeScenario.label}).`
+                : 'Select a scenario to link simulation files.'}
             </div>
-          ) : null}
-          <div className="flex flex-wrap gap-1.5">
-            {simulationEntries.length > 0 ? (
-              simulationEntries.map((entry) => (
-                <span key={entry} className="inline-flex items-center gap-0.5 rounded-sm bg-secondary px-1.5 py-0.5 text-xs">
-                  <code>{entry}</code>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5"
-                    onClick={() => onRemoveSimulationEntry(entry)}
-                    aria-label={`Remove ${entry}`}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </span>
-              ))
-            ) : (
-              <span className="text-xs text-muted-foreground">No simulation entries.</span>
-            )}
-          </div>
+          )}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-fit"
-            onClick={() => setManualEntryExpanded((current) => !current)}
-          >
-            {manualEntryExpanded ? 'Hide path entry' : 'Enter path…'}
-          </Button>
-
-          {manualEntryExpanded ? (
+          {!inScenarioMode && manualEntryExpanded ? (
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5 border-t border-border pt-1.5">
               <Input
                 type="text"
@@ -233,6 +360,34 @@ export default function SimulationDataOverlay({
                 placeholder="relative/path/to/file.1 or run.1:20"
               />
               <Button type="button" size="sm" onClick={onAddSimulationEntry} disabled={simulationEntryInput.trim().length === 0}>
+                Add
+              </Button>
+            </div>
+          ) : null}
+
+          {inScenarioMode ? (
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5">
+              <Input
+                type="text"
+                value={simulationEntryInput}
+                onChange={(event) => {
+                  clearBrowserSelection();
+                  setSimulationEntryInput(event.target.value);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    onAddSimulationEntry();
+                  }
+                }}
+                placeholder="relative/path/to/file.1 or run.1:20"
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={onAddSimulationEntry}
+                disabled={simulationEntryInput.trim().length === 0 || simulationLoading}
+              >
                 Add
               </Button>
             </div>

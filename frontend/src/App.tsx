@@ -61,6 +61,9 @@ function WorkspaceApp() {
     handleImportSimulationEntries,
     handleLinkSimulationSettings,
     handleSetActiveScenario,
+    handleUpdateScenarioLabel,
+    handleAddScenario,
+    handleRemoveScenario,
     handleLoad,
     handleWorkspaceChange,
     handleLoadWorkspacePath,
@@ -465,6 +468,9 @@ function WorkspaceApp() {
         setSceneInput={setSceneInput}
         shell={shell}
         onSetActiveScenario={setActiveScenario}
+        onUpdateScenarioLabel={handleUpdateScenarioLabel}
+        onAddScenario={() => handleAddScenario()}
+        onRemoveScenario={handleRemoveScenario}
         simulationFiles={simulationFiles}
         simulationLoading={simulationLoading}
       />

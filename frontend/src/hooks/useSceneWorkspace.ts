@@ -33,7 +33,9 @@ import { isMotionGenesisInputPath, defaultSimFileNameForScene, getSceneDirectory
 import { buildTimeline } from '../core/timeline.ts';
 import { combineBrowserPath, validateFolderName } from '../core/workspacePaths.ts';
 import { DEFAULT_SCENE_LAYOUT } from '../core/workspaceLayout.ts';
-import type { SceneScenario } from '../core/types.ts';
+import {
+  uniqueScenarioId,
+} from '../core/sceneScenarios.ts';
 import { useUndoRedo } from './useUndoRedo.ts';
 import type {
   NormalizedSceneConfig,
@@ -41,6 +43,7 @@ import type {
   SceneConfig,
   SceneDiagnostic,
   SceneObjectInspection,
+  SceneScenario,
   SimulationTable,
   Timeline,
 } from '../core/types.ts';
@@ -613,20 +616,24 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
     }
   };
 
-  const persistDraftVisualization = async (
-    updater: (draft: NormalizedSceneConfig) => void,
+  const persistDraftState = async (
+    nextDraft: NormalizedSceneConfig,
     successMessage: string
   ): Promise<boolean> => {
-    if (!canSaveScene || !loaded || !draftScene) {
+    if (!loaded) {
       return false;
+    }
+
+    if (!canSaveScene) {
+      pushDraftScene(nextDraft);
+      reportSuccess(successMessage);
+      return true;
     }
 
     setSaving(true);
     setError(null);
 
     try {
-      const nextDraft = cloneScene(draftScene);
-      updater(nextDraft);
       const savedScene = createSavableScene(loaded.rawScene, nextDraft);
       await saveSceneJson(loaded.sceneRef, savedScene);
       const nextSimulationState = await loadSimulationWorkspaceState(nextDraft, loaded.sceneRef);
@@ -642,6 +649,19 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
     } finally {
       setSaving(false);
     }
+  };
+
+  const persistDraftVisualization = async (
+    updater: (draft: NormalizedSceneConfig) => void,
+    successMessage: string
+  ): Promise<boolean> => {
+    if (!draftScene) {
+      return false;
+    }
+
+    const nextDraft = cloneScene(draftScene);
+    updater(nextDraft);
+    return persistDraftState(nextDraft, successMessage);
   };
 
   const handleLinkSimulationSettings = async (relativePath: string): Promise<boolean> => {
@@ -713,6 +733,87 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
       draft.activeScenario = activeScenario.id;
       draft.simulationData = [...activeScenario.simulationData];
     }, `Imported ${scenarios.length} scenario${scenarios.length === 1 ? '' : 's'}`);
+  };
+
+  const handleUpdateScenarioLabel = async (scenarioId: string, label: string): Promise<boolean> => {
+    const trimmedLabel = label.trim();
+    if (!draftScene || draftScene.scenarios.length === 0) {
+      return false;
+    }
+    if (trimmedLabel.length === 0) {
+      reportError('Scenario name cannot be empty.');
+      return false;
+    }
+
+    const scenario = draftScene.scenarios.find((entry) => entry.id === scenarioId);
+    if (!scenario) {
+      reportError(`Unknown scenario: ${scenarioId}`);
+      return false;
+    }
+
+    return persistDraftVisualization((draft) => {
+      const target = draft.scenarios.find((entry) => entry.id === scenarioId);
+      if (target) {
+        target.label = trimmedLabel;
+      }
+    }, `Renamed scenario to ${trimmedLabel}`);
+  };
+
+  const handleAddScenario = async (label?: string): Promise<boolean> => {
+    if (!draftScene) {
+      return false;
+    }
+
+    const trimmedLabel = label?.trim() ?? 'New scenario';
+    if (trimmedLabel.length === 0) {
+      reportError('Scenario name cannot be empty.');
+      return false;
+    }
+    const nextDraft = cloneScene(draftScene);
+    const existingIds = nextDraft.scenarios.map((scenario) => scenario.id);
+    const enablingScenarioMode = nextDraft.scenarios.length === 0;
+    const newScenario: SceneScenario = {
+      id: uniqueScenarioId(trimmedLabel, existingIds),
+      label: trimmedLabel,
+      simulationData: enablingScenarioMode ? [...nextDraft.simulationData] : [],
+    };
+    nextDraft.scenarios.push(newScenario);
+    nextDraft.activeScenario = newScenario.id;
+    nextDraft.simulationData = [...newScenario.simulationData];
+
+    return persistDraftState(nextDraft, `Added scenario ${trimmedLabel}`);
+  };
+
+  const handleRemoveScenario = async (scenarioId: string): Promise<boolean> => {
+    if (!draftScene || draftScene.scenarios.length === 0) {
+      return false;
+    }
+
+    const scenario = draftScene.scenarios.find((entry) => entry.id === scenarioId);
+    if (!scenario) {
+      reportError(`Unknown scenario: ${scenarioId}`);
+      return false;
+    }
+
+    const nextDraft = cloneScene(draftScene);
+    nextDraft.scenarios = nextDraft.scenarios.filter((entry) => entry.id !== scenarioId);
+
+    if (nextDraft.scenarios.length === 0) {
+      nextDraft.activeScenario = null;
+      nextDraft.simulationData = [...scenario.simulationData];
+    } else {
+      const nextActive =
+        nextDraft.scenarios.find((entry) => entry.id === nextDraft.activeScenario) ??
+        nextDraft.scenarios[0];
+      if (!nextActive) {
+        return false;
+      }
+
+      nextDraft.activeScenario = nextActive.id;
+      nextDraft.simulationData = [...nextActive.simulationData];
+    }
+
+    return persistDraftState(nextDraft, `Removed scenario ${scenario.label}`);
   };
 
   const handleCreateSimProject = async (folderName: string, parentPath: string): Promise<boolean> => {
@@ -916,6 +1017,9 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
     handleImportSimulationEntries,
     handleLinkSimulationSettings,
     handleSetActiveScenario,
+    handleUpdateScenarioLabel,
+    handleAddScenario,
+    handleRemoveScenario,
     handleLoad,
     handleLoadWorkspacePath,
     handleWorkspaceChange,

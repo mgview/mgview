@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   buildScenarioFromOdeBasePath,
+  buildScenarioFromSimulationDataEntry,
   detectCompletedOdeOutputs,
   discoverSimulationDataEntryFromListing,
   getEffectiveSimulationData,
@@ -47,11 +48,20 @@ test('getEffectiveSimulationData resolves active scenario entries', () => {
   assert.deepEqual(getEffectiveSimulationData(scene), ['chaotic/Data.2:3']);
 });
 
-test('buildScenarioFromOdeBasePath creates unique scenario ids', () => {
-  const first = buildScenarioFromOdeBasePath('stable/Data', 'stable/Data.2:3', []);
-  const second = buildScenarioFromOdeBasePath('stable/Data', 'stable/Data.2:4', [first.id]);
+test('buildScenarioFromOdeBasePath creates unique scenario ids and uses parent folder labels', () => {
+  const stable = buildScenarioFromOdeBasePath('stable/Data', 'stable/Data.2:3', []);
+  const chaotic = buildScenarioFromOdeBasePath('chaotic/Data', 'chaotic/Data.2:3', [stable.id]);
 
-  assert.equal(first.id, 'stable_data');
-  assert.equal(second.id, 'stable_data_2');
+  assert.equal(stable.id, 'stable');
+  assert.equal(stable.label, 'Stable');
+  assert.equal(chaotic.id, 'chaotic');
+  assert.equal(chaotic.label, 'Chaotic');
   assert.equal(slugifyScenarioId('Chaotic ICs'), 'chaotic_ics');
+});
+
+test('buildScenarioFromSimulationDataEntry infers labels from simulation paths', () => {
+  const scenario = buildScenarioFromSimulationDataEntry('chaotic/Data.2:3', []);
+  assert.equal(scenario.id, 'chaotic');
+  assert.equal(scenario.label, 'Chaotic');
+  assert.deepEqual(scenario.simulationData, ['chaotic/Data.2:3']);
 });
