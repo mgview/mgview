@@ -59,6 +59,7 @@ function WorkspaceApp() {
     handleImportScenarios,
     handleImportSimulationEntries,
     handleLinkSimulationSettings,
+    handleUnlinkSimulationSettings,
     handleSetActiveScenario,
     handleUpdateScenarioLabel,
     handleAddScenario,
@@ -145,6 +146,7 @@ function WorkspaceApp() {
     handleImportScenarios,
     handleImportSimulationEntries,
     handleLinkSimulationSettings,
+    handleUnlinkSimulationSettings,
     handleRefreshSimulationData,
     handleSaveScene,
     handleSetActiveScenario,
@@ -164,6 +166,7 @@ function WorkspaceApp() {
     importPrompt,
     importingSimulationData,
     linkSimulationSettings,
+    unlinkSimulationSettings,
     motionGenesisRun,
     runMotionGenesis,
     setActiveScenario,
@@ -389,6 +392,7 @@ function WorkspaceApp() {
           onSimFileChange={simulationSettingsEditor.setDraftContent}
           onCreateSimulationFile={createAndLinkSimulationFile}
           onLinkSimulationSettings={linkSimulationSettings}
+          onUnlinkSimulationSettings={unlinkSimulationSettings}
           onStopMotionGenesis={() => {
             void motionGenesisRun.stopRun();
           }}

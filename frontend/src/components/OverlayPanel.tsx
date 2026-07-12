@@ -43,6 +43,13 @@ export default function OverlayPanel({
           onClose();
         }}
         onEscapeKeyDown={(event) => {
+          if (
+            event.target instanceof Element &&
+            event.target.closest('[data-overlay-escape-lock]')
+          ) {
+            event.preventDefault();
+            return;
+          }
           event.preventDefault();
           event.stopPropagation();
           onClose();

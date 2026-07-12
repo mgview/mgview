@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 import type { useInspectorSelectionState } from './useInspectorSelectionState.ts';
 import type { usePlaybackController } from './usePlaybackController.ts';
 import type { useWorkspaceShell } from './useWorkspaceShell.ts';
@@ -114,7 +115,7 @@ export function useWorkspaceKeyboardShortcuts({
 
       if (hasModifier && !isTextEditing && event.key.toLowerCase() === 'o') {
         event.preventDefault();
-        if (!loading && !saving && !simFileSaving) {
+        if (canPersistScenesToServer && !loading && !saving && !simFileSaving) {
           shell.openLoadOverlay();
         }
         return;

@@ -130,6 +130,10 @@ export function useWorkspaceShell({
   ]);
 
   const openLoadOverlay = () => {
+    if (!canPersistScenesToServer) {
+      return;
+    }
+
     setError(null);
     setSceneOverlayMode('load');
     setLoadOverlayOpen(true);

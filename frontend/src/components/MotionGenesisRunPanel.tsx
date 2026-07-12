@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 import { listLocalFiles, type FileBrowserListing, type MotionGenesisRunOptions, type MotionGenesisRunState } from '../api/localFiles.ts';
 import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 import { getBasePath, getRelativePath } from '../core/pathUtils.ts';
@@ -26,6 +27,7 @@ interface MotionGenesisRunPanelProps {
   onInputChange: (value: string) => void;
   onOptionsChange: (nextOptions: MotionGenesisRunOptions) => void;
   onLinkSimulationSettings: (relativePath: string) => Promise<boolean>;
+  onUnlinkSimulationSettings: () => Promise<boolean>;
   onRun: () => void | Promise<void>;
   onSimFileChange: (value: string) => void;
   onStop: () => void;
@@ -52,6 +54,7 @@ export default function MotionGenesisRunPanel({
   onInputChange,
   onOptionsChange,
   onLinkSimulationSettings,
+  onUnlinkSimulationSettings,
   onRun,
   onSimFileChange,
   onStop,
@@ -77,11 +80,10 @@ export default function MotionGenesisRunPanel({
   const [newSimDialogError, setNewSimDialogError] = useState<string | null>(null);
   const [newSimDialogLoading, setNewSimDialogLoading] = useState(false);
 
-  const runDisabledReason = !loadedScenePath
-    ? 'Load a workspace scene to run Motion Genesis.'
-    : !simulationSettings
-      ? 'This scene does not define simulationSettings.'
-      : null;
+  const [unlinking, setUnlinking] = useState(false);
+
+  const runDisabledReason = !loadedScenePath ? 'Load a workspace scene to run Motion Genesis.' : null;
+  const hasLinkedSimulationFile = Boolean(simulationSettings?.trim());
   const sceneDirectoryPath = useMemo(() => getSceneDirectoryPath(loadedScenePath), [loadedScenePath]);
   const simulationFilePath = useMemo(
     () => resolveSimulationFilePath(loadedScenePath, simulationSettings),
@@ -166,23 +168,50 @@ export default function MotionGenesisRunPanel({
     setNewSimDialogError(error ?? 'Could not create simulation file.');
   };
 
+  const handleUnlinkSimulationFile = async () => {
+    if (unlinking || !hasLinkedSimulationFile) {
+      return;
+    }
+
+    setUnlinking(true);
+    await onUnlinkSimulationSettings();
+    setUnlinking(false);
+  };
+
   const configureExtras = (
-    <div className="grid gap-1.5 text-xs">
-      <div className="text-muted-foreground">
-        Simulation file:{' '}
+    <>
+      <div className="text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
+        Simulation file
+      </div>
+      <div className="flex items-start gap-1">
         <button
           type="button"
-          className="group cursor-pointer rounded-sm text-primary underline decoration-primary decoration-2 underline-offset-[3px] transition-colors hover:text-primary/80 hover:decoration-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
+          className="group min-w-0 flex-1 cursor-pointer rounded-sm text-left text-primary underline decoration-primary decoration-2 underline-offset-[3px] transition-colors hover:text-primary/80 hover:decoration-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
           onClick={() => setPickerOpen(true)}
           disabled={loadedScenePath === null}
         >
-          <code className="font-mono text-inherit group-hover:text-inherit">
-            {simulationSettings?.trim() ? simulationSettings : '<click to select>'}
+          <code className="break-all font-mono text-xs text-inherit group-hover:text-inherit">
+            {hasLinkedSimulationFile ? simulationSettings : '<click to select>'}
           </code>
           {simFileDirty ? <span className="text-warning"> • unsaved</span> : null}
         </button>
+        {hasLinkedSimulationFile ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0 text-muted-foreground"
+            disabled={loadedScenePath === null || unlinking}
+            aria-label="Unlink simulation file"
+            onClick={() => {
+              void handleUnlinkSimulationFile();
+            }}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        ) : null}
       </div>
-    </div>
+    </>
   );
 
   return (

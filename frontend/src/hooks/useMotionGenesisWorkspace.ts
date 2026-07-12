@@ -35,6 +35,7 @@ interface UseMotionGenesisWorkspaceOptions {
   handleImportScenarios: (scenarios: SceneScenario[], activeScenarioId: string) => Promise<boolean>;
   handleImportSimulationEntries: (entries: string[]) => Promise<boolean>;
   handleLinkSimulationSettings: (relativePath: string) => Promise<boolean>;
+  handleUnlinkSimulationSettings: () => Promise<boolean>;
   handleRefreshSimulationData: (successMessage: string) => Promise<void>;
   handleSaveScene: () => Promise<void>;
   handleSetActiveScenario: (scenarioId: string) => Promise<boolean>;
@@ -49,6 +50,7 @@ export function useMotionGenesisWorkspace({
   handleImportScenarios,
   handleImportSimulationEntries,
   handleLinkSimulationSettings,
+  handleUnlinkSimulationSettings,
   handleRefreshSimulationData,
   handleSaveScene,
   handleSetActiveScenario,
@@ -142,6 +144,10 @@ export function useMotionGenesisWorkspace({
     },
     [handleLinkSimulationSettings]
   );
+
+  const unlinkSimulationSettings = useCallback(async () => {
+    return handleUnlinkSimulationSettings();
+  }, [handleUnlinkSimulationSettings]);
 
   const setActiveScenario = useCallback(
     async (scenarioId: string) => {
@@ -286,6 +292,7 @@ export function useMotionGenesisWorkspace({
     importPrompt,
     importingSimulationData,
     linkSimulationSettings,
+    unlinkSimulationSettings,
     motionGenesisRun,
     runMotionGenesis,
     setActiveScenario,

@@ -52,6 +52,7 @@ interface WorkspaceShellProps {
   onSimFileChange: (value: string) => void;
   onCreateSimulationFile: (directoryPath: string, fileName: string) => Promise<boolean>;
   onLinkSimulationSettings: (relativePath: string) => Promise<boolean>;
+  onUnlinkSimulationSettings: () => Promise<boolean>;
   onStopMotionGenesis: () => void;
   onStartSplitterDrag: (
     splitter: 'visual' | 'workspace',
@@ -133,6 +134,7 @@ export default function WorkspaceShell({
   onSimFileChange,
   onCreateSimulationFile,
   onLinkSimulationSettings,
+  onUnlinkSimulationSettings,
   onStopMotionGenesis,
   onStartSplitterDrag,
   playback,
@@ -276,6 +278,7 @@ export default function WorkspaceShell({
             onOptionsChange={onMotionGenesisOptionsChange}
             onCreateSimulationFile={onCreateSimulationFile}
             onLinkSimulationSettings={onLinkSimulationSettings}
+            onUnlinkSimulationSettings={onUnlinkSimulationSettings}
             onRun={onRunMotionGenesis}
             onSimFileChange={onSimFileChange}
             onStop={onStopMotionGenesis}

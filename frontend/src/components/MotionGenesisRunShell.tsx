@@ -29,7 +29,14 @@ import MotionGenesisRunOutput from './MotionGenesisRunOutput.tsx';
 import { Badge } from './ui/badge.tsx';
 import { Button } from './ui/button.tsx';
 import { Checkbox } from './ui/checkbox.tsx';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu.tsx';
 import { Input } from './ui/input.tsx';
+import { Label } from './ui/label.tsx';
+import { Separator } from './ui/separator.tsx';
 
 const SPLITTER_WIDTH = 8;
 const SPLITTER_GAP = 8;
@@ -154,7 +161,7 @@ export default function MotionGenesisRunShell({
   const { layoutMode, setLayoutMode, setSplitRatio, setVimMode, splitRatio, vimMode } =
     useMotionGenesisRunPreferences(defaultLayoutMode);
 
-  const [showConfigure, setShowConfigure] = useState(false);
+  const [configureOpen, setConfigureOpen] = useState(false);
   const [showStatusDetails, setShowStatusDetails] = useState(false);
   const [isDesktopLayout, setIsDesktopLayout] = useState(false);
 
@@ -549,58 +556,102 @@ export default function MotionGenesisRunShell({
     </div>
   );
 
-  const renderConfigureSection = () => (
-    <div className="grid gap-3 border-t border-border/70 pt-2">
-      {configureExtras}
-      <div className="grid gap-1 text-sm">
+  const renderConfigureSectionLabel = (label: string) => (
+    <div className="text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+  );
+
+  const renderConfigureCheckbox = (
+    id: string,
+    label: string,
+    checked: boolean,
+    onCheckedChange: (checked: boolean) => void,
+    disabled = false
+  ) => (
+    <Label
+      key={id}
+      htmlFor={id}
+      className="flex cursor-pointer items-center gap-1.5 rounded-sm py-0 text-[0.7rem] font-normal leading-tight text-foreground"
+      onPointerDown={(event) => event.preventDefault()}
+    >
+      <Checkbox
+        id={id}
+        checked={checked}
+        disabled={disabled}
+        className="h-3.5 w-3.5"
+        onCheckedChange={(next) => onCheckedChange(next === true)}
+      />
+      <span>{label}</span>
+    </Label>
+  );
+
+  const renderConfigurePanel = () => (
+    <div className="grid max-h-[min(70vh,28rem)] gap-2 overflow-y-auto p-2.5 text-xs">
+      {configureExtras ? (
+        <>
+          <div className="grid gap-1">{configureExtras}</div>
+          <Separator />
+        </>
+      ) : null}
+
+      <div className="grid gap-1">
+        {renderConfigureSectionLabel('Sim Executable')}
         <div className="min-w-0">
-          <span className="text-muted-foreground">Command: </span>
           {canOpenExecutablePicker ? (
             <button
               type="button"
-              className="rounded-sm text-left underline decoration-dotted underline-offset-4 transition-colors hover:text-primary"
-              onClick={motionGenesisRuntime.openPicker}
+              className="group min-w-0 cursor-pointer rounded-sm text-left text-primary underline decoration-primary decoration-2 underline-offset-[3px] transition-colors hover:text-primary/80 hover:decoration-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => {
+                motionGenesisRuntime.openPicker();
+              }}
             >
-              <code className="break-all text-foreground">{resolvedCommand}</code>
+              <code className="break-all font-mono text-xs text-inherit group-hover:text-inherit">
+                {resolvedCommand}
+              </code>
             </button>
           ) : (
-            <code className="break-all text-foreground">{resolvedCommand}</code>
+            <code className="break-all font-mono text-xs text-foreground">{resolvedCommand}</code>
           )}
         </div>
         {ptySetupError ? (
-          <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-destructive">{ptySetupError}</pre>
+          <pre className="overflow-x-auto whitespace-pre-wrap text-[0.7rem] text-destructive">{ptySetupError}</pre>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <label className="flex items-center gap-2">
-          <Checkbox
-            checked={options.autoQuit}
-            onCheckedChange={(checked) => onOptionsChange({ ...options, autoQuit: checked === true })}
-          />
-          <span className="text-foreground">Auto-quit</span>
-        </label>
-        <label className="flex items-center gap-2">
-          <Checkbox
-            checked={options.autoDefaultValues}
-            onCheckedChange={(checked) => onOptionsChange({ ...options, autoDefaultValues: checked === true })}
-          />
-          <span className="text-foreground">Auto defaults</span>
-        </label>
-        <label className="flex items-center gap-2">
-          <Checkbox
-            checked={options.debug}
-            onCheckedChange={(checked) => onOptionsChange({ ...options, debug: checked === true })}
-          />
-          <span className="text-foreground">Debug output</span>
-        </label>
-        <label className="flex items-center gap-2">
-          <span className="text-foreground">Scrollback</span>
+
+      <Separator />
+
+      <div className="grid gap-1">
+        {renderConfigureSectionLabel('Run Options')}
+        <div className="grid gap-0.5">
+          {renderConfigureCheckbox('mg-auto-quit', 'Auto-quit', options.autoQuit, (checked) =>
+            onOptionsChange({ ...options, autoQuit: checked })
+          )}
+          {renderConfigureCheckbox('mg-auto-defaults', 'Auto defaults', options.autoDefaultValues, (checked) =>
+            onOptionsChange({ ...options, autoDefaultValues: checked })
+          )}
+          {renderConfigureCheckbox('mg-debug', 'Debug output', options.debug, (checked) =>
+            onOptionsChange({ ...options, debug: checked })
+          )}
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="grid gap-1">
+        {renderConfigureSectionLabel('Output Options')}
+        <div className="flex items-center gap-2">
+          <Label
+            htmlFor="mg-scrollback-limit"
+            className="shrink-0 text-[0.7rem] font-normal text-muted-foreground"
+          >
+            Scrollback lines
+          </Label>
           <Input
+            id="mg-scrollback-limit"
             type="number"
             min="0"
             step="10"
             inputMode="numeric"
-            className="h-8 w-28"
+            className="h-6 w-16 shrink-0 font-mono text-[0.7rem]"
             value={String(options.scrollbackLimit)}
             onChange={(event) => {
               const nextValue = event.target.value.trim();
@@ -611,16 +662,21 @@ export default function MotionGenesisRunShell({
               });
             }}
           />
-          <span className="text-[11px]">lines, `0` = all</span>
-        </label>
-        <label className="flex items-center gap-2">
-          <Checkbox
-            checked={vimMode}
-            disabled={editorLoading || !editorFilePath}
-            onCheckedChange={(checked) => setVimMode(checked === true)}
-          />
-          <span className="text-foreground">Vim</span>
-        </label>
+          <span className="min-w-0 truncate text-[0.7rem] text-muted-foreground"> (0 = unlimited)</span>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="grid gap-1">
+        {renderConfigureSectionLabel('Editor Options')}
+        {renderConfigureCheckbox(
+          'mg-vim-mode',
+          'Vim keybindings',
+          vimMode,
+          (checked) => setVimMode(checked),
+          editorLoading || !editorFilePath
+        )}
       </div>
     </div>
   );
@@ -663,15 +719,30 @@ export default function MotionGenesisRunShell({
             ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <Button
-              type="button"
-              size="sm"
-              variant={showConfigure ? 'default' : 'outline'}
-              onClick={() => setShowConfigure((current) => !current)}
+            <DropdownMenu
+              open={configureOpen}
+              onOpenChange={(open) => {
+                if (!open && motionGenesisRuntime.pickerOpen) {
+                  return;
+                }
+                setConfigureOpen(open);
+              }}
             >
-              <Settings2 className="h-3 w-3" />
-              Configure
-            </Button>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" size="sm" variant={configureOpen ? 'default' : 'outline'}>
+                  <Settings2 className="h-3 w-3" />
+                  Configure
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={6}
+                className="w-[27rem] p-0"
+                onCloseAutoFocus={(event) => event.preventDefault()}
+              >
+                {renderConfigurePanel()}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <div className="inline-flex h-6 items-center gap-0.5 rounded-md border border-border p-0.5">
               <Button
                 type="button"
@@ -716,7 +787,6 @@ export default function MotionGenesisRunShell({
         {error ? <p className="text-xs text-destructive">{error}</p> : null}
         {editorError ? <p className="text-xs text-destructive">{editorError}</p> : null}
         {showStatusDetails ? renderStatusDetails() : null}
-        {showConfigure ? renderConfigureSection() : null}
       </div>
 
       <div className="min-h-0 h-full overflow-hidden">{renderContent()}</div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Undo2, Redo2, ChevronDown, Sun, Moon, PanelsTopLeft, TriangleAlert } from 'lucide-react';
-import { canPersistScenesToServer, isStaticHosting } from '../api/runtimeMode.ts';
+import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 import type { NormalizedSceneLayout, SceneScenario } from '../core/types.ts';
 import { DEFAULT_SCENE_LAYOUT } from '../core/workspaceLayout.ts';
 import AppModeSwitcher from './AppModeSwitcher.tsx';
@@ -15,11 +15,14 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu.tsx';
 import { Checkbox } from './ui/checkbox.tsx';
-import { Label } from './ui/label.tsx';
 import { cn } from '../lib/utils.ts';
 
 type LayoutToggleKey = 'showRenderer' | 'showPlots';
 type RightRailTarget = 'scene' | 'sim';
+
+const LAYOUT_MENU_ROW_CLASS =
+  'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent';
+const LAYOUT_MENU_SHORTCUT_CLASS = 'text-[0.65rem] text-muted-foreground';
 
 const LAYOUT_TOGGLE_PANES: ReadonlyArray<{ key: LayoutToggleKey; label: string; shortcut: string }> = [
   { key: 'showRenderer', label: '3D View', shortcut: '1' },
@@ -271,13 +274,10 @@ export default function SceneHeaderBar({
               const inputId = `layout-${key}`;
 
               return (
-                <Label
+                <label
                   key={key}
                   htmlFor={inputId}
-                  className={cn(
-                    'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent',
-                    checked && 'bg-accent/60'
-                  )}
+                  className={cn(LAYOUT_MENU_ROW_CLASS, checked && 'bg-accent/60')}
                   onPointerDown={(event) => event.preventDefault()}
                 >
                   <Checkbox
@@ -286,8 +286,8 @@ export default function SceneHeaderBar({
                     onCheckedChange={(nextChecked) => onSetLayoutVisibility(key, nextChecked === true)}
                   />
                   <span className="flex-1">{label}</span>
-                  <span className="text-[0.65rem] text-muted-foreground">Alt+{shortcut}</span>
-                </Label>
+                  <span className={LAYOUT_MENU_SHORTCUT_CLASS}>Alt+{shortcut}</span>
+                </label>
               );
             })}
             <DropdownMenuSeparator />
@@ -302,7 +302,8 @@ export default function SceneHeaderBar({
                     role="radio"
                     aria-checked={checked}
                     className={cn(
-                      'flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent',
+                      LAYOUT_MENU_ROW_CLASS,
+                      'w-full text-left',
                       checked && 'bg-accent/60'
                     )}
                     onPointerDown={(event) => event.preventDefault()}
@@ -318,18 +319,15 @@ export default function SceneHeaderBar({
                       {checked ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
                     </span>
                     <span className="flex-1">{label}</span>
-                    <span className="text-[0.65rem] text-muted-foreground">Alt+{shortcut}</span>
+                    <span className={LAYOUT_MENU_SHORTCUT_CLASS}>Alt+{shortcut}</span>
                   </button>
                 );
               })}
             </div>
             <DropdownMenuSeparator />
-            <Label
+            <label
               htmlFor="layout-renderer-stats"
-              className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent',
-                performanceOverlayOpen && 'bg-accent/60'
-              )}
+              className={cn(LAYOUT_MENU_ROW_CLASS, performanceOverlayOpen && 'bg-accent/60')}
               onPointerDown={(event) => event.preventDefault()}
             >
               <Checkbox
@@ -338,10 +336,10 @@ export default function SceneHeaderBar({
                 onCheckedChange={(checked) => onSetPerformanceOverlayOpen(checked === true)}
               />
               <span className="flex-1">Renderer stats</span>
-            </Label>
+            </label>
             <button
               type="button"
-              className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+              className={cn(LAYOUT_MENU_ROW_CLASS, 'w-full text-left')}
               onPointerDown={(event) => event.preventDefault()}
               onClick={toggleTheme}
             >
@@ -350,7 +348,7 @@ export default function SceneHeaderBar({
               ) : (
                 <Moon className="h-4 w-4 shrink-0" aria-hidden />
               )}
-              <span className="flex-1 text-left">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+              <span className="flex-1">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
             </button>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -383,16 +381,31 @@ export default function SceneHeaderBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {isStaticHosting ? (
-              <>
-                <DropdownMenuItem onSelect={onOpenSamplesOverlay}>Examples…</DropdownMenuItem>
-                <DropdownMenuItem onSelect={onOpenLoadOverlay}>Open…</DropdownMenuItem>
-              </>
+            {canPersistScenesToServer ? (
+              <DropdownMenuItem onSelect={onOpenCreateOverlay}>New…</DropdownMenuItem>
             ) : (
+              <div
+                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs opacity-50"
+                title={demoDisabledTitle}
+                aria-disabled="true"
+              >
+                New…
+              </div>
+            )}
+            {canPersistScenesToServer ? (
               <DropdownMenuItem onSelect={onOpenLoadOverlay}>
                 <span className="flex-1">Open…</span>
                 <span className="ml-4 text-[0.65rem] text-muted-foreground">{MODIFIER_SHORTCUT_PREFIX}O</span>
               </DropdownMenuItem>
+            ) : (
+              <div
+                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs opacity-50"
+                title={demoDisabledTitle}
+                aria-disabled="true"
+              >
+                <span className="flex-1">Open…</span>
+                <span className="ml-4 text-[0.65rem] text-muted-foreground">{MODIFIER_SHORTCUT_PREFIX}O</span>
+              </div>
             )}
             <DropdownMenuItem disabled={!hasLocalEdits || saving} onSelect={onRevert}>
               Revert changes
@@ -430,20 +443,8 @@ export default function SceneHeaderBar({
                 Save scene as…
               </div>
             )}
-            {canPersistScenesToServer ? (
-              <DropdownMenuItem onSelect={onOpenCreateOverlay}>New…</DropdownMenuItem>
-            ) : (
-              <div
-                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs opacity-50"
-                title={demoDisabledTitle}
-                aria-disabled="true"
-              >
-                New…
-              </div>
-            )}
-            {!isStaticHosting ? (
-              <DropdownMenuItem onSelect={onOpenSamplesOverlay}>Examples…</DropdownMenuItem>
-            ) : null}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={onOpenSamplesOverlay}>Example Scenes…</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

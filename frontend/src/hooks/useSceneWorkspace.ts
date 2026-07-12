@@ -680,6 +680,20 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
     }, `Linked simulation file ${trimmedPath}`);
   };
 
+  const handleUnlinkSimulationSettings = async (): Promise<boolean> => {
+    if (!canSaveScene || !loaded || !draftScene) {
+      reportError('Load a workspace scene before changing simulation settings.');
+      return false;
+    }
+    if (!draftScene.simulationSettings?.trim()) {
+      return true;
+    }
+
+    return persistDraftVisualization((draft) => {
+      delete draft.simulationSettings;
+    }, 'Unlinked simulation file');
+  };
+
   const handleSetActiveScenario = async (scenarioId: string): Promise<boolean> => {
     if (!draftScene) {
       return false;
@@ -965,6 +979,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef | null, notification
     handleImportScenarios,
     handleImportSimulationEntries,
     handleLinkSimulationSettings,
+    handleUnlinkSimulationSettings,
     handleSetActiveScenario,
     handleUpdateScenarioLabel,
     handleAddScenario,

@@ -1,5 +1,5 @@
-import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { Check, Pencil, Trash2, X } from 'lucide-react';
 import type { FileBrowserListing } from '../api/localFiles.ts';
 import type { NormalizedSceneConfig, ParsedSimulationFile } from '../core/types.ts';
 import { findSimulationEntryForExpandedFile } from '../core/expandSimulationFiles.ts';
@@ -150,92 +150,157 @@ function OverflowChannelBadges({
   );
 }
 
-function ScenarioLabelEditor({
+function ScenarioHeaderControls({
+  activeScenario,
+  activeScenarioId,
   disabled,
-  label,
-  onSave,
-  variant = 'inline',
+  onAddScenario,
+  onRemoveScenario,
+  onSetActiveScenario,
+  onUpdateScenarioLabel,
+  scenarioCount,
+  scenarios,
 }: {
+  activeScenario: { id: string; label: string };
+  activeScenarioId: string | null;
   disabled?: boolean;
-  label: string;
-  onSave: (label: string) => void | Promise<void>;
-  variant?: 'inline' | 'icon';
+  onAddScenario?: () => void | Promise<void>;
+  onRemoveScenario?: (scenarioId: string) => void | Promise<void>;
+  onSetActiveScenario: (scenarioId: string) => void | Promise<void>;
+  onUpdateScenarioLabel?: (scenarioId: string, label: string) => void | Promise<void>;
+  scenarioCount: number;
+  scenarios: NormalizedSceneConfig['scenarios'];
 }) {
-  const [editing, setEditing] = useState(false);
-  const [draftLabel, setDraftLabel] = useState(label);
+  const [renaming, setRenaming] = useState(false);
+  const [draftLabel, setDraftLabel] = useState(activeScenario.label);
 
-  const commit = () => {
-    const trimmed = draftLabel.trim();
-    if (trimmed.length === 0) {
-      setDraftLabel(label);
-      setEditing(false);
-      return;
-    }
-    if (trimmed !== label) {
-      void onSave(trimmed);
-    }
-    setEditing(false);
+  useEffect(() => {
+    setRenaming(false);
+    setDraftLabel(activeScenario.label);
+  }, [activeScenario.id, activeScenario.label]);
+
+  const cancelRename = () => {
+    setDraftLabel(activeScenario.label);
+    setRenaming(false);
   };
 
-  if (editing) {
-    return (
-      <Input
-        autoFocus
-        value={draftLabel}
-        disabled={disabled}
-        className={variant === 'icon' ? 'h-7 w-36 text-xs' : 'h-6 text-xs'}
-        onChange={(event) => setDraftLabel(event.target.value)}
-        onBlur={commit}
-        onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-          if (event.key === 'Enter') {
-            commit();
-          }
-          if (event.key === 'Escape') {
-            setDraftLabel(label);
-            setEditing(false);
-          }
-        }}
-      />
-    );
-  }
+  const commitRename = () => {
+    const trimmed = draftLabel.trim();
+    if (trimmed.length === 0) {
+      cancelRename();
+      return;
+    }
+    if (trimmed !== activeScenario.label && onUpdateScenarioLabel) {
+      void onUpdateScenarioLabel(activeScenario.id, trimmed);
+    }
+    setRenaming(false);
+  };
 
-  if (variant === 'icon') {
+  if (renaming && onUpdateScenarioLabel) {
     return (
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 shrink-0"
-        disabled={disabled}
-        aria-label={`Rename ${label}`}
-        onClick={() => {
-          setDraftLabel(label);
-          setEditing(true);
-        }}
-      >
-        <Pencil className="h-3 w-3" />
-      </Button>
+      <>
+        <Input
+          autoFocus
+          value={draftLabel}
+          disabled={disabled}
+          className="h-7 min-w-0 max-w-[12rem] flex-1 text-xs"
+          aria-label="Sim data set name"
+          data-overlay-escape-lock
+          onChange={(event) => setDraftLabel(event.target.value)}
+          onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              commitRename();
+            }
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              event.stopPropagation();
+              cancelRename();
+            }
+          }}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          disabled={disabled}
+          aria-label="Save name"
+          onClick={commitRename}
+        >
+          <Check className="h-3 w-3" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          disabled={disabled}
+          aria-label="Cancel rename"
+          onClick={cancelRename}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+        <InlineHelp label="About sim data sets">
+          Each sim data set is a different simulation of the same scene, for example different initial
+          conditions or other variations.
+        </InlineHelp>
+      </>
     );
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-1">
-      <div className="truncate text-xs font-medium text-foreground">{label}</div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="h-5 w-5 shrink-0"
-        disabled={disabled}
-        aria-label={`Rename ${label}`}
-        onClick={() => {
-          setDraftLabel(label);
-          setEditing(true);
-        }}
-      >
-        <Pencil className="h-3 w-3" />
-      </Button>
-    </div>
+    <>
+      <ScenarioSelector
+        activeScenario={activeScenarioId}
+        disabled={disabled ?? false}
+        triggerMode="name-only"
+        onSetActiveScenario={onSetActiveScenario}
+        scenarios={scenarios}
+        {...(onAddScenario
+          ? {
+              onAddNew: () => {
+                void onAddScenario();
+              },
+            }
+          : {})}
+      />
+      {onUpdateScenarioLabel ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          disabled={disabled}
+          aria-label={`Rename ${activeScenario.label}`}
+          onClick={() => {
+            setDraftLabel(activeScenario.label);
+            setRenaming(true);
+          }}
+        >
+          <Pencil className="h-3 w-3" />
+        </Button>
+      ) : null}
+      {onRemoveScenario && scenarioCount > 1 ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0 text-muted-foreground"
+          disabled={disabled}
+          aria-label={`Remove ${activeScenario.label}`}
+          onClick={() => {
+            void onRemoveScenario(activeScenario.id);
+          }}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      ) : null}
+      <InlineHelp label="About sim data sets">
+        Each sim data set is a different simulation of the same scene, for example different initial
+        conditions or other variations.
+      </InlineHelp>
+    </>
   );
 }
 
@@ -320,52 +385,18 @@ export default function SimulationDataOverlay({
   const simulationEntries = activeScenario?.simulationData ?? [];
   const hasSimulationFiles = expandedFiles.length > 0;
   const scenarioHeaderAddon =
-    onSetActiveScenario ? (
-      <>
-        <ScenarioSelector
-          activeScenario={activeScene.activeScenario}
-          disabled={simulationLoading}
-          triggerMode="name-only"
-          onSetActiveScenario={onSetActiveScenario}
-          scenarios={activeScene.scenarios}
-          {...(onAddScenario
-            ? {
-                onAddNew: () => {
-                  void onAddScenario();
-                },
-              }
-            : {})}
-        />
-        {activeScenario && onUpdateScenarioLabel ? (
-          <ScenarioLabelEditor
-            disabled={simulationLoading}
-            label={activeScenario.label}
-            variant="icon"
-            onSave={(nextLabel) => onUpdateScenarioLabel(activeScenario.id, nextLabel)}
-          />
-        ) : null}
-        {onRemoveScenario && activeScene.scenarios.length > 1 ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 shrink-0 text-muted-foreground"
-            disabled={simulationLoading}
-            aria-label={`Remove ${activeScenario?.label ?? 'sim data'}`}
-            onClick={() => {
-              if (activeScenario) {
-                void onRemoveScenario(activeScenario.id);
-              }
-            }}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        ) : null}
-        <InlineHelp label="About sim data sets">
-          Each sim data set is a different simulation of the same scene, for example different initial
-          conditions or other variations.
-        </InlineHelp>
-      </>
+    onSetActiveScenario && activeScenario ? (
+      <ScenarioHeaderControls
+        activeScenario={activeScenario}
+        activeScenarioId={activeScene.activeScenario}
+        disabled={simulationLoading}
+        scenarioCount={activeScene.scenarios.length}
+        scenarios={activeScene.scenarios}
+        onSetActiveScenario={onSetActiveScenario}
+        {...(onAddScenario ? { onAddScenario } : {})}
+        {...(onRemoveScenario ? { onRemoveScenario } : {})}
+        {...(onUpdateScenarioLabel ? { onUpdateScenarioLabel } : {})}
+      />
     ) : null;
 
   return (
