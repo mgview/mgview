@@ -48,6 +48,7 @@ export default function LoadScenePathPanel({
           {inputLabel ? <Label>{inputLabel}</Label> : null}
           <Input
             type="text"
+            focusVariant="soft"
             value={sceneInput}
             onChange={(event) => onSceneInputChange(event.target.value)}
             aria-label={inputLabel || 'Scene path'}

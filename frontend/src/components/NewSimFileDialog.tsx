@@ -5,6 +5,7 @@ import {
   DialogBody,
   DialogContent,
   DialogDescription,
+  DialogForm,
   DialogHeader,
   DialogTitle,
 } from './ui/dialog.tsx';
@@ -41,10 +42,23 @@ export default function NewSimFileDialog({
           </div>
         </DialogHeader>
         <DialogBody>
-          <div className="grid gap-1.5">
+          <DialogForm
+            errorMessage={errorMessage}
+            actions={
+              <div className="flex justify-end gap-1.5">
+                <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={() => onCreate(name)} disabled={loading}>
+                  {loading ? 'Creating…' : 'Create'}
+                </Button>
+              </div>
+            }
+          >
             <Input
               autoFocus
               type="text"
+              focusVariant="soft"
               value={name}
               onChange={(event) => setName(event.target.value)}
               onKeyDown={(event) => {
@@ -55,16 +69,7 @@ export default function NewSimFileDialog({
               }}
               placeholder="my_sim.txt"
             />
-            {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
-          </div>
-          <div className="flex justify-end gap-1.5">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={() => onCreate(name)} disabled={loading}>
-              {loading ? 'Creating…' : 'Create'}
-            </Button>
-          </div>
+          </DialogForm>
         </DialogBody>
       </DialogContent>
     </Dialog>

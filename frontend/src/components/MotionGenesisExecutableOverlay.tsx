@@ -84,7 +84,7 @@ export default function MotionGenesisExecutableOverlay({
         ) : null}
 
         {discoveredCandidates.length > 0 ? (
-          <div className="grid gap-1 rounded-md border border-border/70 bg-muted/10 p-2 text-xs">
+          <div className="grid max-h-48 gap-1 overflow-y-auto rounded-md border border-border/70 bg-muted/10 p-2 text-xs">
             <div className="font-medium text-foreground">Discovered installs</div>
             {discoveredCandidates.map((candidate) => (
               <button

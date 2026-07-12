@@ -253,6 +253,7 @@ export default function MotionGenesisRunPanel({
           title="Select Simulation File"
           subtitle="Pick the Motion Genesis input file for this scene."
           size="narrow"
+          bodyClassName="min-h-0 overflow-y-auto"
           onClose={closeSimulationFilePicker}
         >
           <div className="grid gap-2">
@@ -274,8 +275,10 @@ export default function MotionGenesisRunPanel({
               browserListing={browserListing}
               browserError={browserError}
               browserLoading={browserLoading}
+              className="h-72"
               compact
               flat
+              scrollable
               emptyStateMessage="Browse to a Motion Genesis input file."
               filterEntry={(entry) => entry.type === 'directory' || isMotionGenesisInputPath(entry.path)}
               hideTitle

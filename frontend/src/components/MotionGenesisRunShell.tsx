@@ -432,7 +432,8 @@ export default function MotionGenesisRunShell({
       <Input
         ref={stdinInputRef}
         type="text"
-        className="font-mono transition-colors focus:border-ring focus:bg-accent focus:outline-none focus:ring-0 focus-visible:ring-0"
+        className="font-mono"
+        focusVariant="soft"
         value={input}
         onChange={(event) => onInputChange(event.target.value)}
         onKeyDown={(event) => {

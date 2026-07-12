@@ -201,6 +201,7 @@ function ScenarioHeaderControls({
       <>
         <Input
           autoFocus
+          focusVariant="soft"
           value={draftLabel}
           disabled={disabled}
           className="h-7 min-w-0 max-w-[12rem] flex-1 text-xs"
@@ -406,7 +407,7 @@ export default function SimulationDataOverlay({
       headerAddon={scenarioHeaderAddon}
       actions={simulationLoading ? <Badge variant="outline">Refreshing…</Badge> : null}
       contentClassName="!overflow-hidden grid-rows-[auto_minmax(0,1fr)]"
-      bodyClassName="min-h-0 overflow-hidden h-[min(68vh,640px)] grid-rows-[minmax(0,1fr)] !gap-0"
+      bodyClassName="grid min-h-0 overflow-hidden h-[min(68vh,640px)] grid-rows-[minmax(0,1fr)] !gap-0"
       onClose={onClose}
     >
       <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
@@ -415,6 +416,7 @@ export default function SimulationDataOverlay({
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5">
               <Input
                 type="text"
+                focusVariant="soft"
                 value={simulationEntryInput}
                 onChange={(event) => {
                   clearBrowserSelection();
