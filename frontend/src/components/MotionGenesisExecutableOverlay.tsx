@@ -1,4 +1,9 @@
 import type { MotionGenesisRuntimeInfo } from '../api/motionGenesisTypes.ts';
+import {
+  isPtyBlocked,
+  NODE_LTS_DOWNLOAD_URL,
+  PTY_UNAVAILABLE_SUMMARY,
+} from '../lib/ptyAvailability.ts';
 import OverlayPanel from './OverlayPanel.tsx';
 import { Button } from './ui/button.tsx';
 import { Input } from './ui/input.tsx';
@@ -27,6 +32,7 @@ export default function MotionGenesisExecutableOverlay({
   onSelectCandidate,
 }: MotionGenesisExecutableOverlayProps) {
   const discoveredCandidates = runtimeInfo?.candidates.filter((candidate) => candidate.exists) ?? [];
+  const ptyBlocked = isPtyBlocked(runtimeInfo);
 
   return (
     <OverlayPanel
@@ -70,10 +76,29 @@ export default function MotionGenesisExecutableOverlay({
                 Saved override: <code className="text-foreground">{runtimeInfo.configuredPath}</code>
               </div>
             ) : null}
-            {!runtimeInfo.ptyAvailable && runtimeInfo.ptyError ? (
-              <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-destructive/30 bg-destructive/5 p-2 text-[0.68rem] text-destructive">
-                {runtimeInfo.ptyError}
-              </pre>
+            {ptyBlocked ? (
+              <div className="mt-1 grid gap-1 rounded-md border border-destructive/30 bg-destructive/5 p-2 text-[0.68rem] text-destructive">
+                <p>{PTY_UNAVAILABLE_SUMMARY}</p>
+                <p>
+                  Download Node.js 20+ LTS from{' '}
+                  <a
+                    className="font-medium underline underline-offset-2"
+                    href={NODE_LTS_DOWNLOAD_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    nodejs.org
+                  </a>
+                  , then restart MGView. Developers: run{' '}
+                  <code className="font-mono">cd frontend && npm install</code>.
+                </p>
+                {runtimeInfo.ptyError ? (
+                  <details className="text-destructive/90">
+                    <summary className="cursor-pointer select-none font-medium">Technical details</summary>
+                    <pre className="mt-1 overflow-x-auto whitespace-pre-wrap">{runtimeInfo.ptyError}</pre>
+                  </details>
+                ) : null}
+              </div>
             ) : null}
             {runtimeInfo.ptyAvailable && runtimeInfo.resolvedModulePath ? (
               <div>

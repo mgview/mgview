@@ -113,17 +113,15 @@ fi
 MGVIEW_PARENT_DIR=$( cd "$BIN_DIR/../.." && pwd )
 MGVIEW_URL="http://localhost:${PORT}/mgview/"
 SERVER_CMD=()
-IS_PACKAGED_RELEASE=0
-
-if [[ ! -d "$MGVIEW_PARENT_DIR/frontend/src" ]]; then
-  IS_PACKAGED_RELEASE=1
-fi
-
-if [[ "$(uname -s)" == "Darwin" && "$IS_PACKAGED_RELEASE" -eq 1 && -z "${MGVIEW_PTY_BACKEND:-}" ]]; then
-  export MGVIEW_PTY_BACKEND="python-bridge"
-fi
 
 if command -v node >/dev/null 2>&1; then
+  NODE_MAJOR="$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo 0)"
+  if [[ "$NODE_MAJOR" =~ ^[0-9]+$ ]] && (( NODE_MAJOR < 20 )); then
+    echo -e "${C_RED_BOLD}MGView requires Node.js 20 or later (found $(node -v)).${C_DEFAULT}"
+    echo -e "${C_YELLOW}Install the official Node.js LTS release from:${C_DEFAULT}"
+    echo -e "${C_GREEN_BOLD}https://nodejs.org/en/download${C_DEFAULT}"
+    die 1
+  fi
   SERVER_CMD=(node "$BIN_DIR/server.js" --port "$PORT")
   if [[ -n "$WORKSPACE_DIR" ]]; then
     SERVER_CMD+=(--workspace "$WORKSPACE_DIR")
@@ -133,7 +131,7 @@ if command -v node >/dev/null 2>&1; then
   fi
 else
   echo -e "${C_RED_BOLD}Unable to find Node.js on your PATH.${C_DEFAULT}"
-  echo -e "${C_YELLOW}Install the official Node.js LTS release from:${C_DEFAULT}"
+  echo -e "${C_YELLOW}MGView requires Node.js 20 or later. Install from:${C_DEFAULT}"
   echo -e "${C_GREEN_BOLD}https://nodejs.org/en/download${C_DEFAULT}"
   echo -e "${C_YELLOW}After installing Node.js, close this window and run MGView again.${C_DEFAULT}"
   die 1
@@ -146,9 +144,6 @@ echo -e "${C_YELLOW_BOLD}-------------------------------------------------------
 echo -e "${C_YELLOW_BOLD}Starting MGView $(cat ${BIN_DIR}/VERSION)${C_DEFAULT}\n"
 if [[ -n "$WORKSPACE_DIR" ]]; then
   echo -e "${C_GREEN_BOLD}Workspace: ${WORKSPACE_DIR}${C_DEFAULT}\n"
-fi
-if [[ "${MGVIEW_PTY_BACKEND:-}" == "python-bridge" && "$(uname -s)" == "Darwin" ]]; then
-  echo -e "${C_YELLOW}Motion Genesis PTY backend: python bridge${C_DEFAULT}\n"
 fi
 echo -e "${C_YELLOW}If your browser does not open automatically, open this URL manually:${C_DEFAULT}"
 echo -e "${C_GREEN_BOLD}${MGVIEW_URL}${C_DEFAULT}"

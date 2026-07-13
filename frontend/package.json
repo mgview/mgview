@@ -19,14 +19,17 @@
     "build:site": "npm run build:static:github && npm run assemble:site",
     "build:site:workspace": "npm run build:static:workspace && npm run assemble:site:workspace",
     "build:release": "npm run build && npm run assemble:release",
+    "postinstall": "node scripts/ensureNodePtyExecutable.mjs",
     "preview:site": "npm run build:info && node scripts/previewSite.mjs",
     "preview:site:workspace": "npm run build:info && node scripts/previewSite.mjs --workspace",
     "deploy:pages": "npm run build:site && node scripts/deployPages.mjs",
     "preview": "vite preview",
     "cleanup:servers": "node scripts/cleanupServers.mjs"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
-    "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-dialog": "^1.1.15",

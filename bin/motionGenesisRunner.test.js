@@ -7,7 +7,10 @@ const path = require('path');
 const {
   createMotionGenesisRunManager,
   detectOdeOutputPathsFromSimText,
+  ensureNodePtySpawnHelpersExecutable,
   ensureOdeOutputDirectories,
+  getNodePtyCandidatePaths,
+  inspectNodePtyLoad,
   normalizePtyOutput,
   normalizeRunOptions,
   resolveMotionGenesisCommand,
@@ -923,12 +926,13 @@ test('runner caps stored output size by line count when scrollbackLimit is confi
 
 test('runner uses native macOS PTY execution by default', () => {
   const spawned = [];
+  const environment = {
+    ...process.env,
+    MGVIEW_MOTION_GENESIS_BIN: '/custom/MotionGenesis',
+  };
 
   const manager = createMotionGenesisRunManager({
-    environment: {
-      ...process.env,
-      MGVIEW_MOTION_GENESIS_BIN: '/custom/MotionGenesis',
-    },
+    environment,
     platform: 'darwin',
     spawnPtyProcess(command, args, options) {
       spawned.push({ command, args, options });
@@ -960,10 +964,7 @@ test('runner uses native macOS PTY execution by default', () => {
   assert.deepEqual(spawned[0].options, {
     cwd: path.join(workspaceRoot, 'project'),
     cols: 80,
-    env: {
-      ...process.env,
-      MGVIEW_MOTION_GENESIS_BIN: '/custom/MotionGenesis',
-    },
+    env: environment,
     platform: 'darwin',
     rows: 30,
     stdio: 'pipe',
@@ -980,26 +981,15 @@ test('runner uses native macOS PTY execution by default', () => {
   assert.equal(run.canSendInput, true);
 });
 
-test('runner can still use the macOS python PTY bridge when explicitly requested', () => {
-  const spawned = [];
-
+test('runner removes auto-quit temp file when PTY spawn throws', () => {
   const manager = createMotionGenesisRunManager({
     environment: {
       ...process.env,
       MGVIEW_MOTION_GENESIS_BIN: '/custom/MotionGenesis',
-      MGVIEW_PYTHON_BIN: '/custom/python3',
-      MGVIEW_PTY_BACKEND: 'python-bridge',
     },
     platform: 'darwin',
-    spawnProcess(command, args, options) {
-      spawned.push({ command, args, options });
-      return {
-        pid: 123,
-        stdout: { on() {} },
-        stderr: { on() {} },
-        stdin: { on() {}, write() {} },
-        on() {},
-      };
+    spawnPtyProcess() {
+      throw new Error('posix_spawnp failed.');
     },
   });
 
@@ -1009,24 +999,22 @@ test('runner can still use the macOS python PTY bridge when explicitly requested
   writeFile(sceneFilePath, '{}\n');
   writeFile(settingsFilePath, '% demo\n');
 
-  const run = manager.startRun({
-    scenePath: 'project/demo.json',
-    sceneFilePath,
-    simulationSettings: 'demo.al',
-    options: {
-      autoQuit: false,
-      autoDefaultValues: false,
-      debug: true,
-    },
-    workspaceRoot,
-  });
+  assert.throws(
+    () =>
+      manager.startRun({
+        scenePath: 'project/demo.json',
+        sceneFilePath,
+        simulationSettings: 'demo.al',
+        options: { autoQuit: true, debug: false },
+        workspaceRoot,
+      }),
+    /posix_spawnp failed/
+  );
 
-  assert.equal(spawned.length, 1);
-  assert.equal(spawned[0].command, '/custom/python3');
-  assert.equal(spawned[0].args[0], path.resolve(__dirname, 'mg_pty_bridge.py'));
-  assert.equal(spawned[0].args[1], '/custom/MotionGenesis');
-  assert.equal(spawned[0].args[2], 'demo.al');
-  assert.match(run.output, /pty bridge enabled via python3/);
+  const leftovers = fs
+    .readdirSync(path.join(workspaceRoot, 'project'))
+    .filter((name) => name.startsWith('.mgview-run-'));
+  assert.deepEqual(leftovers, []);
 });
 
 test('runner uses native Windows PTY execution for interactive sessions', () => {
@@ -1279,4 +1267,32 @@ test('runner skips auto-quit temp file when option is disabled', () => {
 
   assert.equal(spawned[0].args[0], 'demo.al');
   assert.equal(run.output, '');
+});
+
+test('loads microsoft node-pty for native PTY', () => {
+  const candidates = getNodePtyCandidatePaths();
+  assert.match(candidates[0], /node-pty$/);
+  assert.equal(candidates.every((candidate) => !String(candidate).includes('homebridge')), true);
+
+  const inspection = inspectNodePtyLoad(process.platform);
+  assert.equal(inspection.ptyAvailable, true);
+  assert.equal(inspection.requiredModule, 'node-pty');
+});
+
+test('ensureNodePtySpawnHelpersExecutable adds execute bits when missing', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mgview-pty-helper-'));
+  const helperDir = path.join(tempRoot, 'prebuilds', 'darwin-arm64');
+  const helperPath = path.join(helperDir, 'spawn-helper');
+  fs.mkdirSync(helperDir, { recursive: true });
+  fs.writeFileSync(helperPath, '#!/bin/sh\n');
+  fs.chmodSync(helperPath, 0o644);
+
+  const fixed = ensureNodePtySpawnHelpersExecutable(tempRoot);
+  assert.deepEqual(fixed, [helperPath]);
+  assert.equal((fs.statSync(helperPath).mode & 0o111) !== 0, true);
+
+  const secondPass = ensureNodePtySpawnHelpersExecutable(tempRoot);
+  assert.deepEqual(secondPass, []);
+
+  fs.rmSync(tempRoot, { recursive: true, force: true });
 });

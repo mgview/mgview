@@ -4,10 +4,13 @@
  * Includes only what MGView runtime needs: Node server, modern app build, samples,
  * shared runtime assets, and bundled server-side native dependencies. Does NOT include
  * legacy/ or frontend source.
+ *
+ * Native PTY: microsoft/node-pty (N-API) with darwin/win32 prebuilds plus the
+ * Linux build/Release produced by npm ci on the release runner. Debug symbols (.pdb)
+ * are stripped. spawn-helper binaries are marked executable before zipping.
  */
-import { readFile } from 'node:fs/promises';
+import { chmod, cp, mkdir, readdir, readFile, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { cp, mkdir, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import {
   distServerDir,
@@ -29,8 +32,9 @@ const releaseFiles = [
   'README.md',
   'LICENSE',
 ];
-const bundledNodeModules = ['node-pty', 'node-addon-api'];
-const bundledScopedNodeModules = [['@homebridge', 'node-pty-prebuilt-multiarch']];
+
+/** Runtime PTY package only — N-API prebuilds cover macOS/Windows; Linux uses build/. */
+const bundledNodeModules = ['node-pty'];
 
 async function readVersion() {
   const packageJsonPath = path.join(frontendDir, 'package.json');
@@ -43,10 +47,84 @@ async function readVersion() {
   return version;
 }
 
+function excludeReleaseNativeJunk(src) {
+  if (excludeDotfiles(src)) {
+    return true;
+  }
+  const base = path.basename(src);
+  // Debug symbols dominate Windows prebuild size and are unused at runtime.
+  if (base.endsWith('.pdb')) {
+    return true;
+  }
+  return false;
+}
+
+async function markSpawnHelpersExecutable(rootDir) {
+  const stack = [rootDir];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    let entries;
+    try {
+      entries = await readdir(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+        continue;
+      }
+      if (entry.name === 'spawn-helper') {
+        await chmod(fullPath, 0o755);
+      }
+    }
+  }
+}
+
+async function assertNodePtyReleaseLayout(nodePtyDir) {
+  const required = [
+    path.join(nodePtyDir, 'prebuilds', 'darwin-arm64', 'pty.node'),
+    path.join(nodePtyDir, 'prebuilds', 'darwin-arm64', 'spawn-helper'),
+    path.join(nodePtyDir, 'prebuilds', 'darwin-x64', 'pty.node'),
+    path.join(nodePtyDir, 'prebuilds', 'darwin-x64', 'spawn-helper'),
+    path.join(nodePtyDir, 'prebuilds', 'win32-x64', 'pty.node'),
+  ];
+
+  if (process.platform === 'linux') {
+    required.push(
+      path.join(nodePtyDir, 'build', 'Release', 'pty.node'),
+      path.join(nodePtyDir, 'build', 'Release', 'spawn-helper')
+    );
+  } else {
+    console.warn(
+      'assembleRelease: building on non-Linux host. ' +
+        'Linux users need bin/node_modules/node-pty/build/Release from a Linux npm ci ' +
+        '(release CI runs on ubuntu-latest).'
+    );
+  }
+
+  for (const filePath of required) {
+    try {
+      const info = await stat(filePath);
+      if (!info.isFile()) {
+        throw new Error(`not a file: ${filePath}`);
+      }
+    } catch (error) {
+      throw new Error(
+        `Release node-pty layout incomplete (missing ${filePath}). ` +
+          `Ensure frontend npm ci installed node-pty with platform prebuilds. ` +
+          `(${error instanceof Error ? error.message : error})`
+      );
+    }
+  }
+}
+
 async function zipDirectory(stagingRoot, zipPath) {
   await rm(zipPath, { force: true });
   await new Promise((resolve, reject) => {
-    const child = spawn('zip', ['-r', zipPath, RELEASE_TOP_LEVEL], {
+    // -y store symlinks as links; unix modes (incl. +x) are preserved by Info-ZIP.
+    const child = spawn('zip', ['-ry', zipPath, RELEASE_TOP_LEVEL], {
       cwd: stagingRoot,
       stdio: 'inherit',
     });
@@ -90,22 +168,16 @@ async function main() {
   });
 
   for (const moduleName of bundledNodeModules) {
-    await cp(
-      path.join(frontendDir, 'node_modules', moduleName),
-      path.join(stagingDir, 'bin', 'node_modules', moduleName),
-      { recursive: true }
-    );
+    const source = path.join(frontendDir, 'node_modules', moduleName);
+    const target = path.join(stagingDir, 'bin', 'node_modules', moduleName);
+    await copyTree(source, target, {
+      exclude: excludeReleaseNativeJunk,
+    });
   }
 
-  for (const [scopeName, moduleName] of bundledScopedNodeModules) {
-    const targetScopeDir = path.join(stagingDir, 'bin', 'node_modules', scopeName);
-    await mkdir(targetScopeDir, { recursive: true });
-    await cp(
-      path.join(frontendDir, 'node_modules', scopeName, moduleName),
-      path.join(targetScopeDir, moduleName),
-      { recursive: true }
-    );
-  }
+  const stagedNodePty = path.join(stagingDir, 'bin', 'node_modules', 'node-pty');
+  await markSpawnHelpersExecutable(stagedNodePty);
+  await assertNodePtyReleaseLayout(stagedNodePty);
 
   await zipDirectory(stagingRoot, zipPath);
   console.log(`Release zip: ${zipPath}`);
