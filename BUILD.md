@@ -4,16 +4,18 @@ This repo is **source-only**. Built output lives under `build/` (gitignored) and
 
 Handoff docs:
 
-- [mgview-in-place-modernization.md](mgview-in-place-modernization.md) — product status, run commands, gaps, **start here for new agents**
-- [mgview-ui-stack.md](mgview-ui-stack.md) — UI stack (Tailwind, shadcn, themes)
-- [mgview-scene-sources-split.md](mgview-scene-sources-split.md) — scene URLs (`?sample=` / `?scene=`), API `root=`, Samples vs Load (implemented)
+- [dev/mgview-in-place-modernization.md](dev/mgview-in-place-modernization.md) — product status, code map, gaps, **start here for new agents**
+- [frontend/DESIGN-NOTE.md](frontend/DESIGN-NOTE.md) — UI stack, Tailwind/shadcn conventions
+- [mg-lab-workspace-run-parity.md](mg-lab-workspace-run-parity.md) — Sim Editor, MGLab, shared run shell
+- [dev/mgview-pty-output-normalization.md](dev/mgview-pty-output-normalization.md) — Motion Genesis PTY runner, `MGVIEW_MOTION_GENESIS_BIN`
+- [todo_tracker.md](todo_tracker.md) — open tasks
 
 ## Three outputs
 
 | Output | Command | Used for |
 |--------|---------|----------|
-| **Server app** | `cd frontend && npm run build` | Local Node server (launchers below) — full API, read/write scenes |
-| **GitHub Pages site** | `cd frontend && npm run build:site` | https://mgview.github.io/mgview/ — static demo, bundled samples |
+| **Server app** | `cd frontend && npm run build` | Local Node server (launchers below) — full API, workspace read/write, Motion Genesis runs |
+| **GitHub Pages site** | `cd frontend && npm run build:site` | https://mgview.github.io/mgview/ — static demo, bundled samples (read-only) |
 | **Release zip** | `cd frontend && npm run build:release` | User download — server + compiled app + samples (no legacy) |
 
 All assembly logic is in `frontend/scripts/`. Shared constants: `deployConfig.mjs`.
@@ -27,7 +29,8 @@ Every `build*` script runs `build:info` first, which writes `frontend/src/genera
 - Modern static app (`index.html`, `bundled/` — Vite JS/CSS)
 - `samples/` and `samples-manifest.json`
 - `assets/` (textures and other bundled runtime media)
-- `docs/index.html` — same SPA entry as root (for `/mgview/docs/`)
+- `docs/index.html` — in-app documentation (`/mgview/docs/`)
+- `lab/index.html` — MGLab route (`/mgview/lab/`; UI loads, but sim runs need the local server)
 - `.nojekyll` (so GitHub Pages serves `_`-prefixed paths)
 - `legacy/` (optional, copied if present — historical reference only)
 
@@ -152,4 +155,4 @@ Or run **Actions → Release zip → Run workflow** manually (no tag required fo
 | `VITE_MGVIEW_BASE` | `/mgview/` | `/mgview/` | `/mgview/` |
 | `VITE_MGVIEW_PUBLIC_BASE` | `/` | `/mgview/` | `/` |
 
-Scene URLs: `?sample=particle_pendulum/particle_pendulum.json` (bundled samples) or `?scene=my_sim/foo.json` (workspace). List/file APIs take `root=workspace|sample|app` and `path=` relative to that root (e.g. `GET /mgview/api/list?root=workspace&path=.`). Workspace API: `GET`/`POST` `/mgview/api/workspace` (config `~/.mgview/config.json`; in-memory roots sync on every API request after POST). Static HTTP: `/mgview/samples/…`, `/mgview/assets/…`. Local app URL: `http://localhost:8000/mgview/` (server redirects `/mgview` → `/mgview/`). Docs: `/mgview/docs/`.
+Scene URLs: `?sample=particle_pendulum/particle_pendulum.json` (bundled samples) or `?scene=my_sim/foo.json` (workspace). List/file APIs take `root=workspace|sample|app` and `path=` relative to that root (e.g. `GET /mgview/api/list?root=workspace&path=.`). Workspace API: `GET`/`POST` `/mgview/api/workspace` (config `~/.mgview/config.json`; in-memory roots sync on every API request after POST). Motion Genesis run API (`bin/motionGenesisRunner.js`): start/poll/stop runs and send stdin — **server mode only** (`VITE_MGVIEW_STATIC` unset). Static HTTP: `/mgview/samples/…`, `/mgview/assets/…`. SPA routes: `/mgview/docs/`, `/mgview/lab/`. Local app URL: `http://localhost:8000/mgview/` (server redirects `/mgview` → `/mgview/`).

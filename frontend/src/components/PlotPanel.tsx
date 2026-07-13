@@ -39,7 +39,7 @@ function scalePlotTotalHeight(baseHeight: number, heightScale: number): number {
 const PLOT_XY_AXIS_LABEL_SIZE = 18;
 const PLOT_XY_AXIS_LABEL_GAP = 2;
 const SQUARE_PLOT_SIZE_MAX_PASSES = 4;
-/** Square aspect UI is disabled until sizing is fixed — see mgview-plot-square-aspect.md */
+/** Square aspect UI is disabled until sizing is fixed — see todo_tracker.md */
 const SQUARE_ASPECT_UI_ENABLED = false;
 const MANUAL_ZOOM_SENSITIVITY = 100;
 

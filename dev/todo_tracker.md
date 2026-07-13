@@ -17,10 +17,13 @@ Notes:
 
 Add 3D UI widgets for dragging and rotating objects directly in the scene instead of relying on the draggable numeric input boxes.
 
-
 ### Handle Plot commands in MG files
 
 We have to either ignore Plot commands, or turn them into auto-configured plots in the MGView UI. Otherwise when the UI runs the MG backend, it will launch the plotting program mid-sim and hang the process.
+
+### Y vs X square plot aspect
+
+**Square** control for Y vs X panels is disabled (`SQUARE_ASPECT_UI_ENABLED = false` in `PlotPanel.tsx`). Goal: equal width/height for uPlot's drawable `bbox` so circular parametric paths look circular.
 
 ### Need a listing of allowed units names and prefixes
 
