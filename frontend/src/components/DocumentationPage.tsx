@@ -1,13 +1,26 @@
-import { ArrowLeft, BookOpenText, Download, MessageCircleWarning, PanelsTopLeft } from 'lucide-react';
-import { getHomePath, inAppLinkProps } from '../core/appRoutes.ts';
+import { useEffect, useState, type ReactNode } from 'react';
+import { ArrowLeft, BookOpenText, Download, FlaskConical, MessageCircleWarning, PanelsTopLeft } from 'lucide-react';
+import { getHomePath, getLabPath, inAppLinkProps } from '../core/appRoutes.ts';
 import buildInfo from '../generated/buildInfo.ts';
+import { cn } from '../lib/utils.ts';
 import { Button } from './ui/button.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs.tsx';
 
 const MGVIEW_SOURCE_URL = 'https://github.com/mgview/mgview';
 const MGVIEW_ISSUES_URL = `${MGVIEW_SOURCE_URL}/issues`;
 const MGVIEW_RELEASES_URL = `${MGVIEW_SOURCE_URL}/releases`;
 const MGVIEW_RELEASE_DOWNLOAD_URL = `${MGVIEW_SOURCE_URL}/releases/download/v${buildInfo.version}/mgview-${buildInfo.version}.zip`;
 const MGVIEW_SAMPLES_URL = `${MGVIEW_SOURCE_URL}/tree/master/samples`;
+
+const DOC_TABS = [
+  { id: 'setup', label: 'Setup' },
+  { id: 'quick-start', label: 'Quick Start' },
+  { id: 'sim-runner', label: 'Sim Runner' },
+  { id: 'mglab', label: 'MGLab' },
+  { id: 'mg-tips', label: 'MG Tips' },
+] as const;
+
+type DocTabId = (typeof DOC_TABS)[number]['id'];
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -27,8 +40,7 @@ const shortcutItems = [
   { keys: 'Cmd/Ctrl+O', description: 'Open the workspace load dialog.' },
   { keys: 'Cmd/Ctrl+S', description: 'Save the current scene when save is available.' },
   { keys: 'Cmd/Ctrl+Z', description: 'Undo the latest scene edit.' },
-  { keys: 'Cmd/Ctrl+Shift+Z', description: 'Redo the latest undone edit.' },
-  { keys: 'Cmd/Ctrl+Y', description: 'Redo the latest undone edit.' },
+  { keys: 'Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y', description: 'Redo the latest undone edit.' },
   { keys: 'Alt+L', description: 'Open the Layout menu.' },
   { keys: 'Alt+1 / Alt+2', description: 'Show or hide the 3D View and Plots panes.' },
   { keys: 'Alt+3 / Alt+4', description: 'Show Scene Editor or Sim Editor (mutually exclusive).' },
@@ -51,10 +63,55 @@ ODE() case2/my_data`;
 const advancedOutputTreeExample = `<MotionGenesis folder>/project1/case1/my_data.{1,...,n}
 <MotionGenesis folder>/project1/case2/my_data.{1,...,n}`;
 
+function readTabFromHash(): DocTabId {
+  const hash = window.location.hash.replace(/^#/, '');
+  const match = DOC_TABS.find((tab) => tab.id === hash);
+  return match?.id ?? 'setup';
+}
+
+function DocArticle({
+  title,
+  children,
+  className,
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <article className={cn('rounded-2xl border border-border bg-card p-5 shadow-sm', className)}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-3 text-sm leading-6 text-muted-foreground">{children}</div>
+    </article>
+  );
+}
+
 export default function DocumentationPage() {
+  const [activeTab, setActiveTab] = useState<DocTabId>(() =>
+    typeof window !== 'undefined' ? readTabFromHash() : 'setup'
+  );
+
+  useEffect(() => {
+    const onHashChange = () => {
+      setActiveTab(readTabFromHash());
+    };
+
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const handleTabChange = (value: string) => {
+    const tab = value as DocTabId;
+    setActiveTab(tab);
+
+    const url = new URL(window.location.href);
+    url.hash = tab;
+    window.history.replaceState(null, '', url.toString());
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-5 sm:px-6 lg:px-8">
         <header className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 max-w-3xl space-y-3">
@@ -72,6 +129,10 @@ export default function DocumentationPage() {
                 <p className="max-w-3xl text-sm leading-6 text-muted-foreground sm:text-[0.95rem]">
                   MGView displays simulation outputs in a browser-based 3D viewer with plots and editing tools.
                 </p>
+                <p className="max-w-3xl text-sm leading-6 text-muted-foreground sm:text-[0.95rem]">
+                  With a Motion Gensis license, you can also edit and run Motion Genesis
+                  simulations, then visualize the results without leaving your browser.
+                </p>
               </div>
             </div>
 
@@ -83,6 +144,12 @@ export default function DocumentationPage() {
                 <a href={getHomePath()} {...inAppLinkProps}>
                   <ArrowLeft className="h-4 w-4" />
                   Open App
+                </a>
+              </Button>
+              <Button asChild variant="outline" className="w-full justify-start">
+                <a href={getLabPath()} {...inAppLinkProps}>
+                  <FlaskConical className="h-4 w-4" />
+                  Open MGLab
                 </a>
               </Button>
               <Button asChild variant="outline" className="w-full justify-start">
@@ -107,311 +174,469 @@ export default function DocumentationPage() {
           </div>
         </header>
 
-        <div className="grid gap-4 lg:grid-cols-4">
-          <article className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
-            <h2 className="text-lg font-semibold">Installation (once only)</h2>
-            <div className="mt-3 space-y-4 text-sm leading-6 text-muted-foreground">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">1. Install Node.js</h3>
-                <p className="mt-1">
-                  MGView uses a small local server, so Node.js needs to be installed first.
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="min-h-0">
+          <nav
+            className="sticky top-0 z-10 rounded-2xl border border-border bg-card/95 p-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80"
+            aria-label="Documentation sections"
+          >
+            <TabsList className="h-auto w-full flex-wrap justify-start gap-1 border-b-0 pb-0">
+              {DOC_TABS.map(({ id, label }) => (
+                <TabsTrigger key={id} value={id} className="px-3 py-1.5 text-xs sm:text-sm">
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </nav>
+
+          <TabsContent value="setup" className="mt-4">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <DocArticle title="Installation (once only)">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">1. Install Node.js</h3>
+                    <p className="mt-1">
+                      MGView uses a small local server, so Node.js needs to be installed first.
+                    </p>
+                    <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
+                      <li>
+                        Download the current LTS release from{' '}
+                        <a
+                          className="text-primary underline-offset-4 hover:underline"
+                          href="https://nodejs.org/en/download"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          nodejs.org
+                        </a>
+                        .
+                      </li>
+                      <li>
+                        <span className="font-semibold italic">Run</span> the node installer on your machine.
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">2. Install MGView</h3>
+                    <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
+                      <li>
+                        Download{' '}
+                        <a
+                          className="text-primary underline-offset-4 hover:underline"
+                          href={MGVIEW_RELEASE_DOWNLOAD_URL}
+                        >
+                          mgview-{buildInfo.version}.zip
+                        </a>
+                        , or browse{' '}
+                        <a
+                          className="text-primary underline-offset-4 hover:underline"
+                          href={MGVIEW_RELEASES_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          all releases on GitHub
+                        </a>
+                        .
+                      </li>
+                      <li>
+                        Move the .zip file to your MotionGenesis folder. For most users this will be:
+                        <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
+                          <li>
+                            macOS: <code>/Applications/MotionGenesis</code>
+                          </li>
+                          <li>
+                            Windows: <code>C:\MotionGenesis</code>
+                          </li>
+                        </ul>
+                      </li>
+                      <li>
+                        Unzip the file in your MotionGenesis folder. (Optional: delete the .zip file.)
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">3. Updating MGView</h3>
+                    <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
+                      <li>Delete (or rename) the old MGView folder, then repeat step 2 above.</li>
+                      <li>
+                        Keep your own simulation files outside the MGView folder so you can
+                        delete or update MGView without losing your data.
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </DocArticle>
+
+              <DocArticle title="Running">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">On macOS</h3>
+                    <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
+                      <li>
+                        In Finder, go to your MGView folder and double-click{' '}
+                        <code>RunMGViewMac</code>.
+                        <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
+                          <li>
+                            Or in Terminal:{' '}
+                            <code>/Applications/MotionGenesis/mgview/RunMGViewMac</code>
+                          </li>
+                        </ul>
+                      </li>
+                      <li>
+                        If a browser tab does not open automatically, open{' '}
+                        <code>http://localhost:8000/mgview/</code> in any browser.
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">On Windows</h3>
+                    <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
+                      <li>Open the MGView folder in File Explorer.</li>
+                      <li>
+                        Double-click <code>RunMGViewWindows.bat</code>.
+                      </li>
+                      <li>If Windows asks about permissions for the local server, allow it.</li>
+                      <li>
+                        If a browser tab does not open automatically, open{' '}
+                        <code>http://localhost:8000/mgview/</code> in any browser.
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/25 px-3 py-2.5">
+                    <p>
+                      <span className="font-semibold text-foreground">Online demo vs local server.</span> The public
+                      demo at{' '}
+                      <a
+                        className="text-primary underline-offset-4 hover:underline"
+                        href="https://mgview.github.io/mgview/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        mgview.github.io/mgview
+                      </a>{' '}
+                      is read-only. Running Motion Genesis, saving scenes, and creating sim files require the local
+                      server started by <code>RunMGViewMac</code> or <code>RunMGViewWindows.bat</code>.
+                    </p>
+                  </div>
+                </div>
+              </DocArticle>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="quick-start" className="mt-4">
+            <DocArticle title="Quick Start">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Explore the UI</h3>
+                  <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
+                    <li>
+                      Open the <span className="font-semibold text-foreground">Scene</span> menu and choose{' '}
+                      <code>Examples…</code> to try bundled demos.
+                    </li>
+                    <li>
+                      Press <code>Space</code> to play or pause the timeline.
+                    </li>
+                    <li>
+                      Use the layout button{' '}
+                      <span
+                        className="mx-0.5 inline-flex h-6 w-6 translate-y-px items-center justify-center rounded-md border border-border bg-muted/40 text-foreground"
+                        title="Layout"
+                        aria-hidden
+                      >
+                        <PanelsTopLeft className="h-3.5 w-3.5" />
+                      </span>{' '}
+                      in the header (<code>Alt+L</code>) to show or hide the{' '}
+                      <span className="font-semibold text-foreground">3D View</span>,{' '}
+                      <span className="font-semibold text-foreground">Plots</span>,{' '}
+                      <span className="font-semibold text-foreground">Scene Editor</span>, and{' '}
+                      <span className="font-semibold text-foreground">Sim Editor</span> panes (
+                      <code>Alt+1</code> / <code>Alt+2</code> / <code>Alt+3</code> / <code>Alt+4</code>).
+                    </li>
+                    <li>
+                      In the editor rail, pick a frame or point under{' '}
+                      <span className="font-semibold text-foreground">Objects</span>, then select a geometry
+                      by clicking its name chip under{' '}
+                      <span className="font-semibold text-foreground">Geometries</span> (or click the chip again to
+                      rename).
+                    </li>
+                    <li>
+                      Change type, position, size, and color in the{' '}
+                      <span className="font-semibold text-foreground">Editor</span> tab to see how geometry
+                      properties affect the 3D view.
+                    </li>
+                    <li>
+                      In the plots area, click <code>Add panel</code>, then choose channels to chart against
+                      time or another channel.
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Next steps</h3>
+                  <p className="mt-1">
+                    To run a Motion Genesis simulation and visualize it, open the{' '}
+                    <span className="font-semibold text-foreground">Sim Runner</span> tab. For editing a sim file
+                    without a scene, open the <span className="font-semibold text-foreground">MGLab</span> tab or{' '}
+                    <a className="text-primary underline-offset-4 hover:underline" href={getLabPath()} {...inAppLinkProps}>
+                      launch MGLab
+                    </a>
+                    .
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Keyboard shortcuts</h3>
+                  <dl className="mt-2 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                    {shortcutItems.map(({ keys, description }) => (
+                      <div
+                        key={keys}
+                        className="grid grid-cols-[minmax(6.5rem,9rem)_1fr] items-baseline gap-x-2 text-xs sm:text-sm"
+                      >
+                        <dt>
+                          <code className="text-foreground">{keys}</code>
+                        </dt>
+                        <dd className="leading-5">{description}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+            </DocArticle>
+          </TabsContent>
+
+          <TabsContent value="sim-runner" className="mt-4">
+            <DocArticle title="Run simulations in MGView">
+              <div className="space-y-4">
+                <p>
+                  The <span className="font-semibold text-foreground">Sim Editor</span> pane lets you link a Motion
+                  Genesis input file to a workspace scene, edit it in-app, run it with live terminal output, and import
+                  the resulting animation data for playback.
+                </p>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Run and visualize (recommended)</h3>
+                  <ol className="mt-1 list-decimal list-outside space-y-2 pl-5">
+                    <li>
+                      Start MGView with the local server (see the <span className="font-semibold text-foreground">Setup</span>{' '}
+                      tab). Motion Genesis must be installed with an active license file.
+                    </li>
+                    <li>
+                      In the <span className="font-semibold text-foreground">Scene</span> menu, choose{' '}
+                      <code>New…</code> or <code>Open…</code> to create or load a workspace scene JSON file in the
+                      folder where you keep your project.
+                    </li>
+                    <li>
+                      Open the <span className="font-semibold text-foreground">Sim Editor</span> pane from the Layout
+                      menu (<code>Alt+4</code>).
+                    </li>
+                    <li>
+                      Click <code>Configure</code> and link a <code>.al</code> or <code>.txt</code> sim file. Use{' '}
+                      <code>New Sim File</code> in the picker to scaffold a starter input file next to your scene.
+                    </li>
+                    <li>
+                      Edit the sim file in the built-in editor, then click <code>Run</code>. Unsaved edits are saved
+                      automatically before the run starts. Use <code>Stop</code> to cancel an active run.
+                    </li>
+                    <li>
+                      Watch live output in the terminal pane. If Motion Genesis waits for input, type in the{' '}
+                      <code>Send</code> box below the output and press <code>Enter</code> (a blank line is sent if the
+                      box is empty).
+                    </li>
+                    <li>
+                      After a successful run, MGView offers to import detected <code>ODE()</code> output files. Accept
+                      the prompt to load channels for playback and plots. If multiple <code>ODE()</code> blocks were
+                      detected, choose <code>Import separately</code> so each case becomes its own entry in the{' '}
+                      <code>Sim Data</code> dropdown.
+                    </li>
+                    <li>
+                      Switch to the <span className="font-semibold text-foreground">Scene Editor</span> pane (
+                      <code>Alt+3</code>). Add geometries on the frames and points you want to see, adjust{' '}
+                      <code>Scene Settings</code> (camera up, parent frame), and press <code>Space</code> to play the
+                      timeline.
+                    </li>
+                    <li>
+                      Choose <code>Save all</code> from the <span className="font-semibold text-foreground">Scene</span>{' '}
+                      menu (<code>Cmd/Ctrl+S</code>) to write the scene JSON and any dirty sim file changes to disk.
+                    </li>
+                  </ol>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Configure options</h3>
+                  <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
+                    <li>
+                      <span className="font-semibold text-foreground">Sim Executable</span> — click the path to pick a
+                      different Motion Genesis binary.
+                    </li>
+                    <li>
+                      <span className="font-semibold text-foreground">Auto-quit</span> — append <code>QUIT</code> to a
+                      temporary copy of the input file so batch runs finish without manual exit.
+                    </li>
+                    <li>
+                      <span className="font-semibold text-foreground">Auto defaults</span> — send a blank line when MG
+                      is waiting at an <code>Enter INPUT value…</code> prompt.
+                    </li>
+                    <li>
+                      <span className="font-semibold text-foreground">Debug output</span> — show MGView diagnostic lines
+                      in the output pane.
+                    </li>
+                    <li>
+                      <span className="font-semibold text-foreground">Vim keybindings</span> — enable vim-style editing
+                      in the sim file editor.
+                    </li>
+                  </ul>
+                  <p className="mt-2">
+                    Run options and editor layout are remembered between sessions. Avoid <code>Plot</code> commands in
+                    sim files for now — they can launch MG&apos;s separate plotting tool and stall an in-app run.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Scenarios and manual import</h3>
+                  <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
+                    <li>
+                      The header <code>Sim Data</code> dropdown switches between scenarios (for example different
+                      initial conditions or <code>ODE()</code> subpaths). Choose <code>Edit Sim Data</code> to add,
+                      remove, or rename scenarios and their data files.
+                    </li>
+                    <li>
+                      If you ran Motion Genesis outside MGView, open <code>Edit Sim Data</code> and browse to your{' '}
+                      <code>.1</code>, <code>.2</code>, … animation files manually. Confirm the parsed channel list at
+                      the bottom of the dialog.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </DocArticle>
+          </TabsContent>
+
+          <TabsContent value="mglab" className="mt-4">
+            <DocArticle title="MGLab">
+              <div className="space-y-3">
+                <p>
+                  <span className="font-semibold text-foreground">MGLab</span> is a standalone Motion Genesis editor and
+                  runner for workspace <code>.al</code> and <code>.txt</code> files. Use it when you want to edit or run
+                  a sim without loading a scene — for example while iterating on input files before visualization.
                 </p>
                 <ul className="list-disc list-outside space-y-1 pl-5">
                   <li>
-                    Download the current LTS release from{' '}
-                    <a
-                      className="text-primary underline-offset-4 hover:underline"
-                      href="https://nodejs.org/en/download"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      nodejs.org
-                    </a>.
-                  </li>
-                  <li>
-                    <span className="font-semibold italic">Run</span> the node installer on your machine.
-                  </li>
-                </ul>
-           
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">2. Install MGView</h3>
-                <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
-                  <li>
-                    Download {' '}
-                    <a
-                      className="text-primary underline-offset-4 hover:underline"
-                      href={MGVIEW_RELEASE_DOWNLOAD_URL}
-                    >
-                      mgview-{buildInfo.version}.zip
-                    </a>
-                    , or browse{' '}
-                    <a
-                      className="text-primary underline-offset-4 hover:underline"
-                      href={MGVIEW_RELEASES_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      all releases on GitHub
+                    Open MGLab from the app title dropdown in the header (switch between <code>MGView</code> and{' '}
+                    <code>MGLab</code>), or go directly to{' '}
+                    <a className="text-primary underline-offset-4 hover:underline" href={getLabPath()} {...inAppLinkProps}>
+                      <code>{getLabPath()}</code>
                     </a>
                     .
                   </li>
                   <li>
-                    Move the .zip file to your MotionGenesis folder. For most users this will be:
-                    <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
-                      <li>
-                        macOS: <code>/Applications/MotionGenesis</code>
-                      </li>
-                      <li>
-                        Windows: <code>C:\MotionGenesis</code>
-                      </li>
-                    </ul>
+                    Click <code>Open File</code> to browse your workspace, or <code>New Sim File</code> to create a
+                    scaffolded input file in the current folder.
                   </li>
                   <li>
-                    Unzip the file in your MotionGenesis folder. (Optional: delete the .zip file.)
+                    Edit, <code>Save</code> (<code>Cmd/Ctrl+S</code>), <code>Revert</code>, and <code>Run</code> work the
+                    same way as in the workspace Sim Editor. The default layout shows the editor and output side by side.
                   </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">3. Updating MGView</h3>
-                <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
-                  <li>Delete (or rename) the old MGView folder, then repeat step 2 above.</li>
                   <li>
-                    Keep your own simulation files outside the MGView folder so you can
-                    delete or update MGView without losing your data.
+                    MGLab does not manage scene JSON or 3D visualization. After a run, switch back to{' '}
+                    <code>MGView</code>, link the sim file in the Sim Editor, and import the output data into a scene.
                   </li>
+                  <li>MGLab requires the local server — it is not available in the online read-only demo.</li>
                 </ul>
               </div>
-            </div>
-          </article>
+            </DocArticle>
+          </TabsContent>
 
-          <article className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
-            <h2 className="text-lg font-semibold">Running</h2>
-            <div className="mt-3 space-y-4 text-sm leading-6 text-muted-foreground">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">On macOS</h3>
-                <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
-                  <li>
-                    In Finder, go to your MGView folder and double-click{' '}
-                    <code>RunMGViewMac</code>.
-                    <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
-                      <li>
-                        Or in Terminal:{' '}
-                        <code>/Applications/MotionGenesis/mgview/RunMGViewMac</code>
-                      </li>
-                    </ul>
-                  </li>
-                  <li>
-                    If a browser tab does not open automatically, open{' '}
-                    <code>http://localhost:8000/mgview/</code> in any browser.
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">On Windows</h3>
-                <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
-                  <li>Open the MGView folder in File Explorer.</li>
-                  <li>
-                    Double-click <code>RunMGViewWindows.bat</code>.
-                  </li>
-                  <li>If Windows asks about permissions for the local server, allow it.</li>
-                  <li>
-                    If a browser tab does not open automatically, open{' '}
-                    <code>http://localhost:8000/mgview/</code> in any browser.
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </article>
-
-          <article className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-3">
-            <h2 className="text-lg font-semibold">Quick Start</h2>
-            <div className="mt-3 space-y-4 text-sm leading-6 text-muted-foreground">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Explore the UI</h3>
-                <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
-                  <li>
-                    Open the <span className="font-semibold text-foreground">Scene</span> menu and choose{' '}
-                    <code>Examples…</code> to try bundled demos.
-                  </li>
-                  <li>
-                    Press <code>Space</code> to play or pause the timeline.
-                  </li>
-                  <li>
-                    Use the layout button{' '}
-                    <span
-                      className="mx-0.5 inline-flex h-6 w-6 translate-y-px items-center justify-center rounded-md border border-border bg-muted/40 text-foreground"
-                      title="Layout"
-                      aria-hidden
-                    >
-                      <PanelsTopLeft className="h-3.5 w-3.5" />
-                    </span>{' '}
-                    in the header (<code>Alt+L</code>) to show or hide the{' '}
-                    <span className="font-semibold text-foreground">3D View</span>,{' '}
-                    <span className="font-semibold text-foreground">Plots</span>,{' '}
-                    <span className="font-semibold text-foreground">Scene Editor</span>, and{' '}
-                    <span className="font-semibold text-foreground">Sim Editor</span> panes (
-                    <code>Alt+1</code> / <code>Alt+2</code> / <code>Alt+3</code> / <code>Alt+4</code>).
-                  </li>
-                  <li>
-                    In the editor rail, pick a frame or point under{' '}
-                    <span className="font-semibold text-foreground">Objects</span>, then select a geometry
-                    by clicking its name chip under <span className="font-semibold text-foreground">Geometries</span>{' '}
-                    (or click the chip again to rename).
-                  </li>
-                  <li>
-                    Change type, position, size, and color in the{' '}
-                    <span className="font-semibold text-foreground">Editor</span> tab to see how geometry
-                    properties affect the 3D view.
-                  </li>
-                  <li>
-                    In the plots area, click <code>Add panel</code>, then choose channels to chart against
-                    time or another channel.
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Create a scene from your simulation</h3>
-                <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
-                  <li>
-                    Run your MotionGenesis simulation so it writes animation files (for example{' '}
-                    <code>myFileName.1</code>, <code>myFileName.2</code>, …). See{' '}
-                    <span className="font-semibold text-foreground">
-                      Creating Numerical Pose Data Using MotionGenesis (MG)
-                    </span>{' '}
-                    below if channels are missing.
-                  </li>
-                  <li>
-                    In the <span className="font-semibold text-foreground">Scene</span> menu, choose{' '}
-                    <code>New…</code>, browse to the folder where your sim files live, enter a scene name
-                    (such as <code>my_scene.json</code>), and click <code>Create</code>.
-                  </li>
-                  <li>
-                    Open the <code>Sim Data</code> dropdown and choose <code>Edit Sim Data</code>, then select one or more data files in
-                    the browser, click <code>Add</code>, then confirm the parsed channels at the bottom of
-                    the dialog (file count, channel list, inferred origin and Newtonian frame).
-                  </li>
-                  <li>
-                    Open the inspector&apos;s <code>Scene Settings</code> tab. Set{' '}
-                    <span className="font-semibold text-foreground">Camera Up</span> to match which axis is
-                    &quot;up&quot; in your Newtonian frame. Optionally set{' '}
-                    <span className="font-semibold text-foreground">Camera Parent Frame</span>: tracking a
-                    frame moves position and orientation with that body; tracking a point moves position
-                    only.
-                  </li>
-                  <li>
-                    Back on the <code>Editor</code> tab, add geometries on each frame and point you want to
-                    visualize.
-                  </li>
-                  <li>
-                    Remember to <code>Save all</code> (<code>Cmd/Ctrl+S</code>) to write your scene changes to disk.
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </article>
-
-          <article className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-1">
-            <h2 className="text-lg font-semibold">Keyboard Shortcuts</h2>
-            <dl className="mt-3 grid gap-2 text-sm">
-              {shortcutItems.map(({ keys, description }) => (
-                <div key={keys} className="space-y-1 rounded-xl border border-border bg-muted/25 px-3 py-2.5">
-                  <dt>
-                    <code>{keys}</code>
-                  </dt>
-                  <dd className="leading-5 text-muted-foreground">{description}</dd>
+          <TabsContent value="mg-tips" className="mt-4">
+            <div className="grid gap-4">
+              <DocArticle title="Creating Numerical Pose Data Using MotionGenesis (MG)">
+                <div className="space-y-3">
+                  <p>
+                    Your MG simulations must output animation data (position/orientation vs. time) for each point and
+                    frame that you want to visualize.
+                  </p>
+                  <ol className="list-decimal list-outside space-y-3 pl-5">
+                    <li>
+                      Ensure you have defined the position of each &quot;origin&quot; point in your simulation (No, Bo,
+                      etc).
+                      <br />
+                      <span className="text-xs">
+                        <strong>Note:</strong> The <code>Translate</code> command is sufficient, you do not need a
+                        separate <code>SetPosition</code> call.
+                      </span>
+                    </li>
+                    <li>
+                      Ensure the time step set by the MG command
+                      <br />
+                      <code>Input IntegStp = 0.01</code>
+                      <br />
+                      provides a reasonable visual frame-rate without making data files excessively large.
+                    </li>
+                    <li>
+                      Ensure the line <code>Animate(N, No)</code> appears in your MG command file before the MG command{' '}
+                      <code>ODE() myFileName</code>
+                      <br />
+                      In the Animate command:
+                      <ul className="mt-2 list-disc list-outside space-y-1 pl-5">
+                        <li>Replace &quot;N&quot; with the name of your NewtonianFrame.</li>
+                        <li>Replace &quot;No&quot; with the name of your World Origin.</li>
+                        <li>
+                          By default it will animate everything. You can optionally specify which points and bodies to
+                          animate, e.g. <code>Animate(N, No, A, B, C, Ab, Bc)</code>.
+                        </li>
+                      </ul>
+                    </li>
+                    <li>
+                      After running the simulation, you will have a series of data files called &quot;myFileName.1&quot;,
+                      &quot;myFileName.2&quot;, etc.
+                    </li>
+                    <li>
+                      See the{' '}
+                      <a
+                        className="text-primary underline-offset-4 hover:underline"
+                        href={MGVIEW_SAMPLES_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        samples folder on GitHub
+                      </a>{' '}
+                      if you have trouble.
+                    </li>
+                  </ol>
                 </div>
-              ))}
-            </dl>
-          </article>
+              </DocArticle>
 
-          <article className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-4">
-            <h2 className="text-lg font-semibold">Creating Numerical Pose Data Using MotionGenesis (MG)</h2>
-            <div className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
-            <p>
-              Your MG simulations must output animation data (position/orientation vs. time) for each point and frame
-              that you want to visualize.
-            </p>
-            <ol className="list-decimal list-outside space-y-3 pl-5">
-              <li>
-                Ensure you have defined the position of each &quot;origin&quot; point in your simulation (No, Bo, etc).
-                <br />
-                <span className="text-xs">
-                  <strong>Note:</strong> The <code>Translate</code> command is sufficient, you do not need a separate{' '}
-                  <code>SetPosition</code> call.
-                </span>
-              </li>
-              <li>
-                Ensure the time step set by the MG command
-                <br />
-                <code>Input IntegStp = 0.01</code>
-                <br />
-                provides a reasonable visual frame-rate without making data files excessively large.
-              </li>
-              <li>
-                Ensure the line <code>Animate(N, No)</code> appears in your MG command file before the MG command{' '}
-                <code>ODE() myFileName</code>
-                <br />
-                In the Animate command:
-                <ul className="mt-2 list-disc list-outside space-y-1 pl-5">
-                  <li>Replace &quot;N&quot; with the name of your NewtonianFrame.</li>
-                  <li>Replace &quot;No&quot; with the name of your World Origin.</li>
-                  <li>
-                    By default it will animate everything. You can optionally specify which points and bodies to
-                    animate, e.g. <code>Animate(N, No, A, B, C, Ab, Bc)</code>.
-                  </li>
-                </ul>
-              </li>
-              <li>
-                After running the simulation, you will have a series of data files called &quot;myFileName.1&quot;,
-                &quot;myFileName.2&quot;, etc.
-              </li>
-              <li>
-                See the{' '}
-                <a
-                  className="text-primary underline-offset-4 hover:underline"
-                  href={MGVIEW_SAMPLES_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  samples folder on GitHub
-                </a>{' '}
-                if you have trouble.
-              </li>
-            </ol>
+              <DocArticle title="Advanced workspace management">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Run MotionGenesis from a project subfolder</h3>
+                    <p className="mt-1">
+                      Over time you will have many sims with many output files. Organize each one into its own folder to
+                      keep things tidy. You can run these files from the Sim Editor or MGLab instead of a separate
+                      terminal, or use the terminal workflow below.
+                    </p>
+                    <pre className="mt-2 overflow-x-auto rounded-xl border border-border bg-muted/30 p-3 text-xs text-foreground">
+                      <code>{advancedProjectFolderExample}</code>
+                    </pre>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Use subpaths in ODE() for multiple cases</h3>
+                    <p className="mt-1">
+                      In your MG input file, each <code>ODE()</code> call can write animation data to a different
+                      subfolder. Change initial conditions or parameters between runs to compare cases side by side.
+                    </p>
+                    <pre className="mt-2 overflow-x-auto rounded-xl border border-border bg-muted/30 p-3 text-xs text-foreground">
+                      <code>{advancedOdeSubpathExample}</code>
+                    </pre>
+                    <p className="mt-2">You will end up with a tree like:</p>
+                    <pre className="mt-2 overflow-x-auto rounded-xl border border-border bg-muted/30 p-3 text-xs text-foreground">
+                      <code>{advancedOutputTreeExample}</code>
+                    </pre>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Workspace management</h3>
+                    <p className="mt-1">
+                      You can put MGView in any location you want, and use the workspace feature to load
+                      simulations from any folder on your machine.
+                    </p>
+                  </div>
+                </div>
+              </DocArticle>
             </div>
-          </article>
-
-          <article className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-4">
-            <h2 className="text-lg font-semibold">Advanced workspace management</h2>
-            <div className="mt-3 space-y-4 text-sm leading-6 text-muted-foreground">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Run MotionGenesis from a project subfolder</h3>
-                <p className="mt-1">
-                  Over time you will have many sims with many output files. Organize each one into its own folder to keep things tidy.
-                </p>
-                <pre className="mt-2 overflow-x-auto rounded-xl border border-border bg-muted/30 p-3 text-xs text-foreground"><code>{advancedProjectFolderExample}</code></pre>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Use subpaths in ODE() for multiple cases</h3>
-                <p className="mt-1">
-                  In your MG input file, each <code>ODE()</code> call can write animation data to a different
-                  subfolder. Change initial conditions or parameters between runs to compare cases side by side.
-                </p>
-                <pre className="mt-2 overflow-x-auto rounded-xl border border-border bg-muted/30 p-3 text-xs text-foreground"><code>{advancedOdeSubpathExample}</code></pre>
-                <p className="mt-2">You will end up with a tree like:</p>
-                <pre className="mt-2 overflow-x-auto rounded-xl border border-border bg-muted/30 p-3 text-xs text-foreground"><code>{advancedOutputTreeExample}</code></pre>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Workspace management</h3>
-                <p className="mt-1">
-                  You can put MGView in any location you want, and use the workspace feature to load
-                  simulations from any folder on your machine.
-                </p>
-              </div>
-            </div>
-          </article>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   );
