@@ -47,7 +47,7 @@ These must not share a directory — the Node server routes `/mgview/bundled/` t
 
 - Top-level folder: `mgview-<version>/` (same as the zip basename)
 - `mgview-<version>/bin/` — Node server
-- `mgview-<version>/bin/node_modules/node-pty/` — N-API PTY binaries (macOS/Windows prebuilds + Linux `build/Release`; `.pdb` stripped)
+- `mgview-<version>/bin/node_modules/node-pty/` — N-API PTY binaries (macOS/Windows prebuilds + Linux `build/Release`; `.pdb` stripped). Linux `spawn-helper` is compiled during assemble (node-pty only builds it on macOS).
 - `mgview-<version>/frontend/dist/` — compiled modern app (server mode)
 - `mgview-<version>/samples/`
 - `mgview-<version>/assets/`
