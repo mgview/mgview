@@ -1,15 +1,15 @@
 {
   "name": "disk",
-  "showAxes": true,
+  "showAxes": false,
   "cameraUp": [
     0,
     -2.220446049250313e-16,
     1
   ],
   "cameraEye": [
-    0.3105193065928319,
-    -1.4631221888900843,
-    1.9766321939704268
+    1.8180163801527331,
+    -0.6348591693218953,
+    1.5607670826404663
   ],
   "cameraFocus": [
     0,
@@ -19,13 +19,6 @@
   "cameraParentFrame": "A",
   "speedFactor": 1,
   "workspaceSize": 1,
-  "simulationData": [
-    "disk.1",
-    "disk.2",
-    "disk.3",
-    "disk.4",
-    "disk.5"
-  ],
   "simulationSettings": "disk.in",
   "objects": {
     "A": {
@@ -37,16 +30,18 @@
           "text": "A",
           "scale": 0.125,
           "position": {
-            "x": 0.347,
-            "y": 0.083,
-            "z": 0
+            "x": 0.841,
+            "y": 0.12,
+            "z": 0.02
           },
           "rotation": {
             "x": 0,
             "y": 0,
             "z": 1.5708
           },
-          "material": "SILVER"
+          "material": {
+            "name": "#111827"
+          }
         },
         "basis": {
           "visible": true,
@@ -128,15 +123,17 @@
           "scale": 0.125,
           "position": {
             "x": 0.167,
-            "y": 0.03125,
+            "y": -0.031,
             "z": 0.15
           },
           "rotation": {
             "x": 1.5708,
             "y": 0,
-            "z": 3.1415
+            "z": 0
           },
-          "material": "SILVER"
+          "material": {
+            "name": "#111827"
+          }
         },
         "basis": {
           "visible": true,
@@ -144,7 +141,7 @@
           "scale": 0.25,
           "position": {
             "x": 0,
-            "y": 0,
+            "y": 0.01,
             "z": 0
           },
           "rotation": {
@@ -167,7 +164,9 @@
             "y": 0,
             "z": 0
           },
-          "material": "WHITE",
+          "material": {
+            "name": "METAL"
+          },
           "radius": 0.34,
           "length": 0.01,
           "capped": true,
@@ -239,22 +238,24 @@
     "B": {
       "type": "frame",
       "visual": {
-        "label": {
+        "DA": {
           "visible": true,
           "type": "text",
-          "text": "B",
-          "scale": 0.125,
+          "text": "DA",
+          "scale": 0.08,
           "position": {
-            "x": 0.08333333333333333,
-            "y": 0.03125,
-            "z": 0
+            "x": -0.001,
+            "y": -0.096,
+            "z": 0.01
           },
           "rotation": {
             "x": 0,
             "y": 0,
             "z": 0
           },
-          "material": "SILVER"
+          "material": {
+            "name": "#111827"
+          }
         },
         "basis": {
           "visible": true,
@@ -271,6 +272,26 @@
             "z": 0
           },
           "material": "SILVER"
+        },
+        "B": {
+          "visible": true,
+          "type": "text",
+          "position": {
+            "x": 0.097,
+            "y": 0,
+            "z": 0.115
+          },
+          "rotation": {
+            "x": 1.5707963267948966,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "#111827"
+          },
+          "scale": 0.125,
+          "text": "B",
+          "text_mode": "2d"
         }
       }
     },
@@ -290,9 +311,11 @@
           "rotation": {
             "x": 1.5708,
             "y": 0,
-            "z": 3.1415
+            "z": 0
           },
-          "material": "SILVER"
+          "material": {
+            "name": "#111827"
+          }
         },
         "basis": {
           "visible": true,
@@ -316,14 +339,14 @@
       "type": "point",
       "visual": {
         "label": {
-          "visible": true,
+          "visible": false,
           "type": "text",
           "text": "Ao",
           "scale": 0.125,
           "position": {
             "x": 0.08333333333333333,
             "y": 0.03125,
-            "z": 0
+            "z": 0.01
           },
           "rotation": {
             "x": 0,
@@ -335,7 +358,7 @@
           }
         },
         "point": {
-          "visible": true,
+          "visible": false,
           "type": "sphere",
           "radius": 0.05,
           "segments_width": 16,
@@ -360,7 +383,7 @@
       "type": "point",
       "visual": {
         "label": {
-          "visible": true,
+          "visible": false,
           "type": "text",
           "text": "Do",
           "scale": 0.125,
@@ -379,7 +402,7 @@
           }
         },
         "point": {
-          "visible": true,
+          "visible": false,
           "type": "sphere",
           "radius": 0.05,
           "segments_width": 16,
@@ -404,7 +427,7 @@
       "type": "point",
       "visual": {
         "label": {
-          "visible": true,
+          "visible": false,
           "type": "text",
           "text": "Bo",
           "scale": 0.125,
@@ -423,7 +446,7 @@
           }
         },
         "point": {
-          "visible": true,
+          "visible": false,
           "type": "sphere",
           "radius": 0.05,
           "segments_width": 16,
@@ -448,7 +471,7 @@
       "type": "point",
       "visual": {
         "label": {
-          "visible": true,
+          "visible": false,
           "type": "text",
           "text": "Co",
           "scale": 0.125,
@@ -467,7 +490,7 @@
           }
         },
         "point": {
-          "visible": true,
+          "visible": false,
           "type": "sphere",
           "radius": 0.05,
           "segments_width": 16,
@@ -491,10 +514,96 @@
     "DA": {
       "type": "point",
       "visual": {
+        "DA": {
+          "visible": false,
+          "type": "text",
+          "text": "DA",
+          "scale": 0.125,
+          "position": {
+            "x": -0.045,
+            "y": 0.145,
+            "z": 0.01
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "BLACK"
+          }
+        },
+        "point": {
+          "visible": true,
+          "type": "sphere",
+          "radius": 0.03,
+          "segments_width": 16,
+          "segments_height": 12,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "#ff6b6b"
+          }
+        }
+      }
+    },
+    "N": {
+      "type": "frame",
+      "visual": {
         "label": {
           "visible": true,
           "type": "text",
-          "text": "DA",
+          "text": "N",
+          "scale": 0.125,
+          "position": {
+            "x": 0.08333333333333333,
+            "y": 0.03125,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "BLACK"
+          }
+        },
+        "basis": {
+          "visible": true,
+          "type": "basis",
+          "scale": 0.25,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
+          }
+        }
+      }
+    },
+    "No": {
+      "type": "point",
+      "visual": {
+        "label": {
+          "visible": true,
+          "type": "text",
+          "text": "No",
           "scale": 0.125,
           "position": {
             "x": 0.08333333333333333,
@@ -536,8 +645,10 @@
   "layout": {
     "showRenderer": true,
     "showPlots": true,
-    "showEditorRail": false,
-    "focusTarget": null
+    "rightRail": "none",
+    "focusTarget": null,
+    "visualSplit": 0.6,
+    "workspaceSplit": 0.65
   },
   "backgroundColor": "#e0f0ff",
   "plots": {
@@ -553,14 +664,8 @@
         "xMin": -0.78201,
         "xMax": 0.76587,
         "yMin": -0.45,
-        "yMax": 0.35912
-      },
-      {
-        "id": "70314bc2-dd7e-492f-b99c-bff87c699308",
-        "channels": [
-          "L"
-        ],
-        "xMode": "time"
+        "yMax": 0.35912,
+        "title": "Path of contact point"
       },
       {
         "id": "78f7674b-47e8-477e-8543-8c74d576652d",
@@ -568,10 +673,33 @@
           "x",
           "y"
         ],
-        "xMode": "time"
+        "xMode": "time",
+        "title": "Contact point X and Y vs time"
+      },
+      {
+        "id": "70314bc2-dd7e-492f-b99c-bff87c699308",
+        "channels": [
+          "L"
+        ],
+        "xMode": "time",
+        "title": "Lean Angle, L"
       }
     ],
-    "heightScale": 1.5
+    "heightScale": 1.25
   },
-  "spans": {}
+  "spans": {},
+  "scenarios": [
+    {
+      "id": "default",
+      "label": "Default",
+      "simulationData": [
+        "disk.1",
+        "disk.2",
+        "disk.3",
+        "disk.4",
+        "disk.5"
+      ]
+    }
+  ],
+  "activeScenario": "default"
 }

@@ -92,7 +92,13 @@ function legacySamplesPlugin(): Plugin {
             ? 'text/plain; charset=utf-8'
             : extension === '.obj' || extension === '.stl' || extension === '.xml'
               ? 'text/plain; charset=utf-8'
-              : 'application/octet-stream';
+              : extension === '.png'
+                ? 'image/png'
+                : extension === '.jpg' || extension === '.jpeg'
+                  ? 'image/jpeg'
+                  : extension === '.webp'
+                    ? 'image/webp'
+                    : 'application/octet-stream';
 
       res.statusCode = 200;
       res.setHeader('Content-Type', contentType);
