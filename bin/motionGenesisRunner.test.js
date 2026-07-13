@@ -810,7 +810,7 @@ test('runner rejects file-based runs that escape the workspace', () => {
   );
 });
 
-test('runner keeps full output when scrollback is unlimited', async () => {
+test('runner keeps full output when scrollback is unlimited', () => {
   const workspaceRoot = makeTempWorkspace();
   const scenePath = 'project/demo.json';
   const sceneFilePath = path.join(workspaceRoot, scenePath);
@@ -819,17 +819,26 @@ test('runner keeps full output when scrollback is unlimited', async () => {
   const fullLineCount = 600;
 
   writeFile(sceneFilePath, '{}\n');
-  writeFile(
-    settingsFilePath,
-    `process.stdout.write(${JSON.stringify(Array.from({ length: fullLineCount }, (_, index) => `line-${index}`).join('\n') + '\n')});`
-  );
+  writeFile(settingsFilePath, 'INPUT\n');
 
+  let dataHandler = null;
+  let exitHandler = null;
   const manager = createMotionGenesisRunManager({
     environment: {
       ...process.env,
-      MGVIEW_MOTION_GENESIS_BIN: process.execPath,
+      MGVIEW_MOTION_GENESIS_BIN: '/Applications/MotionGenesis/MotionGenesis',
     },
-    platform: 'linux',
+    platform: 'darwin',
+    spawnPtyProcess() {
+      return createFakeNativePty({
+        onData(handler) {
+          dataHandler = handler;
+        },
+        onExit(handler) {
+          exitHandler = handler;
+        },
+      });
+    },
   });
 
   const started = manager.startRun({
@@ -845,21 +854,17 @@ test('runner keeps full output when scrollback is unlimited', async () => {
     workspaceRoot,
   });
 
-  let current = started;
-  for (let index = 0; index < 50; index += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    current = manager.getRun(started.id);
-    if (current && (current.status === 'success' || current.status === 'failed')) {
-      break;
-    }
-  }
+  const fullOutput = `${Array.from({ length: fullLineCount }, (_, index) => `line-${index}`).join('\n')}\n`;
+  dataHandler(fullOutput);
+  exitHandler({ exitCode: 0, signal: 0 });
 
+  const current = manager.getRun(started.id);
   assert.ok(current);
   assert.equal(current.status, 'success');
   assert.equal(current.output.split('\n').length - 1, fullLineCount);
 });
 
-test('runner caps stored output size by line count when scrollbackLimit is configured', async () => {
+test('runner caps stored output size by line count when scrollbackLimit is configured', () => {
   const workspaceRoot = makeTempWorkspace();
   const scenePath = 'project/demo.json';
   const sceneFilePath = path.join(workspaceRoot, scenePath);
@@ -869,17 +874,26 @@ test('runner caps stored output size by line count when scrollbackLimit is confi
   const fullLineCount = scrollbackLimit + 10;
 
   writeFile(sceneFilePath, '{}\n');
-  writeFile(
-    settingsFilePath,
-    `process.stdout.write(${JSON.stringify(Array.from({ length: fullLineCount }, (_, index) => `line-${index}`).join('\n') + '\n')});`
-  );
+  writeFile(settingsFilePath, 'INPUT\n');
 
+  let dataHandler = null;
+  let exitHandler = null;
   const manager = createMotionGenesisRunManager({
     environment: {
       ...process.env,
-      MGVIEW_MOTION_GENESIS_BIN: process.execPath,
+      MGVIEW_MOTION_GENESIS_BIN: '/Applications/MotionGenesis/MotionGenesis',
     },
-    platform: 'linux',
+    platform: 'darwin',
+    spawnPtyProcess() {
+      return createFakeNativePty({
+        onData(handler) {
+          dataHandler = handler;
+        },
+        onExit(handler) {
+          exitHandler = handler;
+        },
+      });
+    },
   });
 
   const started = manager.startRun({
@@ -895,15 +909,11 @@ test('runner caps stored output size by line count when scrollbackLimit is confi
     workspaceRoot,
   });
 
-  let current = started;
-  for (let index = 0; index < 50; index += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    current = manager.getRun(started.id);
-    if (current && (current.status === 'success' || current.status === 'failed')) {
-      break;
-    }
-  }
+  const fullOutput = `${Array.from({ length: fullLineCount }, (_, index) => `line-${index}`).join('\n')}\n`;
+  dataHandler(fullOutput);
+  exitHandler({ exitCode: 0, signal: 0 });
 
+  const current = manager.getRun(started.id);
   assert.ok(current);
   assert.equal(current.status, 'success');
   assert.equal(current.output.split('\n').length - 1, scrollbackLimit);
