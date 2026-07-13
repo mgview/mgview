@@ -2,6 +2,7 @@
   "version": 1,
   "scenes": [
     { "group": "Motion Genesis Examples", "label": "Particle Pendulum", "path": "particle_pendulum/particle_pendulum.json" },
+    { "group": "Motion Genesis Examples", "label": "Babyboot Pendulum", "path": "babyboot/babyboot.json" },
     { "group": "Motion Genesis Examples", "label": "Particle In Slot", "path": "particle_in_slot/slot.json" },
     { "group": "Motion Genesis Examples", "label": "Spinning Book - Vacuum", "path": "spinning_book/vacuum/EulerParameters3DOrientation.json" },
     { "group": "Motion Genesis Examples", "label": "Spinning Book - Air", "path": "spinning_book/air/EulerParameters3DOrientation.json" },

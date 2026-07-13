@@ -270,9 +270,10 @@ export default function WorkspaceShell({
         <div className="workspace-editor-rail workspace-sim-rail min-h-0">
           <MotionGenesisRunPanel
             canRun={loaded?.sceneRef.source === 'workspace' && Boolean(activeScene?.simulationSettings)}
+            canLinkSimulationFile={loaded?.sceneRef.source === 'workspace'}
             error={motionGenesisError}
             input={motionGenesisInput}
-            loadedScenePath={loaded?.sceneRef.source === 'workspace' ? loaded.scenePath : null}
+            loadedScenePath={loaded?.scenePath ?? null}
             options={motionGenesisOptions}
             onInputChange={onMotionGenesisInputChange}
             onOptionsChange={onMotionGenesisOptionsChange}

@@ -1,29 +1,37 @@
 import { useMemo } from 'react';
-import { isMotionGenesisInputPath, resolveSimulationFilePath } from '../core/simulationFilePath.ts';
+import {
+  isMotionGenesisInputPath,
+  resolveSimulationFileLoadRequest,
+} from '../core/simulationFilePath.ts';
+import type { SceneRef } from '../core/sceneRef.ts';
 import { useWorkspaceTextFileEditor } from './useWorkspaceTextFileEditor.ts';
 
 interface UseSimulationSettingsEditorOptions {
-  canEdit: boolean;
-  scenePath: string | null;
+  canSave: boolean;
+  sceneRef: SceneRef | null;
   simulationSettings: string | null | undefined;
 }
 
 export function useSimulationSettingsEditor({
-  canEdit,
-  scenePath,
+  canSave,
+  sceneRef,
   simulationSettings,
 }: UseSimulationSettingsEditorOptions) {
-  const filePath = useMemo(
-    () => resolveSimulationFilePath(scenePath, simulationSettings),
-    [scenePath, simulationSettings]
+  const fileRequest = useMemo(
+    () => resolveSimulationFileLoadRequest(sceneRef, simulationSettings),
+    [sceneRef, simulationSettings]
   );
+  const filePath = fileRequest?.path ?? null;
+  const canLoadFile = filePath !== null && isMotionGenesisInputPath(filePath);
   const editor = useWorkspaceTextFileEditor({
-    canEdit: canEdit && filePath !== null && isMotionGenesisInputPath(filePath),
+    canEdit: canSave && canLoadFile,
+    canLoad: canLoadFile,
     filePath,
+    fileRoot: fileRequest?.root ?? 'workspace',
   });
 
   return {
-    canSaveSimFile: editor.canSaveFile && filePath !== null && isMotionGenesisInputPath(filePath),
+    canSaveSimFile: canSave && editor.canSaveFile && canLoadFile,
     draftContent: editor.draftContent,
     error: editor.error,
     filePath,

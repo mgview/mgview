@@ -1,4 +1,4 @@
-% File: ClassicParticlePendulumEuler.txt
+% File: particle_pendulum.al
 %---------------------------------------------------------------
 NewtonianFrame N % Newtonian reference frame (ground)
 RigidFrame B % Massless, inextensible (rigid) string
@@ -33,5 +33,10 @@ Input theta=30 deg, theta'=0 deg/sec
 % Quantities to be output by ODE command.
 Output t sec, theta deg, theta' deg/sec, KE Joules, PE Joules, MechanicalEnergy Joules
 %---------------------------------------------------------------
+% The animate command creates Output statements for position and
+% rotation matrix for every frame (or body) and point (or
+% particle) in the system.
 animate(N, No)
+%---------------------------------------------------------------
+% Do the numerical integration and write to output files.
 ODE() particle_pendulum

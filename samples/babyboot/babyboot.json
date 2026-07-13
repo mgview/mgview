@@ -1,0 +1,545 @@
+{
+  "name": "babyboot",
+  "showAxes": false,
+  "cameraUp": [
+    0,
+    -2.220446049250313e-16,
+    1
+  ],
+  "cameraEye": [
+    0.5367651053095619,
+    -0.36948054158635346,
+    0.19293436949784015
+  ],
+  "cameraFocus": [
+    0.012658891390829841,
+    0.024008933700103485,
+    -0.1307558621334885
+  ],
+  "cameraParentFrame": "N",
+  "speedFactor": 1,
+  "workspaceSize": 0.2,
+  "objects": {
+    "N": {
+      "type": "frame",
+      "visual": {
+        "label": {
+          "visible": true,
+          "type": "text",
+          "text": "N",
+          "scale": 0.025,
+          "position": {
+            "x": 0,
+            "y": 0.02,
+            "z": 0.026
+          },
+          "rotation": {
+            "x": 1.5708,
+            "y": 1.5708,
+            "z": 0
+          },
+          "material": {
+            "name": "#111827"
+          }
+        },
+        "basis": {
+          "visible": true,
+          "type": "basis",
+          "scale": 0.05,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "rgb(165, 165, 165)",
+            "color": {
+              "r": 0.64453125,
+              "g": 0.64453125,
+              "b": 0.64453125,
+              "a": 1
+            }
+          }
+        },
+        "shaft": {
+          "type": "cylinder",
+          "visible": true,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 1.5708
+          },
+          "material": "WHITE",
+          "capped": true,
+          "radius1": 1,
+          "radius2": 1,
+          "radius": 0.01,
+          "length": 0.04,
+          "segments_radius": 12,
+          "segments_height": 1
+        },
+        "topSupport": {
+          "type": "box",
+          "visible": true,
+          "position": {
+            "x": -0.093,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "rgb(211, 211, 211)",
+            "color": {
+              "r": 0.82421875,
+              "g": 0.82421875,
+              "b": 0.82421875,
+              "a": 1
+            }
+          },
+          "size": {
+            "x": 0.15,
+            "y": 0.03,
+            "z": 0.03
+          }
+        },
+        "verticalSupport": {
+          "type": "box",
+          "visible": true,
+          "position": {
+            "x": -0.17,
+            "y": 0,
+            "z": -0.16
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "rgb(195, 195, 195)",
+            "color": {
+              "r": 0.76171875,
+              "g": 0.76171875,
+              "b": 0.76171875,
+              "a": 1
+            }
+          },
+          "size": {
+            "x": 0.04,
+            "y": 0.04,
+            "z": 0.36
+          }
+        },
+        "basePlate": {
+          "type": "box",
+          "visible": true,
+          "position": {
+            "x": -0.037,
+            "y": 0,
+            "z": -0.33
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "rgb(207, 207, 207)",
+            "color": {
+              "r": 0.80859375,
+              "g": 0.80859375,
+              "b": 0.80859375,
+              "a": 1
+            }
+          },
+          "size": {
+            "x": 0.305,
+            "y": 0.264,
+            "z": 0.02
+          }
+        }
+      }
+    },
+    "A": {
+      "type": "frame",
+      "visual": {
+        "label": {
+          "visible": true,
+          "type": "text",
+          "text": "A",
+          "scale": 0.025,
+          "position": {
+            "x": 0,
+            "y": 0.03,
+            "z": -0.02
+          },
+          "rotation": {
+            "x": 1.5708,
+            "y": 1.5708,
+            "z": 0
+          },
+          "material": {
+            "name": "#111827"
+          }
+        },
+        "basis": {
+          "visible": true,
+          "type": "basis",
+          "scale": 0.05,
+          "position": {
+            "x": 0.008,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": "SILVER"
+        },
+        "rod": {
+          "type": "cylinder",
+          "visible": true,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 1.5708,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "rgba(193, 20, 20, 0.82)",
+            "color": {
+              "r": 0.75390625,
+              "g": 0.078125,
+              "b": 0.078125,
+              "a": 0.82
+            }
+          },
+          "radius": 0.007,
+          "length": 0.15,
+          "capped": true,
+          "radius1": 1,
+          "radius2": 1,
+          "segments_radius": 12,
+          "segments_height": 1
+        },
+        "bearing": {
+          "type": "cylinder",
+          "visible": true,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0.075
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 1.5708
+          },
+          "material": {
+            "name": "rgb(193, 47, 47)",
+            "color": {
+              "r": 0.75390625,
+              "g": 0.18359375,
+              "b": 0.18359375,
+              "a": 1
+            }
+          },
+          "radius": 0.016,
+          "length": 0.014,
+          "capped": true,
+          "radius1": 1,
+          "radius2": 1,
+          "segments_radius": 12,
+          "segments_height": 1
+        }
+      }
+    },
+    "B": {
+      "type": "frame",
+      "visual": {
+        "label": {
+          "visible": true,
+          "type": "text",
+          "text": "B",
+          "scale": 0.025,
+          "position": {
+            "x": 0.01,
+            "y": 0.05,
+            "z": 0.02
+          },
+          "rotation": {
+            "x": 1.5708,
+            "y": 1.5708,
+            "z": 0
+          },
+          "material": {
+            "name": "#111827"
+          }
+        },
+        "basis": {
+          "visible": true,
+          "type": "basis",
+          "scale": 0.05,
+          "position": {
+            "x": 0.01,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": "SILVER"
+        },
+        "boot": {
+          "type": "box",
+          "visible": true,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "rgba(99, 156, 197, 0.8)",
+            "color": {
+              "r": 0.38671875,
+              "g": 0.609375,
+              "b": 0.76953125,
+              "a": 0.8
+            }
+          },
+          "size": {
+            "x": 0.02,
+            "y": 0.16,
+            "z": 0.1
+          }
+        },
+        "collar": {
+          "type": "cylinder",
+          "visible": true,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0.053
+          },
+          "rotation": {
+            "x": 1.5708,
+            "y": 0,
+            "z": 0
+          },
+          "material": "WHITE",
+          "radius": 0.01,
+          "length": 0.006,
+          "capped": true,
+          "radius1": 1,
+          "radius2": 1,
+          "segments_radius": 12,
+          "segments_height": 1
+        }
+      }
+    },
+    "No": {
+      "type": "point",
+      "visual": {
+        "label": {
+          "visible": true,
+          "type": "text",
+          "text": "No",
+          "scale": 0.025,
+          "position": {
+            "x": 0.016666666666666666,
+            "y": -0.044,
+            "z": 0
+          },
+          "rotation": {
+            "x": 1.5707963267948966,
+            "y": 1.5707963267948966,
+            "z": 0
+          },
+          "material": {
+            "name": "BLACK"
+          }
+        },
+        "point": {
+          "visible": true,
+          "type": "sphere",
+          "radius": 0.010000000000000002,
+          "segments_width": 16,
+          "segments_height": 12,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
+          }
+        }
+      }
+    },
+    "Ao": {
+      "type": "point",
+      "visual": {
+        "label": {
+          "visible": false,
+          "type": "text",
+          "text": "Ao",
+          "scale": 0.025,
+          "position": {
+            "x": 0.016666666666666666,
+            "y": 0.00625,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "BLACK"
+          }
+        },
+        "point": {
+          "visible": false,
+          "type": "sphere",
+          "radius": 0.010000000000000002,
+          "segments_width": 16,
+          "segments_height": 12,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
+          }
+        }
+      }
+    },
+    "Bo": {
+      "type": "point",
+      "visual": {
+        "label": {
+          "visible": false,
+          "type": "text",
+          "text": "Bo",
+          "scale": 0.025,
+          "position": {
+            "x": 0.016666666666666666,
+            "y": 0.00625,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "BLACK"
+          }
+        },
+        "point": {
+          "visible": false,
+          "type": "sphere",
+          "radius": 0.010000000000000002,
+          "segments_width": 16,
+          "segments_height": 12,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
+          }
+        }
+      }
+    }
+  },
+  "layout": {
+    "showRenderer": true,
+    "showPlots": true,
+    "rightRail": "sim",
+    "focusTarget": null,
+    "visualSplit": 0.6,
+    "workspaceSplit": 0.6443514644351465
+  },
+  "backgroundColor": "#e0f0ff",
+  "plots": {
+    "panels": [
+      {
+        "id": "b66d0d4b-683c-42da-8fbb-2717e9ae1df8",
+        "title": "qA and qB vs time",
+        "channels": [
+          "qA",
+          "qB"
+        ],
+        "xMode": "time"
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "default",
+      "label": "Stable Initial Conditions",
+      "simulationData": [
+        "stable/Data.1",
+        "stable/Data.2",
+        "stable/Data.3"
+      ]
+    },
+    {
+      "id": "sim_data_1",
+      "label": "Chaotic Initial Conditions",
+      "simulationData": [
+        "chaotic/Data.1",
+        "chaotic/Data.2",
+        "chaotic/Data.3"
+      ]
+    }
+  ],
+  "activeScenario": "sim_data_1",
+  "spans": {},
+  "simulationSettings": "babyboot.txt"
+}

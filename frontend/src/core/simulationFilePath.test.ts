@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   defaultSimFileNameForScene,
   getSimulationSettingsRelativePath,
+  resolveSimulationFileLoadRequest,
   validateSimFileName,
 } from './simulationFilePath.ts';
 
@@ -20,6 +21,29 @@ test('validateSimFileName rejects unsupported simulation file names', () => {
   assert.equal(validateSimFileName('sim.json'), 'Simulation files must end in .al or .txt.');
   assert.equal(validateSimFileName('sim.txt'), null);
   assert.equal(validateSimFileName('sim.al'), null);
+});
+
+test('resolveSimulationFileLoadRequest uses the sample API root for sample scenes', () => {
+  assert.deepEqual(
+    resolveSimulationFileLoadRequest(
+      { source: 'sample', path: 'particle_pendulum/particle_pendulum.json' },
+      'particle_pendulum.al'
+    ),
+    {
+      path: 'particle_pendulum/particle_pendulum.al',
+      root: 'sample',
+    }
+  );
+  assert.deepEqual(
+    resolveSimulationFileLoadRequest(
+      { source: 'workspace', path: 'projects/demo/my_scene.json' },
+      'my_scene.txt'
+    ),
+    {
+      path: 'projects/demo/my_scene.txt',
+      root: 'workspace',
+    }
+  );
 });
 
 test('getSimulationSettingsRelativePath resolves colocated and nested simulation files', () => {
