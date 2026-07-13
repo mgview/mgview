@@ -344,6 +344,11 @@ export function NumericInput({
           return;
         }
 
+        // Let clicks on the text field place the caret normally.
+        if (event.target === inputRef.current) {
+          return;
+        }
+
         event.preventDefault();
         event.currentTarget.setPointerCapture(event.pointerId);
 
