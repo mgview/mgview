@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { loadTextFile, saveTextFile } from '../api/localFiles.ts';
+import type { ApiRoot } from '../core/sceneRef.ts';
 
 interface UseWorkspaceTextFileEditorOptions {
   canEdit?: boolean;
+  canLoad?: boolean;
   filePath: string | null;
+  fileRoot?: ApiRoot;
 }
 
 export function useWorkspaceTextFileEditor({
   canEdit = true,
+  canLoad,
   filePath,
+  fileRoot = 'workspace',
 }: UseWorkspaceTextFileEditorOptions) {
   const [savedContent, setSavedContent] = useState<string | null>(null);
   const [draftContent, setDraftContent] = useState('');
@@ -17,11 +22,12 @@ export function useWorkspaceTextFileEditor({
   const [error, setError] = useState<string | null>(null);
 
   const normalizedFilePath = useMemo(() => filePath?.trim() || null, [filePath]);
+  const shouldLoad = canLoad ?? canEdit;
   const canSaveFile = canEdit && normalizedFilePath !== null;
   const hasEdits = savedContent !== null && draftContent !== savedContent;
 
   useEffect(() => {
-    if (!canEdit || !normalizedFilePath) {
+    if (!shouldLoad || !normalizedFilePath) {
       setSavedContent(null);
       setDraftContent('');
       setError(null);
@@ -33,7 +39,7 @@ export function useWorkspaceTextFileEditor({
     setLoading(true);
     setError(null);
 
-    void loadTextFile(normalizedFilePath)
+    void loadTextFile(normalizedFilePath, fileRoot)
       .then((text) => {
         if (cancelled) {
           return;
@@ -58,7 +64,7 @@ export function useWorkspaceTextFileEditor({
     return () => {
       cancelled = true;
     };
-  }, [canEdit, normalizedFilePath]);
+  }, [fileRoot, normalizedFilePath, shouldLoad]);
 
   const saveFile = useCallback(async (): Promise<boolean> => {
     if (!canSaveFile || !normalizedFilePath || !hasEdits) {

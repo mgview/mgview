@@ -201,8 +201,8 @@ export function useMotionGenesisWorkspace({
   );
 
   const simulationSettingsEditor = useSimulationSettingsEditor({
-    canEdit: loaded?.sceneRef.source === 'workspace',
-    scenePath: loaded?.sceneRef.source === 'workspace' ? loaded.sceneRef.path : null,
+    canSave: loaded?.sceneRef.source === 'workspace',
+    sceneRef: loaded?.sceneRef ?? null,
     simulationSettings: activeScene?.simulationSettings,
   });
 

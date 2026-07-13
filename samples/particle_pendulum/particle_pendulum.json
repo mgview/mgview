@@ -1,451 +1,471 @@
 {
-    "name": "particle_pendulum",
-    "showAxes": false,
-    "cameraUp": [
-      0,
-      1,
-      0
-    ],
-    "cameraEye": [
-      -0.06910130341426125,
-      0.11435816182928077,
-      1.3771521401461664
-    ],
-    "cameraFocus": [
-      0,
-      -0.25,
-      0
-    ],
-    "cameraParentFrame": "N",
-    "speedFactor": 1,
-    "workspaceSize": 0.5,
-    "customMaterials": {},
-    "objects": {
-      "N": {
-        "type": "frame",
-        "visual": {
-          "ground_box": {
-            "visible": true,
-            "type": "box",
-            "size": {
-              "x": 1,
-              "y": 0.02,
-              "z": 1
-            },
-            "position": {
-              "x": 0,
-              "y": -0.65,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "DIRT",
-              "color": {
-                "r": 0.6,
-                "g": 0.3,
-                "b": 0,
-                "a": 1
-              }
-            }
+  "name": "particle_pendulum",
+  "showAxes": false,
+  "cameraUp": [
+    0,
+    1,
+    0
+  ],
+  "cameraEye": [
+    0.005191028126462497,
+    0.007625382834576533,
+    1.402740921439397
+  ],
+  "cameraFocus": [
+    0,
+    -0.25,
+    0
+  ],
+  "cameraParentFrame": "N",
+  "speedFactor": 1,
+  "workspaceSize": 0.5,
+  "customMaterials": {},
+  "objects": {
+    "N": {
+      "type": "frame",
+      "visual": {
+        "ground_box": {
+          "visible": true,
+          "type": "box",
+          "size": {
+            "x": 1,
+            "y": 0.02,
+            "z": 1
           },
-          "label": {
-            "visible": true,
-            "type": "text",
-            "text": "N",
-            "scale": 0.05,
-            "position": {
-              "x": -0.161,
-              "y": 0.15,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "#111827"
-            }
+          "position": {
+            "x": 0,
+            "y": -0.65,
+            "z": 0
           },
-          "basis": {
-            "visible": true,
-            "type": "basis",
-            "scale": 0.125,
-            "position": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "SILVER"
-            }
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          "bracket": {
-            "visible": true,
-            "type": "cylinder",
-            "position": {
-              "x": 0,
-              "y": 0.1,
-              "z": -0.02
-            },
-            "rotation": {
-              "x": 1.5707963267948966,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "SILVER"
-            },
-            "radius": 0.1,
-            "length": 0.02,
-            "capped": true,
-            "segments_radius": 3,
-            "segments_height": 1
-          },
-          "ceiling": {
-            "visible": true,
-            "type": "box",
-            "position": {
-              "x": 0,
-              "y": 0.15,
-              "z": -0.02
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "#111827"
-            },
-            "size": {
-              "x": 0.25,
-              "y": 0.05,
-              "z": 0.025
-            },
-            "segments_width": 1,
-            "segments_height": 1,
-            "segments_depth": 1
-          },
-          "pin": {
-            "visible": true,
-            "type": "cylinder",
-            "position": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "rotation": {
-              "x": 1.5707963267948966,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "#111827"
-            },
-            "radius": 0.01,
-            "length": 0.06,
-            "capped": true,
-            "segments_radius": 16,
-            "segments_height": 1
-          }
-        }
-      },
-      "B": {
-        "type": "frame",
-        "visual": {
-          "shaft": {
-            "visible": true,
-            "type": "cylinder",
-            "length": 0.5,
-            "radius": 0.007,
-            "position": {
-              "x": 0,
-              "y": -0.25,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "BLACK"
-            },
-            "radius1": 1,
-            "radius2": 1,
-            "segments_radius": 12,
-            "segments_height": 1,
-            "capped": true
-          },
-          "ring_torus": {
-            "visible": true,
-            "type": "torus",
-            "radius": 0.015,
-            "thickness": 0.03,
-            "position": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "GRAY"
-            },
-            "segments_radius": 12,
-            "segments_thickness": 8
-          },
-          "ring_center": {
-            "visible": true,
-            "type": "cylinder",
-            "radius": 0.015,
-            "length": 0.025,
-            "position": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "rotation": {
-              "x": 1.5708,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "GRAY"
-            },
-            "radius1": 1,
-            "radius2": 1,
-            "segments_radius": 12,
-            "segments_height": 1,
-            "capped": true
-          },
-          "label": {
-            "visible": true,
-            "type": "text",
-            "text": "B",
-            "scale": 0.0625,
-            "position": {
-              "x": 0.05,
-              "y": -0.2,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "#111827"
-            }
-          },
-          "basis": {
-            "visible": true,
-            "type": "basis",
-            "scale": 0.125,
-            "position": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "SILVER"
+          "material": {
+            "name": "DIRT",
+            "color": {
+              "r": 0.6,
+              "g": 0.3,
+              "b": 0,
+              "a": 1
             }
           }
-        }
-      },
-      "Q": {
-        "type": "point",
-        "rotationFrame": "B",
-        "visual": {
-          "sphere1": {
-            "visible": true,
-            "type": "sphere",
-            "radius": 0.05,
-            "position": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "CHECKERBOARD"
-            },
-            "segments_width": 8,
-            "segments_height": 8
+        },
+        "label": {
+          "visible": true,
+          "type": "text",
+          "text": "N",
+          "scale": 0.05,
+          "position": {
+            "x": -0.161,
+            "y": 0.15,
+            "z": 0
           },
-          "label": {
-            "visible": true,
-            "type": "text",
-            "text": "Q",
-            "scale": 0.0625,
-            "position": {
-              "x": 0.08,
-              "y": 0.025,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "#111827"
-            }
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          "basis": {
-            "visible": false,
-            "type": "basis",
-            "scale": 0.125,
-            "position": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "SILVER"
-            }
+          "material": {
+            "name": "#111827"
           }
-        }
-      },
-      "No": {
-        "type": "point",
-        "visual": {
-          "label": {
-            "visible": true,
-            "type": "text",
-            "text": "No, Bo",
-            "scale": 0.06,
-            "position": {
-              "x": -0.16,
-              "y": 0,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "BLACK"
-            }
+        },
+        "basis": {
+          "visible": true,
+          "type": "basis",
+          "scale": 0.125,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          "point": {
-            "visible": false,
-            "type": "sphere",
-            "radius": 0.025,
-            "segments_width": 16,
-            "segments_height": 12,
-            "position": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "SILVER"
-            }
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
           }
-        }
-      },
-      "Bo": {
-        "type": "point",
-        "visual": {
-          "label": {
-            "visible": false,
-            "type": "text",
-            "text": "Bo",
-            "scale": 0.0625,
-            "position": {
-              "x": -0.125,
-              "y": -0.08,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "BLACK"
-            }
+        },
+        "bracket": {
+          "visible": true,
+          "type": "cylinder",
+          "position": {
+            "x": 0,
+            "y": 0.1,
+            "z": -0.02
           },
-          "point": {
-            "visible": false,
-            "type": "sphere",
-            "radius": 0.025,
-            "segments_width": 16,
-            "segments_height": 12,
-            "position": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "material": {
-              "name": "SILVER"
-            }
+          "rotation": {
+            "x": 1.5707963267948966,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
+          },
+          "radius": 0.1,
+          "length": 0.02,
+          "capped": true,
+          "segments_radius": 3,
+          "segments_height": 1
+        },
+        "ceiling": {
+          "visible": true,
+          "type": "box",
+          "position": {
+            "x": 0,
+            "y": 0.15,
+            "z": -0.02
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "#7f8da3"
+          },
+          "size": {
+            "x": 0.2,
+            "y": 0.05,
+            "z": 0.025
+          },
+          "segments_width": 1,
+          "segments_height": 1,
+          "segments_depth": 1
+        },
+        "pin": {
+          "visible": true,
+          "type": "cylinder",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 1.5707963267948966,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "#111827"
+          },
+          "radius": 0.01,
+          "length": 0.06,
+          "capped": true,
+          "segments_radius": 16,
+          "segments_height": 1
+        }
+      }
+    },
+    "B": {
+      "type": "frame",
+      "visual": {
+        "shaft": {
+          "visible": true,
+          "type": "cylinder",
+          "length": 0.5,
+          "radius": 0.007,
+          "position": {
+            "x": 0,
+            "y": -0.25,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "BLACK"
+          },
+          "radius1": 1,
+          "radius2": 1,
+          "segments_radius": 12,
+          "segments_height": 1,
+          "capped": true
+        },
+        "ring_torus": {
+          "visible": true,
+          "type": "torus",
+          "radius": 0.015,
+          "thickness": 0.03,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "GRAY"
+          },
+          "segments_radius": 12,
+          "segments_thickness": 8
+        },
+        "ring_center": {
+          "visible": true,
+          "type": "cylinder",
+          "radius": 0.015,
+          "length": 0.025,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 1.5708,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "GRAY"
+          },
+          "radius1": 1,
+          "radius2": 1,
+          "segments_radius": 12,
+          "segments_height": 1,
+          "capped": true
+        },
+        "label": {
+          "visible": true,
+          "type": "text",
+          "text": "B",
+          "scale": 0.0625,
+          "position": {
+            "x": 0.05,
+            "y": -0.2,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "#111827"
+          }
+        },
+        "basis": {
+          "visible": true,
+          "type": "basis",
+          "scale": 0.125,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
           }
         }
       }
     },
-    "layout": {
-      "showRenderer": true,
-      "showPlots": false,
-      "rightRail": "scene",
-      "focusTarget": null,
-      "visualSplit": 0.6,
-      "workspaceSplit": 0.5526315789473684
+    "Q": {
+      "type": "point",
+      "rotationFrame": "B",
+      "visual": {
+        "sphere1": {
+          "visible": true,
+          "type": "sphere",
+          "radius": 0.05,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "CHECKERBOARD"
+          },
+          "segments_width": 8,
+          "segments_height": 8
+        },
+        "label": {
+          "visible": true,
+          "type": "text",
+          "text": "Q",
+          "scale": 0.0625,
+          "position": {
+            "x": 0.08,
+            "y": 0.025,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "#111827"
+          }
+        },
+        "basis": {
+          "visible": false,
+          "type": "basis",
+          "scale": 0.125,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
+          }
+        }
+      }
     },
-    "backgroundColor": "#e0f0ff",
-    "plots": {
-      "panels": []
+    "No": {
+      "type": "point",
+      "visual": {
+        "label": {
+          "visible": true,
+          "type": "text",
+          "text": "No, Bo",
+          "scale": 0.06,
+          "position": {
+            "x": -0.16,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "BLACK"
+          }
+        },
+        "point": {
+          "visible": false,
+          "type": "sphere",
+          "radius": 0.025,
+          "segments_width": 16,
+          "segments_height": 12,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
+          }
+        }
+      }
     },
-    "scenarios": [
+    "Bo": {
+      "type": "point",
+      "visual": {
+        "label": {
+          "visible": false,
+          "type": "text",
+          "text": "Bo",
+          "scale": 0.0625,
+          "position": {
+            "x": -0.125,
+            "y": -0.08,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "BLACK"
+          }
+        },
+        "point": {
+          "visible": false,
+          "type": "sphere",
+          "radius": 0.025,
+          "segments_width": 16,
+          "segments_height": 12,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "material": {
+            "name": "SILVER"
+          }
+        }
+      }
+    }
+  },
+  "layout": {
+    "showRenderer": true,
+    "showPlots": false,
+    "rightRail": "sim",
+    "focusTarget": null,
+    "visualSplit": 0.5,
+    "workspaceSplit": 0.5287983786610879
+  },
+  "backgroundColor": "#e0f0ff",
+  "plots": {
+    "panels": [
       {
-        "id": "default",
-        "label": "Default",
-        "simulationData": [
-          "particle_pendulum.1",
-          "particle_pendulum.2",
-          "particle_pendulum.3"
-        ]
+        "id": "d42f03ce-7235-4642-a059-9e0794312628",
+        "channels": [
+          "theta"
+        ],
+        "xMode": "time",
+        "title": "Theta vs Time"
+      },
+      {
+        "id": "07de086a-87df-4897-9b4c-0a12b60c29c2",
+        "channels": [
+          "KE",
+          "PE",
+          "MechanicalEnergy"
+        ],
+        "xMode": "time",
+        "title": "Energy vs Time"
       }
-    ],
-    "activeScenario": "default",
-    "spans": {}
-  }
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "default",
+      "label": "Default",
+      "simulationData": [
+        "particle_pendulum.1",
+        "particle_pendulum.2",
+        "particle_pendulum.3"
+      ]
+    }
+  ],
+  "activeScenario": "default",
+  "spans": {},
+  "simulationSettings": "particle_pendulum.al"
+}

@@ -1,4 +1,10 @@
 import { getBasePath, getRelativePath, normalizeWorkspaceRelativePath } from './pathUtils.ts';
+import { getApiRoot, type ApiRoot, type SceneRef } from './sceneRef.ts';
+
+export interface SimulationFileLoadRequest {
+  path: string;
+  root: ApiRoot;
+}
 
 export function getSceneDirectoryPath(scenePath: string | null): string {
   if (!scenePath) {
@@ -22,6 +28,25 @@ export function resolveSimulationFilePath(
   const joinedPath =
     sceneDirectoryPath === '.' ? trimmedSettings : `${sceneDirectoryPath}/${trimmedSettings}`;
   return normalizeWorkspaceRelativePath(joinedPath);
+}
+
+export function resolveSimulationFileLoadRequest(
+  sceneRef: SceneRef | null,
+  simulationSettings: string | null | undefined
+): SimulationFileLoadRequest | null {
+  if (!sceneRef) {
+    return null;
+  }
+
+  const path = resolveSimulationFilePath(sceneRef.path, simulationSettings);
+  if (!path) {
+    return null;
+  }
+
+  return {
+    path,
+    root: getApiRoot(sceneRef),
+  };
 }
 
 export function isMotionGenesisInputPath(filePath: string): boolean {

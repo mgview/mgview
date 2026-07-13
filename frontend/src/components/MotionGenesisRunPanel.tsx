@@ -19,6 +19,7 @@ import { Separator } from './ui/separator.tsx';
 
 interface MotionGenesisRunPanelProps {
   canRun: boolean;
+  canLinkSimulationFile: boolean;
   error: string | null;
   input: string;
   loadedScenePath: string | null;
@@ -46,6 +47,7 @@ interface MotionGenesisRunPanelProps {
 
 export default function MotionGenesisRunPanel({
   canRun,
+  canLinkSimulationFile,
   error,
   input,
   loadedScenePath,
@@ -82,7 +84,11 @@ export default function MotionGenesisRunPanel({
 
   const [unlinking, setUnlinking] = useState(false);
 
-  const runDisabledReason = !loadedScenePath ? 'Load a workspace scene to run Motion Genesis.' : null;
+  const runDisabledReason = !canRun
+    ? loadedScenePath
+      ? 'Motion Genesis runs are only available for workspace scenes.'
+      : 'Load a workspace scene to run Motion Genesis.'
+    : null;
   const hasLinkedSimulationFile = Boolean(simulationSettings?.trim());
   const sceneDirectoryPath = useMemo(() => getSceneDirectoryPath(loadedScenePath), [loadedScenePath]);
   const simulationFilePath = useMemo(
@@ -184,18 +190,24 @@ export default function MotionGenesisRunPanel({
         Simulation file
       </div>
       <div className="flex items-start gap-1">
-        <button
-          type="button"
-          className="group min-w-0 flex-1 cursor-pointer rounded-sm text-left text-primary underline decoration-primary decoration-2 underline-offset-[3px] transition-colors hover:text-primary/80 hover:decoration-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
-          onClick={() => setPickerOpen(true)}
-          disabled={loadedScenePath === null}
-        >
-          <code className="break-all font-mono text-xs text-inherit group-hover:text-inherit">
-            {hasLinkedSimulationFile ? simulationSettings : '<click to select>'}
+        {canLinkSimulationFile ? (
+          <button
+            type="button"
+            className="group min-w-0 flex-1 cursor-pointer rounded-sm text-left text-primary underline decoration-primary decoration-2 underline-offset-[3px] transition-colors hover:text-primary/80 hover:decoration-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
+            onClick={() => setPickerOpen(true)}
+            disabled={loadedScenePath === null}
+          >
+            <code className="break-all font-mono text-xs text-inherit group-hover:text-inherit">
+              {hasLinkedSimulationFile ? simulationSettings : '<click to select>'}
+            </code>
+            {simFileDirty ? <span className="text-warning"> • unsaved</span> : null}
+          </button>
+        ) : (
+          <code className="min-w-0 flex-1 break-all font-mono text-xs">
+            {hasLinkedSimulationFile ? simulationSettings : 'Not linked'}
           </code>
-          {simFileDirty ? <span className="text-warning"> • unsaved</span> : null}
-        </button>
-        {hasLinkedSimulationFile ? (
+        )}
+        {hasLinkedSimulationFile && canLinkSimulationFile ? (
           <Button
             type="button"
             variant="ghost"

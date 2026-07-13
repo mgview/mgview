@@ -3,8 +3,6 @@ RigidBody A,B
 
 variable qA'', qB''
 constant La, Lb
-constant mA, mB,
-constant Ia, IBx, Iby, Ibz
 constant g
 
 A.setMass(mA)
