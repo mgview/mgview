@@ -22,8 +22,6 @@ import {
 import { checkReleaseVersion } from './checkReleaseVersion.mjs';
 import { copyTree, excludeDotfiles } from './lib/copyTree.mjs';
 
-const RELEASE_TOP_LEVEL = 'mgview';
-
 const releaseFiles = [
   'bin',
   'RunMGViewMac',
@@ -120,12 +118,12 @@ async function assertNodePtyReleaseLayout(nodePtyDir) {
   }
 }
 
-async function zipDirectory(stagingRoot, zipPath) {
+async function zipDirectory(parentDir, folderName, zipPath) {
   await rm(zipPath, { force: true });
   await new Promise((resolve, reject) => {
     // -y store symlinks as links; unix modes (incl. +x) are preserved by Info-ZIP.
-    const child = spawn('zip', ['-ry', zipPath, RELEASE_TOP_LEVEL], {
-      cwd: stagingRoot,
+    const child = spawn('zip', ['-ry', zipPath, folderName], {
+      cwd: parentDir,
       stdio: 'inherit',
     });
     child.on('error', reject);
@@ -143,11 +141,11 @@ async function main() {
   await checkReleaseVersion();
 
   const version = process.env.MGVIEW_RELEASE_VERSION ?? (await readVersion());
-  const stagingRoot = path.join(releaseDir, `mgview-${version}`);
-  const stagingDir = path.join(stagingRoot, RELEASE_TOP_LEVEL);
-  const zipPath = path.join(releaseDir, `mgview-${version}.zip`);
+  const topLevelName = `mgview-${version}`;
+  const stagingDir = path.join(releaseDir, topLevelName);
+  const zipPath = path.join(releaseDir, `${topLevelName}.zip`);
 
-  await rm(stagingRoot, { recursive: true, force: true });
+  await rm(stagingDir, { recursive: true, force: true });
   await mkdir(stagingDir, { recursive: true });
 
   for (const entry of releaseFiles) {
@@ -179,7 +177,7 @@ async function main() {
   await markSpawnHelpersExecutable(stagedNodePty);
   await assertNodePtyReleaseLayout(stagedNodePty);
 
-  await zipDirectory(stagingRoot, zipPath);
+  await zipDirectory(releaseDir, topLevelName, zipPath);
   console.log(`Release zip: ${zipPath}`);
 }
 
