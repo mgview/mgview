@@ -80,10 +80,24 @@ if errorlevel 1 (
   echo.
   echo    ERROR: Node.js was not found on this computer.
   echo.
-  echo    Install the official Node.js LTS release from:
+  echo    MGView requires Node.js 20 or later. Install from:
   echo    https://nodejs.org/en/download
   echo.
   echo    After installing Node.js, close this window and run MGView again.
+  echo.
+  pause
+  exit /b 1
+)
+
+for /f "delims=" %%V in ('node -p "process.versions.node.split('.')[0]" 2^>nul') do set "NODE_MAJOR=%%V"
+if defined NODE_MAJOR if %NODE_MAJOR% LSS 20 (
+  echo.
+  echo    ERROR: MGView requires Node.js 20 or later ^(found:
+  node -v
+  echo    ^).
+  echo.
+  echo    Install the official Node.js LTS release from:
+  echo    https://nodejs.org/en/download
   echo.
   pause
   exit /b 1

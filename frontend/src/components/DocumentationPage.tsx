@@ -199,7 +199,8 @@ export default function DocumentationPage() {
                     </p>
                     <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
                       <li>
-                        Download the current LTS release from{' '}
+                        Download <span className="font-medium">Node.js 20 or later</span> (current LTS
+                        recommended) from{' '}
                         <a
                           className="text-primary underline-offset-4 hover:underline"
                           href="https://nodejs.org/en/download"
@@ -208,7 +209,8 @@ export default function DocumentationPage() {
                         >
                           nodejs.org
                         </a>
-                        .
+                        . Interactive Run Sim / MG Lab sessions need this version for the bundled PTY
+                        module.
                       </li>
                       <li>
                         <span className="font-semibold italic">Run</span> the node installer on your machine.

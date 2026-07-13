@@ -4,7 +4,6 @@ const crypto = require('crypto');
 const childProcess = require('child_process');
 const { readMotionGenesisBinFromConfig } = require('./workspaceRoots.js');
 
-const PTY_BRIDGE_PATH = path.resolve(__dirname, 'mg_pty_bridge.py');
 const DEFAULT_PTY_COLS = 80;
 const DEFAULT_PTY_ROWS = 30;
 
@@ -247,27 +246,105 @@ function defaultSpawn(command, args, options) {
   return childProcess.spawn(command, args, options);
 }
 
-const PTY_MODULE_NAME = '@homebridge/node-pty-prebuilt-multiarch';
+const PTY_MODULE_NAME = 'node-pty';
 
 function getNodePtyCandidatePaths() {
   return [
-    path.resolve(__dirname, 'node_modules', '@homebridge', 'node-pty-prebuilt-multiarch'),
-    path.resolve(__dirname, '../frontend/node_modules/@homebridge/node-pty-prebuilt-multiarch'),
+    path.resolve(__dirname, 'node_modules', 'node-pty'),
+    path.resolve(__dirname, '../frontend/node_modules/node-pty'),
     PTY_MODULE_NAME,
   ];
 }
 
+function resolveNodePtyPackageRoot(candidatePath) {
+  if (candidatePath === PTY_MODULE_NAME) {
+    try {
+      return path.dirname(require.resolve(`${PTY_MODULE_NAME}/package.json`));
+    } catch {
+      return null;
+    }
+  }
+  return candidatePath;
+}
+
+/**
+ * npm's node-pty tarball often ships macOS/Linux spawn-helper as mode 644.
+ * Without +x, pty.spawn throws a bare "posix_spawnp failed."
+ * See https://github.com/microsoft/node-pty/issues/850
+ */
+function ensureNodePtySpawnHelpersExecutable(nodePtyRoot) {
+  if (!nodePtyRoot || (process.platform !== 'darwin' && process.platform !== 'linux')) {
+    return [];
+  }
+
+  const fixed = [];
+  const stack = [
+    path.join(nodePtyRoot, 'prebuilds'),
+    path.join(nodePtyRoot, 'build', 'Release'),
+  ];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    let entries;
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+        continue;
+      }
+      if (entry.name !== 'spawn-helper') {
+        continue;
+      }
+
+      try {
+        const stats = fs.statSync(fullPath);
+        if ((stats.mode & 0o111) !== 0) {
+          continue;
+        }
+        fs.chmodSync(fullPath, stats.mode | 0o755);
+        fixed.push(fullPath);
+      } catch {
+        // Leave unreadable helpers alone; spawn will surface a clearer error.
+      }
+    }
+  }
+
+  return fixed;
+}
+
 function formatNodePtyLoadError(platform, attempts) {
   const lines = [
-    `Interactive Motion Genesis runs on ${platform || process.platform} require ${PTY_MODULE_NAME}.`,
-    `Node.js ${process.version}.`,
+    `Interactive Motion Genesis runs require the native PTY module (${PTY_MODULE_NAME}).`,
+    `Platform: ${platform || process.platform}. Node.js ${process.version} (MGView requires Node.js 20 or later).`,
+    'Without node-pty, Run Sim / MG Lab interactive sessions are unavailable.',
+    'Install Node.js 20+ LTS from https://nodejs.org/en/download, then restart MGView.',
     'Module load attempts:',
     ...attempts.map((attempt) => `  - ${attempt.path}: ${attempt.error}`),
     'Dev setup: cd frontend && npm install',
-    'Release bundles this module under bin/node_modules/.',
-    'Node.js 24 requires @homebridge/node-pty-prebuilt-multiarch >= 0.13.1.',
+    'Release bundles node-pty under bin/node_modules/ (macOS/Windows prebuilds; Linux build/Release from CI).',
   ];
   return lines.join('\n');
+}
+
+function formatPtySpawnFailure(error, command) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (!/posix_spawnp failed/i.test(message)) {
+    return error instanceof Error ? error : new Error(message);
+  }
+
+  return new Error(
+    `Could not start Motion Genesis via PTY (${message}). ` +
+      'On macOS/Linux this usually means node-pty spawn-helper is not executable ' +
+      '(npm may install it as mode 644). Restart MGView after `cd frontend && npm install`, ' +
+      'or run: chmod +x frontend/node_modules/node-pty/prebuilds/*/spawn-helper. ' +
+      `Command: ${command}`
+  );
 }
 
 function inspectNodePtyLoad(platform) {
@@ -275,6 +352,10 @@ function inspectNodePtyLoad(platform) {
 
   for (const candidatePath of getNodePtyCandidatePaths()) {
     try {
+      const packageRoot = resolveNodePtyPackageRoot(candidatePath);
+      if (packageRoot) {
+        ensureNodePtySpawnHelpersExecutable(packageRoot);
+      }
       require(candidatePath);
       return {
         ptyAvailable: true,
@@ -311,17 +392,16 @@ function loadNodePty(platform) {
     throw new Error(inspection.ptyError || `Could not load ${PTY_MODULE_NAME}.`);
   }
 
+  const packageRoot = resolveNodePtyPackageRoot(inspection.resolvedModulePath);
+  if (packageRoot) {
+    ensureNodePtySpawnHelpersExecutable(packageRoot);
+  }
+
   return require(inspection.resolvedModulePath);
 }
 
-function assertInteractivePtyAvailable(platform, environment) {
-  const resolvedPlatform = platform || process.platform;
-  const ptyBackend = resolvePtyBackend(resolvedPlatform, environment);
-  if (ptyBackend !== 'native') {
-    return;
-  }
-
-  loadNodePty(resolvedPlatform);
+function assertInteractivePtyAvailable(platform) {
+  loadNodePty(platform || process.platform);
 }
 
 function defaultPtySpawn(command, args, options) {
@@ -330,21 +410,17 @@ function defaultPtySpawn(command, args, options) {
   const requestedRows = Number(options && options.rows);
   const cols = Number.isFinite(requestedCols) && requestedCols > 0 ? Math.floor(requestedCols) : DEFAULT_PTY_COLS;
   const rows = Number.isFinite(requestedRows) && requestedRows > 0 ? Math.floor(requestedRows) : DEFAULT_PTY_ROWS;
-  return pty.spawn(command, args, {
-    name: 'xterm-color',
-    cols,
-    rows,
-    cwd: options && options.cwd ? options.cwd : process.cwd(),
-    env: options && options.env ? options.env : process.env,
-  });
-}
-
-function resolvePythonCommand(environment) {
-  const env = environment || process.env;
-  const explicitPath = typeof env.MGVIEW_PYTHON_BIN === 'string'
-    ? env.MGVIEW_PYTHON_BIN.trim()
-    : '';
-  return explicitPath.length > 0 ? explicitPath : 'python3';
+  try {
+    return pty.spawn(command, args, {
+      name: 'xterm-color',
+      cols,
+      rows,
+      cwd: options && options.cwd ? options.cwd : process.cwd(),
+      env: options && options.env ? options.env : process.env,
+    });
+  } catch (error) {
+    throw formatPtySpawnFailure(error, command);
+  }
 }
 
 function normalizeRunOptions(options) {
@@ -378,47 +454,10 @@ function buildAutoQuitInputFile(originalFilePath, runId) {
   };
 }
 
-function resolvePtyBackend(platform, environment) {
+function resolveMotionGenesisLaunch(command, simulationSettings, platform) {
   const resolvedPlatform = platform || process.platform;
-  const env = environment || process.env;
-  const explicitBackend = typeof env.MGVIEW_PTY_BACKEND === 'string'
-    ? env.MGVIEW_PTY_BACKEND.trim().toLowerCase()
-    : '';
 
-  if (resolvedPlatform === 'darwin') {
-    if (explicitBackend === 'python-bridge') {
-      return 'python-bridge';
-    }
-    return 'native';
-  }
-
-  if (resolvedPlatform === 'win32' || resolvedPlatform === 'linux') {
-    return 'native';
-  }
-
-  return 'pipe';
-}
-
-function resolveMotionGenesisLaunch(command, simulationSettings, platform, environment) {
-  const resolvedPlatform = platform || process.platform;
-  const ptyBackend = resolvePtyBackend(resolvedPlatform, environment);
-
-  if (resolvedPlatform === 'darwin' && ptyBackend === 'python-bridge') {
-    const spawnCommand = resolvePythonCommand(environment);
-    const spawnArgs = [PTY_BRIDGE_PATH, command, simulationSettings];
-    return {
-      spawnCommand,
-      spawnArgs,
-      commandLine: [spawnCommand, ...spawnArgs].map(quoteCommandPart).join(' '),
-      stdio: 'pipe',
-      pty: true,
-      nativePty: false,
-      inputTerminator: '\n',
-      stopSignal: 'SIGTERM',
-    };
-  }
-
-  if (ptyBackend === 'native') {
+  if (resolvedPlatform === 'darwin' || resolvedPlatform === 'win32' || resolvedPlatform === 'linux') {
     return {
       spawnCommand: command,
       spawnArgs: [simulationSettings],
@@ -433,7 +472,7 @@ function resolveMotionGenesisLaunch(command, simulationSettings, platform, envir
 
   throw new Error(
     `Interactive Motion Genesis runs are not configured for platform ${resolvedPlatform}. ` +
-      'Supported platforms use native PTY execution, or macOS python-bridge when MGVIEW_PTY_BACKEND=python-bridge.'
+      'Supported platforms: darwin, win32, and linux (native node-pty).'
   );
 }
 
@@ -677,16 +716,38 @@ function createMotionGenesisRunManager(options) {
     }
     if (typeof terminal.onExit === 'function') {
       terminal.onExit((event) => {
-        if (run.tempInputFilePath) {
-          try {
-            fs.unlinkSync(run.tempInputFilePath);
-            appendSystemOutput(run, `removed temporary input ${JSON.stringify(path.basename(run.tempInputFilePath))}`);
-          } catch (error) {
-            appendSystemOutput(run, `could not remove temporary input ${JSON.stringify(path.basename(run.tempInputFilePath))}`);
-          }
-        }
+        removeTempInputFile(run);
         completeRun(run, event && typeof event.exitCode === 'number' ? event.exitCode : null);
       });
+    }
+  }
+
+  function removeTempInputFile(run) {
+    if (!run || !run.tempInputFilePath) {
+      return;
+    }
+
+    const tempInputFilePath = run.tempInputFilePath;
+    run.tempInputFilePath = null;
+    try {
+      fs.unlinkSync(tempInputFilePath);
+      appendSystemOutput(run, `removed temporary input ${JSON.stringify(path.basename(tempInputFilePath))}`);
+    } catch {
+      appendSystemOutput(
+        run,
+        `could not remove temporary input ${JSON.stringify(path.basename(tempInputFilePath))}`
+      );
+    }
+  }
+
+  function removeTempInputFilePath(tempInputFilePath) {
+    if (!tempInputFilePath) {
+      return;
+    }
+    try {
+      fs.unlinkSync(tempInputFilePath);
+    } catch {
+      // Best-effort cleanup when spawn fails before a run record exists.
     }
   }
 
@@ -760,25 +821,29 @@ function createMotionGenesisRunManager(options) {
     const launchInfo = resolveMotionGenesisLaunch(
       commandInfo.command,
       launchSimulationSettings,
-      platform,
-      environment
+      platform
     );
-    assertInteractivePtyAvailable(platform, environment);
-    const child = launchInfo.nativePty
-      ? spawnPtyProcess(launchInfo.spawnCommand, launchInfo.spawnArgs, {
-          cwd: simulationDirectory,
-          env: environment,
-          cols: DEFAULT_PTY_COLS,
-          rows: DEFAULT_PTY_ROWS,
-          platform,
-          stdio: launchInfo.stdio,
-        })
-      : spawnProcess(launchInfo.spawnCommand, launchInfo.spawnArgs, {
-          cwd: simulationDirectory,
-          env: environment,
-          stdio: launchInfo.stdio,
-        });
-
+    assertInteractivePtyAvailable(platform);
+    let child;
+    try {
+      child = launchInfo.nativePty
+        ? spawnPtyProcess(launchInfo.spawnCommand, launchInfo.spawnArgs, {
+            cwd: simulationDirectory,
+            env: environment,
+            cols: DEFAULT_PTY_COLS,
+            rows: DEFAULT_PTY_ROWS,
+            platform,
+            stdio: launchInfo.stdio,
+          })
+        : spawnProcess(launchInfo.spawnCommand, launchInfo.spawnArgs, {
+            cwd: simulationDirectory,
+            env: environment,
+            stdio: launchInfo.stdio,
+          });
+    } catch (error) {
+      removeTempInputFilePath(tempInputFilePath);
+      throw error;
+    }
     const run = createInitialRunState(
       id,
       target.mode,
@@ -812,10 +877,7 @@ function createMotionGenesisRunManager(options) {
       `pid ${run.pid === null ? 'unavailable' : String(run.pid)} via ${commandInfo.source}`
     );
     if (launchInfo.pty) {
-      appendSystemOutput(
-        run,
-        launchInfo.nativePty ? 'native pty enabled via node-pty' : 'pty bridge enabled via python3'
-      );
+      appendSystemOutput(run, 'native pty enabled via node-pty');
     }
     if (tempInputFilePath) {
       appendSystemOutput(
@@ -853,19 +915,13 @@ function createMotionGenesisRunManager(options) {
     if (typeof child.on === 'function') {
       child.on('error', (error) => {
         appendOutput(run, `Failed to start Motion Genesis: ${error.message}\n`);
+        removeTempInputFile(run);
         completeRun(run, null);
         run.status = 'failed';
       });
       if (!run.nativePty) {
         child.on('close', (exitCode) => {
-          if (run.tempInputFilePath) {
-            try {
-              fs.unlinkSync(run.tempInputFilePath);
-              appendSystemOutput(run, `removed temporary input ${JSON.stringify(path.basename(run.tempInputFilePath))}`);
-            } catch (error) {
-              appendSystemOutput(run, `could not remove temporary input ${JSON.stringify(path.basename(run.tempInputFilePath))}`);
-            }
-          }
+          removeTempInputFile(run);
           completeRun(run, exitCode);
         });
       }
@@ -983,9 +1039,11 @@ module.exports = {
   assertInteractivePtyAvailable,
   createMotionGenesisRunManager,
   detectOdeOutputPathsFromSimText,
+  ensureNodePtySpawnHelpersExecutable,
   ensureOdeOutputDirectories,
   getMotionGenesisCommandCandidates,
   getMotionGenesisRuntimeInfo,
+  getNodePtyCandidatePaths,
   inspectNodePtyLoad,
   normalizePtyOutput,
   normalizeRunOptions,

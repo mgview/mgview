@@ -46,11 +46,13 @@ These must not share a directory — the Node server routes `/mgview/bundled/` t
 **Release zip** (`build/release/mgview-<version>.zip`):
 
 - `mgview/bin/` — Node server
+- `mgview/bin/node_modules/node-pty/` — N-API PTY binaries (macOS/Windows prebuilds + Linux `build/Release`; `.pdb` stripped)
 - `mgview/frontend/dist/` — compiled modern app (server mode)
 - `mgview/samples/`
 - `mgview/assets/`
 - `RunMGViewMac`, `RunMGViewLinux`, `RunMGViewWindows.bat`, README, LICENSE
-- **No** `legacy/`, **no** frontend source, **no** `node_modules`
+- **No** `legacy/`, **no** frontend source
+- Local download requires **Node.js 20+** on PATH
 
 ## Local development
 

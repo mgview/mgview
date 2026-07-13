@@ -22,6 +22,11 @@ import {
   useMotionGenesisRunPreferences,
   type MotionGenesisRunLayoutMode,
 } from '../hooks/useMotionGenesisRunPreferences.ts';
+import {
+  isPtyBlocked,
+  NODE_LTS_DOWNLOAD_URL,
+  PTY_UNAVAILABLE_SUMMARY,
+} from '../lib/ptyAvailability.ts';
 import { cn } from '../lib/utils.ts';
 import CodeEditor from './CodeEditor.tsx';
 import MotionGenesisExecutableOverlay from './MotionGenesisExecutableOverlay.tsx';
@@ -178,8 +183,25 @@ export default function MotionGenesisRunShell({
   const statusLabel = useMemo(() => getStatusLabel(run), [run]);
   const statusVariant = useMemo(() => getStatusVariant(run), [run]);
   const resolvedCommand = run?.command ?? motionGenesisRuntime.runtimeInfo?.command ?? 'Not configured';
+  const ptyBlocked = isPtyBlocked(motionGenesisRuntime.runtimeInfo);
   const ptySetupError = motionGenesisRuntime.runtimeInfo?.ptyError ?? null;
+  const effectiveCanRun = canRun && !ptyBlocked;
+  const effectiveRunDisabledReason = ptyBlocked ? null : runDisabledReason;
   const output = run?.output ?? '';
+
+  const handleRunClick = useCallback(() => {
+    if (!effectiveCanRun || starting || runActive) {
+      return;
+    }
+    void onRun();
+  }, [effectiveCanRun, onRun, runActive, starting]);
+
+  const handleEditorRun = useCallback(() => {
+    if (!effectiveCanRun || starting || runActive || !onEditorRun) {
+      return;
+    }
+    void onEditorRun();
+  }, [effectiveCanRun, onEditorRun, runActive, starting]);
 
   const chooseLayoutMode = useCallback(
     (nextMode: MotionGenesisRunLayoutMode) => {
@@ -398,7 +420,7 @@ export default function MotionGenesisRunShell({
         <CodeEditor
           className={cn('min-h-0 transition-[filter,opacity] duration-150', runActive && 'opacity-55 grayscale-[0.2]')}
           onChange={onEditorChange}
-          onRun={onEditorRun}
+          onRun={handleEditorRun}
           readOnly={editorLocked}
           value={editorValue}
           vimMode={vimMode}
@@ -614,7 +636,26 @@ export default function MotionGenesisRunShell({
           )}
         </div>
         {ptySetupError ? (
-          <pre className="overflow-x-auto whitespace-pre-wrap text-[0.7rem] text-destructive">{ptySetupError}</pre>
+          <div className="grid gap-1 rounded-md border border-destructive/30 bg-destructive/5 p-2 text-[0.7rem] text-destructive">
+            <p>{PTY_UNAVAILABLE_SUMMARY}</p>
+            <p>
+              Download Node.js 20+ LTS from{' '}
+              <a
+                className="font-medium underline underline-offset-2"
+                href={NODE_LTS_DOWNLOAD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                nodejs.org
+              </a>
+              , then restart MGView. Developers: run{' '}
+              <code className="font-mono">cd frontend && npm install</code>.
+            </p>
+            <details className="text-destructive/90">
+              <summary className="cursor-pointer select-none font-medium">Technical details</summary>
+              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap">{ptySetupError}</pre>
+            </details>
+          </div>
         ) : null}
       </div>
 
@@ -779,12 +820,28 @@ export default function MotionGenesisRunShell({
             <Button type="button" variant="outline" size="sm" disabled={!runActive || stopping} onClick={onStop}>
               {stopping ? 'Stopping…' : 'Stop'}
             </Button>
-            <Button type="button" size="sm" disabled={!canRun || starting || runActive} onClick={onRun}>
+            <Button type="button" size="sm" disabled={!effectiveCanRun || starting || runActive} onClick={handleRunClick}>
               {starting ? 'Running…' : runButtonLabel}
             </Button>
           </div>
         </div>
-        {runDisabledReason ? <p className="text-xs text-muted-foreground">{runDisabledReason}</p> : null}
+        {ptyBlocked ? (
+          <p className="text-xs text-destructive">
+            {PTY_UNAVAILABLE_SUMMARY}{' '}
+            <a
+              className="font-medium underline underline-offset-2"
+              href={NODE_LTS_DOWNLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Download Node.js LTS
+            </a>
+            , then restart MGView.
+          </p>
+        ) : null}
+        {effectiveRunDisabledReason ? (
+          <p className="text-xs text-muted-foreground">{effectiveRunDisabledReason}</p>
+        ) : null}
         {error ? <p className="text-xs text-destructive">{error}</p> : null}
         {editorError ? <p className="text-xs text-destructive">{editorError}</p> : null}
         {showStatusDetails ? renderStatusDetails() : null}

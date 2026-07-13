@@ -4,7 +4,7 @@ Context for Motion Genesis interactive runs launched from MGView (workspace **Ru
 
 ## Problem
 
-Motion Genesis is spawned behind a native PTY (`@homebridge/node-pty-prebuilt-multiarch`). Raw PTY bytes are not plain text:
+Motion Genesis is spawned behind a native PTY (`node-pty`). Raw PTY bytes are not plain text:
 
 1. **Terminal control sequences** — ANSI CSI/OSC/DCS, cursor show/hide, clear screen, window title (`\x1b]0;...\x07`), etc.
 2. **Cursor-positioned splash screen** — Windows startup banner uses absolute cursor moves (`\x1b[15;1H`) instead of newlines between rows.
@@ -32,7 +32,6 @@ frontend output panel   →  whitespace-pre-wrap + break-all
 | `bin/server.js` | HTTP API; uses `createMotionGenesisRunManager()` |
 | `frontend/src/components/MotionGenesisRunPanel.tsx` | Workspace **Run Sim** output (textarea) |
 | `frontend/src/components/MgLabPage.tsx` | MG Lab output (segmented, syntax-toned) |
-| `bin/mg_pty_bridge.py` | Optional macOS python PTY bridge (`MGVIEW_PTY_BACKEND=python-bridge`) |
 
 ## PTY configuration
 
@@ -42,7 +41,7 @@ frontend output panel   →  whitespace-pre-wrap + break-all
 | `DEFAULT_PTY_ROWS` | `30` | |
 | Windows input | `\r` line endings | `inputTerminator` in launch config |
 | macOS/Linux input | `\n` | |
-| Backend | `native` on win32/linux/darwin | python-bridge only when `MGVIEW_PTY_BACKEND=python-bridge` on macOS |
+| Backend | native `node-pty` only | If the module cannot load, interactive Run Sim / MG Lab is unavailable (no alternate backend) |
 
 `run.ptyCols` is stored on each run and passed into `normalizePtyOutput()` so unwrap logic matches the spawned PTY width.
 
@@ -120,10 +119,10 @@ Mg Lab renders each `\n`-delimited logical line as a `display: block` span with 
 | Platform | PTY path | Input terminator | Regression risk |
 |----------|----------|------------------|-----------------|
 | Windows | native node-pty / ConPTY | `\r` | Splash CSI, hard-wrap overlap |
-| macOS | native (default) or python-bridge | `\n` | python-bridge does not set winsize in `mg_pty_bridge.py` |
+| macOS | native node-pty | `\n` | Quarantine / non-executable `spawn-helper` after zip extract or npm install (mode 644 → `posix_spawnp failed`; runner + postinstall set +x) |
 | Linux | native node-pty | `\n` | Lower splash complexity |
 
-All platforms share the same `normalizePtyOutput()` when using **native** PTY. Test macOS native and python-bridge separately if changing normalization.
+All platforms share the same `normalizePtyOutput()` on native PTY.
 
 ## Testing
 
@@ -194,5 +193,3 @@ Enable **Debug output** in Run Sim / MG Lab configure panel. This appends `[mgvi
 Environment:
 
 - `MGVIEW_MOTION_GENESIS_BIN` — executable path
-- `MGVIEW_PTY_BACKEND=python-bridge` — macOS only
-- `MGVIEW_PYTHON_BIN` — python for bridge
