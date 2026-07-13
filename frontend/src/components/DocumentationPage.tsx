@@ -240,7 +240,8 @@ export default function DocumentationPage() {
                         .
                       </li>
                       <li>
-                        Move the .zip file to your MotionGenesis folder. For most users this will be:
+                        You can put the MGView folder anywhere you want. The usual default is to unzip it
+                        inside your MotionGenesis folder:
                         <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
                           <li>
                             macOS: <code>/Applications/MotionGenesis</code>
@@ -251,7 +252,8 @@ export default function DocumentationPage() {
                         </ul>
                       </li>
                       <li>
-                        Unzip the file in your MotionGenesis folder. (Optional: delete the .zip file.)
+                        Unzip the file wherever you chose. It extracts to a folder named{' '}
+                        <code>mgview-{buildInfo.version}</code>. (Optional: delete the .zip file afterward.)
                       </li>
                     </ul>
                   </div>
@@ -278,10 +280,29 @@ export default function DocumentationPage() {
                         <code>RunMGViewMac</code>.
                         <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
                           <li>
-                            Or in Terminal:{' '}
-                            <code>/Applications/MotionGenesis/mgview/RunMGViewMac</code>
+                            Or in Terminal (default install location):{' '}
+                            <code>/Applications/MotionGenesis/mgview-{buildInfo.version}/RunMGViewMac</code>
                           </li>
                         </ul>
+                      </li>
+                      <li>
+                        The first launch is often blocked by macOS Gatekeeper. Control-click → Open usually does{' '}
+                        <span className="font-semibold italic">not</span> work for this launcher. Instead:
+                        <ol className="mt-1 list-decimal list-outside space-y-1 pl-5">
+                          <li>
+                            Try opening <code>RunMGViewMac</code> once (double-click). macOS will refuse and may say
+                            the developer cannot be verified.
+                          </li>
+                          <li>
+                            Open <span className="font-medium text-foreground">System Settings → Privacy &amp; Security</span>.
+                          </li>
+                          <li>
+                            Scroll to the security message about <code>RunMGViewMac</code> and click{' '}
+                            <span className="font-medium text-foreground">Allow Anyway</span> (or{' '}
+                            <span className="font-medium text-foreground">Open Anyway</span>).
+                          </li>
+                          <li>Open <code>RunMGViewMac</code> again and confirm when prompted.</li>
+                        </ol>
                       </li>
                       <li>
                         If a browser tab does not open automatically, open{' '}
@@ -293,6 +314,20 @@ export default function DocumentationPage() {
                     <h3 className="text-sm font-semibold text-foreground">On Windows</h3>
                     <ul className="mt-1 list-disc list-outside space-y-1 pl-5">
                       <li>Open the MGView folder in File Explorer.</li>
+                      <li>
+                        Before the first run, unblock the launcher so Smart App Control (or similar) does not block it:
+                        <ol className="mt-1 list-decimal list-outside space-y-1 pl-5">
+                          <li>
+                            Right-click <code>RunMGViewWindows.bat</code> →{' '}
+                            <span className="font-medium text-foreground">Properties</span>.
+                          </li>
+                          <li>
+                            Near the bottom of the General tab, check{' '}
+                            <span className="font-medium text-foreground">Unblock</span>, then click{' '}
+                            <span className="font-medium text-foreground">OK</span>.
+                          </li>
+                        </ol>
+                      </li>
                       <li>
                         Double-click <code>RunMGViewWindows.bat</code>.
                       </li>
