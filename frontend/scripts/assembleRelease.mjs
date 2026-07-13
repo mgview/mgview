@@ -8,6 +8,9 @@
  * Native PTY: microsoft/node-pty (N-API) with darwin/win32 prebuilds plus the
  * Linux build/Release produced by npm ci on the release runner. Debug symbols (.pdb)
  * are stripped. spawn-helper binaries are marked executable before zipping.
+ *
+ * node-pty's binding.gyp only builds spawn-helper when OS=="mac", but Unix PTY
+ * fork always posix_spawns that helper. On Linux CI we compile it from source.
  */
 import { chmod, cp, mkdir, readdir, readFile, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
@@ -78,6 +81,54 @@ async function markSpawnHelpersExecutable(rootDir) {
       }
     }
   }
+}
+
+async function pathExists(filePath) {
+  try {
+    await stat(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * microsoft/node-pty omits the spawn-helper target on Linux (binding.gyp is
+ * OS=="mac" only). Compile it so the release zip can run interactive PTY sessions.
+ */
+async function ensureLinuxSpawnHelper(nodePtyDir) {
+  if (process.platform !== 'linux') {
+    return;
+  }
+
+  const helperPath = path.join(nodePtyDir, 'build', 'Release', 'spawn-helper');
+  if (await pathExists(helperPath)) {
+    return;
+  }
+
+  const sourcePath = path.join(nodePtyDir, 'src', 'unix', 'spawn-helper.cc');
+  if (!(await pathExists(sourcePath))) {
+    throw new Error(
+      `Cannot build Linux spawn-helper: missing source at ${sourcePath}`
+    );
+  }
+
+  await mkdir(path.dirname(helperPath), { recursive: true });
+  await new Promise((resolve, reject) => {
+    const child = spawn('g++', ['-O2', '-o', helperPath, sourcePath], {
+      stdio: 'inherit',
+    });
+    child.on('error', reject);
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`g++ failed building spawn-helper (exit ${code})`));
+      }
+    });
+  });
+  await chmod(helperPath, 0o755);
+  console.log(`assembleRelease: built Linux spawn-helper at ${helperPath}`);
 }
 
 async function assertNodePtyReleaseLayout(nodePtyDir) {
@@ -174,6 +225,7 @@ async function main() {
   }
 
   const stagedNodePty = path.join(stagingDir, 'bin', 'node_modules', 'node-pty');
+  await ensureLinuxSpawnHelper(stagedNodePty);
   await markSpawnHelpersExecutable(stagedNodePty);
   await assertNodePtyReleaseLayout(stagedNodePty);
 
