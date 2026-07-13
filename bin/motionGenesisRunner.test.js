@@ -134,15 +134,54 @@ test('resolveMotionGenesisCommand prefers explicit environment override', () => 
 });
 
 test('resolveMotionGenesisCommand defaults to the macOS install location', () => {
-  const result = resolveMotionGenesisCommand('/tmp/project/case1', '/tmp/workspace', {}, 'darwin');
-  assert.equal(result.command, '/Applications/MotionGenesis/MotionGenesis');
-  assert.equal(result.source, 'platform-default');
+  const workspaceRoot = makeTempWorkspace();
+  const originalExistsSync = fs.existsSync;
+  const originalHomedir = os.homedir;
+  fs.existsSync = (candidatePath) => {
+    if (candidatePath === '/Applications/MotionGenesis/MotionGenesis') {
+      return false;
+    }
+    return originalExistsSync(candidatePath);
+  };
+  os.homedir = () => workspaceRoot;
+  try {
+    const result = resolveMotionGenesisCommand('/tmp/project/case1', '/tmp/workspace', {}, 'darwin');
+    assert.equal(result.command, '/Applications/MotionGenesis/MotionGenesis');
+    assert.equal(result.source, 'platform-default');
+  } finally {
+    fs.existsSync = originalExistsSync;
+    os.homedir = originalHomedir;
+  }
 });
 
 test('resolveMotionGenesisCommand defaults to the Windows install location', () => {
-  const result = resolveMotionGenesisCommand('C:\\tmp\\project\\case1', 'C:\\tmp\\workspace', {}, 'win32');
-  assert.equal(result.command, 'C:\\MotionGenesis\\MotionGenesis');
-  assert.equal(result.source, 'platform-default');
+  const workspaceRoot = makeTempWorkspace();
+  const originalExistsSync = fs.existsSync;
+  const originalHomedir = os.homedir;
+  const windowsDefaultCandidates = new Set([
+    'C:\\MotionGenesis\\MotionGenesis',
+    'C:\\MotionGenesis\\MotionGenesis.exe',
+  ]);
+  fs.existsSync = (candidatePath) => {
+    if (windowsDefaultCandidates.has(candidatePath)) {
+      return false;
+    }
+    return originalExistsSync(candidatePath);
+  };
+  os.homedir = () => workspaceRoot;
+  try {
+    const result = resolveMotionGenesisCommand(
+      'C:\\tmp\\project\\case1',
+      'C:\\tmp\\workspace',
+      { HOME: '', USERPROFILE: '' },
+      'win32'
+    );
+    assert.equal(result.command, 'C:\\MotionGenesis\\MotionGenesis');
+    assert.equal(result.source, 'platform-default');
+  } finally {
+    fs.existsSync = originalExistsSync;
+    os.homedir = originalHomedir;
+  }
 });
 
 test('resolveMotionGenesisCommand discovers a Windows executable under the user profile', () => {

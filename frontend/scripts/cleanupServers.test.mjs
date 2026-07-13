@@ -3,6 +3,7 @@ import { execSync } from 'node:child_process';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from './cleanupServers.mjs';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const scriptPath = path.join(scriptDir, 'cleanupServers.mjs');
@@ -17,5 +18,5 @@ test('cleanup:servers defaults to dry run', () => {
 });
 
 test('cleanup:servers rejects unknown flags', () => {
-  assert.throws(() => runCleanup('--nope'), /Unknown option/);
+  assert.throws(() => parseArgs(['--nope']), /Unknown option/);
 });

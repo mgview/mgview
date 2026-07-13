@@ -7,8 +7,10 @@
  *   npm run cleanup:servers -- --force --keep-port 8000
  */
 import { execSync, spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const keepPorts = new Set();
   let force = false;
 
@@ -187,4 +189,12 @@ function main() {
   console.log(`\nStopped ${targets.length} process(es).`);
 }
 
-main();
+const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+if (isMainModule) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
+}
