@@ -10,6 +10,7 @@ import type {
   Vector3Like,
 } from './types.ts';
 import { collectPlotConfigDiagnostics } from './plotsConfig.ts';
+import { sceneHasVisualizationData } from './sceneScenarios.ts';
 import {
   collectBaseFrames,
   collectPositionOrigins,
@@ -202,10 +203,10 @@ export function collectSceneDiagnostics(
   const canonicalOrigin = scene.referenceContext.sceneOrigin.canonical;
   const canonicalFrame = scene.referenceContext.newtonianFrame.canonical;
 
-  if ((rawScene.simulationData ?? []).length === 0) {
+  if (!sceneHasVisualizationData(rawScene)) {
     diagnostics.push({
       severity: 'warning',
-      message: 'Scene JSON does not list any simulationData entries.',
+      message: 'Scene JSON does not list any simulation data entries.',
     });
   }
 

@@ -6,16 +6,16 @@
     "Help": {
       "id": "Help",
       "title": "Interface (type",
-      "aliases": [],
+      "aliases": [
+        "help"
+      ],
       "purpose": "",
       "syntax": []
     },
     ">": {
       "id": ">",
       "title": ">",
-      "aliases": [
-        ">>"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  >    at the end of a name identifies the name as a vector. >>   at the end of a name identifies the name as a dyadic. >>>  at the end of a name identifies the name as a triadic.",
       "syntax": [
         "Syntax 1:  nameA>    is treated as a vector.",
@@ -26,9 +26,7 @@
     "0>": {
       "id": "0>",
       "title": "0>",
-      "aliases": [
-        "0>>"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  0>    is the zero vector  (0 magnitude and a direction). 0>>   is the zero dyadic  (0 magnitude and two directions). 0>>>  is the zero triadic (0 magnitude and three directions).",
       "syntax": [
         "Syntax 1:  0>            Note:  0>    is a vector, NOT equal to scalar 0.",
@@ -59,9 +57,7 @@
     "%": {
       "id": "%",
       "title": "%",
-      "aliases": [
-        "%%"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Marks the beginning of a comment. Marks the beginning of a comment that is to be incorporated in a C, Fortran, or MATLAB programs.",
       "syntax": [
         "Syntax 1:  %  Put your comment here",
@@ -108,9 +104,7 @@
     "=": {
       "id": "=",
       "title": "=",
-      "aliases": [
-        ":="
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Assignment operators.",
       "syntax": [
         "Syntax 1:  A  = B",
@@ -124,7 +118,9 @@
     "AbsError": {
       "id": "AbsError",
       "title": "absError",
-      "aliases": [],
+      "aliases": [
+        "abserror"
+      ],
       "purpose": "",
       "syntax": []
     },
@@ -140,9 +136,7 @@
     "acos": {
       "id": "acos",
       "title": "acos",
-      "aliases": [
-        "acosDegrees"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Returns the inverse cosine of a scalar expression.",
       "syntax": [
         "Syntax 1:  acos( scalarExpression )",
@@ -162,10 +156,7 @@
     "atan": {
       "id": "atan",
       "title": "atan or atan2",
-      "aliases": [
-        "atan2Degrees",
-        "atan2"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Returns the inverse tangent of a scalar expression or the the numerical value of the two-argument inverse tangent.",
       "syntax": [
         "Syntax 1:  atan( scalarExpression )",
@@ -177,7 +168,9 @@
     "AddForce": {
       "id": "AddForce",
       "title": "AddForce",
-      "aliases": [],
+      "aliases": [
+        "addforce"
+      ],
       "purpose": "Purpose:  Adds (or resets) force on a point or particle.",
       "syntax": [
         "Syntax 1:  Q.AddForce(       forceVec )",
@@ -191,7 +184,9 @@
     "AddForceDamper": {
       "id": "AddForceDamper",
       "title": "AddForceDamper",
-      "aliases": [],
+      "aliases": [
+        "addforcedamper"
+      ],
       "purpose": "Purpose:  Applies damper forces between two points.",
       "syntax": [
         "Syntax 1:  Q.AddForceDamper( P, b )",
@@ -201,7 +196,9 @@
     "AddForceElectrostatic": {
       "id": "AddForceElectrostatic",
       "title": "AddForceElectrostatic",
-      "aliases": [],
+      "aliases": [
+        "addforceelectrostatic"
+      ],
       "purpose": "Purpose:  Applies an inverse-square electrostatic force on two points.",
       "syntax": [
         "Syntax:  Q.AddForceElectrostatic( P, k )"
@@ -210,7 +207,9 @@
     "AddForceGravity": {
       "id": "AddForceGravity",
       "title": "AddForceGravity",
-      "aliases": [],
+      "aliases": [
+        "addforcegravity"
+      ],
       "purpose": "Purpose:  Applies a force associated with the resultant force produced by a uniform parallel gravitational field, to the mass center of a massive object (e.g., a Particle or RigidBody) or to all particles and/or mass centers of all rigid bodies in a System.",
       "syntax": [
         "Syntax 1:  Object.AddForceGravity( gVector )",
@@ -220,7 +219,9 @@
     "AddForceInverseSquare": {
       "id": "AddForceInverseSquare",
       "title": "AddForceInverseSquare",
-      "aliases": [],
+      "aliases": [
+        "addforceinversesquare"
+      ],
       "purpose": "Purpose:  Applies an inverse-square force on a point from another point.",
       "syntax": [
         "Syntax:  Q.AddForceInverseSquare( P, coef )"
@@ -229,7 +230,9 @@
     "AddForceLinearActuator": {
       "id": "AddForceLinearActuator",
       "title": "AddForceLinearActuator",
-      "aliases": [],
+      "aliases": [
+        "addforcelinearactuator"
+      ],
       "purpose": "Purpose:  Applies a linear actuator force between two points.",
       "syntax": [
         "Syntax:    Q.AddForceLinearActuator( P, FActuator )"
@@ -238,7 +241,9 @@
     "AddForceSpring": {
       "id": "AddForceSpring",
       "title": "AddForceSpring",
-      "aliases": [],
+      "aliases": [
+        "addforcespring"
+      ],
       "purpose": "Purpose:  Applies spring forces between two points.",
       "syntax": [
         "Syntax 1:  Q.AddForceSpring( P, k, Ln )",
@@ -248,7 +253,9 @@
     "AddTorque": {
       "id": "AddTorque",
       "title": "AddTorque",
-      "aliases": [],
+      "aliases": [
+        "addtorque"
+      ],
       "purpose": "Purpose:  Adds (or resets) torque to a RigidFrame or RigidBody.",
       "syntax": [
         "Syntax 1:  B.AddTorque(       torqueVec )",
@@ -260,7 +267,9 @@
     "AddTorqueDamper": {
       "id": "AddTorqueDamper",
       "title": "AddTorqueDamper",
-      "aliases": [],
+      "aliases": [
+        "addtorquedamper"
+      ],
       "purpose": "Purpose:  Adds damper torque to a RigidFrame or RigidBody.",
       "syntax": [
         "Syntax 1:  B.AddTorqueDamper( A, b )",
@@ -270,7 +279,9 @@
     "Animate": {
       "id": "Animate",
       "title": "Animate",
-      "aliases": [],
+      "aliases": [
+        "animate"
+      ],
       "purpose": "Purpose:  Creates output for objects to be animated by a computer graphic visualization program, e.g., MGView (Web) or ANIMAKE (Windows/PC).",
       "syntax": [
         "Syntax 1:  Animate( N, O,  A,B,C, ... )",
@@ -281,9 +292,7 @@
     "ceil": {
       "id": "ceil",
       "title": "ceil",
-      "aliases": [
-        "floor"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Returns the ceiling or floor of a real scalar expression.",
       "syntax": [
         "Syntax 1:  ceil( realScalarExpression )",
@@ -293,7 +302,9 @@
     "Clear": {
       "id": "Clear",
       "title": "Clear",
-      "aliases": [],
+      "aliases": [
+        "clear"
+      ],
       "purpose": "Purpose:  Clears the workspace by restarting the program. Re-runs designated lines from the workspace.",
       "syntax": [
         "Syntax 1:  Clear",
@@ -303,7 +314,9 @@
     "Constant": {
       "id": "Constant",
       "title": "Constant",
-      "aliases": [],
+      "aliases": [
+        "constant"
+      ],
       "purpose": "Purpose:  Declares the names of constants.",
       "syntax": [
         "Syntax 1:  Constant        a,  b,  c+,  d-",
@@ -316,7 +329,9 @@
     "ConvertUnits": {
       "id": "ConvertUnits",
       "title": "ConvertUnits",
-      "aliases": [],
+      "aliases": [
+        "convertunits"
+      ],
       "purpose": "Purpose:  Calculates units conversion factors.",
       "syntax": [
         "Syntax 1:  ConvertUnits(   Units1, Units2 )",
@@ -327,7 +342,9 @@
     "Convolve": {
       "id": "Convolve",
       "title": "Convolve",
-      "aliases": [],
+      "aliases": [
+        "convolve"
+      ],
       "purpose": "Purpose:  Convolves two one-dimensional matrices",
       "syntax": [
         "Syntax:  Convolve( M, N )"
@@ -336,9 +353,7 @@
     "cos": {
       "id": "cos",
       "title": "cos and sec",
-      "aliases": [
-        "cosDegrees"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Returns the cosine or secant of a scalar expression.",
       "syntax": [
         "Syntax 1:  cos(x)  or  sec(x)",
@@ -348,10 +363,7 @@
     "cosh": {
       "id": "cosh",
       "title": "cosh,",
-      "aliases": [
-        "sinh",
-        "tanh"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Returns the hyperbolic cosine, sine, or tangent.",
       "syntax": [
         "Syntax 1:  cosh( scalarExpression )",
@@ -363,7 +375,7 @@
       "id": "Cross",
       "title": "Cross",
       "aliases": [
-        "Dot"
+        "cross"
       ],
       "purpose": "Purpose:  Forms the cross-product or dot-product for vectors, dyadics, etc.",
       "syntax": [
@@ -382,7 +394,7 @@
       "id": "Dt",
       "title": "Dt",
       "aliases": [
-        "DtDt"
+        "dt"
       ],
       "purpose": "Purpose:  Forms the ordinary derivative of a scalar, vector, or dyadic expression or a matrix of such expressions.",
       "syntax": [
@@ -397,7 +409,9 @@
     "D": {
       "id": "D",
       "title": "D",
-      "aliases": [],
+      "aliases": [
+        "d"
+      ],
       "purpose": "Purpose:  Forms the partial derivative of a scalar, vector, or dyadic expression or a matrix of such expressions.",
       "syntax": [
         "Syntax 1:  D( scalarOrMatrixExpression, X )",
@@ -407,9 +421,7 @@
     "GetJacobian": {
       "id": "GetJacobian",
       "title": "GetJacobian",
-      "aliases": [
-        "GetVelocityJacobian"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Forms a Jacobian whose elements are partial derivatives, e.g., partial derivatives of velocity with respect to generalized speeds.",
       "syntax": [
         "Syntax 1:  GetJacobian( scalarTensorMatrix1D, X )",
@@ -422,7 +434,9 @@
     "GetPartialVelocity": {
       "id": "GetPartialVelocity",
       "title": "GetPartials",
-      "aliases": [],
+      "aliases": [
+        "getpartialvelocity"
+      ],
       "purpose": "Purpose:  Forms partial velocities and partial angular velocities.",
       "syntax": [
         "Syntax 1:  Q.GetPartialVelocity( refFrame )",
@@ -433,7 +447,9 @@
     "Dyadic": {
       "id": "Dyadic",
       "title": "Dyadic",
-      "aliases": [],
+      "aliases": [
+        "dyadic"
+      ],
       "purpose": "Purpose:  Constructs a dyadic.",
       "syntax": [
         "Syntax 1:  Dyadic( A,  xx, yy, zz )",
@@ -446,7 +462,9 @@
     "Echo": {
       "id": "Echo",
       "title": "Echo",
-      "aliases": [],
+      "aliases": [
+        "echo"
+      ],
       "purpose": "Purpose:  Display messages on the screen.",
       "syntax": [
         "Syntax:  ECHO( MSG )"
@@ -466,7 +484,9 @@
     "Epsilon": {
       "id": "Epsilon",
       "title": "Epsilon",
-      "aliases": [],
+      "aliases": [
+        "epsilon"
+      ],
       "purpose": "Purpose:  Rounds numbers that are suitably close to an integer.",
       "syntax": [
         "Syntax 1:  Epsilon( mathExpression, absEpsilon )",
@@ -476,7 +496,9 @@
     "Euler": {
       "id": "Euler",
       "title": "Euler -- one of the greatest engineer / mathematician of all time.",
-      "aliases": [],
+      "aliases": [
+        "euler"
+      ],
       "purpose": "",
       "syntax": []
     },
@@ -491,7 +513,7 @@
       "id": "Evaluate",
       "title": "Evaluate,",
       "aliases": [
-        "EvaluateToNumber"
+        "evaluate"
       ],
       "purpose": "Purpose:  Evaluates an expression by replacing designated symbols.",
       "syntax": [
@@ -512,7 +534,9 @@
     "Expand": {
       "id": "Expand",
       "title": "Expand or ExpandDeep",
-      "aliases": [],
+      "aliases": [
+        "expand"
+      ],
       "purpose": "Purpose:  Produces an expression that is mathematically equivalent to the given expression but usually containing fewer parentheses.",
       "syntax": [
         "Syntax 1:  Expand( mathExpression )",
@@ -526,7 +550,9 @@
     "Explicit": {
       "id": "Explicit",
       "title": "Explicit",
-      "aliases": [],
+      "aliases": [
+        "explicit"
+      ],
       "purpose": "Purpose:  Substitutes the right-hand-side of all names in an expressions, repeating this process until no names that have a right-hand-side remain the expression.",
       "syntax": [
         "Syntax 1:  Explicit( mathExpression )",
@@ -536,7 +562,9 @@
     "Express": {
       "id": "Express",
       "title": "Express",
-      "aliases": [],
+      "aliases": [
+        "express"
+      ],
       "purpose": "Purpose:  Expresses a vector, dyadic, or other tensor in terms of basis vectors fixed in RigidFrame or RigidBody.",
       "syntax": [
         "Syntax:  Express( v, RefFrame )"
@@ -545,7 +573,9 @@
     "Factor": {
       "id": "Factor",
       "title": "Factor",
-      "aliases": [],
+      "aliases": [
+        "factor"
+      ],
       "purpose": "Purpose:  Useful to simplify results or compare results with another analyst. Rearranges expression by regrouping on certain factors.",
       "syntax": [
         "Syntax:  Factor( mathExpression, X )"
@@ -555,7 +585,7 @@
       "id": "FactorLinear",
       "title": "FactorLinear",
       "aliases": [
-        "FactorQuadratic"
+        "factorlinear"
       ],
       "purpose": "Purpose:  Useful to simplify results or compare results with another analyst. Rearranges expression by regrouping terms in designated names. FactorLinear    rearranges terms in groups of degree 1. FactorQuadratic rearranges terms in groups of degree 1 and 2.",
       "syntax": [
@@ -575,7 +605,9 @@
     "Exclude": {
       "id": "Exclude",
       "title": "Exclude",
-      "aliases": [],
+      "aliases": [
+        "exclude"
+      ],
       "purpose": "Purpose:  Forms the portion of an expression that remains when terms containing designated names are excluded.",
       "syntax": [
         "Syntax 1:  Exclude(  ExpressionY, X )",
@@ -586,7 +618,9 @@
     "Include": {
       "id": "Include",
       "title": "Include",
-      "aliases": [],
+      "aliases": [
+        "include"
+      ],
       "purpose": "Purpose:  Forms the portion of an expression that contains designated names",
       "syntax": [
         "Syntax 1:  Include(  ExpressionY, X )",
@@ -597,7 +631,9 @@
     "GetAcceleration": {
       "id": "GetAcceleration",
       "title": "GetAcceleration",
-      "aliases": [],
+      "aliases": [
+        "getacceleration"
+      ],
       "purpose": "Purpose:  Gets a point's acceleration in a reference frame or gets a point's acceleration relative to another point in a reference frame.",
       "syntax": [
         "Syntax 1:  Q.GetAcceleration( refFrame )",
@@ -608,7 +644,7 @@
       "id": "GetAngleBetweenVectors",
       "title": "GetAngleBetweenVectors",
       "aliases": [
-        "GetAngleBetweenUnitVectors"
+        "getanglebetweenvectors"
       ],
       "purpose": "Purpose:  Forms the angle between two vectors.",
       "syntax": [
@@ -621,7 +657,9 @@
     "GetAngularAcceleration": {
       "id": "GetAngularAcceleration",
       "title": "GetAngularAcceleration",
-      "aliases": [],
+      "aliases": [
+        "getangularacceleration"
+      ],
       "purpose": "Purpose:  Gets a rigid frame/body's angular acceleration in a reference frame.",
       "syntax": [
         "Syntax:  B.GetAngularAcceleration( A )"
@@ -630,7 +668,9 @@
     "GetAngularMomentum": {
       "id": "GetAngularMomentum",
       "title": "GetAngularMomentum",
-      "aliases": [],
+      "aliases": [
+        "getangularmomentum"
+      ],
       "purpose": "Purpose:  Calculates an object's angular momentum about a point.",
       "syntax": [
         "Syntax 1:  Object.GetAngularMomentum( aboutPoint )",
@@ -640,7 +680,9 @@
     "GetAngularSpeed": {
       "id": "GetAngularSpeed",
       "title": "GetAngularSpeed",
-      "aliases": [],
+      "aliases": [
+        "getangularspeed"
+      ],
       "purpose": "Purpose:  Gets a rigid frame/body's angular speed in a reference frame.",
       "syntax": [
         "Syntax 1:  B.GetAngularSpeed( A )",
@@ -650,7 +692,9 @@
     "GetAngularVelocity": {
       "id": "GetAngularVelocity",
       "title": "GetAngularVelocity",
-      "aliases": [],
+      "aliases": [
+        "getangularvelocity"
+      ],
       "purpose": "Purpose:  Gets a rigid frame/body's angular velocity in a reference frame.",
       "syntax": [
         "Syntax:  B.GetAngularVelocity( A )"
@@ -659,7 +703,9 @@
     "GetBasisVector": {
       "id": "GetBasisVector",
       "title": "GetBasisVector",
-      "aliases": [],
+      "aliases": [
+        "getbasisvector"
+      ],
       "purpose": "Purpose:  Returns a unit vector that was created when a RigidBody RigidFrame, or NewtonianFrame declaration was issued",
       "syntax": [
         "Syntax:  GetBasisVector( frameName, int123 )"
@@ -668,7 +714,9 @@
     "GetCharge": {
       "id": "GetCharge",
       "title": "GetCharge",
-      "aliases": [],
+      "aliases": [
+        "getcharge"
+      ],
       "purpose": "Purpose:  Gets the charge on an object.",
       "syntax": [
         "Syntax:  Object.GetCharge()"
@@ -677,7 +725,10 @@
     "GetCmAcceleration": {
       "id": "GetCmAcceleration",
       "title": "GetCmAcceleration",
-      "aliases": [],
+      "aliases": [
+        "getcmacceleration",
+        "GetCMAcceleration"
+      ],
       "purpose": "Purpose:  Gets a system's center of mass acceleration in a reference frame.",
       "syntax": [
         "Syntax:  S.GetCmAcceleration( refFrame )"
@@ -686,7 +737,10 @@
     "GetCmPosition": {
       "id": "GetCmPosition",
       "title": "GetCmPosition",
-      "aliases": [],
+      "aliases": [
+        "getcmposition",
+        "GetCMPosition"
+      ],
       "purpose": "Purpose:  Gets a system's center of mass position from another point.",
       "syntax": [
         "Syntax:  S.GetCmPosition( fromPoint )"
@@ -695,7 +749,10 @@
     "GetCmVelocity": {
       "id": "GetCmVelocity",
       "title": "GetCmVelocity",
-      "aliases": [],
+      "aliases": [
+        "getcmvelocity",
+        "GetCMVelocity"
+      ],
       "purpose": "Purpose:  Gets a system's center of mass velocity in a reference frame.",
       "syntax": [
         "Syntax:  S.GetCmVelocity( refFrame )"
@@ -704,7 +761,9 @@
     "GetCoefficient": {
       "id": "GetCoefficient",
       "title": "GetCoefficient",
-      "aliases": [],
+      "aliases": [
+        "getcoefficient"
+      ],
       "purpose": "Purpose:  Gets the coefficient of a name or names in an expression.",
       "syntax": [
         "Syntax 1:  GetCoefficient(        ExpressionY, X )",
@@ -715,7 +774,8 @@
       "id": "GetColumns",
       "title": "GetRows",
       "aliases": [
-        "GetRows"
+        "getcolumns",
+        "getrows"
       ],
       "purpose": "Purpose:  Reports the number of rows or columns of a matrix. Creates a matrix from designated rows or columns of a matrix.",
       "syntax": [
@@ -729,7 +789,7 @@
       "id": "GetDefaults",
       "title": "GetDefaults",
       "aliases": [
-        "SetDefaults"
+        "getdefaults"
       ],
       "purpose": "",
       "syntax": [
@@ -741,7 +801,10 @@
     "AUTOLEV": {
       "id": "AUTOLEV",
       "title": "AUTOLEV",
-      "aliases": [],
+      "aliases": [
+        "autolev",
+        "Autolev"
+      ],
       "purpose": "Purpose:  Sets defaults to be compatible with older versions of the program.",
       "syntax": [
         "Syntax 1:  SetDefaults( AUTOLEV )",
@@ -761,7 +824,9 @@
     "GetDeterminant": {
       "id": "GetDeterminant",
       "title": "GetDeterminant",
-      "aliases": [],
+      "aliases": [
+        "getdeterminant"
+      ],
       "purpose": "Purpose:  Forms the determinant of a matrix.",
       "syntax": [
         "Syntax 1:  GetDeterminant( squareMatrix )",
@@ -771,7 +836,9 @@
     "GetDiagonalMatrix": {
       "id": "GetDiagonalMatrix",
       "title": "GetDiagonalMatrix",
-      "aliases": [],
+      "aliases": [
+        "getdiagonalmatrix"
+      ],
       "purpose": "Purpose:  Forms diagonal matrices. Forms a column matrix from diagonal elements of a matrix.",
       "syntax": [
         "Syntax 1:  GetDiagonalMatrix( m, X )",
@@ -784,7 +851,7 @@
       "id": "GetDistance",
       "title": "GetDistance",
       "aliases": [
-        "GetDistanceSquared"
+        "getdistance"
       ],
       "purpose": "Purpose:  Gets the distance (or its square) between two points.",
       "syntax": [
@@ -795,7 +862,9 @@
     "GetDynamics": {
       "id": "GetDynamics",
       "title": "GetDynamics",
-      "aliases": [],
+      "aliases": [
+        "getdynamics"
+      ],
       "purpose": "Purpose:  Gets equations of motion (dynamics).",
       "syntax": [
         "Syntax 1:  Object.GetDynamics()",
@@ -807,7 +876,9 @@
     "GetEffectiveForce": {
       "id": "GetEffectiveForce",
       "title": "GetEffectiveForce",
-      "aliases": [],
+      "aliases": [
+        "geteffectiveforce"
+      ],
       "purpose": "Purpose:  Gets effective force in the NewtonianFrame (or a designated frame).",
       "syntax": [
         "Syntax 1:  Object.GetEffectiveForce()",
@@ -817,7 +888,9 @@
     "GetEigen": {
       "id": "GetEigen",
       "title": "GetEigen",
-      "aliases": [],
+      "aliases": [
+        "geteigen"
+      ],
       "purpose": "Purpose:  Calculates the eigenvalues or the eigenvalues and eigenvectors of a real square matrix or a dyadic whose measures are real numbers.",
       "syntax": [
         "Syntax 1:  GetEigen( M )",
@@ -841,7 +914,9 @@
     "GetElement": {
       "id": "GetElement",
       "title": "GetElement",
-      "aliases": [],
+      "aliases": [
+        "getelement"
+      ],
       "purpose": "Purpose:  Returns one or more elements from an unnamed matrix expression. Type  Help []  for simpler syntax for a named matrix.",
       "syntax": [
         "Syntax 1:  GetElement( mat1DExpression,  index )",
@@ -853,7 +928,9 @@
     "GetElongation": {
       "id": "GetElongation",
       "title": "GetElongation",
-      "aliases": [],
+      "aliases": [
+        "getelongation"
+      ],
       "purpose": "Purpose:  Gets the time-derivative of the distance between two points.",
       "syntax": [
         "Syntax:  Q.GetElongation( P )"
@@ -862,7 +939,9 @@
     "GetEnergyCheckKane": {
       "id": "GetEnergyCheckKane",
       "title": "GetEnergyCheckKane",
-      "aliases": [],
+      "aliases": [
+        "getenergycheckkane"
+      ],
       "purpose": "Purpose:  Returns an energy checking function associated with Kane's dynamical equations, which theoretically remains constant throughout numerical integration of equations of motion.",
       "syntax": [
         "Syntax 1:  System.GetEnergyCheckKane()",
@@ -874,7 +953,9 @@
     "GetEnvironmentValue": {
       "id": "GetEnvironmentValue",
       "title": "GetEnvironmentValue",
-      "aliases": [],
+      "aliases": [
+        "getenvironmentvalue"
+      ],
       "purpose": "Purpose:  Displays the value of an operating system environment variable.",
       "syntax": [
         "Syntax:  GetEnvironmentValue( envName )"
@@ -883,7 +964,9 @@
     "GetForceElectrostaticPotentialEnergy": {
       "id": "GetForceElectrostaticPotentialEnergy",
       "title": "GetForceElectrostaticPotentialEnergy",
-      "aliases": [],
+      "aliases": [
+        "getforceelectrostaticpotentialenergy"
+      ],
       "purpose": "Purpose:  Calculates potential energy associated with electrostatic forces.",
       "syntax": [
         "Syntax:  Q.GetForceElectrostaticPotentialEnergy( P, k )"
@@ -892,7 +975,9 @@
     "GetForceInverseSquarePotentialEnergy": {
       "id": "GetForceInverseSquarePotentialEnergy",
       "title": "GetForceInverseSquarePotentialEnergy",
-      "aliases": [],
+      "aliases": [
+        "getforceinversesquarepotentialenergy"
+      ],
       "purpose": "Purpose:  Calculates potential energy associated with an inverse-square force.",
       "syntax": [
         "Syntax:  Q.GetForceInverseSquarePotentialEnergy( P, coef )"
@@ -901,7 +986,9 @@
     "GetForceGravityPotentialEnergy": {
       "id": "GetForceGravityPotentialEnergy",
       "title": "GetForceGravityPotentialEnergy",
-      "aliases": [],
+      "aliases": [
+        "getforcegravitypotentialenergy"
+      ],
       "purpose": "Purpose:  Calculates potential energy associated with gravity forces.",
       "syntax": [
         "Syntax 1:  Object.GetForceGravityPotentialEnergy( gVector, refPoint )",
@@ -911,7 +998,9 @@
     "GetForceSpringPotentialEnergy": {
       "id": "GetForceSpringPotentialEnergy",
       "title": "GetForceSpringPotentialEnergy",
-      "aliases": [],
+      "aliases": [
+        "getforcespringpotentialenergy"
+      ],
       "purpose": "Purpose:  Calculates potential energy associated with a spring force.",
       "syntax": [
         "Syntax 1:  Q.GetForceSpringPotentialEnergy( P, k, Ln )",
@@ -921,7 +1010,9 @@
     "GetGeneralizedEffectiveForce": {
       "id": "GetGeneralizedEffectiveForce",
       "title": "GetGeneralizedEffectiveForce",
-      "aliases": [],
+      "aliases": [
+        "getgeneralizedeffectiveforce"
+      ],
       "purpose": "Purpose:  Forms expressions for generalized effective forces or contributions to generalized effective forces.",
       "syntax": [
         "Syntax:  Object.GetGeneralizedEffectiveForce()"
@@ -930,7 +1021,9 @@
     "GetGeneralizedForce": {
       "id": "GetGeneralizedForce",
       "title": "GetGeneralizedForce",
-      "aliases": [],
+      "aliases": [
+        "getgeneralizedforce"
+      ],
       "purpose": "Purpose:  Forms expressions for a system's generalized forces.",
       "syntax": [
         "Syntax:  System.GetGeneralizedForce()"
@@ -939,7 +1032,9 @@
     "GetGeneralizedMomentum": {
       "id": "GetGeneralizedMomentum",
       "title": "GetGeneralizedMomentum",
-      "aliases": [],
+      "aliases": [
+        "getgeneralizedmomentum"
+      ],
       "purpose": "Purpose:  Forms expressions for generalized momenta or contributions to generalized momenta.",
       "syntax": [
         "Syntax:  Object.GetGeneralizedMomentum()"
@@ -949,7 +1044,8 @@
       "id": "GetIdentityMatrix",
       "title": "GetZeroMatrix",
       "aliases": [
-        "GetZeroMatrix"
+        "getidentitymatrix",
+        "getzeromatrix"
       ],
       "purpose": "Purpose:  Forms a square or rectangular zero or identity matrix.",
       "syntax": [
@@ -962,7 +1058,9 @@
     "GetInertiaDyadic": {
       "id": "GetInertiaDyadic",
       "title": "GetInertiaDyadic",
-      "aliases": [],
+      "aliases": [
+        "getinertiadyadic"
+      ],
       "purpose": "Purpose:  Gets an object's inertia dyadic about a point.",
       "syntax": [
         "Syntax 1:  Object.GetInertiaDyadic( aboutPoint )",
@@ -972,7 +1070,9 @@
     "GetInertiaMatrix": {
       "id": "GetInertiaMatrix",
       "title": "GetInertiaMatrix",
-      "aliases": [],
+      "aliases": [
+        "getinertiamatrix"
+      ],
       "purpose": "Purpose:  Gets an object's inertia matrix about a point.",
       "syntax": [
         "Syntax:  Object.GetInertiaMatrix( aboutPoint, expressBasis )"
@@ -981,7 +1081,9 @@
     "GetInertiaScalar": {
       "id": "GetInertiaScalar",
       "title": "GetInertiaScalar",
-      "aliases": [],
+      "aliases": [
+        "getinertiascalar"
+      ],
       "purpose": "Purpose:  Gets an object's inertia scalar about a point for two unit vectors.",
       "syntax": [
         "Syntax:  Object.GetInertiaScalar( aboutPoint, unitVectorA, unitVectorB )"
@@ -990,7 +1092,9 @@
     "GetInertiaVector": {
       "id": "GetInertiaVector",
       "title": "GetInertiaVector",
-      "aliases": [],
+      "aliases": [
+        "getinertiavector"
+      ],
       "purpose": "Purpose:  Gets an object's inertia vector for a unit vector.",
       "syntax": [
         "Syntax:  Object.GetInertiaVector( aboutPoint, unitVector )"
@@ -999,7 +1103,9 @@
     "GetInverse": {
       "id": "GetInverse",
       "title": "GetInverse",
-      "aliases": [],
+      "aliases": [
+        "getinverse"
+      ],
       "purpose": "Purpose:  Forms the inverse of a matrix or a dyadic.",
       "syntax": [
         "Syntax 1:  GetInverse( squareMatrixOrDyadic )",
@@ -1019,7 +1125,9 @@
     "GetKineticEnergy": {
       "id": "GetKineticEnergy",
       "title": "GetKineticEnergy",
-      "aliases": [],
+      "aliases": [
+        "getkineticenergy"
+      ],
       "purpose": "Purpose:  Gets kinetic energy in the NewtonianFrame (or a designated frame).",
       "syntax": [
         "Syntax 1:  Object.GetKineticEnergy()  or Object.GetKineticEnergy(  refFrame )",
@@ -1032,7 +1140,7 @@
       "id": "GetMagnitude",
       "title": "GetMagnitude",
       "aliases": [
-        "GetMagnitudeSquared"
+        "getmagnitude"
       ],
       "purpose": "Purpose:  Calculates the magnitude of a vector or its magnitude squared.",
       "syntax": [
@@ -1043,7 +1151,9 @@
     "GetMass": {
       "id": "GetMass",
       "title": "GetMass",
-      "aliases": [],
+      "aliases": [
+        "getmass"
+      ],
       "purpose": "Purpose:  Gets an object's mass.",
       "syntax": [
         "Syntax:  Object.GetMass()"
@@ -1064,7 +1174,9 @@
     "GetMemory": {
       "id": "GetMemory",
       "title": "GetMemory",
-      "aliases": [],
+      "aliases": [
+        "getmemory"
+      ],
       "purpose": "Purpose:  Reports amount of dynamically allocated program memory.",
       "syntax": [
         "Syntax:  GetMemory()"
@@ -1073,7 +1185,9 @@
     "GetMomentOfEffectiveForce": {
       "id": "GetMomentOfEffectiveForce",
       "title": "GetMomentOfEffectiveForce",
-      "aliases": [],
+      "aliases": [
+        "getmomentofeffectiveforce"
+      ],
       "purpose": "Purpose:  Calculates an object's moment of effective force about a point.",
       "syntax": [
         "Syntax 1:  Object.GetMomentOfEffectiveForce( aboutPoint )",
@@ -1083,7 +1197,9 @@
     "GetMomentOfForces": {
       "id": "GetMomentOfForces",
       "title": "GetMomentOfForces",
-      "aliases": [],
+      "aliases": [
+        "getmomentofforces"
+      ],
       "purpose": "Purpose:  Sums the moments of all forces applied to an object.",
       "syntax": [
         "Syntax:  Object.GetMomentOfForces( aboutPoint )"
@@ -1092,7 +1208,9 @@
     "GetMomentOfInertia": {
       "id": "GetMomentOfInertia",
       "title": "GetMomentOfInertia",
-      "aliases": [],
+      "aliases": [
+        "getmomentofinertia"
+      ],
       "purpose": "Purpose:  Gets an object's moment of inertia about a line.",
       "syntax": [
         "Syntax:  Object.GetMomentOfInertia( aboutPoint, unitVector )"
@@ -1102,8 +1220,7 @@
       "id": "GetPolynomialRoots",
       "title": "GetPolynomialRoots GetQuadraticRoots",
       "aliases": [
-        "GetQuadraticRoots",
-        "GetCubicRoots"
+        "getpolynomialroots"
       ],
       "purpose": "Purpose:  GetPolynomialRoots  gets the roots of a polynomial of degree Purpose:  GetPolynomial       creates a polynomial function from a matrix of coefficients or determines the coefficients of the leading terms of the Taylor-series expansion of a function about 0.",
       "syntax": [
@@ -1125,7 +1242,9 @@
     "GetPosition": {
       "id": "GetPosition",
       "title": "GetPosition",
-      "aliases": [],
+      "aliases": [
+        "getposition"
+      ],
       "purpose": "Purpose:  Gets the position of a point from another point.",
       "syntax": [
         "Syntax:  Q.GetPosition( fromPoint )"
@@ -1134,14 +1253,18 @@
     "GetPotentialEnergy": {
       "id": "GetPotentialEnergy",
       "title": "GetPotentialEnergy",
-      "aliases": [],
+      "aliases": [
+        "getpotentialenergy"
+      ],
       "purpose": "Purpose:  Help with potential energy associated with various forces.",
       "syntax": []
     },
     "GetPower": {
       "id": "GetPower",
       "title": "GetPower",
-      "aliases": [],
+      "aliases": [
+        "getpower"
+      ],
       "purpose": "Purpose:  Gets the power of all forces and torques in the system.",
       "syntax": [
         "Syntax 1:  System.GetPower()",
@@ -1154,7 +1277,9 @@
     "GetProductOfInertia": {
       "id": "GetProductOfInertia",
       "title": "GetProductOfInertia",
-      "aliases": [],
+      "aliases": [
+        "getproductofinertia"
+      ],
       "purpose": "Purpose:  Gets an object's product of inertia about a point for two orthogonal unit vectors.",
       "syntax": [
         "Syntax:  Object.GetProductOfInertia( aboutPoint, unitVectorA, unitVectorB )"
@@ -1163,7 +1288,9 @@
     "GetRadiusOfGyration": {
       "id": "GetRadiusOfGyration",
       "title": "GetRadiusOfGyration",
-      "aliases": [],
+      "aliases": [
+        "getradiusofgyration"
+      ],
       "purpose": "Purpose:  Gets an object's radius of gyration about a line.",
       "syntax": [
         "Syntax:  Object.GetRadiusOfGyration( aboutPoint, unitVector )"
@@ -1172,7 +1299,9 @@
     "GetResultantForce": {
       "id": "GetResultantForce",
       "title": "GetResultantForce",
-      "aliases": [],
+      "aliases": [
+        "getresultantforce"
+      ],
       "purpose": "Purpose:  Returns the sum of forces applied to an object.",
       "syntax": [
         "Syntax 1:  Object.GetResultantForce()  or  Object.GetNetForce()",
@@ -1182,7 +1311,9 @@
     "GetResultantTorque": {
       "id": "GetResultantTorque",
       "title": "GetResultantTorque",
-      "aliases": [],
+      "aliases": [
+        "getresultanttorque"
+      ],
       "purpose": "Purpose:  Returns the sum of torques applied to a rigid object.",
       "syntax": [
         "Syntax 1:  Object.GetResultantTorque()  or  Object.GetNetTorque()",
@@ -1192,7 +1323,9 @@
     "GetRhs": {
       "id": "GetRhs",
       "title": "GetRhs",
-      "aliases": [],
+      "aliases": [
+        "getrhs"
+      ],
       "purpose": "Purpose:  Returns the expression that is assigned to a name. For example, if  y = 3*sin(t),  GetRhs(y)  returns 3*sin(t).",
       "syntax": [
         "Syntax 1:  GetRhs( scalarName )",
@@ -1202,7 +1335,9 @@
     "GetRotationMatrix": {
       "id": "GetRotationMatrix",
       "title": "GetRotationMatrix",
-      "aliases": [],
+      "aliases": [
+        "getrotationmatrix"
+      ],
       "purpose": "Purpose:  Gets the rotation matrix relating two sets of bases vectors.",
       "syntax": [
         "Syntax:  B.GetRotationMatrix( N )"
@@ -1230,7 +1365,9 @@
     "GetSpeed": {
       "id": "GetSpeed",
       "title": "GetSpeed",
-      "aliases": [],
+      "aliases": [
+        "getspeed"
+      ],
       "purpose": "Purpose:  Gets a point's speed in a reference frame.",
       "syntax": [
         "Syntax 1:  Q.GetSpeed( refFrame )",
@@ -1252,7 +1389,9 @@
     "SVD": {
       "id": "SVD",
       "title": "SVD",
-      "aliases": [],
+      "aliases": [
+        "svd"
+      ],
       "purpose": "Purpose:  Calculates the singular values (and possibly singular vectors) of a real matrix.",
       "syntax": [
         "Syntax 1:  SVD( M )",
@@ -1262,7 +1401,9 @@
     "GetTaylorSeries": {
       "id": "GetTaylorSeries",
       "title": "GetTaylorSeries",
-      "aliases": [],
+      "aliases": [
+        "gettaylorseries"
+      ],
       "purpose": "Purpose:  Expands functions in Taylor series. Use Linearize  for a Taylor series with the 0th and 1st terms. Use Linearize1 for a Taylor series with just the 1st term.",
       "syntax": [
         "Syntax:  GetTaylorSeries( F, Range, arg1, arg2, ... )"
@@ -1271,7 +1412,9 @@
     "Linearize": {
       "id": "Linearize",
       "title": "Linearize",
-      "aliases": [],
+      "aliases": [
+        "linearize"
+      ],
       "purpose": "Purpose:  Returns the sum of the 0th and 1st term of a Taylor series or returns just the 0th or 1st terms of that Taylor series.",
       "syntax": [
         "Syntax:  Linearize(  F, arg1, arg2, ... )  --  0th and 1st terms."
@@ -1289,7 +1432,9 @@
     "GetTrace": {
       "id": "GetTrace",
       "title": "GetTrace",
-      "aliases": [],
+      "aliases": [
+        "gettrace"
+      ],
       "purpose": "Purpose:  Forms the trace of a matrix or dyadic.",
       "syntax": [
         "Syntax:  GetTrace( A )"
@@ -1298,7 +1443,9 @@
     "GetTranspose": {
       "id": "GetTranspose",
       "title": "GetTranspose",
-      "aliases": [],
+      "aliases": [
+        "gettranspose"
+      ],
       "purpose": "Purpose:  Forms the transpose of a matrix or dyadic.",
       "syntax": [
         "Syntax:  GetTranspose( A )"
@@ -1307,7 +1454,9 @@
     "GetUnitVector": {
       "id": "GetUnitVector",
       "title": "GetUnitVector",
-      "aliases": [],
+      "aliases": [
+        "getunitvector"
+      ],
       "purpose": "Purpose:  Forms a unit vector in the same direction as a given vector.",
       "syntax": [
         "Syntax 1:  GetUnitVector( v> )",
@@ -1319,7 +1468,9 @@
     "GetUnitSystem": {
       "id": "GetUnitSystem",
       "title": "GetUnitSystem",
-      "aliases": [],
+      "aliases": [
+        "getunitsystem"
+      ],
       "purpose": "Purpose:  Displays the dimensions of a quantity. Displays the names of all units recognized by the program.",
       "syntax": [
         "Syntax 1:  GetUnitSystem( unitExpression )",
@@ -1329,7 +1480,9 @@
     "GetVelocity": {
       "id": "GetVelocity",
       "title": "GetVelocity",
-      "aliases": [],
+      "aliases": [
+        "getvelocity"
+      ],
       "purpose": "Purpose:  Gets a point's velocity in a reference frame or gets a point's velocity relative to another point in a reference frame.",
       "syntax": [
         "Syntax 1:  Q.GetVelocity( refFrame )",
@@ -1339,7 +1492,9 @@
     "GetVelocityRemainder": {
       "id": "GetVelocityRemainder",
       "title": "GetVelocityRemainder",
-      "aliases": [],
+      "aliases": [
+        "getvelocityremainder"
+      ],
       "purpose": "Purpose:  Forms velocity and angular velocity remainder.",
       "syntax": [
         "Syntax 1:  Q.GetVelocityRemainder( refFrame )",
@@ -1363,7 +1518,7 @@
       "id": "ImaginaryNumber",
       "title": "ImaginaryNumber",
       "aliases": [
-        "imaginary"
+        "imaginarynumber"
       ],
       "purpose": "Purpose:  Declares the name assigned to the square root of -1. Returns  the name assigned to the square root of -1.",
       "syntax": [
@@ -1374,7 +1529,9 @@
     "IndependentVariable": {
       "id": "IndependentVariable",
       "title": "IndependentVariable",
-      "aliases": [],
+      "aliases": [
+        "independentvariable"
+      ],
       "purpose": "Purpose:  Declares the name assigned to the independent variable. Returns  the name assigned to the independent variable.",
       "syntax": [
         "Syntax 1:  SetIndependentVariable( t )",
@@ -1384,7 +1541,9 @@
     "Input": {
       "id": "Input",
       "title": "Input",
-      "aliases": [],
+      "aliases": [
+        "input"
+      ],
       "purpose": "Purpose:  Assigns/reports numerical values (with optional units) to constants, initial values, and numerical integration parameters for use by the ODE, Solve, EvaluateAtInput, and EvaluateToNumber commands.",
       "syntax": [
         "Syntax 1:  Input a = v1 unitsA,  b = v2 unitsB,  c = v3,  d = v4 noUnits",
@@ -1407,7 +1566,9 @@
     "Integrate": {
       "id": "Integrate",
       "title": "Integrate",
-      "aliases": [],
+      "aliases": [
+        "integrate"
+      ],
       "purpose": "Purpose:  Integrates a scalar function or matrix of scalar functions.",
       "syntax": [
         "Syntax:  Integrate( scalarOrMatrixExpression,  x = xi : xf )"
@@ -1423,11 +1584,7 @@
     "IsPositive": {
       "id": "IsPositive",
       "title": "IsNegative",
-      "aliases": [
-        "IsNegativeOr0",
-        "IsPositiveOr0",
-        "IsNegative"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Return a value that depends on the sign of a real scalar expression.",
       "syntax": [
         "Syntax 1:  IsNegative( x )       % Returns  true  if x - 0,  otherwise  false.",
@@ -1479,9 +1636,7 @@
     "Strcmp": {
       "id": "Strcmp",
       "title": "Strcmp",
-      "aliases": [
-        "Strcmpi"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Compares two strings and returns: -1  if stringA    stringB",
       "syntax": [
         "Syntax 1:  Strcmp(  stringA, stringB )",
@@ -1492,8 +1647,8 @@
       "id": "Kane",
       "title": "GetStaticsKane",
       "aliases": [
-        "GetDynamicsKane",
-        "GetStaticsKane"
+        "getstaticskane",
+        "kane"
       ],
       "purpose": "Purpose:  Gets Kane's equations for statics or dynamics .",
       "syntax": [
@@ -1505,8 +1660,7 @@
       "id": "Lagrange",
       "title": "GetStaticsLagrange",
       "aliases": [
-        "GetDynamicsLagrange",
-        "GetStaticsLagrange"
+        "getstaticslagrange"
       ],
       "purpose": "Purpose:  Gets Lagrange's equations for statics or dynamics.",
       "syntax": [
@@ -1518,7 +1672,9 @@
     "Newton": {
       "id": "Newton",
       "title": "GetStatics",
-      "aliases": [],
+      "aliases": [
+        "getstatics"
+      ],
       "purpose": "Purpose:  Gets Newton/Euler statics or dynamics equations of motion.",
       "syntax": [
         "Syntax 1:  Object.GetStatics()",
@@ -1539,7 +1695,9 @@
     "List": {
       "id": "List",
       "title": "List",
-      "aliases": [],
+      "aliases": [
+        "list"
+      ],
       "purpose": "Purpose:  Displays workspace contents on the screen.",
       "syntax": [
         "Syntax 1:  List",
@@ -1550,9 +1708,7 @@
     "log": {
       "id": "log",
       "title": "log or log10",
-      "aliases": [
-        "log10"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Returns the natural (base e) logarithm of a scalar expression. Returns the base 10 logarithm of a scalar expression.",
       "syntax": [
         "Syntax 1: log( scalarExpression )",
@@ -1562,14 +1718,18 @@
     "MathFunctions": {
       "id": "MathFunctions",
       "title": "MathFunctions",
-      "aliases": [],
+      "aliases": [
+        "mathfunctions"
+      ],
       "purpose": "",
       "syntax": []
     },
     "Matrix": {
       "id": "Matrix",
       "title": "Matrix",
-      "aliases": [],
+      "aliases": [
+        "matrix"
+      ],
       "purpose": "Purpose:  Constructs a matrix from a vector, dyadic, ...",
       "syntax": [
         "Syntax 1:  Matrix( A,  vector>    )  or  Vector( A,  vector>  )",
@@ -1591,9 +1751,7 @@
     "min": {
       "id": "min",
       "title": "min",
-      "aliases": [
-        "max"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Returns the smaller or larger of two real numbers.",
       "syntax": [
         "Syntax 1:  min( x, y )",
@@ -1603,7 +1761,9 @@
     "NewtonianFrame": {
       "id": "NewtonianFrame",
       "title": "NewtonianFrame",
-      "aliases": [],
+      "aliases": [
+        "newtonianframe"
+      ],
       "purpose": "Purpose:  Declares a Newtonian (inertial) reference frame, which is a special RigidFrame in which  F = m*a  is valid.",
       "syntax": [
         "Syntax 1:  NewtonianFrame N      (creates a Newtonian reference frame N)",
@@ -1624,7 +1784,9 @@
     "ODE": {
       "id": "ODE",
       "title": "ODE",
-      "aliases": [],
+      "aliases": [
+        "ode"
+      ],
       "purpose": "Purpose:  Executes or writes a MATLAB, C, or Fortran program to solve ordinary differential or coupled differential/algebraic equations.",
       "syntax": [
         "Syntax 1:  ODE()                             Filename.Ext",
@@ -1657,7 +1819,7 @@
       "id": "Output",
       "title": "Output",
       "aliases": [
-        "OutputPlot"
+        "output"
       ],
       "purpose": "Purpose:  Causes programs created by the ODE and CODE command to create",
       "syntax": [
@@ -1669,7 +1831,9 @@
     "Particle": {
       "id": "Particle",
       "title": "Particle",
-      "aliases": [],
+      "aliases": [
+        "particle"
+      ],
       "purpose": "Purpose:  Declares particles.",
       "syntax": [
         "Syntax 1:  Particle Q1, Q2, ...          (creates particles Q1, Q2, ...)",
@@ -1686,7 +1850,9 @@
     "Pause": {
       "id": "Pause",
       "title": "Pause",
-      "aliases": [],
+      "aliases": [
+        "pause"
+      ],
       "purpose": "Purpose:  Suspends execution when running an input file.",
       "syntax": [
         "Syntax 1:  Pause( )",
@@ -1698,7 +1864,9 @@
     "pi": {
       "id": "pi",
       "title": "pi",
-      "aliases": [],
+      "aliases": [
+        "Pi"
+      ],
       "purpose": "Purpose:  Name assigned to the following ratio associated with a circle: pi = CircumferenceOfCircle / DiameterOfCircle.",
       "syntax": [
         "Syntax:  pi"
@@ -1707,7 +1875,9 @@
     "Plot": {
       "id": "Plot",
       "title": "Plot",
-      "aliases": [],
+      "aliases": [
+        "plot"
+      ],
       "purpose": "Purpose:  Invokes plotting program",
       "syntax": [
         "Syntax 1:  Plot",
@@ -1720,7 +1890,9 @@
     "Point": {
       "id": "Point",
       "title": "Point",
-      "aliases": [],
+      "aliases": [
+        "point"
+      ],
       "purpose": "Purpose:  Declares points.  Welds a point to a RigidFrame or RigidBody.",
       "syntax": [
         "Syntax 1:  Point P1, P2, ...   (creates points P1, P2, ...)",
@@ -1732,7 +1904,9 @@
     "Quit": {
       "id": "Quit",
       "title": "Quit",
-      "aliases": [],
+      "aliases": [
+        "quit"
+      ],
       "purpose": "Purpose:  Quits (exits) the program.",
       "syntax": [
         "Syntax 1:  Quit",
@@ -1742,7 +1916,10 @@
     "RandomInteger": {
       "id": "RandomInteger",
       "title": "RandomInteger",
-      "aliases": [],
+      "aliases": [
+        "randominteger",
+        "randomInteger"
+      ],
       "purpose": "Purpose:  Returns a random positive integer.",
       "syntax": [
         "Syntax:  RandomInteger()"
@@ -1751,7 +1928,9 @@
     "ReplaceString": {
       "id": "ReplaceString",
       "title": "ReplaceString",
-      "aliases": [],
+      "aliases": [
+        "replacestring"
+      ],
       "purpose": "Purpose:  Replaces strings in an expression with new strings. Truncates numbers in an expression (possibly simplifying it) by using the number of significant digits determined by SetDigits.",
       "syntax": [
         "Syntax 1:  ReplaceString( mathExpression )",
@@ -1762,7 +1941,9 @@
     "RigidBody": {
       "id": "RigidBody",
       "title": "RigidBody",
-      "aliases": [],
+      "aliases": [
+        "rigidbody"
+      ],
       "purpose": "Purpose:  Declares rigid bodies.",
       "syntax": [
         "Syntax 1:  RigidBody  A, B, ...     (creates rigid bodies A, B, ...)",
@@ -1772,7 +1953,9 @@
     "RigidFrame": {
       "id": "RigidFrame",
       "title": "RigidFrame",
-      "aliases": [],
+      "aliases": [
+        "rigidframe"
+      ],
       "purpose": "Purpose:  Declares a rigid frame (reference frame). Welds a rigid frame to a RigidBody or another RigidFrame.",
       "syntax": [
         "Syntax 1:  RigidFrame  A, B, ...    (creates rigid frames A, B, ...)",
@@ -1783,7 +1966,9 @@
     "Round": {
       "id": "Round",
       "title": "Round",
-      "aliases": [],
+      "aliases": [
+        "round"
+      ],
       "purpose": "Purpose:  Returns the integer nearest to a real number.",
       "syntax": [
         "Syntax:  Round( realScalarExpression )"
@@ -1801,7 +1986,9 @@
     "Rotate": {
       "id": "Rotate",
       "title": "Rotate",
-      "aliases": [],
+      "aliases": [
+        "rotate"
+      ],
       "purpose": "Purpose:  Sets the rotation matrix (direction cosine matrix) associated with the right-handed rotation of a rigid basis (e.g., B) in another rigid basis (e.g., A).  Tries to form B's angular velocity/acceleration in A and in the NewtonianFrame.",
       "syntax": [
         "Syntax 1:  B.Rotate( A, matrix33 )",
@@ -1816,7 +2003,7 @@
       "id": "RotateX",
       "title": "RotateX",
       "aliases": [
-        "RotateNegativeX"
+        "rotatex"
       ],
       "purpose": "Purpose:  Forms the rotation matrix (direction cosine matrix) associated with the right-handed rotation of a rigid basis (e.g., B) in another rigid basis (e.g., A).  Tries to form B's angular velocity/acceleration in A and in the NewtonianFrame.",
       "syntax": [
@@ -1830,7 +2017,7 @@
       "id": "RotateY",
       "title": "RotateY",
       "aliases": [
-        "RotateZ"
+        "rotatey"
       ],
       "purpose": "Purpose:  Forms the rotation matrix (direction cosine matrix) associated with the right-handed rotation of a rigid basis (e.g., B) in another rigid basis (e.g., A).  Tries to form B's angular velocity/acceleration in A and in the NewtonianFrame.",
       "syntax": [
@@ -1843,7 +2030,9 @@
     "RotateZ": {
       "id": "RotateZ",
       "title": "RotateZ",
-      "aliases": [],
+      "aliases": [
+        "rotatez"
+      ],
       "purpose": "Purpose:  Forms the rotation matrix (direction cosine matrix) associated with the right-handed rotation of a rigid basis (e.g., B) in another rigid basis (e.g., A).  Tries to form B's angular velocity/acceleration in A and in the NewtonianFrame.",
       "syntax": [
         "Syntax 1:  B.RotateZ( A, q )",
@@ -1855,7 +2044,9 @@
     "Run": {
       "id": "Run",
       "title": "Run",
-      "aliases": [],
+      "aliases": [
+        "run"
+      ],
       "purpose": "Purpose:  Reads (loads) a file containing a sequence of program commands.",
       "syntax": [
         "Syntax 1:  Run FileName.txt",
@@ -1865,7 +2056,9 @@
     "Save": {
       "id": "Save",
       "title": "Save",
-      "aliases": [],
+      "aliases": [
+        "save"
+      ],
       "purpose": "Purpose:  Creates a text file containing input or input and output. To print the file, open it with a text editor and print.",
       "syntax": [
         "Syntax 1:  Save FileName.txt",
@@ -1876,14 +2069,18 @@
     "SetScratchDirectory": {
       "id": "SetScratchDirectory",
       "title": "SetScratchDirectory",
-      "aliases": [],
+      "aliases": [
+        "setscratchdirectory"
+      ],
       "purpose": "Purpose:  Specifies the operating system path to the directory used by the program for scratch files.",
       "syntax": []
     },
     "SetWorkingDirectory": {
       "id": "SetWorkingDirectory",
       "title": "SetWorkingDirectory",
-      "aliases": [],
+      "aliases": [
+        "setworkingdirectory"
+      ],
       "purpose": "Purpose:  Specifies the operating system path to write files.",
       "syntax": [
         "Syntax 1:  SetWorkingDirectory( pathToFolder )",
@@ -1893,7 +2090,9 @@
     "SetAcceleration": {
       "id": "SetAcceleration",
       "title": "SetAcceleration",
-      "aliases": [],
+      "aliases": [
+        "setacceleration"
+      ],
       "purpose": "Purpose:  Sets a point's acceleration in a reference frame.",
       "syntax": [
         "Syntax 1:  Q.SetAcceleration( N, fromPoint )",
@@ -1906,7 +2105,9 @@
     "SetAngularAcceleration": {
       "id": "SetAngularAcceleration",
       "title": "SetAngularAcceleration",
-      "aliases": [],
+      "aliases": [
+        "setangularacceleration"
+      ],
       "purpose": "Purpose:  Sets a reference frame's angular acceleration.",
       "syntax": [
         "Syntax 1:  B.SetAngularAcceleration( N, angularAccelerationVector )",
@@ -1916,7 +2117,9 @@
     "SetAngularVelocity": {
       "id": "SetAngularVelocity",
       "title": "SetAngularVelocity",
-      "aliases": [],
+      "aliases": [
+        "setangularvelocity"
+      ],
       "purpose": "Purpose:  Sets a reference frame's angular velocity.",
       "syntax": [
         "Syntax 1:  B.SetAngularVelocity( N, angularVelocityVector )",
@@ -1930,7 +2133,9 @@
     "SetAngularVelocityAcceleration": {
       "id": "SetAngularVelocityAcceleration",
       "title": "SetAngularVelocityAcceleration",
-      "aliases": [],
+      "aliases": [
+        "setangularvelocityacceleration"
+      ],
       "purpose": "Purpose:  Sets a reference frame's angular velocity and angular acceleration.",
       "syntax": [
         "Syntax:  B.SetAngularVelocityAcceleration( A, angularVelocityVector )"
@@ -1939,7 +2144,9 @@
     "SetAutoDifferentiate": {
       "id": "SetAutoDifferentiate",
       "title": "SetAutoDifferentiate",
-      "aliases": [],
+      "aliases": [
+        "setautodifferentiate"
+      ],
       "purpose": "Purpose:  Controls whether or not ordinary derivatives of quantities declared as a Variable or Specified are automatically calculated. In other words, controls whether or not y', y'', y''', etc., are automatically calculated and assigned when y is assigned.",
       "syntax": [
         "Syntax:  SetAutoDifferentiate( SETTING )"
@@ -1948,7 +2155,9 @@
     "SetAutoEpsilon": {
       "id": "SetAutoEpsilon",
       "title": "SetAutoEpsilon",
-      "aliases": [],
+      "aliases": [
+        "setautoepsilon"
+      ],
       "purpose": "Purpose:  In every expression, rounds numbers suitably close to an integer.",
       "syntax": [
         "Syntax 1:  SetAutoEpsilon( absEpsilon )",
@@ -1960,7 +2169,9 @@
     "SetAutoExpress": {
       "id": "SetAutoExpress",
       "title": "SetAutoExpress",
-      "aliases": [],
+      "aliases": [
+        "setautoexpress"
+      ],
       "purpose": "Purpose:  For each rigid body, determines whether the body's angular velocity and angular acceleration in the NewtonianFrame are automatically expressed in terms of the body's unit vectors or in terms of unit vectors associated with the body's inertia dyadic.",
       "syntax": [
         "Syntax:  SetAutoExpress( SETTING )"
@@ -1969,7 +2180,9 @@
     "SetAutoFactor": {
       "id": "SetAutoFactor",
       "title": "SetAutoFactor",
-      "aliases": [],
+      "aliases": [
+        "setautofactor"
+      ],
       "purpose": "Purpose:  Determines whether or not to automatically factor expressions.",
       "syntax": [
         "Syntax:  SetAutoFactor( SETTING )"
@@ -1978,7 +2191,10 @@
     "SetAutoOverWrite": {
       "id": "SetAutoOverWrite",
       "title": "SetAutoOverWrite",
-      "aliases": [],
+      "aliases": [
+        "setautooverwrite",
+        "SetAutoOverwrite"
+      ],
       "purpose": "Purpose:  Determines whether to overwrite automatically or only when the user has responded affirmatively to a prompt.",
       "syntax": [
         "Syntax:  SetAutoOverWrite( SETTING )"
@@ -1987,7 +2203,9 @@
     "SetAutoRhs": {
       "id": "SetAutoRhs",
       "title": "SetAutoRhs",
-      "aliases": [],
+      "aliases": [
+        "setautorhs"
+      ],
       "purpose": "Purpose:  Determines whether or not to replace symbols appearing on  the  left-hand  sides of equations with the right- hand  sides  of  the  equations when these symbols are used in expressions.",
       "syntax": [
         "Syntax:  SetAutoRhs( SETTING )"
@@ -1996,7 +2214,9 @@
     "SetAutoSimplify": {
       "id": "SetAutoSimplify",
       "title": "SetAutoSimplify",
-      "aliases": [],
+      "aliases": [
+        "setautosimplify"
+      ],
       "purpose": "Purpose:  Determines whether or not to automatically simplify certain mathematical expressions.",
       "syntax": [
         "Syntax:  SetAutoSimplify( ACOS=SETTING, ASIN=SETTING, ATAN=SETTING )"
@@ -2006,7 +2226,8 @@
       "id": "SetAutoTaylorSeries",
       "title": "SetAutoLinearize",
       "aliases": [
-        "SetAutoLinearize"
+        "setautotaylorseries",
+        "setautolinearize"
       ],
       "purpose": "Purpose:  Automatically expands all expressions in Taylor series.",
       "syntax": [
@@ -2019,7 +2240,9 @@
     "SetAutoZee": {
       "id": "SetAutoZee",
       "title": "SetAutoZee",
-      "aliases": [],
+      "aliases": [
+        "setautozee"
+      ],
       "purpose": "Purpose:  Determines whether or not Zs are to automatically created.",
       "syntax": [
         "Syntax:  SetAutoZee( SETTING )"
@@ -2028,7 +2251,9 @@
     "SetBasisSubscripts": {
       "id": "SetBasisSubscripts",
       "title": "SetBasisSubscripts",
-      "aliases": [],
+      "aliases": [
+        "setbasissubscripts"
+      ],
       "purpose": "Purpose:  Designates the last alphanumeric character in the name of right-handed orthogonal, unit vectors created when a RigidBody, RigidFrame, or NewtonianFrame is declared.",
       "syntax": [
         "Syntax:  SetBasisSubscripts( x,y,z )"
@@ -2037,7 +2262,9 @@
     "SetBeepSoundOnError": {
       "id": "SetBeepSoundOnError",
       "title": "SetBeepSoundOnError",
-      "aliases": [],
+      "aliases": [
+        "setbeepsoundonerror"
+      ],
       "purpose": "Purpose:  Determines whether or not to issue an audible beep sound when a warning or error message is issued.",
       "syntax": [
         "Syntax:  SetBeepSoundOnError( SETTING )"
@@ -2046,7 +2273,9 @@
     "SetCharge": {
       "id": "SetCharge",
       "title": "SetCharge",
-      "aliases": [],
+      "aliases": [
+        "setcharge"
+      ],
       "purpose": "Purpose:  Sets and returns the charge on a point or Particle.",
       "syntax": [
         "Syntax 1:  Q.SetCharge( qCharge )",
@@ -2057,7 +2286,10 @@
     "SetCMSymbol": {
       "id": "SetCMSymbol",
       "title": "SetCMSymbol",
-      "aliases": [],
+      "aliases": [
+        "setcmsymbol",
+        "SetCmSymbol"
+      ],
       "purpose": "Purpose:  Designates the symbol for the center of mass of bodies.",
       "syntax": [
         "Syntax:  SetCMSymbol( cm )"
@@ -2066,7 +2298,9 @@
     "SetComplex": {
       "id": "SetComplex",
       "title": "SetComplex",
-      "aliases": [],
+      "aliases": [
+        "setcomplex"
+      ],
       "purpose": "Purpose:  Determines whether to treat scalars as real or complex.",
       "syntax": [
         "Syntax:  SetComplex( SETTING )"
@@ -2075,7 +2309,9 @@
     "SetDigits": {
       "id": "SetDigits",
       "title": "SetDigits",
-      "aliases": [],
+      "aliases": [
+        "setdigits"
+      ],
       "purpose": "Purpose:  Sets an upper limit on the number of digits displayed on the screen when numerical values are reported. Governs the format and number of digits displayed in output files created in response to the ODE and Solve commands.",
       "syntax": [
         "Syntax 1:  SetDigits( n )",
@@ -2085,7 +2321,9 @@
     "SetDt": {
       "id": "SetDt",
       "title": "SetDt",
-      "aliases": [],
+      "aliases": [
+        "setdt"
+      ],
       "purpose": "Purpose:  Assigns a scalar quantity and its ordinary derivatives.",
       "syntax": [
         "Syntax 1:  SetDt(   x = scalarExpression )",
@@ -2096,7 +2334,7 @@
       "id": "SetGeneralizedSpeed",
       "title": "SetGeneralizedSpeed",
       "aliases": [
-        "SetGeneralizedCoordinate"
+        "setgeneralizedspeed"
       ],
       "purpose": "Purpose: Names generalized speeds for Kane's method. Names generalized coordinates for Lagrange and Kane methods and for calculating generalized forces associated with potential energy. Returns a column matrix of generalized speeds or coordinates.",
       "syntax": [
@@ -2109,7 +2347,9 @@
     "SetNoZeeSymbol": {
       "id": "SetNoZeeSymbol",
       "title": "SetNoZeeSymbol",
-      "aliases": [],
+      "aliases": [
+        "setnozeesymbol"
+      ],
       "purpose": "Purpose:  Identifies scalar quantities that are to be excluded from Zs.",
       "syntax": [
         "Syntax 1:  SetNoZeeSymbol( x, y, z )",
@@ -2121,7 +2361,9 @@
     "SetLineSpacing": {
       "id": "SetLineSpacing",
       "title": "SetLineSpacing",
-      "aliases": [],
+      "aliases": [
+        "setlinespacing"
+      ],
       "purpose": "Purpose:  Sets output line spacing.",
       "syntax": [
         "Syntax:  SetLineSpacing( n )"
@@ -2130,7 +2372,9 @@
     "SetLineStepping": {
       "id": "SetLineStepping",
       "title": "SetLineStepping",
-      "aliases": [],
+      "aliases": [
+        "setlinestepping"
+      ],
       "purpose": "Purpose:  Runs an input file one line at a time.",
       "syntax": [
         "Syntax:  SetLineStepping( SETTING )"
@@ -2148,7 +2392,9 @@
     "SetMass": {
       "id": "SetMass",
       "title": "SetMass",
-      "aliases": [],
+      "aliases": [
+        "setmass"
+      ],
       "purpose": "Purpose:  Sets and returns the mass of a Particle or RigidBody.",
       "syntax": [
         "Syntax 1:  B.SetMass( mB )",
@@ -2174,7 +2420,9 @@
     "SetInertia": {
       "id": "SetInertia",
       "title": "SetInertia",
-      "aliases": [],
+      "aliases": [
+        "setinertia"
+      ],
       "purpose": "Purpose:  Sets and returns a RigidBody's inertia dyadic about a point.",
       "syntax": [
         "Syntax 1:  B.SetInertia( aboutPoint, IBxx, IByy, IBzz )",
@@ -2188,7 +2436,9 @@
     "SetPauseOnWarning": {
       "id": "SetPauseOnWarning",
       "title": "SetPauseOnWarning",
-      "aliases": [],
+      "aliases": [
+        "setpauseonwarning"
+      ],
       "purpose": "Purpose:  Sets the duration of the pause that occurs when a warning is issued during execution of an input file.",
       "syntax": [
         "Syntax 1:  SetPauseOnWarning( numberOfSeconds )",
@@ -2198,7 +2448,9 @@
     "SetRotationMatrix": {
       "id": "SetRotationMatrix",
       "title": "SetRotationMatrix",
-      "aliases": [],
+      "aliases": [
+        "setrotationmatrix"
+      ],
       "purpose": "Purpose:  Sets the rotation matrix relating two sets of bases vectors associated with right-handed rotations of B relative to A.",
       "syntax": [
         "Syntax 1:  B.SetRotationMatrix( A, aboutUnitVector, theta )",
@@ -2242,7 +2494,9 @@
     "SetRotationMatrixODE": {
       "id": "SetRotationMatrixODE",
       "title": "SetRotationMatrixODE",
-      "aliases": [],
+      "aliases": [
+        "setrotationmatrixode"
+      ],
       "purpose": "Purpose:  Sets the rotation matrix relating two sets of bases vectors. Forms differential equations that relate the time-derivatives of orientation angles, Euler parameters, Rodrigues parameters, or rotation matrix elements (direction cosines) to angular velocity measures.",
       "syntax": [
         "Syntax 1:  B.SetRotationMatrixODE( A, SequenceIJK,      q1, q2, q3 )",
@@ -2254,7 +2508,9 @@
     "SetEulerParameterODE": {
       "id": "SetEulerParameterODE",
       "title": "SetEulerParameterODE",
-      "aliases": [],
+      "aliases": [
+        "seteulerparameterode"
+      ],
       "purpose": "Purpose:  Forms differential equations by relating the time-derivatives of Euler parameters (quaternion) to angular velocity measures.",
       "syntax": [
         "Syntax:  B.SetEulerParameterODE( A, e0, e1, e2, e3 )"
@@ -2263,7 +2519,9 @@
     "SetRodriguesParameterODE": {
       "id": "SetRodriguesParameterODE",
       "title": "SetRodriguesParameterODE",
-      "aliases": [],
+      "aliases": [
+        "setrodriguesparameterode"
+      ],
       "purpose": "Purpose:  Forms differential equations by relating the time-derivatives of Rodrigues parameters to angular velocity measures.",
       "syntax": [
         "Syntax:  B.SetRodriguesParameterODE( A, r1, r2, r3 )"
@@ -2272,7 +2530,9 @@
     "SetPoissonParameterODE": {
       "id": "SetPoissonParameterODE",
       "title": "SetPoissonParameterODE",
-      "aliases": [],
+      "aliases": [
+        "setpoissonparameterode"
+      ],
       "purpose": "Purpose:  Forms differential equations by relating the time-derivatives of Rodrigues parameters to angular velocity measures.",
       "syntax": [
         "Syntax:  B.SetPoissonParameterODE( A, Rxx,Rxy,Rxz, Ryx,Ryy,Ryz, Rzx,Rzy,Rzz )"
@@ -2281,7 +2541,9 @@
     "SetRotationMatrixX": {
       "id": "SetRotationMatrixX",
       "title": "SetRotationMatrixX",
-      "aliases": [],
+      "aliases": [
+        "setrotationmatrixx"
+      ],
       "purpose": "Purpose:  Forms the rotation matrix (direction cosine matrix) associated with the right-handed rotation of a rigid basis (e.g., B) relative to another rigid basis (e.g., A).",
       "syntax": [
         "Syntax 1:  B.SetRotationMatrixX( A, q )",
@@ -2291,7 +2553,9 @@
     "SetRotationMatrixY": {
       "id": "SetRotationMatrixY",
       "title": "SetRotationMatrixY",
-      "aliases": [],
+      "aliases": [
+        "setrotationmatrixy"
+      ],
       "purpose": "Purpose:  Forms the rotation matrix (direction cosine matrix) associated with the right-handed rotation of a rigid basis (e.g., B) relative to another rigid basis (e.g., A).",
       "syntax": [
         "Syntax 1:  B.SetRotationMatrixY( A, q )",
@@ -2301,7 +2565,9 @@
     "SetRotationMatrixZ": {
       "id": "SetRotationMatrixZ",
       "title": "SetRotationMatrixZ",
-      "aliases": [],
+      "aliases": [
+        "setrotationmatrixz"
+      ],
       "purpose": "Purpose:  Forms the rotation matrix (direction cosine matrix) associated with the right-handed rotation of a rigid basis (e.g., B) relative to another rigid basis (e.g., A).",
       "syntax": [
         "Syntax 1:  B.SetRotationMatrixZ( A, q )",
@@ -2311,7 +2577,9 @@
     "SetPosition": {
       "id": "SetPosition",
       "title": "SetPosition",
-      "aliases": [],
+      "aliases": [
+        "setposition"
+      ],
       "purpose": "Purpose:  Sets a point's position from another point.",
       "syntax": [
         "Syntax:  Q.SetPosition( fromPoint, positionVector )"
@@ -2320,7 +2588,9 @@
     "SetPositionVelocity": {
       "id": "SetPositionVelocity",
       "title": "SetPositionVelocity",
-      "aliases": [],
+      "aliases": [
+        "setpositionvelocity"
+      ],
       "purpose": "Purpose:  Sets a point's position from another point. Sets a point's velocity in a reference frame.",
       "syntax": [
         "Syntax 1:  Q.SetPositionVelocity( fromPoint, positionVector )",
@@ -2334,7 +2604,9 @@
     "SetScreenDisplay": {
       "id": "SetScreenDisplay",
       "title": "SetScreenDisplay",
-      "aliases": [],
+      "aliases": [
+        "setscreendisplay"
+      ],
       "purpose": "Purpose:  Determines whether or not to print input lines or response lines to the screen.",
       "syntax": [
         "Syntax:  SetScreenDisplay( SETTING )"
@@ -2367,7 +2639,9 @@
     "SetUnitSystem": {
       "id": "SetUnitSystem",
       "title": "SetUnitSystem",
-      "aliases": [],
+      "aliases": [
+        "setunitsystem"
+      ],
       "purpose": "Purpose:  Sets a unit system for unit conversions, e.g., for units set in Input and Output statements and Evaluate and Solve commands.",
       "syntax": [
         "Syntax 1:  SetUnitSystem( massUnit, lengthUnit, timeUnit )",
@@ -2377,7 +2651,9 @@
     "SetVelocity": {
       "id": "SetVelocity",
       "title": "SetVelocity",
-      "aliases": [],
+      "aliases": [
+        "setvelocity"
+      ],
       "purpose": "Purpose:  Sets a point's velocity in a reference frame.",
       "syntax": [
         "Syntax 1:  Q.SetVelocity( N, fromPoint )",
@@ -2389,7 +2665,9 @@
     "SetVelocityAcceleration": {
       "id": "SetVelocityAcceleration",
       "title": "SetVelocityAcceleration",
-      "aliases": [],
+      "aliases": [
+        "setvelocityacceleration"
+      ],
       "purpose": "Purpose:  Sets a point's velocity and acceleration in a reference frame.",
       "syntax": [
         "Syntax 1:  Q.SetVelocityAcceleration( N, fromPoint )",
@@ -2420,9 +2698,7 @@
     "sin": {
       "id": "sin",
       "title": "sin and csc",
-      "aliases": [
-        "sinDegrees"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Returns the sine or cosecant of a scalar expression.",
       "syntax": [
         "Syntax 1:  sin(x)  or  csc(x)",
@@ -2432,7 +2708,9 @@
     "Solve": {
       "id": "Solve",
       "title": "Solve",
-      "aliases": [],
+      "aliases": [
+        "solve"
+      ],
       "purpose": "Purpose:  Solves linear and nonlinear algebraic equations.",
       "syntax": [
         "Syntax 1:  Solve(         EqnsToSolve,  x1, x2, ... )",
@@ -2444,7 +2722,9 @@
     "SolveDt": {
       "id": "SolveDt",
       "title": "SolveDt",
-      "aliases": [],
+      "aliases": [
+        "solvedt"
+      ],
       "purpose": "Purpose:  Solves _linear_ algebraic equations. Differentiates the equations and solves for derivatives.",
       "syntax": [
         "Syntax:  SolveDt(          EqnsToSolve,  x1, x2, ... )"
@@ -2453,7 +2733,9 @@
     "SolveSetInput": {
       "id": "SolveSetInput",
       "title": "SolveSetInput",
-      "aliases": [],
+      "aliases": [
+        "solvesetinput"
+      ],
       "purpose": "Purpose:  Solves NUMERICAL linear and nonlinear algebraic equations and sets Input values for the unknowns.",
       "syntax": [
         "Syntax:  SolveSetInput( EqnsToSolve,  x1=Guess1,  x2=Guess2,  ... )"
@@ -2462,7 +2744,9 @@
     "SolveSetInputDt": {
       "id": "SolveSetInputDt",
       "title": "SolveSetInputDt",
-      "aliases": [],
+      "aliases": [
+        "solvesetinputdt"
+      ],
       "purpose": "Purpose:  Solves linear and nonlinear algebraic equations to set NUMERICAL",
       "syntax": [
         "Syntax:  SolveSetInputDt( EqnsToSolve, x1=Guess1, x2=Guess2,  ... )"
@@ -2472,7 +2756,7 @@
       "id": "SolveQuadraticPositiveRoot",
       "title": "SolveQuadraticPositiveRoot,",
       "aliases": [
-        "SolveQuadraticPositiveRootDt"
+        "solvequadraticpositiveroot"
       ],
       "purpose": "Purpose:  Solve for the positive or negative roots of a polynomial of degree 2 (and possibly its ordinary derivatives).",
       "syntax": [
@@ -2483,7 +2767,9 @@
     "Specified": {
       "id": "Specified",
       "title": "Specified",
-      "aliases": [],
+      "aliases": [
+        "specified"
+      ],
       "purpose": "Purpose:  Declares the names of specified quantities. Creates an array of all names declared as Specified.",
       "syntax": [
         "Syntax 1:  Specified        a,  b,  x+,  y-,  ...",
@@ -2495,7 +2781,9 @@
     "Spline": {
       "id": "Spline",
       "title": "Spline",
-      "aliases": [],
+      "aliases": [
+        "spline"
+      ],
       "purpose": "Purpose:  Fits a curve through two points with various functions: transition, step, pulse, bell, and polynomial.  The examples below use a function y(t) that connects points (t0,y0) and (tF,yF).",
       "syntax": [
         "Syntax 1:  Spline( TRANSITION, t, t0, tF, y0, yF )",
@@ -2531,7 +2819,9 @@
     "System": {
       "id": "System",
       "title": "System",
-      "aliases": [],
+      "aliases": [
+        "system"
+      ],
       "purpose": "Purpose:  Defines a collection of the following physical objects: Point,  Particle,  RigidFrame,  RigidBody.",
       "syntax": [
         "Syntax 1:  System",
@@ -2543,7 +2833,9 @@
     "SyntaxForms": {
       "id": "SyntaxForms",
       "title": "Syntactical Forms",
-      "aliases": [],
+      "aliases": [
+        "syntaxforms"
+      ],
       "purpose": "",
       "syntax": []
     },
@@ -2559,9 +2851,7 @@
     "tan": {
       "id": "tan",
       "title": "tan and cot",
-      "aliases": [
-        "tanDegrees"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Returns the tangent or cotangent of a scalar expression.",
       "syntax": [
         "Syntax 1:  tan(x)  or  cot(x)",
@@ -2571,7 +2861,9 @@
     "Translate": {
       "id": "Translate",
       "title": "Translate",
-      "aliases": [],
+      "aliases": [
+        "translate"
+      ],
       "purpose": "Purpose:  Sets a point's position from another point. Sets a point's velocity in a reference frame. Sets a point's acceleration in a reference frame.",
       "syntax": [
         "Syntax 1:  Q.Translate( fromPoint, positionVector )",
@@ -2594,10 +2886,7 @@
     "TrueFalse": {
       "id": "TrueFalse",
       "title": "true",
-      "aliases": [
-        "false",
-        "true"
-      ],
+      "aliases": [],
       "purpose": "Purpose:  Special names that are helpful for true/false logic.",
       "syntax": [
         "Syntax 1: true        % true  simplifies to 1 in math expressions.",
@@ -2616,14 +2905,18 @@
     "Units": {
       "id": "Units",
       "title": "Units",
-      "aliases": [],
+      "aliases": [
+        "units"
+      ],
       "purpose": "",
       "syntax": []
     },
     "Variable": {
       "id": "Variable",
       "title": "Variable",
-      "aliases": [],
+      "aliases": [
+        "variable"
+      ],
       "purpose": "Purpose:  Declares the names of variables.",
       "syntax": [
         "Syntax 1:  Variable  a,  b,  x+,  y-,  ...",
@@ -2635,7 +2928,9 @@
     "Vector": {
       "id": "Vector",
       "title": "Vector",
-      "aliases": [],
+      "aliases": [
+        "vector"
+      ],
       "purpose": "Purpose:  Constructs a vector or three-element column matrix.",
       "syntax": [
         "Syntax 1:  Vector( A,  x, y, z  )",
@@ -2646,7 +2941,9 @@
     "Zee": {
       "id": "Zee",
       "title": "Zee",
-      "aliases": [],
+      "aliases": [
+        "zee"
+      ],
       "purpose": "Purpose:  Introduces  Z1, Z2, ...  as  names for expressions and makes corresponding replacements.",
       "syntax": [
         "Syntax 1:  Zee( ExpressionY )",
@@ -2666,7 +2963,9 @@
     "Algebraic": {
       "id": "Algebraic",
       "title": "Algebraic",
-      "aliases": [],
+      "aliases": [
+        "algebraic"
+      ],
       "purpose": "Purpose:  Writes a MATLAB, C, or Fortran program to solve for Output and perhaps to solve coupled LINEAR algebraic equations.",
       "syntax": [
         "Syntax 1:  Algebraic()                             Filename.Ext",
@@ -2690,7 +2989,9 @@
     "Code": {
       "id": "Code",
       "title": "CODE",
-      "aliases": [],
+      "aliases": [
+        "code"
+      ],
       "purpose": "Purpose:  Writes a Fortran, C, or MATLAB program or immediately executes a program for a variety of purposes.",
       "syntax": [
         "Syntax 1:  Code ODE()                               Filename.Ext",
@@ -2712,7 +3013,10 @@
     "Dircos": {
       "id": "Dircos",
       "title": "Dircos",
-      "aliases": [],
+      "aliases": [
+        "dircos",
+        "DIRCOS"
+      ],
       "purpose": "Purpose:  Calculates and sets the direction cosine matrix (rotation matrix) relating two sets of dextral, orthogonal unit vectors in terms of orientation angles, Euler parameters, or Rodrigues parameters.",
       "syntax": [
         "Syntax 1:  Dircos( A, B, TYPE,  q1, q2, q3 )",
@@ -2723,7 +3027,10 @@
     "FrStar": {
       "id": "FrStar",
       "title": "FrStar",
-      "aliases": [],
+      "aliases": [
+        "frstar",
+        "FRSTAR"
+      ],
       "purpose": "Purpose:  Forms  expressions  for  generalized inertia forces or contributions to generalized inertia forces.",
       "syntax": [
         "Syntax 1:  FrStar()",
@@ -2733,7 +3040,9 @@
     "Gyrostat": {
       "id": "Gyrostat",
       "title": "Gyrostat",
-      "aliases": [],
+      "aliases": [
+        "gyrostat"
+      ],
       "purpose": "Purpose:  Calculates expressions related to angular momentum, kinetic energy, and generalized inertia forces for systems containing gyrostats.",
       "syntax": [
         "Syntax 1:  Gyrostat( Quantity, CYLINDER, Carrier, Rotor, J )",
@@ -2743,7 +3052,10 @@
     "KinDiffs": {
       "id": "KinDiffs",
       "title": "KinDiffs",
-      "aliases": [],
+      "aliases": [
+        "kindiffs",
+        "KINDIFFS"
+      ],
       "purpose": "Purpose:  Sets the first time-derivatives of orientation angles, Euler parameters, Rodrigues parameters, or direction cosines in terms of angular velocity measure numbers.",
       "syntax": [
         "Syntax 1:  KinDiffs( A, B, SequenceIJK,  q1, q2, q3 )",
@@ -2755,7 +3067,10 @@
     "Simprot": {
       "id": "Simprot",
       "title": "Simprot",
-      "aliases": [],
+      "aliases": [
+        "simprot",
+        "SIMPROT"
+      ],
       "purpose": "Purpose:  Forms rotation matrices associated with a simple rotation of one reference frame in another reference frame.",
       "syntax": [
         "Syntax 1:  Simprot( A, B, Integer, Angle )",
@@ -2766,7 +3081,7 @@
       "id": "V1PT",
       "title": "V1PT",
       "aliases": [
-        "A1PT"
+        "v1pt"
       ],
       "purpose": "Purpose:  Calculates and sets the velocity (or acceleration) of a point moving on a reference frame.",
       "syntax": [
@@ -2778,7 +3093,7 @@
       "id": "V2PTS",
       "title": "V2PTS",
       "aliases": [
-        "A2PTS"
+        "v2pts"
       ],
       "purpose": "Purpose:  For two points fixed on a reference frame (RigidBody or RigidFrame) calculates and sets the velocity (or acceleration) of one point from the velocity (or acceleration) of the other.",
       "syntax": [
@@ -2789,964 +3104,1048 @@
     }
   },
   "aliasToId": {
-    "!": "!",
-    "Clear": "Clear",
-    "Echo": "Echo",
-    "Help": "Help",
-    "List": "List",
-    "GetMemory": "GetMemory",
-    "Pause": "Pause",
-    "Run": "Run",
-    "Quit": "Quit",
-    "Save": "Save",
-    "if": "if",
-    "pi": "pi",
-    "imaginary": "ImaginaryNumber",
-    "true": "TrueFalse",
-    "false": "TrueFalse",
-    "%": "%",
-    "%%": "%",
-    "0>": "0>",
-    "0>>": "0>",
-    "1>>": "1>>",
-    ">": ">",
-    ">>": ">",
-    ":=": "=",
-    "&": "&",
-    "[]": "[]",
-    "t": "t",
-    "tInitial": "absError",
-    "tFinal": "absError",
-    "tStep": "absError",
-    "absError": "absError",
-    "abs": "abs",
-    "exp": "exp",
-    "log": "log",
-    "log10": "log",
-    "factorial": "factorial",
-    "squared": "Squared",
-    "sqrt": "sqrt",
-    "Spline": "Spline",
-    "cos": "cos",
-    "sin": "sin",
-    "tan": "tan",
-    "cosh": "cosh",
-    "sinh": "cosh",
-    "tanh": "cosh",
-    "acos": "acos",
-    "asin": "asin",
-    "atan": "atan",
-    "atan2": "atan",
-    "ceil": "ceil",
-    "floor": "ceil",
-    "int": "int",
-    "round": "round",
-    "sign": "sign",
-    "max": "min",
-    "min": "min",
-    "RandomInteger": "RandomInteger",
-    "cosDegrees": "cos",
-    "sinDegrees": "sin",
-    "tanDegrees": "tan",
-    "acosDegrees": "acos",
-    "atan2Degrees": "atan",
-    "D": "D",
-    "Dt": "Dt",
-    "DtDt": "Dt",
-    "Evaluate": "Evaluate",
-    "EvaluateToNumber": "Evaluate",
-    "Exclude": "Exclude",
-    "Include": "Include",
-    "RoundDigits": "RoundDigits",
-    "Integrate": "Integrate",
-    "GetCoefficient": "GetCoefficient",
-    "GetRhs": "GetRhs",
-    "GetTaylorSeries": "GetTaylorSeries",
-    "Linearize": "Linearize",
-    "ReplaceString": "ReplaceString",
-    "Expand": "Expand",
-    "Epsilon": "Epsilon",
-    "Explicit": "Explicit",
-    "Factor": "Factor",
-    "FactorLinear": "FactorLinear",
-    "FactorQuadratic": "FactorLinear",
-    "Zee": "Zee",
-    "IsContainSymbol": "IsContainSymbol",
-    "IsSimplifyEqual": "IsSimplifyEqual",
-    "IsSimplifyZero": "IsSimplifyZero",
-    "IsSimplifyTrue": "IsSimplifyTrue",
-    "Strcmp": "Strcmp",
-    "Strcmpi": "Strcmp",
-    "IsNegative": "IsPositive",
-    "IsNegativeOr0": "IsPositive",
-    "IsPositiveOr0": "IsPositive",
-    "IsPositive": "IsPositive",
-    "GetCubicRoots": "GetPolynomialRoots",
-    "GetQuadraticRoots": "GetPolynomialRoots",
-    "GetPolynomialRoots": "GetPolynomialRoots",
-    "Solve": "Solve",
-    "SolveDt": "SolveDt",
-    "SolveSetInput": "SolveSetInput",
-    "SolveSetInputDt": "SolveSetInputDt",
-    "SetDt": "SetDt",
-    "SolveQuadraticPositiveRoot": "SolveQuadraticPositiveRoot",
-    "SolveQuadraticPositiveRootDt": "SolveQuadraticPositiveRoot",
-    "Constant": "Constant",
-    "Variable": "Variable",
-    "Specified": "Specified",
-    "ImaginaryNumber": "ImaginaryNumber",
-    "IndependentVariable": "IndependentVariable",
-    "SetGeneralizedSpeed": "SetGeneralizedSpeed",
-    "SetGeneralizedCoordinate": "SetGeneralizedSpeed",
-    "NewtonianFrame": "NewtonianFrame",
-    "RigidBody": "RigidBody",
-    "RigidFrame": "RigidFrame",
-    "Point": "Point",
-    "Particle": "Particle",
-    "System": "System",
-    "GetMass": "GetMass",
-    "SetMass": "SetMass",
-    "GetCharge": "GetCharge",
-    "SetCharge": "SetCharge",
-    "GetCmPosition": "GetCMPosition",
-    "GetCmVelocity": "GetCMVelocity",
-    "GetCmAcceleration": "GetCMAcceleration",
-    "GetInertiaDyadic": "GetInertiaDyadic",
-    "GetInertiaMatrix": "GetInertiaMatrix",
-    "GetMomentOfInertia": "GetMomentOfInertia",
-    "SetInertia": "SetInertia",
-    "GetProductOfInertia": "GetProductOfInertia",
-    "GetRadiusOfGyration": "GetRadiusOfGyration",
-    "GetInertiaVector": "GetInertiaVector",
-    "SetMassInertia": "SetMassInertia",
-    "Cross": "Cross",
-    "Dot": "Cross",
-    "Dyadic": "Dyadic",
-    "Express": "Express",
-    "GetAngleBetweenVectors": "GetAngleBetweenVectors",
-    "GetAngleBetweenUnitVectors": "GetAngleBetweenVectors",
-    "GetBasisVector": "GetBasisVector",
-    "GetMagnitude": "GetMagnitude",
-    "GetMagnitudeSquared": "GetMagnitude",
-    "GetUnitVector": "GetUnitVector",
-    "Vector": "Vector",
-    "GetColumns": "GetColumns",
-    "GetDeterminant": "GetDeterminant",
-    "GetDiagonalMatrix": "GetDiagonalMatrix",
-    "GetEigen": "GetEigen",
-    "GetNorm": "GetNorm",
-    "GetElement": "GetElement",
-    "GetIdentityMatrix": "GetIdentityMatrix",
-    "GetInverse": "GetInverse",
-    "GetRows": "GetColumns",
-    "GetTrace": "GetTrace",
-    "GetTranspose": "GetTranspose",
-    "GetZeroMatrix": "GetIdentityMatrix",
-    "Matrix": "Matrix",
-    "Convolve": "Convolve",
-    "SVD": "SVD",
-    "Rotate": "Rotate",
-    "RotateX": "RotateX",
-    "RotateY": "RotateY",
-    "RotateZ": "RotateY",
-    "RotateNegativeX": "RotateX",
-    "GetRotationMatrix": "GetRotationMatrix",
-    "SetRotationMatrix": "SetRotationMatrix",
-    "SetRotationMatrixODE": "SetRotationMatrixODE",
-    "GetAngularVelocity": "GetAngularVelocity",
-    "SetAngularVelocity": "SetAngularVelocity",
-    "GetAngularSpeed": "GetAngularSpeed",
-    "GetAngularAcceleration": "GetAngularAcceleration",
-    "SetAngularAcceleration": "SetAngularAcceleration",
-    "SetAngularVelocityAcceleration": "SetAngularVelocityAcceleration",
-    "Translate": "Translate",
-    "SetPositionVelocity": "SetPositionVelocity",
-    "SetVelocityAcceleration": "SetVelocityAcceleration",
-    "SetPosition": "SetPosition",
-    "GetPosition": "GetPosition",
-    "GetDistance": "GetDistance",
-    "GetDistanceSquared": "GetDistance",
-    "SetVelocity": "SetVelocity",
-    "GetVelocity": "GetVelocity",
-    "GetSpeed": "GetSpeed",
-    "GetElongation": "GetElongation",
-    "SetAcceleration": "SetAcceleration",
-    "GetAcceleration": "GetAcceleration",
-    "GetVelocityJacobian": "GetJacobian",
-    "AddForce": "AddForce",
-    "AddForceDamper": "AddForceDamper",
-    "AddForceElectrostatic": "AddForceElectrostatic",
-    "AddForceGravity": "AddForceGravity",
-    "AddForceInverseSquare": "AddForceInverseSquare",
-    "AddForceSpring": "AddForceSpring",
-    "AddForceLinearActuator": "AddForceLinearActuator",
-    "GetResultantForce": "GetResultantForce",
-    "AddTorque": "AddTorque",
-    "AddTorqueDamper": "AddTorqueDamper",
-    "GetMomentOfForces": "GetMomentOfForces",
-    "GetResultantTorque": "GetResultantTorque",
-    "GetForceGravityPotentialEnergy": "GetForceGravityPotentialEnergy",
-    "GetForceSpringPotentialEnergy": "GetForceSpringPotentialEnergy",
-    "GetForceElectrostaticPotentialEnergy": "GetForceElectrostaticPotentialEnergy",
-    "GetForceInverseSquarePotentialEnergy": "GetForceInverseSquarePotentialEnergy",
-    "SetWorkODE": "SetWorkODE",
-    "GetPower": "GetPower",
-    "GetKineticEnergy": "GetKineticEnergy",
-    "GetAngularMomentum": "GetAngularMomentum",
-    "GetTranslationalMomentum": "GetTranslationalMomentum",
-    "GetGeneralizedMomentum": "GetGeneralizedMomentum",
-    "GetStatics": "GetStatics",
-    "GetStaticsKane": "Kane",
-    "GetStaticsLagrange": "Lagrange",
-    "Constrain": "Constrain",
-    "GetDynamics": "GetDynamics",
-    "GetDynamicsKane": "Kane",
-    "GetDynamicsLagrange": "Lagrange",
-    "ConvertUnits": "ConvertUnits",
-    "GetUnitSystem": "GetUnitSystem",
-    "SetUnitSystem": "SetUnitSystem",
-    "ODE": "ODE",
-    "Input": "Input",
-    "Output": "Output",
-    "OutputPlot": "Output",
-    "Plot": "Plot",
-    "Animate": "Animate",
-    "Code": "Code",
-    "Algebraic": "Algebraic",
-    "Nonlinear": "Nonlinear",
-    "Angvel": "Angvel",
-    "KinDiffs": "KinDiffs",
-    "Dircos": "Dircos",
-    "FrStar": "FrStar",
-    "Gyrostat": "Gyrostat",
-    "Simprot": "Simprot",
-    "V1PT": "V1PT",
-    "V2PTS": "V2PTS",
-    "A1PT": "V1PT",
-    "A2PTS": "V2PTS",
     "SetAutoDifferentiate": "SetAutoDifferentiate",
     "SetAutoEpsilon": "SetAutoEpsilon",
     "SetAutoExpress": "SetAutoExpress",
     "SetAutoFactor": "SetAutoFactor",
-    "SetAutoLinearize": "SetAutoTaylorSeries",
-    "SetAutoOverwrite": "SetAutoOverwrite",
+    "SetAutoOverwrite": "SetAutoOverWrite",
     "SetAutoRhs": "SetAutoRhs",
     "SetAutoSimplify": "SetAutoSimplify",
-    "SetAutoTaylorSeries": "SetAutoTaylorSeries",
     "SetAutoZee": "SetAutoZee",
     "SetBasisSubscripts": "SetBasisSubscripts",
-    "SetCmSymbol": "SetCmSymbol",
+    "SetBeepSoundOnError": "SetBeepSoundOnError",
+    "SetCmSymbol": "SetCMSymbol",
     "SetComplex": "SetComplex",
+    "GetDefaults": "GetDefaults",
     "SetDigits": "SetDigits",
-    "SetDefaults": "GetDefaults",
-    "AUTOLEV": "AUTOLEV",
+    "SetLineSpacing": "SetLineSpacing",
     "SetLineStepping": "SetLineStepping",
-    "SetLineWidth": "SetLineWidth",
     "SetPauseOnWarning": "SetPauseOnWarning",
+    "SetScreenDisplay": "SetScreenDisplay",
+    "Echo": "Echo",
+    "Help": "Help",
+    "Quit": "Quit",
+    "Plot": "Plot",
+    "Run": "Run",
+    "Save": "Save",
     "SetWorkingDirectory": "SetWorkingDirectory",
+    "SetScratchDirectory": "SetScratchDirectory",
+    "Clear": "Clear",
+    "!": "!",
+    "%": "%",
+    "List": "List",
+    "GetMemory": "GetMemory",
+    "Pause": "Pause",
     "GetEnvironmentValue": "GetEnvironmentValue",
-    "clear": "Clear",
-    "echo": "Echo",
-    "help": "Help",
-    "list": "List",
-    "getmemory": "GetMemory",
-    "pause": "Pause",
-    "run": "Run",
-    "quit": "Quit",
-    "save": "Save",
-    "tinitial": "absError",
-    "tfinal": "absError",
-    "tstep": "absError",
-    "abserror": "absError",
-    "spline": "Spline",
-    "randominteger": "RandomInteger",
-    "cosdegrees": "cos",
-    "sindegrees": "sin",
-    "tandegrees": "tan",
-    "acosdegrees": "acos",
-    "atan2degrees": "atan",
-    "d": "D",
-    "dt": "Dt",
-    "dtdt": "Dt",
-    "evaluate": "Evaluate",
-    "evaluatetonumber": "Evaluate",
-    "exclude": "Exclude",
-    "include": "Include",
-    "rounddigits": "RoundDigits",
-    "integrate": "Integrate",
-    "getcoefficient": "GetCoefficient",
-    "getrhs": "GetRhs",
-    "gettaylorseries": "GetTaylorSeries",
-    "linearize": "Linearize",
-    "replacestring": "ReplaceString",
-    "expand": "Expand",
-    "epsilon": "Epsilon",
-    "explicit": "Explicit",
-    "factor": "Factor",
-    "factorlinear": "FactorLinear",
-    "factorquadratic": "FactorLinear",
-    "zee": "Zee",
-    "iscontainsymbol": "IsContainSymbol",
-    "issimplifyequal": "IsSimplifyEqual",
-    "issimplifyzero": "IsSimplifyZero",
-    "issimplifytrue": "IsSimplifyTrue",
-    "strcmp": "Strcmp",
-    "strcmpi": "Strcmp",
-    "isnegative": "IsPositive",
-    "isnegativeor0": "IsPositive",
-    "ispositiveor0": "IsPositive",
-    "ispositive": "IsPositive",
-    "getcubicroots": "GetPolynomialRoots",
-    "getquadraticroots": "GetPolynomialRoots",
-    "getpolynomialroots": "GetPolynomialRoots",
-    "solve": "Solve",
-    "solvedt": "SolveDt",
-    "solvesetinput": "SolveSetInput",
-    "solvesetinputdt": "SolveSetInputDt",
-    "setdt": "SetDt",
-    "solvequadraticpositiveroot": "SolveQuadraticPositiveRoot",
-    "solvequadraticpositiverootdt": "SolveQuadraticPositiveRoot",
-    "constant": "Constant",
-    "variable": "Variable",
-    "specified": "Specified",
-    "imaginarynumber": "ImaginaryNumber",
-    "independentvariable": "IndependentVariable",
-    "setgeneralizedspeed": "SetGeneralizedSpeed",
-    "setgeneralizedcoordinate": "SetGeneralizedSpeed",
-    "newtonianframe": "NewtonianFrame",
-    "rigidbody": "RigidBody",
-    "rigidframe": "RigidFrame",
-    "point": "Point",
-    "particle": "Particle",
-    "system": "System",
-    "getmass": "GetMass",
-    "setmass": "SetMass",
-    "getcharge": "GetCharge",
-    "setcharge": "SetCharge",
-    "getcmposition": "GetCMPosition",
-    "getcmvelocity": "GetCMVelocity",
-    "getcmacceleration": "GetCMAcceleration",
-    "getinertiadyadic": "GetInertiaDyadic",
-    "getinertiamatrix": "GetInertiaMatrix",
-    "getmomentofinertia": "GetMomentOfInertia",
-    "setinertia": "SetInertia",
-    "getproductofinertia": "GetProductOfInertia",
-    "getradiusofgyration": "GetRadiusOfGyration",
-    "getinertiavector": "GetInertiaVector",
-    "setmassinertia": "SetMassInertia",
-    "cross": "Cross",
-    "dot": "Cross",
-    "dyadic": "Dyadic",
-    "express": "Express",
-    "getanglebetweenvectors": "GetAngleBetweenVectors",
-    "getanglebetweenunitvectors": "GetAngleBetweenVectors",
-    "getbasisvector": "GetBasisVector",
-    "getmagnitude": "GetMagnitude",
-    "getmagnitudesquared": "GetMagnitude",
-    "getunitvector": "GetUnitVector",
-    "vector": "Vector",
-    "getcolumns": "GetColumns",
-    "getdeterminant": "GetDeterminant",
-    "getdiagonalmatrix": "GetDiagonalMatrix",
-    "geteigen": "GetEigen",
-    "getnorm": "GetNorm",
-    "getelement": "GetElement",
-    "getidentitymatrix": "GetIdentityMatrix",
-    "getinverse": "GetInverse",
-    "getrows": "GetColumns",
-    "gettrace": "GetTrace",
-    "gettranspose": "GetTranspose",
-    "getzeromatrix": "GetIdentityMatrix",
-    "matrix": "Matrix",
-    "convolve": "Convolve",
-    "svd": "SVD",
-    "rotate": "Rotate",
-    "rotatex": "RotateX",
-    "rotatey": "RotateY",
-    "rotatez": "RotateY",
-    "rotatenegativex": "RotateX",
-    "getrotationmatrix": "GetRotationMatrix",
-    "setrotationmatrix": "SetRotationMatrix",
-    "setrotationmatrixode": "SetRotationMatrixODE",
-    "getangularvelocity": "GetAngularVelocity",
-    "setangularvelocity": "SetAngularVelocity",
-    "getangularspeed": "GetAngularSpeed",
-    "getangularacceleration": "GetAngularAcceleration",
-    "setangularacceleration": "SetAngularAcceleration",
-    "setangularvelocityacceleration": "SetAngularVelocityAcceleration",
-    "translate": "Translate",
-    "setpositionvelocity": "SetPositionVelocity",
-    "setvelocityacceleration": "SetVelocityAcceleration",
-    "setposition": "SetPosition",
-    "getposition": "GetPosition",
-    "getdistance": "GetDistance",
-    "getdistancesquared": "GetDistance",
-    "setvelocity": "SetVelocity",
-    "getvelocity": "GetVelocity",
-    "getspeed": "GetSpeed",
-    "getelongation": "GetElongation",
-    "setacceleration": "SetAcceleration",
-    "getacceleration": "GetAcceleration",
-    "getvelocityjacobian": "GetJacobian",
-    "addforce": "AddForce",
-    "addforcedamper": "AddForceDamper",
-    "addforceelectrostatic": "AddForceElectrostatic",
-    "addforcegravity": "AddForceGravity",
-    "addforceinversesquare": "AddForceInverseSquare",
-    "addforcespring": "AddForceSpring",
-    "addforcelinearactuator": "AddForceLinearActuator",
-    "getresultantforce": "GetResultantForce",
-    "addtorque": "AddTorque",
-    "addtorquedamper": "AddTorqueDamper",
-    "getmomentofforces": "GetMomentOfForces",
-    "getresultanttorque": "GetResultantTorque",
-    "getforcegravitypotentialenergy": "GetForceGravityPotentialEnergy",
-    "getforcespringpotentialenergy": "GetForceSpringPotentialEnergy",
-    "getforceelectrostaticpotentialenergy": "GetForceElectrostaticPotentialEnergy",
-    "getforceinversesquarepotentialenergy": "GetForceInverseSquarePotentialEnergy",
-    "setworkode": "SetWorkODE",
-    "getpower": "GetPower",
-    "getkineticenergy": "GetKineticEnergy",
-    "getangularmomentum": "GetAngularMomentum",
-    "gettranslationalmomentum": "GetTranslationalMomentum",
-    "getgeneralizedmomentum": "GetGeneralizedMomentum",
-    "getstatics": "GetStatics",
-    "getstaticskane": "Kane",
-    "getstaticslagrange": "Lagrange",
-    "constrain": "Constrain",
-    "getdynamics": "GetDynamics",
-    "getdynamicskane": "Kane",
-    "getdynamicslagrange": "Lagrange",
-    "convertunits": "ConvertUnits",
-    "getunitsystem": "GetUnitSystem",
-    "setunitsystem": "SetUnitSystem",
-    "ode": "ODE",
-    "input": "Input",
-    "output": "Output",
-    "outputplot": "Output",
-    "plot": "Plot",
-    "animate": "Animate",
-    "code": "Code",
-    "algebraic": "Algebraic",
-    "nonlinear": "Nonlinear",
-    "angvel": "Angvel",
-    "kindiffs": "KinDiffs",
-    "dircos": "Dircos",
-    "frstar": "FrStar",
-    "gyrostat": "Gyrostat",
-    "simprot": "Simprot",
-    "v1pt": "V1PT",
-    "v2pts": "V2PTS",
-    "a1pt": "V1PT",
-    "a2pts": "V2PTS",
+    "SyntaxForms": "SyntaxForms",
+    "Pi": "pi",
+    "t": "t",
+    "&": "&",
+    "0>": "0>",
+    "1>>": "1>>",
+    "ImaginaryNumber": "ImaginaryNumber",
+    "IndependentVariable": "IndependentVariable",
+    "absError": "AbsError",
+    "Constant": "Constant",
+    "Variable": "Variable",
+    "Specified": "Specified",
+    "SetGeneralizedSpeed": "SetGeneralizedSpeed",
+    "Animate": "Animate",
+    "Units": "Units",
+    "ConvertUnits": "ConvertUnits",
+    "Input": "Input",
+    "Output": "Output",
+    "GetUnitSystem": "GetUnitSystem",
+    "SetUnitSystem": "SetUnitSystem",
+    "Point": "Point",
+    "Particle": "Particle",
+    "RigidFrame": "RigidFrame",
+    "RigidBody": "RigidBody",
+    "NewtonianFrame": "NewtonianFrame",
+    "System": "System",
+    "Cross": "Cross",
+    "GetUnitVector": "GetUnitVector",
+    "GetAngleBetweenVectors": "GetAngleBetweenVectors",
+    "GetBasisVector": "GetBasisVector",
+    "GetMagnitude": "GetMagnitude",
+    "Express": "Express",
+    "SolveQuadraticPositiveRoot": "SolveQuadraticPositiveRoot",
+    "GetPolynomialRoots": "GetPolynomialRoots",
+    "Spline": "Spline",
+    "Solve": "Solve",
+    "SolveDt": "SolveDt",
+    "SolveSetInput": "SolveSetInput",
+    "SolveSetInputDt": "SolveSetInputDt",
+    "SVD": "SVD",
+    "Matrix": "Matrix",
+    "Vector": "Vector",
+    "Dyadic": "Dyadic",
+    "GetDeterminant": "GetDeterminant",
+    "GetElement": "GetElement",
+    "GetInverse": "GetInverse",
+    "GetRows": "GetColumns",
+    "GetColumns": "GetColumns",
+    "GetZeroMatrix": "GetIdentityMatrix",
+    "GetDiagonalMatrix": "GetDiagonalMatrix",
+    "GetIdentityMatrix": "GetIdentityMatrix",
+    "GetTrace": "GetTrace",
+    "GetTranspose": "GetTranspose",
+    "GetEigen": "GetEigen",
+    "abs": "abs",
+    "sin": "sin",
+    "cos": "cos",
+    "tan": "tan",
+    "exp": "exp",
+    "asin": "asin",
+    "acos": "acos",
+    "atan": "atan",
+    "log": "log",
+    "cosh": "cosh",
+    "ceil": "ceil",
+    "int": "int",
+    "round": "Round",
+    "sign": "sign",
+    "factorial": "factorial",
+    "sqrt": "sqrt",
+    "randomInteger": "RandomInteger",
+    "SetNoZeeSymbol": "SetNoZeeSymbol",
+    "Zee": "Zee",
+    "Evaluate": "Evaluate",
+    "Dt": "Dt",
+    "SetDt": "SetDt",
+    "Integrate": "Integrate",
+    "SetAutoTaylorSeries": "SetAutoTaylorSeries",
+    "Convolve": "Convolve",
+    "D": "D",
+    "Exclude": "Exclude",
+    "Include": "Include",
+    "Epsilon": "Epsilon",
+    "Expand": "Expand",
+    "Explicit": "Explicit",
+    "Factor": "Factor",
+    "FactorLinear": "FactorLinear",
+    "ReplaceString": "ReplaceString",
+    "Squared": "Squared",
+    "GetTaylorSeries": "GetTaylorSeries",
+    "Linearize": "Linearize",
+    "SetAutoLinearize": "SetAutoTaylorSeries",
+    "GetPartialVelocity": "GetPartialVelocity",
+    "GetResultantForce": "GetResultantForce",
+    "GetGeneralizedForce": "GetGeneralizedForce",
+    "AddForce": "AddForce",
+    "AddForceSpring": "AddForceSpring",
+    "AddForceDamper": "AddForceDamper",
+    "AddForceGravity": "AddForceGravity",
+    "AddForceElectrostatic": "AddForceElectrostatic",
+    "AddForceInverseSquare": "AddForceInverseSquare",
+    "AddForceLinearActuator": "AddForceLinearActuator",
+    "GetPower": "GetPower",
+    "AddTorque": "AddTorque",
+    "AddTorqueDamper": "AddTorqueDamper",
+    "GetResultantTorque": "GetResultantTorque",
+    "GetMomentOfForces": "GetMomentOfForces",
+    "GetMass": "GetMass",
+    "SetMass": "SetMass",
+    "GetCharge": "GetCharge",
+    "SetCharge": "SetCharge",
+    "GetCMPosition": "GetCmPosition",
+    "GetCMAcceleration": "GetCmAcceleration",
+    "GetCMVelocity": "GetCmVelocity",
+    "SetInertia": "SetInertia",
+    "GetInertiaDyadic": "GetInertiaDyadic",
+    "GetInertiaMatrix": "GetInertiaMatrix",
+    "GetInertiaVector": "GetInertiaVector",
+    "GetInertiaScalar": "GetInertiaScalar",
+    "GetProductOfInertia": "GetProductOfInertia",
+    "GetMomentOfInertia": "GetMomentOfInertia",
+    "GetRadiusOfGyration": "GetRadiusOfGyration",
+    "GetPotentialEnergy": "GetPotentialEnergy",
+    "GetForceGravityPotentialEnergy": "GetForceGravityPotentialEnergy",
+    "GetForceSpringPotentialEnergy": "GetForceSpringPotentialEnergy",
+    "GetForceElectrostaticPotentialEnergy": "GetForceElectrostaticPotentialEnergy",
+    "GetForceInverseSquarePotentialEnergy": "GetForceInverseSquarePotentialEnergy",
+    "Rotate": "Rotate",
+    "RotateX": "RotateX",
+    "RotateY": "RotateY",
+    "RotateZ": "RotateZ",
+    "GetRotationMatrix": "GetRotationMatrix",
+    "Euler": "Euler",
+    "SetRotationMatrix": "SetRotationMatrix",
+    "SetRotationMatrixX": "SetRotationMatrixX",
+    "SetRotationMatrixY": "SetRotationMatrixY",
+    "SetRotationMatrixZ": "SetRotationMatrixZ",
+    "SIMPROT": "Simprot",
+    "DIRCOS": "Dircos",
+    "SetRotationMatrixODE": "SetRotationMatrixODE",
+    "SetEulerParameterODE": "SetEulerParameterODE",
+    "SetRodriguesParameterODE": "SetRodriguesParameterODE",
+    "SetPoissonParameterODE": "SetPoissonParameterODE",
+    "KINDIFFS": "KinDiffs",
+    "GetAngularVelocity": "GetAngularVelocity",
+    "GetAngularAcceleration": "GetAngularAcceleration",
+    "GetAngularSpeed": "GetAngularSpeed",
+    "SetAngularVelocity": "SetAngularVelocity",
+    "SetAngularAcceleration": "SetAngularAcceleration",
+    "SetAngularVelocityAcceleration": "SetAngularVelocityAcceleration",
+    "GetPosition": "GetPosition",
+    "SetPosition": "SetPosition",
+    "GetDistance": "GetDistance",
+    "GetElongation": "GetElongation",
+    "SetPositionVelocity": "SetPositionVelocity",
+    "Translate": "Translate",
+    "GetVelocity": "GetVelocity",
+    "GetVelocityRemainder": "GetVelocityRemainder",
+    "SetVelocity": "SetVelocity",
+    "GetSpeed": "GetSpeed",
+    "GetAcceleration": "GetAcceleration",
+    "SetAcceleration": "SetAcceleration",
+    "SetVelocityAcceleration": "SetVelocityAcceleration",
+    "V1PT": "V1PT",
+    "V2PTS": "V2PTS",
+    "GetEffectiveForce": "GetEffectiveForce",
+    "GetGeneralizedMomentum": "GetGeneralizedMomentum",
+    "GetAngularMomentum": "GetAngularMomentum",
+    "GetMomentOfEffectiveForce": "GetMomentOfEffectiveForce",
+    "GetGeneralizedEffectiveForce": "GetGeneralizedEffectiveForce",
+    "GetStatics": "Newton",
+    "GetDynamics": "GetDynamics",
+    "Kane": "Kane",
+    "GetStaticsKane": "Kane",
+    "GetStaticsLagrange": "Lagrange",
+    "MathFunctions": "MathFunctions",
+    "GetCoefficient": "GetCoefficient",
+    "GetRhs": "GetRhs",
+    "GetKineticEnergy": "GetKineticEnergy",
+    "GetEnergyCheckKane": "GetEnergyCheckKane",
+    "ODE": "ODE",
+    "Algebraic": "Algebraic",
+    "Code": "Code",
+    "if": "if",
+    "min": "min",
+    "Autolev": "AUTOLEV",
+    "FRSTAR": "FrStar",
+    "Gyrostat": "Gyrostat",
     "setautodifferentiate": "SetAutoDifferentiate",
     "setautoepsilon": "SetAutoEpsilon",
     "setautoexpress": "SetAutoExpress",
     "setautofactor": "SetAutoFactor",
-    "setautolinearize": "SetAutoTaylorSeries",
-    "setautooverwrite": "SetAutoOverwrite",
+    "setautooverwrite": "SetAutoOverWrite",
     "setautorhs": "SetAutoRhs",
     "setautosimplify": "SetAutoSimplify",
-    "setautotaylorseries": "SetAutoTaylorSeries",
     "setautozee": "SetAutoZee",
     "setbasissubscripts": "SetBasisSubscripts",
-    "setcmsymbol": "SetCmSymbol",
+    "setbeepsoundonerror": "SetBeepSoundOnError",
+    "setcmsymbol": "SetCMSymbol",
     "setcomplex": "SetComplex",
+    "getdefaults": "GetDefaults",
     "setdigits": "SetDigits",
-    "setdefaults": "GetDefaults",
-    "autolev": "AUTOLEV",
+    "setlinespacing": "SetLineSpacing",
     "setlinestepping": "SetLineStepping",
-    "setlinewidth": "SetLineWidth",
     "setpauseonwarning": "SetPauseOnWarning",
+    "setscreendisplay": "SetScreenDisplay",
+    "echo": "Echo",
+    "help": "Help",
+    "quit": "Quit",
+    "plot": "Plot",
+    "run": "Run",
+    "save": "Save",
     "setworkingdirectory": "SetWorkingDirectory",
-    "getenvironmentvalue": "GetEnvironmentValue"
+    "setscratchdirectory": "SetScratchDirectory",
+    "clear": "Clear",
+    "list": "List",
+    "getmemory": "GetMemory",
+    "pause": "Pause",
+    "getenvironmentvalue": "GetEnvironmentValue",
+    "syntaxforms": "SyntaxForms",
+    "pi": "pi",
+    "imaginarynumber": "ImaginaryNumber",
+    "independentvariable": "IndependentVariable",
+    "abserror": "AbsError",
+    "constant": "Constant",
+    "variable": "Variable",
+    "specified": "Specified",
+    "setgeneralizedspeed": "SetGeneralizedSpeed",
+    "animate": "Animate",
+    "units": "Units",
+    "convertunits": "ConvertUnits",
+    "input": "Input",
+    "output": "Output",
+    "getunitsystem": "GetUnitSystem",
+    "setunitsystem": "SetUnitSystem",
+    "point": "Point",
+    "particle": "Particle",
+    "rigidframe": "RigidFrame",
+    "rigidbody": "RigidBody",
+    "newtonianframe": "NewtonianFrame",
+    "system": "System",
+    "cross": "Cross",
+    "getunitvector": "GetUnitVector",
+    "getanglebetweenvectors": "GetAngleBetweenVectors",
+    "getbasisvector": "GetBasisVector",
+    "getmagnitude": "GetMagnitude",
+    "express": "Express",
+    "solvequadraticpositiveroot": "SolveQuadraticPositiveRoot",
+    "getpolynomialroots": "GetPolynomialRoots",
+    "spline": "Spline",
+    "solve": "Solve",
+    "solvedt": "SolveDt",
+    "solvesetinput": "SolveSetInput",
+    "solvesetinputdt": "SolveSetInputDt",
+    "svd": "SVD",
+    "matrix": "Matrix",
+    "vector": "Vector",
+    "dyadic": "Dyadic",
+    "getdeterminant": "GetDeterminant",
+    "getelement": "GetElement",
+    "getinverse": "GetInverse",
+    "getrows": "GetColumns",
+    "getcolumns": "GetColumns",
+    "getzeromatrix": "GetIdentityMatrix",
+    "getdiagonalmatrix": "GetDiagonalMatrix",
+    "getidentitymatrix": "GetIdentityMatrix",
+    "gettrace": "GetTrace",
+    "gettranspose": "GetTranspose",
+    "geteigen": "GetEigen",
+    "randominteger": "RandomInteger",
+    "setnozeesymbol": "SetNoZeeSymbol",
+    "zee": "Zee",
+    "evaluate": "Evaluate",
+    "dt": "Dt",
+    "setdt": "SetDt",
+    "integrate": "Integrate",
+    "setautotaylorseries": "SetAutoTaylorSeries",
+    "convolve": "Convolve",
+    "d": "D",
+    "exclude": "Exclude",
+    "include": "Include",
+    "epsilon": "Epsilon",
+    "expand": "Expand",
+    "explicit": "Explicit",
+    "factor": "Factor",
+    "factorlinear": "FactorLinear",
+    "replacestring": "ReplaceString",
+    "squared": "Squared",
+    "gettaylorseries": "GetTaylorSeries",
+    "linearize": "Linearize",
+    "setautolinearize": "SetAutoTaylorSeries",
+    "getpartialvelocity": "GetPartialVelocity",
+    "getresultantforce": "GetResultantForce",
+    "getgeneralizedforce": "GetGeneralizedForce",
+    "addforce": "AddForce",
+    "addforcespring": "AddForceSpring",
+    "addforcedamper": "AddForceDamper",
+    "addforcegravity": "AddForceGravity",
+    "addforceelectrostatic": "AddForceElectrostatic",
+    "addforceinversesquare": "AddForceInverseSquare",
+    "addforcelinearactuator": "AddForceLinearActuator",
+    "getpower": "GetPower",
+    "addtorque": "AddTorque",
+    "addtorquedamper": "AddTorqueDamper",
+    "getresultanttorque": "GetResultantTorque",
+    "getmomentofforces": "GetMomentOfForces",
+    "getmass": "GetMass",
+    "setmass": "SetMass",
+    "getcharge": "GetCharge",
+    "setcharge": "SetCharge",
+    "getcmposition": "GetCmPosition",
+    "getcmacceleration": "GetCmAcceleration",
+    "getcmvelocity": "GetCmVelocity",
+    "setinertia": "SetInertia",
+    "getinertiadyadic": "GetInertiaDyadic",
+    "getinertiamatrix": "GetInertiaMatrix",
+    "getinertiavector": "GetInertiaVector",
+    "getinertiascalar": "GetInertiaScalar",
+    "getproductofinertia": "GetProductOfInertia",
+    "getmomentofinertia": "GetMomentOfInertia",
+    "getradiusofgyration": "GetRadiusOfGyration",
+    "getpotentialenergy": "GetPotentialEnergy",
+    "getforcegravitypotentialenergy": "GetForceGravityPotentialEnergy",
+    "getforcespringpotentialenergy": "GetForceSpringPotentialEnergy",
+    "getforceelectrostaticpotentialenergy": "GetForceElectrostaticPotentialEnergy",
+    "getforceinversesquarepotentialenergy": "GetForceInverseSquarePotentialEnergy",
+    "rotate": "Rotate",
+    "rotatex": "RotateX",
+    "rotatey": "RotateY",
+    "rotatez": "RotateZ",
+    "getrotationmatrix": "GetRotationMatrix",
+    "euler": "Euler",
+    "setrotationmatrix": "SetRotationMatrix",
+    "setrotationmatrixx": "SetRotationMatrixX",
+    "setrotationmatrixy": "SetRotationMatrixY",
+    "setrotationmatrixz": "SetRotationMatrixZ",
+    "simprot": "Simprot",
+    "dircos": "Dircos",
+    "setrotationmatrixode": "SetRotationMatrixODE",
+    "seteulerparameterode": "SetEulerParameterODE",
+    "setrodriguesparameterode": "SetRodriguesParameterODE",
+    "setpoissonparameterode": "SetPoissonParameterODE",
+    "kindiffs": "KinDiffs",
+    "getangularvelocity": "GetAngularVelocity",
+    "getangularacceleration": "GetAngularAcceleration",
+    "getangularspeed": "GetAngularSpeed",
+    "setangularvelocity": "SetAngularVelocity",
+    "setangularacceleration": "SetAngularAcceleration",
+    "setangularvelocityacceleration": "SetAngularVelocityAcceleration",
+    "getposition": "GetPosition",
+    "setposition": "SetPosition",
+    "getdistance": "GetDistance",
+    "getelongation": "GetElongation",
+    "setpositionvelocity": "SetPositionVelocity",
+    "translate": "Translate",
+    "getvelocity": "GetVelocity",
+    "getvelocityremainder": "GetVelocityRemainder",
+    "setvelocity": "SetVelocity",
+    "getspeed": "GetSpeed",
+    "getacceleration": "GetAcceleration",
+    "setacceleration": "SetAcceleration",
+    "setvelocityacceleration": "SetVelocityAcceleration",
+    "v1pt": "V1PT",
+    "v2pts": "V2PTS",
+    "geteffectiveforce": "GetEffectiveForce",
+    "getgeneralizedmomentum": "GetGeneralizedMomentum",
+    "getangularmomentum": "GetAngularMomentum",
+    "getmomentofeffectiveforce": "GetMomentOfEffectiveForce",
+    "getgeneralizedeffectiveforce": "GetGeneralizedEffectiveForce",
+    "getstatics": "Newton",
+    "getdynamics": "GetDynamics",
+    "kane": "Kane",
+    "getstaticskane": "Kane",
+    "getstaticslagrange": "Lagrange",
+    "mathfunctions": "MathFunctions",
+    "getcoefficient": "GetCoefficient",
+    "getrhs": "GetRhs",
+    "getkineticenergy": "GetKineticEnergy",
+    "getenergycheckkane": "GetEnergyCheckKane",
+    "ode": "ODE",
+    "algebraic": "Algebraic",
+    "code": "Code",
+    "autolev": "AUTOLEV",
+    "frstar": "FrStar",
+    "gyrostat": "Gyrostat"
   },
   "keywords": [
-    "getforceelectrostaticpotentialenergy",
+    "GetForceInverseSquareLawPotentialEnergy",
+    "GetAngularVelocityFromRotationMatrix",
     "GetForceElectrostaticPotentialEnergy",
-    "getforceinversesquarepotentialenergy",
     "GetForceInverseSquarePotentialEnergy",
-    "GetPolynomialRoots GetQuadraticRoots",
-    "getforcegravitypotentialenergy",
+    "GetTorqueDamperDissipationFunction",
+    "GetForceDamperDissipationFunction",
+    "SetPoissonParameterODENoTranspose",
+    "GetGravitationalPotentialEnergy",
+    "SetPositionVelocityAcceleration",
     "GetForceGravityPotentialEnergy",
-    "setangularvelocityacceleration",
+    "GetLocalMaximumWithConstraints",
+    "GetLocalMinimumWithConstraints",
     "SetAngularVelocityAcceleration",
-    "getforcespringpotentialenergy",
     "GetForceSpringPotentialEnergy",
-    "solvequadraticpositiverootdt",
+    "GetGeneralizedEffectiveForce",
+    "SolveQuadraticNegativeRootDt",
     "SolveQuadraticPositiveRootDt",
-    "SolveQuadraticPositiveRoot,",
-    "getanglebetweenunitvectors",
+    "GetAngularVelocityRemainder",
+    "GetPartialAngularVelocities",
+    "ResetGeneralizedCoordinates",
     "GetAngleBetweenUnitVectors",
-    "solvequadraticpositiveroot",
+    "GetElongationBetweenPoints",
+    "GetLocalMaxWithConstraints",
+    "GetLocalMinWithConstraints",
+    "GetRotationMatrixNegativeX",
+    "GetRotationMatrixNegativeY",
+    "GetRotationMatrixNegativeZ",
+    "GetRotationMatrixPositiveX",
+    "GetRotationMatrixPositiveY",
+    "GetRotationMatrixPositiveZ",
+    "ResetGeneralizedCoordinate",
+    "SetRotationMatrixNegativeX",
+    "SetRotationMatrixNegativeY",
+    "SetRotationMatrixNegativeZ",
+    "SetRotationMatrixPositiveX",
+    "SetRotationMatrixPositiveY",
+    "SetRotationMatrixPositiveZ",
+    "SolveQuadraticNegativeRoot",
     "SolveQuadraticPositiveRoot",
-    "gettranslationalmomentum",
-    "GetTranslationalMomentum",
-    "setgeneralizedcoordinate",
+    "GeneralizedEffectiveForce",
+    "GetGeneralizedCoordinates",
+    "GetGravityPotentialEnergy",
+    "GetMaximumWithConstraints",
+    "GetMinimumWithConstraints",
+    "GetMomentOfEffectiveForce",
+    "GetPartialAngularVelocity",
+    "GetPotentialEnergyGravity",
+    "GetResultantMomentOfForce",
+    "SetGeneralizedCoordinates",
+    "AddForceInverseSquareLaw",
+    "GetGeneralizedCoordinate",
+    "GetQuadraticNegativeRoot",
+    "GetQuadraticPositiveRoot",
+    "SetEulerParameterODE1234",
     "SetGeneralizedCoordinate",
-    "setvelocityacceleration",
+    "SetRodriguesParameterODE",
+    "ElongationBetweenPoints",
     "SetVelocityAcceleration",
-    "addforcelinearactuator",
+    "SolvePolynomialEquation",
+    "SolveSetInputDtSymbolic",
     "AddForceLinearActuator",
-    "getanglebetweenvectors",
     "GetAngleBetweenVectors",
-    "getangularacceleration",
     "GetAngularAcceleration",
-    "getgeneralizedmomentum",
+    "GetAngularSpeedSquared",
+    "GetEnvironmentVariable",
     "GetGeneralizedMomentum",
-    "setangularacceleration",
+    "MomentOfEffectiveForce",
+    "ResetGeneralizedSpeeds",
+    "ResultantMomentOfForce",
     "SetAngularAcceleration",
-    "addforceelectrostatic",
+    "SetPoissonParameterODE",
+    "SolveQuadraticEquation",
     "AddForceElectrostatic",
-    "addforceinversesquare",
     "AddForceInverseSquare",
-    "Expand or ExpandDeep",
-    "setautodifferentiate",
+    "GetCoefficientShallow",
+    "GetEnergyCheckingKane",
+    "GetGeneralizedMomenta",
+    "GetPositionVectorFrom",
+    "GetShallowCoefficient",
+    "GetUnitPositionVector",
+    "ResetGeneralizedSpeed",
+    "GetDeterminantMinors",
+    "GetEnergyCheckSigmaR",
+    "GetGeneralizedSpeeds",
+    "GetPartialVelocities",
+    "GetVelocityRemainder",
     "SetAutoDifferentiate",
-    "setrotationmatrixode",
+    "SetEulerParameterODE",
+    "SetGeneralizedSpeeds",
     "SetRotationMatrixODE",
-    "getdynamicslagrange",
+    "SolveQuarticEquation",
+    "SolveQuinticEquation",
+    "AngularSpeedSquared",
+    "GeneralizedMomentum",
+    "GetConversionFactor",
     "GetDynamicsLagrange",
-    "getenvironmentvalue",
     "GetEnvironmentValue",
-    "getmagnitudesquared",
+    "GetGeneralizedForce",
+    "GetGeneralizedSpeed",
     "GetMagnitudeSquared",
-    "getproductofinertia",
     "GetProductOfInertia",
-    "getradiusofgyration",
     "GetRadiusOfGyration",
-    "getvelocityjacobian",
-    "GetVelocityJacobian",
-    "independentvariable",
+    "GetResultantMoments",
+    "GetWorkingDirectory",
     "IndependentVariable",
-    "setautotaylorseries",
     "SetAutoTaylorSeries",
-    "setgeneralizedspeed",
+    "SetBeepSoundOnError",
     "SetGeneralizedSpeed",
-    "setpositionvelocity",
     "SetPositionVelocity",
-    "setworkingdirectory",
+    "SetRotationAngleODE",
+    "SetScratchDirectory",
     "SetWorkingDirectory",
-    "getangularmomentum",
+    "EnergyCheckingKane",
+    "GeneralizedMomenta",
     "GetAngularMomentum",
-    "getangularvelocity",
     "GetAngularVelocity",
-    "getdistancesquared",
+    "GetCoefficientDeep",
+    "GetDeepCoefficient",
     "GetDistanceSquared",
-    "getmomentofinertia",
+    "GetDynamicLagrange",
+    "GetEnergyCheckKane",
+    "GetMagnitudeSquare",
     "GetMomentOfInertia",
-    "getpolynomialroots",
+    "GetPartialVelocity",
     "GetPolynomialRoots",
-    "getresultanttorque",
+    "GetPotentialEnergy",
+    "GetResultantMoment",
     "GetResultantTorque",
-    "getstaticslagrange",
+    "GetRotationMatrixX",
+    "GetRotationMatrixY",
+    "GetRotationMatrixZ",
     "GetStaticsLagrange",
-    "setangularvelocity",
+    "RodriguesParameter",
     "SetAngularVelocity",
-    "setbasissubscripts",
     "SetBasisSubscripts",
-    "getcmacceleration",
-    "GetCmAcceleration",
-    "getdiagonalmatrix",
+    "SetRotationMatrixX",
+    "SetRotationMatrixY",
+    "SetRotationMatrixZ",
+    "SolveCubicEquation",
+    "SolvePolynomialEqn",
+    "SolveQuadraticRoot",
+    "ClearOutputEncode",
+    "EnergyCheckSigmaR",
+    "GetAngularMomenta",
+    "GetCMAcceleration",
+    "GetComputerIDEcho",
     "GetDiagonalMatrix",
-    "getidentitymatrix",
+    "GetEffectiveForce",
     "GetIdentityMatrix",
-    "getmomentofforces",
+    "GetInertiaProduct",
+    "GetKineticEnergy0",
+    "GetKineticEnergy1",
+    "GetKineticEnergy2",
+    "GetLinearMomentum",
     "GetMomentOfForces",
-    "getquadraticroots",
+    "GetPolynomialRoot",
+    "GetPositionVector",
     "GetQuadraticRoots",
-    "getresultantforce",
     "GetResultantForce",
-    "getrotationmatrix",
     "GetRotationMatrix",
-    "setpauseonwarning",
+    "GetStaticLagrange",
+    "GetUnitConversion",
+    "PoissonParameter\"",
+    "QuadraticEquation",
+    "SetBasisSubscript",
     "SetPauseOnWarning",
-    "setrotationmatrix",
+    "SetPositionVector",
     "SetRotationMatrix",
-    "evaluatetonumber",
+    "SolveQuadraticEqn",
+    "DynamicsLagrange",
     "EvaluateToNumber",
-    "getinertiadyadic",
+    "GeneralizedForce",
     "GetInertiaDyadic",
-    "getinertiamatrix",
     "GetInertiaMatrix",
-    "getinertiavector",
+    "GetInertiaMoment",
+    "GetInertiaScalar",
     "GetInertiaVector",
-    "getkineticenergy",
     "GetKineticEnergy",
-    "setautolinearize",
+    "GetLengthSquared",
+    "GetLinearMomenta",
+    "GetMomentOfForce",
+    "GetQuadraticRoot",
+    "GetRightHandSide",
+    "GetWorkingFolder",
+    "ResetNoZeeSymbol",
+    "ResultantMoments",
     "SetAutoLinearize",
-    "setautooverwrite",
     "SetAutoOverwrite",
-    "addforcegravity",
+    "SetScreenDisplay",
+    "SetWorkingFolder",
+    "sign0IsNegative1",
+    "sign0IsPositive1",
+    "SyntacticalForms",
     "AddForceGravity",
-    "addtorquedamper",
     "AddTorqueDamper",
-    "factorquadratic",
+    "AngularMomentum",
+    "ClearOutputPlot",
+    "DistanceSquared",
+    "DynamicLagrange",
+    "EnergyCheckKane",
+    "EvaluateAtInput",
     "FactorQuadratic",
-    "getacceleration",
     "GetAcceleration",
-    "getangularspeed",
     "GetAngularSpeed",
-    "getdynamicskane",
+    "GetDetermMinors",
     "GetDynamicsKane",
-    "gettaylorseries",
+    "GetLocalMaximum",
+    "GetLocalMinimum",
+    "GetPositionFrom",
+    "GetQuarticRoots",
+    "GetQuinticRoots",
+    "GetSpeedSquared",
     "GetTaylorSeries",
-    "imaginarynumber",
     "ImaginaryNumber",
-    "Interface (type",
-    "iscontainsymbol",
-    "IsContainSymbol",
-    "issimplifyequal",
-    "IsSimplifyEqual",
-    "rotatenegativex",
+    "MotionVariable'",
+    "ResultantMoment",
+    "ResultantTorque",
     "RotateNegativeX",
-    "setacceleration",
+    "RotateNegativeY",
+    "RotateNegativeZ",
+    "RotatePositiveX",
+    "RotatePositiveY",
+    "RotatePositiveZ",
     "SetAcceleration",
-    "setautosimplify",
     "SetAutoSimplify",
-    "setlinestepping",
     "SetLineStepping",
-    "solvesetinputdt",
+    "SolvePolynomial",
+    "SolveQuarticEqn",
+    "SolveQuinticEqn",
     "SolveSetInputDt",
-    "addforcedamper",
+    "StaticsLagrange",
     "AddForceDamper",
-    "addforcespring",
     "AddForceSpring",
-    "getbasisvector",
+    "AngularMomenta",
+    "DiagonalMatrix",
+    "EffectiveForce",
+    "EulerParameter",
+    "EvaluateNumber",
     "GetBasisVector",
-    "getcoefficient",
     "GetCoefficient",
-    "getdeterminant",
+    "GetCoefShallow",
     "GetDeterminant",
-    "getstaticskane",
+    "GetDynamicKane",
+    "GetEigenvalues",
+    "GetLinearRoots",
+    "GetNoZeeSymbol",
+    "GetQuarticRoot",
+    "GetQuinticRoot",
+    "GetShallowCoef",
     "GetStaticsKane",
-    "issimplifytrue",
-    "IsSimplifyTrue",
-    "issimplifyzero",
-    "IsSimplifyZero",
-    "newtonianframe",
+    "IdentityMatrix",
+    "KineticEnergy0",
+    "KineticEnergy1",
+    "KineticEnergy2",
+    "LinearMomentum",
+    "MinorsExplicit",
+    "MinorsImplicit",
+    "MomentOfForces",
+    "MotionVariable",
     "NewtonianFrame",
-    "setautoepsilon",
+    "printIntScreen",
+    "ResultantForce",
     "SetAutoEpsilon",
-    "setautoexpress",
     "SetAutoExpress",
-    "setmassinertia",
-    "SetMassInertia",
-    "atan or atan2",
-    "getcmposition",
-    "GetCmPosition",
-    "getcmvelocity",
-    "GetCmVelocity",
-    "getcubicroots",
+    "SetLineSpacing",
+    "SetNoZeeSymbol",
+    "signDerivative",
+    "SolveQuadratic",
+    "StaticLagrange",
+    "EvaluateInput",
+    "GaussExplicit",
+    "GaussImplicit",
+    "GetCMPosition",
+    "GetCMVelocity",
+    "GetComputerID",
     "GetCubicRoots",
-    "getelongation",
+    "GetEigenvalue",
     "GetElongation",
-    "getunitsystem",
+    "GetLinearRoot",
+    "GetMagSquared",
+    "GetPolynomial",
+    "GetStaticKane",
     "GetUnitSystem",
-    "getunitvector",
     "GetUnitVector",
-    "getzeromatrix",
     "GetZeroMatrix",
-    "isnegativeor0",
-    "IsNegativeOr0",
-    "ispositiveor0",
-    "IsPositiveOr0",
-    "randominteger",
-    "RandomInteger",
-    "replacestring",
+    "ImaginaryName",
+    "KineticEnergy",
+    "LengthSquared",
+    "LinearMomenta",
+    "MathFunctions",
+    "MinorExplicit",
+    "MinorImplicit",
+    "MomentOfForce",
+    "PseudoInverse",
+    "randomInteger",
     "ReplaceString",
-    "setautofactor",
     "SetAutoFactor",
-    "setunitsystem",
+    "SetAutoTaylor",
     "SetUnitSystem",
-    "solvesetinput",
+    "SolveCubicEqn",
     "SolveSetInput",
-    "atan2degrees",
-    "atan2Degrees",
-    "convertunits",
+    "StringReplace",
+    "Acceleration",
+    "AngularSpeed",
+    "ATan2Degrees",
     "ConvertUnits",
-    "factorlinear",
+    "DynamicsKane",
+    "EncodeOutput",
     "FactorLinear",
-    "getmagnitude",
+    "GetCubicRoot",
+    "GetDetMinors",
+    "GetDirectory",
     "GetMagnitude",
-    "gettranspose",
+    "GetMagSquare",
+    "GetPolyRoots",
+    "GetPotential",
     "GetTranspose",
-    "log or log10",
-    "setlinewidth",
-    "SetLineWidth",
-    "acosdegrees",
-    "acosDegrees",
-    "cos and sec",
+    "MathFunction",
+    "OutputEncode",
+    "printIntFile",
+    "SetBeepSound",
+    "SetDirectory",
+    "SolveQuartic",
+    "SolveQuintic",
+    "SpeedSquared",
+    "Syntax_Forms",
+    "ACosDegrees",
+    "ASinDegrees",
+    "ATanDegrees",
+    "AutoExpress",
+    "ClearOutput",
+    "ConvertUnit",
+    "Determinant",
+    "DynamicKane",
+    "GetCoefDeep",
+    "GetDeepCoef",
     "GetDefaults",
-    "getdistance",
     "GetDistance",
-    "getdynamics",
+    "GetDtLength",
     "GetDynamics",
-    "GetJacobian",
-    "getposition",
+    "GetLengthDt",
+    "GetLocalMax",
+    "GetLocalMin",
+    "GetPolyRoot",
     "GetPosition",
-    "getvelocity",
+    "GetRotation",
     "GetVelocity",
-    "rounddigits",
-    "RoundDigits",
-    "setcmsymbol",
+    "GibbsVector",
+    "RigidFrames",
     "SetCmSymbol",
-    "setdefaults",
     "SetDefaults",
-    "setposition",
     "SetPosition",
-    "setvelocity",
+    "SetRotation",
     "SetVelocity",
-    "sin and csc",
-    "tan and cot",
-    "cosdegrees",
-    "cosDegrees",
-    "getcolumns",
+    "StaticsKane",
+    "SyntaxForms",
+    "ClearInput",
+    "CosDegrees",
+    "Elongation",
     "GetColumns",
-    "getelement",
+    "GetDynamic",
     "GetElement",
-    "getinverse",
+    "GetInertia",
     "GetInverse",
-    "getstatics",
+    "GetMaximum",
+    "GetMinimum",
     "GetStatics",
-    "isnegative",
-    "IsNegative",
-    "ispositive",
-    "IsPositive",
-    "outputplot",
+    "GetUnitVec",
     "OutputPlot",
-    "rigidframe",
+    "PlotOutput",
+    "Quaternion",
+    "ResetNoZee",
     "RigidFrame",
-    "setautorhs",
     "SetAutoRhs",
-    "setautozee",
     "SetAutoZee",
-    "setcomplex",
     "SetComplex",
-    "setinertia",
     "SetInertia",
-    "setworkode",
-    "SetWorkODE",
-    "sindegrees",
-    "sinDegrees",
-    "tandegrees",
-    "tanDegrees",
-    "addtorque",
+    "SinDegrees",
+    "SolveCubic",
+    "SquareRoot",
+    "StaticKane",
+    "TanDegrees",
+    "Transition",
+    "ZeroMatrix",
     "AddTorque",
-    "algebraic",
     "Algebraic",
-    "constrain",
+    "AxisAngle",
+    "Constants",
     "Constrain",
-    "Evaluate,",
     "factorial",
-    "getcharge",
     "GetCharge",
-    "getmemory",
+    "GetColumn",
+    "GetDeterm",
+    "GetDigits",
+    "GetFolder",
+    "GetLength",
+    "GetMagSqr",
     "GetMemory",
-    "imaginary",
-    "integrate",
+    "GetMoment",
+    "GetStatic",
+    "GetTaylor",
+    "Imaginary",
     "Integrate",
-    "linearize",
     "Linearize",
-    "nonlinear",
-    "Nonlinear",
-    "rigidbody",
+    "Newtonian",
+    "Particles",
+    "Quadratic",
+    "randomInt",
+    "Remainder",
+    "Represent",
     "RigidBody",
-    "setcharge",
+    "Rodrigues",
     "SetCharge",
-    "setdigits",
     "SetDigits",
-    "specified",
+    "SetFolder",
+    "SetToZero",
     "Specified",
-    "translate",
     "Translate",
-    "abserror",
+    "Transpose",
+    "Variables",
     "absError",
-    "addforce",
     "AddForce",
-    "constant",
     "Constant",
-    "convolve",
     "Convolve",
-    "evaluate",
+    "Defaults",
+    "Distance",
+    "DtLength",
+    "Dynamics",
     "Evaluate",
-    "explicit",
+    "ExitQuit",
     "Explicit",
-    "geteigen",
     "GetEigen",
-    "getpower",
+    "GetForce",
+    "GetMagSq",
+    "GetNoZee",
     "GetPower",
-    "getspeed",
+    "GetRoots",
     "GetSpeed",
-    "gettrace",
     "GetTrace",
-    "gyrostat",
     "Gyrostat",
-    "kindiffs",
-    "KinDiffs",
-    "particle",
+    "Implicit",
+    "Integral",
+    "integStp",
+    "KINDIFFS",
+    "LengthDt",
+    "LoadFile",
+    "Momentum",
+    "Partials",
     "Particle",
-    "tinitial",
+    "Position",
+    "printInt",
+    "QuitExit",
+    "relError",
+    "SaveFile",
+    "SetAutoZ",
+    "SetNoZee",
     "tInitial",
-    "variable",
     "Variable",
-    "animate",
+    "Velocity",
+    "Animake",
     "Animate",
-    "autolev",
-    "AUTOLEV",
-    "epsilon",
+    "Arrange",
+    "Autolev",
+    "AutoZee",
+    "Convert",
+    "Default",
+    "Degrees",
+    "Dynamic",
+    "Element",
     "Epsilon",
-    "exclude",
     "Exclude",
-    "express",
     "Express",
-    "getmass",
+    "FORTRAN",
+    "GetCoef",
+    "GetCols",
     "GetMass",
-    "getnorm",
-    "GetNorm",
-    "getrows",
+    "GetRoot",
     "GetRows",
-    "include",
+    "Impulse",
     "Include",
-    "rotatex",
+    "Inertia",
+    "Inverse",
+    "Momenta",
+    "NiCheck",
+    "Poisson",
+    "Replace",
     "RotateX",
-    "rotatey",
     "RotateY",
-    "rotatez",
     "RotateZ",
-    "setmass",
+    "RunFile",
     "SetMass",
-    "simprot",
-    "Simprot",
-    "solvedt",
+    "SetNoDt",
+    "SIMPROT",
     "SolveDt",
-    "squared",
     "Squared",
-    "strcmpi",
-    "Strcmpi",
-    "angvel",
-    "Angvel",
-    "dircos",
-    "Dircos",
-    "dyadic",
+    "Statics",
+    "ZEE_NOT",
+    "Charge",
+    "Determ",
+    "DIRCOS",
     "Dyadic",
-    "expand",
     "Expand",
-    "factor",
     "Factor",
-    "frstar",
-    "FrStar",
-    "getrhs",
+    "Frames",
+    "FRSTAR",
+    "GetCol",
+    "GetDet",
+    "GetEig",
     "GetRhs",
-    "matrix",
+    "GetRow",
+    "GetSVD",
+    "Length",
+    "MATLAB",
     "Matrix",
-    "output",
+    "Minors",
+    "Moment",
     "Output",
-    "rotate",
+    "Points",
+    "Pseudo",
     "Rotate",
-    "spline",
     "Spline",
-    "strcmp",
-    "Strcmp",
-    "system",
+    "Square",
+    "Static",
+    "Syntax",
     "System",
-    "tfinal",
     "tFinal",
-    "vector",
     "Vector",
-    "a2pts",
     "A2PTS",
     "atan2",
-    "clear",
+    "AutoZ",
+    "chdir",
     "Clear",
-    "cosh,",
-    "cross",
     "Cross",
-    "false",
+    "Cubic",
+    "Eigen",
+    "Euler",
     "floor",
-    "input",
+    "Force",
+    "Frame",
+    "Gauss",
     "Input",
     "log10",
-    "pause",
+    "Minor",
     "Pause",
-    "point",
     "Point",
+    "Power",
+    "Pulse",
     "round",
-    "setdt",
     "SetDt",
-    "solve",
     "Solve",
-    "tstep",
-    "tStep",
-    "v2pts",
+    "Speed",
+    "Trace",
+    "TSTAR",
+    "Units",
     "V2PTS",
-    "a1pt",
     "A1PT",
     "acos",
     "asin",
     "atan",
+    "Bell",
+    "Body",
     "ceil",
-    "code",
     "Code",
-    "CODE",
+    "Coef",
+    "Cols",
     "cosh",
-    "dtdt",
     "DtDt",
-    "echo",
     "Echo",
-    "help",
+    "else",
+    "Exit",
     "Help",
-    "list",
+    "Kane",
+    "Line",
     "List",
-    "plot",
+    "Load",
+    "Mass",
     "Plot",
-    "quit",
     "Quit",
-    "save",
+    "Rows",
     "Save",
     "sign",
     "sinh",
     "sqrt",
+    "Step",
+    "Stop",
     "tanh",
-    "true",
-    "v1pt",
+    "Unit",
     "V1PT",
     "0>>",
     "1>>",
     "abs",
+    "Col",
     "cos",
-    "dot",
+    "Det",
     "Dot",
+    "Eig",
     "exp",
     "int",
+    "Inv",
     "log",
     "max",
     "min",
-    "ode",
     "ODE",
-    "run",
+    "Row",
     "Run",
     "sin",
-    "svd",
+    "SQR",
     "SVD",
     "tan",
-    "zee",
     "Zee",
     ":=",
-    "[]",
     "%%",
-    ">>",
     "0>",
-    "dt",
+    "CM",
     "Dt",
+    "FR",
     "if",
-    "pi",
+    "Ln",
+    "Pi",
     "!",
     "&",
     "%",
-    "=",
-    ">",
-    "d",
     "D",
     "t"
   ]

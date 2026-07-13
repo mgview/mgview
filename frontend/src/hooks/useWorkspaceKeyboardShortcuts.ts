@@ -1,34 +1,45 @@
 import { useEffect } from 'react';
+import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 import type { useInspectorSelectionState } from './useInspectorSelectionState.ts';
 import type { usePlaybackController } from './usePlaybackController.ts';
 import type { useWorkspaceShell } from './useWorkspaceShell.ts';
 
 interface UseWorkspaceKeyboardShortcutsOptions {
-  canSaveScene: boolean;
+  canSaveAnything: boolean;
   handleRedo: () => void;
-  handleSaveScene: () => Promise<void>;
+  handleSaveAll: () => Promise<void>;
   handleUndo: () => void;
-  hasLocalEdits: boolean;
+  hasUnsavedChanges: boolean;
   loading: boolean;
   playback: ReturnType<typeof usePlaybackController>;
   saving: boolean;
   selectionState: ReturnType<typeof useInspectorSelectionState>;
   shell: ReturnType<typeof useWorkspaceShell>;
+  simFileSaving: boolean;
 }
 
 export function useWorkspaceKeyboardShortcuts({
-  canSaveScene,
+  canSaveAnything,
   handleRedo,
-  handleSaveScene,
+  handleSaveAll,
   handleUndo,
-  hasLocalEdits,
+  hasUnsavedChanges,
   loading,
   playback,
   saving,
   selectionState,
   shell,
+  simFileSaving,
 }: UseWorkspaceKeyboardShortcutsOptions) {
   useEffect(() => {
+    const isMonacoEditorContext = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) {
+        return document.activeElement instanceof Element && Boolean(document.activeElement.closest('.monaco-editor'));
+      }
+
+      return Boolean(target.closest('.monaco-editor'));
+    };
+
     const isTextEditingTarget = (target: EventTarget | null) => {
       if (target instanceof HTMLTextAreaElement) {
         return true;
@@ -102,15 +113,34 @@ export function useWorkspaceKeyboardShortcuts({
         return;
       }
 
+      if (hasModifier && !isTextEditing && event.key.toLowerCase() === 'o') {
+        event.preventDefault();
+        if (canPersistScenesToServer && !loading && !saving && !simFileSaving) {
+          shell.openLoadOverlay();
+        }
+        return;
+      }
+
       if (hasModifier && event.key.toLowerCase() === 's') {
         event.preventDefault();
-        if (canSaveScene && !shell.loadOverlayOpen && !loading && !saving && hasLocalEdits) {
-          void handleSaveScene();
+        if (
+          canSaveAnything &&
+          !shell.loadOverlayOpen &&
+          !loading &&
+          !saving &&
+          !simFileSaving &&
+          hasUnsavedChanges
+        ) {
+          void handleSaveAll();
         }
         return;
       }
 
       if (event.defaultPrevented || event.repeat || event.code !== 'Space') {
+        return;
+      }
+
+      if (isMonacoEditorContext(target)) {
         return;
       }
 
@@ -136,18 +166,20 @@ export function useWorkspaceKeyboardShortcuts({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [
-    canSaveScene,
+    canSaveAnything,
     handleRedo,
-    handleSaveScene,
+    handleSaveAll,
     handleUndo,
-    hasLocalEdits,
+    hasUnsavedChanges,
     loading,
     playback.togglePlay,
     saving,
     selectionState,
     shell.diagnosticsOpen,
     shell.loadOverlayOpen,
+    shell.openLoadOverlay,
     shell.samplesOverlayOpen,
     shell.simulationOverlayOpen,
+    simFileSaving,
   ]);
 }

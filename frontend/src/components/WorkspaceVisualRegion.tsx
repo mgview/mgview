@@ -2,7 +2,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import PlaybackStrip from './PlaybackStrip.tsx';
 import PlotsPanel from './PlotsPanel.tsx';
 import RendererPanel from './RendererPanel.tsx';
-import type { NormalizedSceneConfig, Timeline, TimelineFrame } from '../core/types.ts';
+import type { NormalizedSceneConfig, Timeline, TimelineFrame, WorkspaceRightRail } from '../core/types.ts';
 import type { usePlaybackController } from '../hooks/usePlaybackController.ts';
 import type { useWorkspaceShell } from '../hooks/useWorkspaceShell.ts';
 
@@ -11,7 +11,7 @@ interface WorkspaceVisualRegionProps {
   channelNames: string[];
   currentFrame: TimelineFrame | undefined;
   onClearSelection: () => void;
-  onOpenEditorRail: () => void;
+  onOpenSceneEditorRail: () => void;
   onSelectObject: (objectName: string, visualName: string | null) => void;
   onSelectSpan: (spanName: string, visualName: string | null) => void;
   onStartSplitterDrag: (
@@ -25,7 +25,7 @@ interface WorkspaceVisualRegionProps {
   selectedObjectName: string | null;
   selectedSpanName: string | null;
   shell: ReturnType<typeof useWorkspaceShell>;
-  showEditorRail: boolean;
+  rightRail: WorkspaceRightRail;
   showPlots: boolean;
   showRenderer: boolean;
   timeline: Timeline;
@@ -74,7 +74,7 @@ export default function WorkspaceVisualRegion({
   channelNames,
   currentFrame,
   onClearSelection,
-  onOpenEditorRail,
+  onOpenSceneEditorRail,
   onSelectObject,
   onSelectSpan,
   onStartSplitterDrag,
@@ -84,7 +84,7 @@ export default function WorkspaceVisualRegion({
   selectedObjectName,
   selectedSpanName,
   shell,
-  showEditorRail,
+  rightRail,
   showPlots,
   showRenderer,
   timeline,
@@ -104,16 +104,16 @@ export default function WorkspaceVisualRegion({
           {activeScene ? (
             <RendererPanel
               cameraSeedKey={shell.cameraSeedKey}
-              layoutSizeKey={`${showRenderer}-${showPlots}-${showEditorRail}`}
+              layoutSizeKey={`${showRenderer}-${showPlots}-${rightRail}`}
               onCameraPreviewChange={shell.setCameraPreview}
               onCameraCommit={shell.commitCameraPreview}
               onClearSelection={onClearSelection}
               onSelectObject={(objectName, visualName) => {
-                onOpenEditorRail();
+                onOpenSceneEditorRail();
                 onSelectObject(objectName, visualName);
               }}
               onSelectSpan={(spanName, visualName) => {
-                onOpenEditorRail();
+                onOpenSceneEditorRail();
                 onSelectSpan(spanName, visualName);
               }}
               scenePath={rendererSceneBasePath}

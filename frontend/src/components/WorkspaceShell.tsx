@@ -1,7 +1,10 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import MotionGenesisRunPanel from './MotionGenesisRunPanel.tsx';
 import WorkspaceEditorRail, { type WorkspaceSpanEntry } from './WorkspaceEditorRail.tsx';
 import WorkspaceVisualRegion from './WorkspaceVisualRegion.tsx';
 import type { InspectorEditorMode } from './InspectorDrawer.tsx';
+import type { MotionGenesisRunOptions } from '../api/localFiles.ts';
+import type { MotionGenesisRunState } from '../api/localFiles.ts';
 import type {
   NormalizedSceneConfig,
   SceneObjectInspection,
@@ -11,6 +14,7 @@ import type {
   Timeline,
   TimelineFrame,
   VisualType,
+  WorkspaceRightRail,
 } from '../core/types.ts';
 import type { LoadedSceneData } from '../hooks/useSceneWorkspace.ts';
 import type { usePlaybackController } from '../hooks/usePlaybackController.ts';
@@ -27,13 +31,29 @@ interface WorkspaceShellProps {
   loaded: LoadedSceneData | null;
   liveSelectedSpan: SceneSpan | undefined;
   liveSelectedSpanVisual: SceneSpanVisual | undefined;
+  motionGenesisError: string | null;
+  motionGenesisInput: string;
+  motionGenesisOptions: MotionGenesisRunOptions;
+  motionGenesisRun: MotionGenesisRunState | null;
+  motionGenesisSendingInput: boolean;
+  motionGenesisStarting: boolean;
+  motionGenesisStopping: boolean;
   objectInspections: SceneObjectInspection[];
   onBeginSpanCreation: () => void;
   onClearSelection: () => void;
   onEditorModeChange: (mode: InspectorEditorMode) => void;
-  onOpenEditorRail: () => void;
+  onMotionGenesisInputChange: (value: string) => void;
+  onMotionGenesisOptionsChange: (options: MotionGenesisRunOptions) => void;
+  onOpenSceneEditorRail: () => void;
+  onRunMotionGenesis: () => void | Promise<void>;
   onSelectObject: (objectName: string, visualName: string | null) => void;
   onSelectSpan: (spanName: string, visualName: string | null) => void;
+  onSendMotionGenesisInput: () => void;
+  onSimFileChange: (value: string) => void;
+  onCreateSimulationFile: (directoryPath: string, fileName: string) => Promise<boolean>;
+  onLinkSimulationSettings: (relativePath: string) => Promise<boolean>;
+  onUnlinkSimulationSettings: () => Promise<boolean>;
+  onStopMotionGenesis: () => void;
   onStartSplitterDrag: (
     splitter: 'visual' | 'workspace',
     event: ReactPointerEvent<HTMLDivElement>,
@@ -42,15 +62,20 @@ interface WorkspaceShellProps {
   playback: ReturnType<typeof usePlaybackController>;
   playbackSpeed: number;
   rendererSceneBasePath: string;
+  rightRail: WorkspaceRightRail;
   savePreview: string;
   selectedSpanName: string | null;
   selectedSpanVisualName: string | null;
   setSelectedVisualName: (name: string | null) => void;
   shell: ReturnType<typeof useWorkspaceShell>;
-  showEditorRail: boolean;
   showPlots: boolean;
   showRenderer: boolean;
   showVisualWorkspace: boolean;
+  simFileContent: string;
+  simFileDirty: boolean;
+  simFileError: string | null;
+  simFileLoading: boolean;
+  simFileReadOnly: boolean;
   spanEntries: WorkspaceSpanEntry[];
   timeline: Timeline;
   timelineOwner: 'renderer' | 'plots' | null;
@@ -88,26 +113,47 @@ export default function WorkspaceShell({
   loaded,
   liveSelectedSpan,
   liveSelectedSpanVisual,
+  motionGenesisError,
+  motionGenesisInput,
+  motionGenesisOptions,
+  motionGenesisRun,
+  motionGenesisSendingInput,
+  motionGenesisStarting,
+  motionGenesisStopping,
   objectInspections,
   onBeginSpanCreation,
   onClearSelection,
   onEditorModeChange,
-  onOpenEditorRail,
+  onMotionGenesisInputChange,
+  onMotionGenesisOptionsChange,
+  onOpenSceneEditorRail,
+  onRunMotionGenesis,
   onSelectObject,
   onSelectSpan,
+  onSendMotionGenesisInput,
+  onSimFileChange,
+  onCreateSimulationFile,
+  onLinkSimulationSettings,
+  onUnlinkSimulationSettings,
+  onStopMotionGenesis,
   onStartSplitterDrag,
   playback,
   playbackSpeed,
   rendererSceneBasePath,
+  rightRail,
   savePreview,
   selectedSpanName,
   selectedSpanVisualName,
   setSelectedVisualName,
   shell,
-  showEditorRail,
   showPlots,
   showRenderer,
   showVisualWorkspace,
+  simFileContent,
+  simFileDirty,
+  simFileError,
+  simFileLoading,
+  simFileReadOnly,
   spanEntries,
   timeline,
   timelineOwner,
@@ -133,9 +179,11 @@ export default function WorkspaceShell({
   workspaceShellRef,
   workspaceShellStyle,
 }: WorkspaceShellProps) {
+  const showRightRail = rightRail !== 'none';
+
   return (
     <div
-      className={`workspace-shell ${!showEditorRail ? 'workspace-shell-no-editor-rail' : ''}`}
+      className={`workspace-shell ${!showRightRail ? 'workspace-shell-no-editor-rail' : ''}`}
       ref={workspaceShellRef}
       style={workspaceShellStyle}
     >
@@ -145,17 +193,17 @@ export default function WorkspaceShell({
           channelNames={channelNames}
           currentFrame={currentFrame}
           onClearSelection={onClearSelection}
-          onOpenEditorRail={onOpenEditorRail}
+          onOpenSceneEditorRail={onOpenSceneEditorRail}
           onSelectObject={onSelectObject}
           onSelectSpan={onSelectSpan}
           onStartSplitterDrag={onStartSplitterDrag}
           playback={playback}
           playbackSpeed={playbackSpeed}
           rendererSceneBasePath={rendererSceneBasePath}
+          rightRail={rightRail}
           selectedObjectName={activeSelectedObject?.name ?? null}
           selectedSpanName={selectedSpanName}
           shell={shell}
-          showEditorRail={showEditorRail}
           showPlots={showPlots}
           showRenderer={showRenderer}
           timeline={timeline}
@@ -165,7 +213,7 @@ export default function WorkspaceShell({
         />
       ) : null}
 
-      {showVisualWorkspace && showEditorRail ? (
+      {showVisualWorkspace && showRightRail ? (
         <div
           className="workspace-horizontal-splitter"
           role="separator"
@@ -175,7 +223,7 @@ export default function WorkspaceShell({
         />
       ) : null}
 
-      {showEditorRail ? (
+      {rightRail === 'scene' ? (
         <WorkspaceEditorRail
           activeScene={activeScene}
           activeSelectedObject={activeSelectedObject}
@@ -218,11 +266,42 @@ export default function WorkspaceShell({
         />
       ) : null}
 
-      {!showVisualWorkspace && !showEditorRail ? (
+      {rightRail === 'sim' ? (
+        <div className="workspace-editor-rail workspace-sim-rail min-h-0">
+          <MotionGenesisRunPanel
+            canRun={loaded?.sceneRef.source === 'workspace' && Boolean(activeScene?.simulationSettings)}
+            error={motionGenesisError}
+            input={motionGenesisInput}
+            loadedScenePath={loaded?.sceneRef.source === 'workspace' ? loaded.scenePath : null}
+            options={motionGenesisOptions}
+            onInputChange={onMotionGenesisInputChange}
+            onOptionsChange={onMotionGenesisOptionsChange}
+            onCreateSimulationFile={onCreateSimulationFile}
+            onLinkSimulationSettings={onLinkSimulationSettings}
+            onUnlinkSimulationSettings={onUnlinkSimulationSettings}
+            onRun={onRunMotionGenesis}
+            onSimFileChange={onSimFileChange}
+            onStop={onStopMotionGenesis}
+            onSendInput={onSendMotionGenesisInput}
+            run={motionGenesisRun}
+            simFileContent={simFileContent}
+            simFileDirty={simFileDirty}
+            simFileError={simFileError}
+            simFileLoading={simFileLoading}
+            simFileReadOnly={simFileReadOnly}
+            simulationSettings={activeScene?.simulationSettings}
+            starting={motionGenesisStarting}
+            stopping={motionGenesisStopping}
+            sendingInput={motionGenesisSendingInput}
+          />
+        </div>
+      ) : null}
+
+      {!showVisualWorkspace && !showRightRail ? (
         <section className="workspace-empty-state">
           <p className="text-sm font-medium">All workspace panels are hidden.</p>
           <p className="text-xs text-muted-foreground">
-            Use the Layout menu to show the 3D view, plots, or the editor rail.
+            Use the Layout menu to show the 3D view, plots, scene editor, or sim editor.
           </p>
         </section>
       ) : null}

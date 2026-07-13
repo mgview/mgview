@@ -34,6 +34,10 @@ interface WorkspaceOverlaysProps {
   serverWorkspace: ReturnType<typeof useServerWorkspace>;
   setSceneInput: (value: string) => void;
   shell: ReturnType<typeof useWorkspaceShell>;
+  onSetActiveScenario?: (scenarioId: string) => void | Promise<void>;
+  onUpdateScenarioLabel?: (scenarioId: string, label: string) => void | Promise<void>;
+  onAddScenario?: () => void | Promise<void>;
+  onRemoveScenario?: (scenarioId: string) => void | Promise<void>;
   simulationFiles: Record<string, string>;
   simulationLoading: boolean;
 }
@@ -60,6 +64,10 @@ export default function WorkspaceOverlays({
   serverWorkspace,
   setSceneInput,
   shell,
+  onSetActiveScenario,
+  onUpdateScenarioLabel,
+  onAddScenario,
+  onRemoveScenario,
   simulationFiles,
   simulationLoading,
 }: WorkspaceOverlaysProps) {
@@ -151,7 +159,13 @@ export default function WorkspaceOverlays({
           }}
           onClose={shell.closeSimulationOverlay}
           onRemoveSimulationEntry={shell.removeSimulationEntry}
+          onClearSimulationEntries={shell.clearSimulationEntries}
+          onSetActiveScenario={onSetActiveScenario}
+          onUpdateScenarioLabel={onUpdateScenarioLabel}
+          onAddScenario={onAddScenario}
+          onRemoveScenario={onRemoveScenario}
           parsedSimulationFiles={parsedSimulationFiles}
+          sceneRef={loaded.sceneRef}
           scenePath={loaded.scenePath}
           simulationEntries={draftScene.simulationData}
           simulationEntryInput={shell.simulationEntryInput}

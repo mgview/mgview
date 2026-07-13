@@ -8,7 +8,7 @@ import {
   saveSceneJson,
   type FileBrowserListing,
 } from '../api/localFiles.ts';
-import { expandSimulationFiles } from '../core/expandSimulationFiles.ts';
+import { expandSimulationFiles, expandSimulationDataEntries } from '../core/expandSimulationFiles.ts';
 import { getBasePath } from '../core/pathUtils.ts';
 import {
   clearSceneRefFromUrl,
@@ -27,7 +27,15 @@ import { parseSimulationText } from '../core/parseSimulationText.ts';
 import { createSceneDocument } from '../core/sceneDocument.ts';
 import { buildObjectInspections, collectSceneDiagnostics } from '../core/sceneInspector.ts';
 import { inferCanonicalNewtonianFrame, inferCanonicalSceneOrigin } from '../core/simulationChannels.ts';
+import { isMotionGenesisInputPath } from '../core/simulationFilePath.ts';
 import { buildTimeline } from '../core/timeline.ts';
+import { DEFAULT_SCENE_LAYOUT } from '../core/workspaceLayout.ts';
+import {
+  DEFAULT_SCENARIO_ID,
+  DEFAULT_SCENARIO_LABEL,
+  nextSimDataLabel,
+  uniqueScenarioId,
+} from '../core/sceneScenarios.ts';
 import { useUndoRedo } from './useUndoRedo.ts';
 import type {
   NormalizedSceneConfig,
@@ -35,6 +43,7 @@ import type {
   SceneConfig,
   SceneDiagnostic,
   SceneObjectInspection,
+  SceneScenario,
   SimulationTable,
   Timeline,
 } from '../core/types.ts';
@@ -102,6 +111,8 @@ export function createNewSceneTemplate(scenePath: string): SceneConfig {
   const sceneName = getFileStem(scenePath);
   return {
     name: sceneName,
+    scenarios: [{ id: DEFAULT_SCENARIO_ID, label: DEFAULT_SCENARIO_LABEL, simulationData: [] }],
+    activeScenario: DEFAULT_SCENARIO_ID,
     simulationData: [],
     showAxes: false,
     workspaceSize: 1,
@@ -139,6 +150,13 @@ export function createSavableScene(
     : undefined;
   nextScene.speedFactor = draftScene.speedFactor;
   nextScene.plots = structuredClone(draftScene.plots);
+  nextScene.scenarios = structuredClone(draftScene.scenarios);
+  if (draftScene.activeScenario) {
+    nextScene.activeScenario = draftScene.activeScenario;
+  } else {
+    delete nextScene.activeScenario;
+  }
+  delete nextScene.simulationData;
   if (typeof draftScene.simulationSettings === 'string' && draftScene.simulationSettings.trim().length > 0) {
     nextScene.simulationSettings = draftScene.simulationSettings.trim();
   } else {
@@ -266,12 +284,12 @@ async function loadSimulationWorkspaceState(
   };
 }
 
-export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: WorkspaceNotifications) {
+export function useSceneWorkspace(initialSceneRef: SceneRef | null, notifications?: WorkspaceNotifications) {
   const [sceneInput, setSceneInput] = useState(
-    initialSceneRef.source === 'workspace' ? initialSceneRef.path : ''
+    initialSceneRef?.source === 'workspace' ? initialSceneRef.path : ''
   );
   const [loaded, setLoaded] = useState<LoadedSceneData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialSceneRef !== null);
   const [error, setError] = useState<string | null>(null);
   const [browserListing, setBrowserListing] = useState<FileBrowserListing | null>(null);
   const [browserLoading, setBrowserLoading] = useState(false);
@@ -420,8 +438,8 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
       return null;
     }
 
-    return `${loaded.scenePath}::${JSON.stringify(draftScene.simulationData)}`;
-  }, [draftScene?.simulationData, loaded?.scenePath]);
+    return `${loaded.scenePath}::${draftScene.activeScenario ?? ''}::${JSON.stringify(draftScene.simulationData)}::${JSON.stringify(draftScene.scenarios)}`;
+  }, [draftScene?.activeScenario, draftScene?.scenarios, draftScene?.simulationData, loaded?.scenePath]);
 
   const commitLoadedScene = (nextLoaded: LoadedSceneData, successMessage?: string) => {
     setLoaded(nextLoaded);
@@ -594,6 +612,224 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     }
   };
 
+  const persistDraftState = async (
+    nextDraft: NormalizedSceneConfig,
+    successMessage: string
+  ): Promise<boolean> => {
+    if (!loaded) {
+      return false;
+    }
+
+    if (!canSaveScene) {
+      pushDraftScene(nextDraft);
+      reportSuccess(successMessage);
+      return true;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const savedScene = createSavableScene(loaded.rawScene, nextDraft);
+      await saveSceneJson(loaded.sceneRef, savedScene);
+      const nextSimulationState = await loadSimulationWorkspaceState(nextDraft, loaded.sceneRef);
+      const nextLoaded = buildLoadedSceneData(savedScene, loaded.sceneRef, nextSimulationState);
+      setLoaded(nextLoaded);
+      setSimulationState(nextSimulationState);
+      replaceDraftScene(createSceneDocument(savedScene, nextSimulationState.channelNames));
+      reportSuccess(successMessage);
+      return true;
+    } catch (persistError) {
+      reportError(persistError instanceof Error ? persistError.message : 'Could not save scene visualization.');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const persistDraftVisualization = async (
+    updater: (draft: NormalizedSceneConfig) => void,
+    successMessage: string
+  ): Promise<boolean> => {
+    if (!draftScene) {
+      return false;
+    }
+
+    const nextDraft = cloneScene(draftScene);
+    updater(nextDraft);
+    return persistDraftState(nextDraft, successMessage);
+  };
+
+  const handleLinkSimulationSettings = async (relativePath: string): Promise<boolean> => {
+    const trimmedPath = relativePath.trim();
+    if (!canSaveScene || !loaded || !draftScene) {
+      reportError('Load a workspace scene before linking a simulation file.');
+      return false;
+    }
+    if (trimmedPath.length === 0) {
+      reportError('Choose a simulation file path.');
+      return false;
+    }
+    if (!isMotionGenesisInputPath(trimmedPath)) {
+      reportError('Simulation settings must point to a Motion Genesis input file with a .al or .txt extension.');
+      return false;
+    }
+
+    return persistDraftVisualization((draft) => {
+      draft.simulationSettings = trimmedPath;
+    }, `Linked simulation file ${trimmedPath}`);
+  };
+
+  const handleUnlinkSimulationSettings = async (): Promise<boolean> => {
+    if (!canSaveScene || !loaded || !draftScene) {
+      reportError('Load a workspace scene before changing simulation settings.');
+      return false;
+    }
+    if (!draftScene.simulationSettings?.trim()) {
+      return true;
+    }
+
+    return persistDraftVisualization((draft) => {
+      delete draft.simulationSettings;
+    }, 'Unlinked simulation file');
+  };
+
+  const handleSetActiveScenario = async (scenarioId: string): Promise<boolean> => {
+    if (!draftScene) {
+      return false;
+    }
+
+    const scenario = draftScene.scenarios.find((entry) => entry.id === scenarioId);
+    if (!scenario) {
+      reportError(`Unknown sim data set: ${scenarioId}`);
+      return false;
+    }
+
+    return persistDraftVisualization((draft) => {
+      draft.activeScenario = scenarioId;
+      draft.simulationData = [...scenario.simulationData];
+    }, `Switched to sim data ${scenario.label}`);
+  };
+
+  const handleImportSimulationEntries = async (entries: string[]): Promise<boolean> => {
+    const trimmedEntries = entries.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+    if (trimmedEntries.length === 0) {
+      return false;
+    }
+
+    return persistDraftVisualization((draft) => {
+      const active =
+        draft.scenarios.find((scenario) => scenario.id === draft.activeScenario) ?? draft.scenarios[0];
+      if (!active) {
+        return;
+      }
+
+      active.simulationData = expandSimulationDataEntries(trimmedEntries);
+      draft.simulationData = [...active.simulationData];
+    }, `Imported simulation data ${trimmedEntries.join(', ')}`);
+  };
+
+  const handleImportScenarios = async (
+    scenarios: SceneScenario[],
+    activeScenarioId: string
+  ): Promise<boolean> => {
+    if (scenarios.length === 0) {
+      return false;
+    }
+
+    const activeScenario =
+      scenarios.find((scenario) => scenario.id === activeScenarioId) ?? scenarios[0];
+    if (!activeScenario) {
+      return false;
+    }
+
+    return persistDraftVisualization((draft) => {
+      draft.scenarios = structuredClone(scenarios);
+      draft.activeScenario = activeScenario.id;
+      draft.simulationData = [...activeScenario.simulationData];
+    }, `Imported ${scenarios.length} sim data set${scenarios.length === 1 ? '' : 's'}`);
+  };
+
+  const handleUpdateScenarioLabel = async (scenarioId: string, label: string): Promise<boolean> => {
+    const trimmedLabel = label.trim();
+    if (!draftScene) {
+      return false;
+    }
+    if (trimmedLabel.length === 0) {
+      reportError('Sim data name cannot be empty.');
+      return false;
+    }
+
+    const scenario = draftScene.scenarios.find((entry) => entry.id === scenarioId);
+    if (!scenario) {
+      reportError(`Unknown sim data set: ${scenarioId}`);
+      return false;
+    }
+
+    return persistDraftVisualization((draft) => {
+      const target = draft.scenarios.find((entry) => entry.id === scenarioId);
+      if (target) {
+        target.label = trimmedLabel;
+      }
+    }, `Renamed sim data to ${trimmedLabel}`);
+  };
+
+  const handleAddScenario = async (label?: string): Promise<boolean> => {
+    if (!draftScene) {
+      return false;
+    }
+
+    const trimmedLabel = label?.trim() ?? nextSimDataLabel(draftScene.scenarios);
+    if (trimmedLabel.length === 0) {
+      reportError('Sim data name cannot be empty.');
+      return false;
+    }
+    const nextDraft = cloneScene(draftScene);
+    const existingIds = nextDraft.scenarios.map((scenario) => scenario.id);
+    const newScenario: SceneScenario = {
+      id: uniqueScenarioId(trimmedLabel, existingIds),
+      label: trimmedLabel,
+      simulationData: [],
+    };
+    nextDraft.scenarios.push(newScenario);
+    nextDraft.activeScenario = newScenario.id;
+    nextDraft.simulationData = [...newScenario.simulationData];
+
+    return persistDraftState(nextDraft, `Added sim data ${trimmedLabel}`);
+  };
+
+  const handleRemoveScenario = async (scenarioId: string): Promise<boolean> => {
+    if (!draftScene) {
+      return false;
+    }
+
+    if (draftScene.scenarios.length <= 1) {
+      reportError('Cannot remove the last sim data set.');
+      return false;
+    }
+
+    const scenario = draftScene.scenarios.find((entry) => entry.id === scenarioId);
+    if (!scenario) {
+      reportError(`Unknown sim data set: ${scenarioId}`);
+      return false;
+    }
+
+    const nextDraft = cloneScene(draftScene);
+    nextDraft.scenarios = nextDraft.scenarios.filter((entry) => entry.id !== scenarioId);
+
+    const nextActive =
+      nextDraft.scenarios.find((entry) => entry.id === nextDraft.activeScenario) ??
+      nextDraft.scenarios[0];
+    if (!nextActive) {
+      return false;
+    }
+
+    nextDraft.activeScenario = nextActive.id;
+    nextDraft.simulationData = [...nextActive.simulationData];
+
+    return persistDraftState(nextDraft, `Removed sim data ${scenario.label}`);
+  };
+
   const handleSaveScene = async () => {
     if (!canSaveScene || !loaded || !draftScene) {
       return;
@@ -661,8 +897,12 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
   };
 
   useEffect(() => {
+    if (!initialSceneRef) {
+      return;
+    }
+
     void handleLoad(initialSceneRef, { force: true });
-  }, [initialSceneRef.path, initialSceneRef.source]);
+  }, [initialSceneRef?.path, initialSceneRef?.source]);
 
   useEffect(() => {
     void browseSceneInputDirectory();
@@ -700,6 +940,32 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
   const handleUndo = () => undoDraftScene();
   const handleRedo = () => redoDraftScene();
 
+  const handleRefreshSimulationData = async (successMessage?: string) => {
+    if (!loaded || !draftScene) {
+      return false;
+    }
+
+    setSimulationLoading(true);
+
+    try {
+      const nextSimulationState = await loadSimulationWorkspaceState(draftScene, loaded.sceneRef);
+      setSimulationState(nextSimulationState);
+      const inferredScene = createSceneDocument(draftScene, nextSimulationState.channelNames);
+      await replaceDraftScene(inferredScene);
+      if (successMessage) {
+        reportSuccess(successMessage);
+      }
+      return true;
+    } catch (refreshError) {
+      reportError(
+        refreshError instanceof Error ? refreshError.message : 'Unknown simulation refresh error'
+      );
+      return false;
+    } finally {
+      setSimulationLoading(false);
+    }
+  };
+
   return {
     activeScene,
     browserError,
@@ -710,6 +976,14 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     error,
     handleBrowse,
     handleCreateScene,
+    handleImportScenarios,
+    handleImportSimulationEntries,
+    handleLinkSimulationSettings,
+    handleUnlinkSimulationSettings,
+    handleSetActiveScenario,
+    handleUpdateScenarioLabel,
+    handleAddScenario,
+    handleRemoveScenario,
     handleLoad,
     handleLoadWorkspacePath,
     handleWorkspaceChange,
@@ -717,6 +991,7 @@ export function useSceneWorkspace(initialSceneRef: SceneRef, notifications?: Wor
     handleSaveSceneAs,
     handleSaveScene,
     handleRedo,
+    handleRefreshSimulationData,
     handleUndo,
     hasLocalEdits,
     canSaveScene,

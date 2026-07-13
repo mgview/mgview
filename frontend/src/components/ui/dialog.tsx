@@ -29,14 +29,22 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
     size?: 'default' | 'medium' | 'narrow' | 'compact';
   }
->(({ className, children, size = 'default', ...props }, ref) => (
+>(({ className, children, size = 'default', style, ...props }, ref) => {
+  const anchoredStyle: React.CSSProperties =
+    size === 'compact'
+      ? { top: '10vh', left: '50%', maxHeight: '80vh', transform: 'translateX(-50%)' }
+      : { top: '10vh', left: '50%', height: '80vh', transform: 'translateX(-50%)' };
+
+  return (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      style={{ ...anchoredStyle, ...style }}
       className={cn(
-        'fixed left-1/2 top-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-3 border border-border bg-popover p-3 shadow-lg',
-        'max-h-[calc(100vh-20px)] overflow-auto rounded-md',
+        'fixed z-50 grid w-full gap-3 border border-border bg-popover p-3 shadow-lg',
+        'rounded-md',
+        size === 'compact' ? 'overflow-auto' : 'grid-rows-[auto_minmax(0,1fr)] overflow-hidden',
         size === 'medium' && 'max-w-[940px]',
         size === 'narrow' && 'max-w-[760px]',
         size === 'compact' && 'max-w-[508px]',
@@ -48,7 +56,8 @@ const DialogContent = React.forwardRef<
       {children}
     </DialogPrimitive.Content>
   </DialogPortal>
-));
+  );
+});
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -95,7 +104,28 @@ function DialogDescription({
 }
 
 function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('grid gap-2', className)} {...props} />;
+  return <div className={cn('min-h-0 content-start overflow-y-auto', className)} {...props} />;
+}
+
+function DialogForm({
+  className,
+  children,
+  actions,
+  errorMessage,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & {
+  actions: React.ReactNode;
+  errorMessage?: string | null;
+}) {
+  return (
+    <div className={cn('grid gap-2', className)} {...props}>
+      <div className="grid gap-1.5">
+        {children}
+        {errorMessage ? <p className="text-xs text-destructive">{errorMessage}</p> : null}
+      </div>
+      {actions}
+    </div>
+  );
 }
 
 export {
@@ -110,4 +140,5 @@ export {
   DialogTitle,
   DialogDescription,
   DialogBody,
+  DialogForm,
 };

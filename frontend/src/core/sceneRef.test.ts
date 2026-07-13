@@ -9,6 +9,9 @@ import {
   getDefaultSceneRef,
   getSceneBasePath,
   parseSceneRefFromUrl,
+  relativeSimulationPathFromBrowser,
+  resolveBrowserListingPath,
+  resolveInitialSceneRef,
   resolveApiFilePath,
   workspacePathFromInput,
 } from './sceneRef.ts';
@@ -28,8 +31,12 @@ test('parseSceneRefFromUrl maps scene param to workspace', () => {
   assert.deepEqual(parseSceneRefFromUrl(params), createWorkspaceRef('ME328/run_01/scene.json'));
 });
 
-test('parseSceneRefFromUrl defaults to bundled sample', () => {
-  assert.deepEqual(parseSceneRefFromUrl(new URLSearchParams()), getDefaultSceneRef());
+test('parseSceneRefFromUrl returns null without scene params', () => {
+  assert.equal(parseSceneRefFromUrl(new URLSearchParams()), null);
+});
+
+test('resolveInitialSceneRef defaults to bundled sample', () => {
+  assert.deepEqual(resolveInitialSceneRef(new URLSearchParams()), getDefaultSceneRef());
 });
 
 test('buildSceneUrl uses separate query params', () => {
@@ -57,6 +64,20 @@ test('getSceneBasePath resolves simulation directories', () => {
     'samples/particle_pendulum/'
   );
   assert.equal(getSceneBasePath(createWorkspaceRef('my_sim/scene.json')), 'my_sim/');
+});
+
+test('resolveBrowserListingPath maps sample browser paths under samples/', () => {
+  assert.equal(resolveBrowserListingPath('.', 'sample'), 'samples/');
+  assert.equal(resolveBrowserListingPath('particle_pendulum', 'sample'), 'samples/particle_pendulum');
+  assert.equal(resolveBrowserListingPath('my_sim/scene.json', 'workspace'), 'my_sim/scene.json');
+});
+
+test('relativeSimulationPathFromBrowser resolves sample paths relative to scene JSON', () => {
+  const sceneRef = createSampleRef('particle_pendulum/particle_pendulum.json');
+  assert.equal(
+    relativeSimulationPathFromBrowser(sceneRef, 'particle_pendulum/particle_pendulum.1'),
+    'particle_pendulum.1'
+  );
 });
 
 test('workspacePathFromInput allows any workspace-relative path except parent traversal', () => {

@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 import { createSceneDocument, DEFAULT_POINT_MARKER_WORKSPACE_FRACTION } from './sceneDocument.ts';
 import { buildObjectInspections, collectSceneDiagnostics } from './sceneInspector.ts';
-import { expandSimulationFiles } from './expandSimulationFiles.ts';
+import { expandSimulationDataEntries, expandSimulationFiles } from './expandSimulationFiles.ts';
 import { getBasePath, getFileExtension, getRelativePath, normalizeWorkspaceRelativePath } from './pathUtils.ts';
 import type { SceneConfig } from './types.ts';
 
@@ -30,6 +30,12 @@ test('path helpers preserve MGView-style relative paths', () => {
 });
 
 test('simulation file expansion matches legacy numeric range behavior', () => {
+  assert.deepEqual(expandSimulationDataEntries(['particle_pendulum.1:3']), [
+    'particle_pendulum.1',
+    'particle_pendulum.2',
+    'particle_pendulum.3',
+  ]);
+
   assert.deepEqual(
     expandSimulationFiles(['particle_pendulum.1:3'], 'samples/particle_pendulum/'),
     [
@@ -47,6 +53,22 @@ test('simulation file expansion matches legacy numeric range behavior', () => {
       'VehicleTricycleFreeMotionBackwardForces.4',
     ]
   );
+});
+
+test('scene normalization synthesizes Default scenario for legacy scenes', () => {
+  const document = createSceneDocument({
+    simulationData: ['demo.1', 'demo.2'],
+    objects: {
+      N: { type: 'frame', visual: {} },
+    },
+  });
+
+  assert.equal(document.scenarios.length, 1);
+  assert.equal(document.scenarios[0]?.id, 'default');
+  assert.equal(document.scenarios[0]?.label, 'Default');
+  assert.deepEqual(document.scenarios[0]?.simulationData, ['demo.1', 'demo.2']);
+  assert.equal(document.activeScenario, 'default');
+  assert.deepEqual(document.simulationData, ['demo.1', 'demo.2']);
 });
 
 test('scene normalization adds legacy defaults and generated visuals', async () => {
@@ -68,7 +90,7 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
   assert.deepEqual(document.layout, {
     showRenderer: true,
     showPlots: false,
-    showEditorRail: true,
+    rightRail: 'scene',
     focusTarget: null,
     visualSplit: 0.6,
     workspaceSplit: 0.68,
@@ -85,6 +107,22 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
     document.objects.P.visual?.point?.radius,
     document.workspaceSize * DEFAULT_POINT_MARKER_WORKSPACE_FRACTION
   );
+});
+
+test('scene normalization migrates legacy showEditorRail to rightRail', () => {
+  const hidden = createSceneDocument({
+    layout: {
+      showEditorRail: false,
+    },
+  });
+  assert.equal(hidden.layout.rightRail, 'none');
+
+  const visible = createSceneDocument({
+    layout: {
+      showEditorRail: true,
+    },
+  });
+  assert.equal(visible.layout.rightRail, 'scene');
 });
 
 test('scene normalization preserves authored layout intent and assigns plot ids', () => {
@@ -115,7 +153,7 @@ test('scene normalization preserves authored layout intent and assigns plot ids'
 
   assert.equal(document.layout.showRenderer, false);
   assert.equal(document.layout.showPlots, true);
-  assert.equal(document.layout.showEditorRail, false);
+  assert.equal(document.layout.rightRail, 'none');
   assert.equal(document.layout.focusTarget, 'plots');
   assert.equal(document.layout.visualSplit, 0.55);
   assert.equal(document.layout.workspaceSplit, 0.72);
@@ -285,4 +323,27 @@ test('scene inspector warns about mixed origins and objects missing sim data', a
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('not used')));
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('will not render')));
   assert.ok(diagnostics.some((diagnostic) => diagnostic.message.includes('Could not parse simulation file')));
+});
+
+test('scene inspector does not warn about missing simulationData when scenarios are linked', () => {
+  const scene = {
+    scenarios: [
+      { id: 'stable', label: 'Stable', simulationData: ['stable/Data.2:3'] },
+      { id: 'chaotic', label: 'Chaotic', simulationData: ['chaotic/Data.2:3'] },
+    ],
+    activeScenario: 'stable',
+    objects: {},
+  };
+  const document = createSceneDocument(scene, ['P_No_Q[1]']);
+  const diagnostics = collectSceneDiagnostics(
+    scene,
+    document,
+    ['stable/Data.2', 'stable/Data.3'],
+    ['P_No_Q[1]']
+  );
+
+  assert.equal(
+    diagnostics.some((diagnostic) => diagnostic.message.includes('does not list any simulation data entries')),
+    false
+  );
 });

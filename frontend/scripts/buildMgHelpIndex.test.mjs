@@ -1,6 +1,25 @@
 import assert from 'node:assert/strict';
+import { promises as fs } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
-import { buildMgHelpIndex, extractKeywordIndexHtml } from './buildMgHelpIndex.mjs';
+import {
+  buildMgHelpIndex,
+  commandNamesPathFromHelpPath,
+  commandNamesPathFromInstallDir,
+  extractKeywordIndexHtml,
+  getMotionGenesisInstallCandidates,
+  helpPathFromInstallDir,
+  parseCommandNamesFile,
+  resolveMotionGenesisHelpPath,
+} from './buildMgHelpIndex.mjs';
+
+const sampleCommandNames = [
+  'NewtonianFrame',
+  'Newtonian',
+  'pi',
+  'SetMass',
+];
 
 const sampleHtml = `<!DOCTYPE html><html><body>
 <a ID="Help"><b>Help</b></a>
@@ -36,33 +55,32 @@ Syntax 1:  pi
 </PRE></body></html>`;
 
 test('buildMgHelpIndex extracts purpose and syntax without examples', () => {
-  const index = buildMgHelpIndex(sampleHtml);
+  const index = buildMgHelpIndex(sampleHtml, { commandNames: sampleCommandNames });
   const topic = index.topics.NewtonianFrame;
   assert.ok(topic);
   assert.equal(topic.title, 'NewtonianFrame');
   assert.match(topic.purpose, /Newtonian \(inertial\)/);
   assert.equal(topic.syntax.length, 2);
   assert.equal(topic.syntax[0], 'Syntax 1:  NewtonianFrame N');
-  assert.ok(index.aliasToId.Newtonian === 'NewtonianFrame');
   assert.ok(index.keywords.includes('NewtonianFrame'));
   assert.equal('sourcePath' in index, false);
   assert.equal(index.sourceVersion, null);
 });
 
 test('buildMgHelpIndex includes source version metadata when provided', () => {
-  const index = buildMgHelpIndex(sampleHtml, { sourceVersion: '7.6' });
+  const index = buildMgHelpIndex(sampleHtml, { sourceVersion: '7.6', commandNames: sampleCommandNames });
   assert.equal(index.sourceVersion, '7.6');
 });
 
 test('buildMgHelpIndex includes pi topics', () => {
-  const index = buildMgHelpIndex(sampleHtml);
+  const index = buildMgHelpIndex(sampleHtml, { commandNames: sampleCommandNames });
   assert.equal(index.topics.pi.purpose.includes('circumference'), true);
 });
 
 test('buildMgHelpIndex adds lowercase aliases for case-insensitive lookup', () => {
-  const index = buildMgHelpIndex(sampleHtml);
+  const index = buildMgHelpIndex(sampleHtml, { commandNames: sampleCommandNames });
   assert.equal(index.aliasToId.newtonianframe, 'NewtonianFrame');
-  assert.equal(index.aliasToId.newtonian, 'NewtonianFrame');
+  assert.equal(index.aliasToId.pi, 'pi');
 });
 
 test('extractKeywordIndexHtml bounds the catalog between Help and Type HELP NAME', () => {
@@ -84,4 +102,102 @@ Syntax:  QB.TranslateAcrossJoint( fromPoint, positionVector )
   assert.equal(index.aliasToId.QB, undefined);
   assert.equal(index.aliasToId.qb, undefined);
   assert.equal(index.aliasToId.Solve, 'Solve');
+});
+
+test('parseCommandNamesFile skips MG header comments but keeps command tokens', () => {
+  const names = parseCommandNamesFile(`% File: MGCommandNamesForTextEditorHighlighting.txt
+% Copyright (c) Motion Genesis LLC
+%------------------------------------------------------------------------------
+NewtonianFrame
+%
+%%
+:=
+`);
+  assert.deepEqual(names, ['NewtonianFrame', '%', '%%', ':=']);
+});
+
+test('buildMgHelpIndex uses command names file for keywords and help topics for hovers', () => {
+  const index = buildMgHelpIndex(sampleHtml, {
+    commandNames: ['NewtonianFrame', 'Newtonian', 'UnknownCommand'],
+  });
+  assert.ok(index.keywords.includes('NewtonianFrame'));
+  assert.ok(index.keywords.includes('Newtonian'));
+  assert.ok(index.keywords.includes('UnknownCommand'));
+  assert.equal(index.aliasToId.NewtonianFrame, 'NewtonianFrame');
+  assert.equal(index.aliasToId.Newtonian, undefined);
+  assert.equal(index.aliasToId.UnknownCommand, undefined);
+});
+
+test('helpPathFromInstallDir appends MGToolbox help file', () => {
+  assert.equal(
+    helpPathFromInstallDir('/Applications/MotionGenesis'),
+    path.join('/Applications/MotionGenesis', 'MGToolbox', 'MotionGenesisHelp.html')
+  );
+});
+
+test('commandNamesPathFromInstallDir appends MGToolbox command names file', () => {
+  assert.equal(
+    commandNamesPathFromInstallDir('/Applications/MotionGenesis'),
+    path.join('/Applications/MotionGenesis', 'MGToolbox', 'MGCommandNamesForTextEditorHighlighting.txt')
+  );
+});
+
+test('commandNamesPathFromHelpPath resolves sibling command names file', () => {
+  assert.equal(
+    commandNamesPathFromHelpPath('/Applications/MotionGenesis/MGToolbox/MotionGenesisHelp.html'),
+    path.join('/Applications/MotionGenesis/MGToolbox', 'MGCommandNamesForTextEditorHighlighting.txt')
+  );
+});
+
+test('getMotionGenesisInstallCandidates includes platform default and home folder', () => {
+  const candidates = getMotionGenesisInstallCandidates();
+  assert.ok(candidates.length >= 2);
+  assert.ok(candidates.includes(path.join(os.homedir(), 'MotionGenesis')));
+});
+
+test('resolveMotionGenesisHelpPath prefers MG_HELP_HTML over install search', async () => {
+  const helpPath = await resolveMotionGenesisHelpPath({
+    env: {
+      MG_HELP_HTML: '/custom/MotionGenesisHelp.html',
+      MG_HOME: '/ignored',
+    },
+    installCandidates: ['/also/ignored'],
+  });
+  assert.equal(helpPath, path.resolve('/custom/MotionGenesisHelp.html'));
+});
+
+test('resolveMotionGenesisHelpPath resolves MG_HOME install folder', async () => {
+  const installDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mg-home-'));
+  const helpDir = path.join(installDir, 'MGToolbox');
+  await fs.mkdir(helpDir, { recursive: true });
+  const helpFile = path.join(helpDir, 'MotionGenesisHelp.html');
+  await fs.writeFile(helpFile, '<html></html>', 'utf8');
+
+  try {
+    const helpPath = await resolveMotionGenesisHelpPath({
+      env: { MG_HOME: installDir },
+      installCandidates: ['/does/not/exist'],
+    });
+    assert.equal(helpPath, helpFile);
+  } finally {
+    await fs.rm(installDir, { recursive: true, force: true });
+  }
+});
+
+test('resolveMotionGenesisHelpPath searches install candidates when unset', async () => {
+  const installDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mg-candidate-'));
+  const helpDir = path.join(installDir, 'MGToolbox');
+  await fs.mkdir(helpDir, { recursive: true });
+  const helpFile = path.join(helpDir, 'MotionGenesisHelp.html');
+  await fs.writeFile(helpFile, '<html></html>', 'utf8');
+
+  try {
+    const helpPath = await resolveMotionGenesisHelpPath({
+      env: {},
+      installCandidates: [installDir],
+    });
+    assert.equal(helpPath, helpFile);
+  } finally {
+    await fs.rm(installDir, { recursive: true, force: true });
+  }
 });

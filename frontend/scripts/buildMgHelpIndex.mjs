@@ -2,23 +2,109 @@
  * Parse MotionGenesisHelp.html into a compact index for Monaco syntax + hovers.
  *
  * Usage:
- *   node scripts/buildMgHelpIndex.mjs [path/to/MotionGenesisHelp.html] [--version <mg-version>]
+ *   node scripts/buildMgHelpIndex.mjs [path/to/MotionGenesisHelp.html | MotionGenesis folder] [--version <mg-version>]
  *
- * Default path depends on the current platform.
- * Override help path with MG_HELP_HTML or the first CLI argument.
+ * Help file resolution (first match wins):
+ *   1. First CLI argument (help HTML file or MotionGenesis install folder)
+ *   2. MG_HELP_HTML (path to MotionGenesisHelp.html)
+ *   3. MG_HOME or MOTION_GENESIS_HOME (MotionGenesis install folder)
+ *   4. Platform default, then ~/MotionGenesis
+ *
+ * Command names for syntax highlighting are read from
+ * MGToolbox/MGCommandNamesForTextEditorHighlighting.txt next to the help HTML.
+ *
  * Default source version metadata comes from frontend/package.json.
  * Override source version metadata with MG_HELP_VERSION or --version.
  */
 
 import { promises as fs } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const defaultHelpPath =
-  process.platform === 'win32'
-    ? 'C:\\MotionGenesis\\MGToolbox\\MotionGenesisHelp.html'
-    : '/Applications/MotionGenesis/MGToolbox/MotionGenesisHelp.html';
+const HELP_RELATIVE_SEGMENTS = ['MGToolbox', 'MotionGenesisHelp.html'];
+const COMMAND_NAMES_FILENAME = 'MGCommandNamesForTextEditorHighlighting.txt';
+
+export function helpPathFromInstallDir(installDir) {
+  return path.join(installDir, ...HELP_RELATIVE_SEGMENTS);
+}
+
+export function commandNamesPathFromInstallDir(installDir) {
+  return path.join(installDir, 'MGToolbox', COMMAND_NAMES_FILENAME);
+}
+
+export function commandNamesPathFromHelpPath(helpPath) {
+  return path.join(path.dirname(helpPath), COMMAND_NAMES_FILENAME);
+}
+
+export function getMotionGenesisInstallCandidates() {
+  const candidates = [];
+
+  if (process.platform === 'win32') {
+    candidates.push('C:\\MotionGenesis');
+  } else {
+    candidates.push('/Applications/MotionGenesis');
+  }
+
+  candidates.push(path.join(os.homedir(), 'MotionGenesis'));
+
+  return candidates;
+}
+
+async function pathExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveHelpPathFromArg(argPath) {
+  const resolved = path.resolve(argPath);
+  if (resolved.toLowerCase().endsWith('.html')) {
+    return resolved;
+  }
+
+  const helpPath = helpPathFromInstallDir(resolved);
+  if (await pathExists(helpPath)) {
+    return helpPath;
+  }
+
+  return resolved;
+}
+
+export async function resolveMotionGenesisHelpPath(options = {}) {
+  const env = options.env ?? process.env;
+  const cliPath = options.helpPath;
+
+  if (cliPath) {
+    return resolveHelpPathFromArg(cliPath);
+  }
+
+  if (typeof env.MG_HELP_HTML === 'string' && env.MG_HELP_HTML.trim().length > 0) {
+    return path.resolve(env.MG_HELP_HTML.trim());
+  }
+
+  const installDirOverride = env.MG_HOME || env.MOTION_GENESIS_HOME;
+  if (typeof installDirOverride === 'string' && installDirOverride.trim().length > 0) {
+    const helpPath = helpPathFromInstallDir(path.resolve(installDirOverride.trim()));
+    if (await pathExists(helpPath)) {
+      return helpPath;
+    }
+  }
+
+  const candidates = options.installCandidates ?? getMotionGenesisInstallCandidates();
+  for (const installDir of candidates) {
+    const helpPath = helpPathFromInstallDir(installDir);
+    if (await pathExists(helpPath)) {
+      return helpPath;
+    }
+  }
+
+  return helpPathFromInstallDir(candidates[0]);
+}
 
 const MAX_PURPOSE_CHARS = 320;
 const MAX_SYNTAX_LINES = 6;
@@ -241,33 +327,59 @@ function parseIndexAliases(indexHtml) {
   return aliasToId;
 }
 
-export function buildMgHelpIndex(html, options = {}) {
-  const sourceVersion = typeof options.sourceVersion === 'string' ? options.sourceVersion : null;
-  const indexHtml = extractKeywordIndexHtml(html);
-  const aliasToId = parseIndexAliases(indexHtml);
-  const topics = {};
-  const keywords = new Set();
-
-  for (const section of parseSections(html)) {
-    const aliases = [];
-    for (const [alias, topicId] of aliasToId.entries()) {
-      if (topicId === section.id && alias !== section.id && !aliases.includes(alias)) {
-        aliases.push(alias);
-      }
+/**
+ * MG ships MGCommandNamesForTextEditorHighlighting.txt with one command/token per line.
+ * Header lines are MG comments beginning with "% " or "%-".
+ */
+export function parseCommandNamesFile(content) {
+  const names = [];
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      continue;
     }
-    aliases.sort((left, right) => right.length - left.length || left.localeCompare(right));
+    if (/^%[\s-]/.test(trimmed)) {
+      continue;
+    }
+    names.push(trimmed);
+  }
+  return names;
+}
 
-    topics[section.id] = {
-      id: section.id,
-      title: section.title,
-      aliases,
-      purpose: section.purpose,
-      syntax: section.syntax,
-    };
+function buildTopicIdByLowerCase(topics) {
+  const topicIdByLowerCase = new Map();
+  for (const [id, topic] of Object.entries(topics)) {
+    topicIdByLowerCase.set(id.toLowerCase(), id);
+    if (topic.title) {
+      topicIdByLowerCase.set(topic.title.toLowerCase(), id);
+    }
+  }
+  return topicIdByLowerCase;
+}
+
+function buildAliasToIdForCommandNames(commandNames, topics) {
+  const aliasToId = new Map();
+  const topicIdByLowerCase = buildTopicIdByLowerCase(topics);
+
+  for (const name of commandNames) {
+    if (!name || name === '...') {
+      continue;
+    }
+    const topicId = topicIdByLowerCase.get(name.toLowerCase());
+    if (!topicId) {
+      continue;
+    }
+    if (!aliasToId.has(name)) {
+      aliasToId.set(name, topicId);
+    }
   }
 
   addCaseInsensitiveAliases(aliasToId);
+  return aliasToId;
+}
 
+function buildKeywordsFromHelpCatalog(aliasToId, topics) {
+  const keywords = new Set();
   for (const [alias, topicId] of aliasToId.entries()) {
     if (alias === '...') {
       continue;
@@ -279,9 +391,66 @@ export function buildMgHelpIndex(html, options = {}) {
     }
   }
 
-  const sortedKeywords = [...keywords]
+  return [...keywords]
     .filter((keyword) => keyword.length > 0)
     .sort((left, right) => right.length - left.length || left.localeCompare(right));
+}
+
+function buildKeywordsFromCommandNames(commandNames) {
+  return [...new Set(commandNames)]
+    .filter((keyword) => keyword.length > 0 && keyword !== '...')
+    .sort((left, right) => right.length - left.length || left.localeCompare(right));
+}
+
+function populateTopicAliases(topics, aliasToId) {
+  for (const topic of Object.values(topics)) {
+    topic.aliases = [];
+  }
+
+  for (const [alias, topicId] of aliasToId.entries()) {
+    const topic = topics[topicId];
+    if (!topic || alias === topic.id || alias === topic.title) {
+      continue;
+    }
+    if (!topic.aliases.includes(alias)) {
+      topic.aliases.push(alias);
+    }
+  }
+
+  for (const topic of Object.values(topics)) {
+    topic.aliases.sort((left, right) => right.length - left.length || left.localeCompare(right));
+  }
+}
+
+export function buildMgHelpIndex(html, options = {}) {
+  const sourceVersion = typeof options.sourceVersion === 'string' ? options.sourceVersion : null;
+  const commandNames = options.commandNames;
+  const topics = {};
+
+  for (const section of parseSections(html)) {
+    topics[section.id] = {
+      id: section.id,
+      title: section.title,
+      aliases: [],
+      purpose: section.purpose,
+      syntax: section.syntax,
+    };
+  }
+
+  let aliasToId;
+  let keywords;
+
+  if (Array.isArray(commandNames) && commandNames.length > 0) {
+    aliasToId = buildAliasToIdForCommandNames(commandNames, topics);
+    keywords = buildKeywordsFromCommandNames(commandNames);
+  } else {
+    const indexHtml = extractKeywordIndexHtml(html);
+    aliasToId = parseIndexAliases(indexHtml);
+    addCaseInsensitiveAliases(aliasToId);
+    keywords = buildKeywordsFromHelpCatalog(aliasToId, topics);
+  }
+
+  populateTopicAliases(topics, aliasToId);
 
   return {
     version: 1,
@@ -289,13 +458,13 @@ export function buildMgHelpIndex(html, options = {}) {
     topicCount: Object.keys(topics).length,
     topics,
     aliasToId: Object.fromEntries(aliasToId.entries()),
-    keywords: sortedKeywords,
+    keywords,
   };
 }
 
 async function main() {
   const cliArgs = parseCliArgs(process.argv.slice(2));
-  const helpPath = cliArgs.helpPath || process.env.MG_HELP_HTML || defaultHelpPath;
+  const helpPath = await resolveMotionGenesisHelpPath({ helpPath: cliArgs.helpPath });
   const packageSourceVersion = await readPackageSourceVersion();
   const sourceVersion = cliArgs.sourceVersion || process.env.MG_HELP_VERSION || packageSourceVersion || null;
   const outputPath = path.resolve(scriptDir, '../src/core/mgLanguage/mgHelpIndex.data.json');
@@ -319,7 +488,17 @@ async function main() {
     }
   }
 
-  const index = buildMgHelpIndex(html, { sourceVersion });
+  const commandNamesPath = commandNamesPathFromHelpPath(helpPath);
+  let commandNames = [];
+  try {
+    commandNames = parseCommandNamesFile(await fs.readFile(commandNamesPath, 'utf8'));
+  } catch (error) {
+    console.warn(
+      `Command names file not found at ${commandNamesPath}; falling back to help HTML keyword catalog.`,
+    );
+  }
+
+  const index = buildMgHelpIndex(html, { sourceVersion, commandNames });
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.writeFile(outputPath, `${JSON.stringify(index, null, 2)}\n`, 'utf8');
   await fs.mkdir(path.dirname(publicHelpPath), { recursive: true });

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ChevronRight, Folder, File } from 'lucide-react';
 import type { FileBrowserListing } from '../api/localFiles.ts';
+import type { ApiRoot } from '../core/sceneRef.ts';
 import { Button } from './ui/button.tsx';
 import { cn } from '../lib/utils.ts';
 
@@ -8,6 +9,8 @@ interface LocalFileBrowserProps {
   browserListing: FileBrowserListing | null;
   browserError: string | null;
   browserLoading: boolean;
+  browseRoot?: ApiRoot;
+  className?: string;
   compact?: boolean;
   emptyStateMessage?: string;
   filterEntry?: (entry: FileBrowserListing['entries'][number]) => boolean;
@@ -15,6 +18,7 @@ interface LocalFileBrowserProps {
   hideTitle?: boolean;
   hideTitleWhenNoActions?: boolean;
   sceneInput: string;
+  scrollable?: boolean;
   selectedPaths?: string[];
   title?: string;
   titleActions?: ReactNode;
@@ -33,15 +37,18 @@ function isAppBundlePath(filePath: string): boolean {
   return /^(samples|assets|bundled|legacy)(\/|$)/.test(filePath);
 }
 
-function rootBreadcrumbLabel(filePath: string): string {
+function rootBreadcrumbLabel(browseRoot: ApiRoot, filePath: string): string {
+  if (browseRoot === 'sample') {
+    return 'samples';
+  }
   return isAppBundlePath(filePath) ? 'app' : 'workspace';
 }
 
-function buildBreadcrumbs(currentPath: string): BreadcrumbSegment[] {
+function buildBreadcrumbs(currentPath: string, browseRoot: ApiRoot): BreadcrumbSegment[] {
   const normalizedPath = currentPath === '.' ? '' : currentPath.replace(/\/+$/g, '');
   const pieces = normalizedPath.length > 0 ? normalizedPath.split('/') : [];
   const breadcrumbs: BreadcrumbSegment[] = [
-    { label: rootBreadcrumbLabel(normalizedPath), path: '.' },
+    { label: rootBreadcrumbLabel(browseRoot, normalizedPath), path: '.' },
   ];
 
   let runningPath = '';
@@ -57,6 +64,8 @@ export default function LocalFileBrowser({
   browserListing,
   browserError,
   browserLoading,
+  browseRoot = 'workspace',
+  className,
   compact = false,
   emptyStateMessage = 'Browse a scene folder to load JSON files through the local API.',
   filterEntry,
@@ -64,6 +73,7 @@ export default function LocalFileBrowser({
   hideTitle = false,
   hideTitleWhenNoActions = false,
   sceneInput,
+  scrollable = false,
   selectedPaths,
   title = 'Local File Browser',
   titleActions,
@@ -72,26 +82,37 @@ export default function LocalFileBrowser({
   onSelectFile,
   getDirectoryPath,
 }: LocalFileBrowserProps) {
-  const currentFolderLabel = browserListing?.path || '(workspace root)';
-  const breadcrumbs = buildBreadcrumbs(browserListing?.path || getDirectoryPath(sceneInput));
+  const currentFolderLabel =
+    browserListing?.path || (browseRoot === 'sample' ? '(samples root)' : '(workspace root)');
+  const breadcrumbs = buildBreadcrumbs(
+    browserListing?.path || getDirectoryPath(sceneInput),
+    browseRoot
+  );
   const activePaths = selectedPaths ?? [sceneInput];
   const visibleEntries = browserListing?.entries.filter((entry) => (filterEntry ? filterEntry(entry) : true)) ?? [];
   const showHeader = !hideTitle && !(hideTitleWhenNoActions && !titleActions);
 
   return (
-    <section className={cn('grid gap-1.5', !flat && 'rounded-md border border-border bg-card p-2')}>
+    <section
+      className={cn(
+        'gap-1.5',
+        scrollable ? 'flex min-h-0 flex-col' : 'grid',
+        !flat && 'rounded-md border border-border bg-card p-2',
+        className
+      )}
+    >
       {showHeader ? (
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <h3 className={cn('min-w-0 flex-1 truncate text-[0.72rem] font-semibold uppercase tracking-wide text-muted-foreground')}>
             {title}
           </h3>
           {titleActions ? <div className="flex gap-1">{titleActions}</div> : null}
         </div>
       ) : titleActions ? (
-        <div className="flex justify-end gap-1">{titleActions}</div>
+        <div className="flex shrink-0 justify-end gap-1">{titleActions}</div>
       ) : null}
 
-      <nav className="flex flex-wrap items-center gap-1 text-xs" aria-label={`Current folder ${currentFolderLabel}`}>
+      <nav className="flex shrink-0 flex-wrap items-center gap-1 text-xs" aria-label={`Current folder ${currentFolderLabel}`}>
         {breadcrumbs.map((segment, index) => (
           <span key={segment.path} className="inline-flex items-center gap-1">
             {index > 0 ? <ChevronRight className="h-3 w-3 text-muted-foreground" /> : null}
@@ -107,11 +128,11 @@ export default function LocalFileBrowser({
         <span className="text-muted-foreground">/</span>
       </nav>
 
-      {browserError ? <p className="text-xs text-destructive">{browserError}</p> : null}
-      {!browserError && browserLoading ? <p className="text-xs text-warning">Browsing local files…</p> : null}
+      {browserError ? <p className="shrink-0 text-xs text-destructive">{browserError}</p> : null}
+      {!browserError && browserLoading ? <p className="shrink-0 text-xs text-warning">Browsing local files…</p> : null}
 
       {browserListing ? (
-        <div className={cn('grid gap-0.5', compact && 'gap-px')}>
+        <div className={cn('grid auto-rows-min content-start gap-0.5', scrollable && 'min-h-0 flex-1 basis-0 overflow-auto', compact && 'gap-px')}>
           {visibleEntries.length > 0 ? visibleEntries.map((entry) => {
             const isActive = activePaths.includes(entry.path);
             return (
@@ -153,7 +174,7 @@ export default function LocalFileBrowser({
           }) : <p className="text-xs text-muted-foreground">No matching files in this folder.</p>}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">{emptyStateMessage}</p>
+        <p className={cn('text-xs text-muted-foreground', scrollable && 'shrink-0')}>{emptyStateMessage}</p>
       )}
     </section>
   );

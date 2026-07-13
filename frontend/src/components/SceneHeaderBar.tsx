@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Undo2, Redo2, ChevronDown, Sun, Moon, PanelsTopLeft, TriangleAlert } from 'lucide-react';
-import { canPersistScenesToServer, isStaticHosting } from '../api/runtimeMode.ts';
-import type { SceneLayoutConfig } from '../core/types.ts';
+import { canPersistScenesToServer } from '../api/runtimeMode.ts';
+import type { NormalizedSceneLayout, SceneScenario } from '../core/types.ts';
 import { DEFAULT_SCENE_LAYOUT } from '../core/workspaceLayout.ts';
+import AppModeSwitcher from './AppModeSwitcher.tsx';
+import ScenarioSelector from './ScenarioSelector.tsx';
 import { useTheme } from './ThemeProvider.tsx';
 import { Button } from './ui/button.tsx';
 import {
@@ -13,32 +15,42 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu.tsx';
 import { Checkbox } from './ui/checkbox.tsx';
-import { Label } from './ui/label.tsx';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-  TOOLTIP_DELAY_MS,
-} from './ui/tooltip.tsx';
 import { cn } from '../lib/utils.ts';
 
-type LayoutPaneKey = 'showRenderer' | 'showPlots' | 'showEditorRail';
+type LayoutToggleKey = 'showRenderer' | 'showPlots';
+type RightRailTarget = 'scene' | 'sim';
 
-const LAYOUT_PANES: ReadonlyArray<{ key: LayoutPaneKey; label: string; shortcut: string }> = [
+const LAYOUT_MENU_ROW_CLASS =
+  'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent';
+const LAYOUT_MENU_SHORTCUT_CLASS = 'text-[0.65rem] text-muted-foreground';
+
+const LAYOUT_TOGGLE_PANES: ReadonlyArray<{ key: LayoutToggleKey; label: string; shortcut: string }> = [
   { key: 'showRenderer', label: '3D View', shortcut: '1' },
   { key: 'showPlots', label: 'Plots', shortcut: '2' },
-  { key: 'showEditorRail', label: 'Editor', shortcut: '3' },
 ];
 
-const LAYOUT_PANE_BY_CODE: Record<string, LayoutPaneKey> = {
+const RIGHT_RAIL_PANES: ReadonlyArray<{ target: RightRailTarget; label: string; shortcut: string }> = [
+  { target: 'scene', label: 'Scene Editor', shortcut: '3' },
+  { target: 'sim', label: 'Sim Editor', shortcut: '4' },
+];
+
+const LAYOUT_TOGGLE_BY_CODE: Record<string, LayoutToggleKey> = {
   Digit1: 'showRenderer',
   Numpad1: 'showRenderer',
   Digit2: 'showPlots',
   Numpad2: 'showPlots',
-  Digit3: 'showEditorRail',
-  Numpad3: 'showEditorRail',
 };
+
+const RIGHT_RAIL_BY_CODE: Record<string, RightRailTarget> = {
+  Digit3: 'scene',
+  Numpad3: 'scene',
+  Digit4: 'sim',
+  Numpad4: 'sim',
+};
+
+const MODIFIER_SHORTCUT_PREFIX = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+  ? '⌘'
+  : 'Ctrl+';
 
 function isTextEditingTarget(target: EventTarget | null) {
   if (target instanceof HTMLTextAreaElement) {
@@ -52,13 +64,17 @@ function isTextEditingTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && target.isContentEditable;
 }
 
-function getLayoutPaneValue(layout: Required<SceneLayoutConfig> | null, key: LayoutPaneKey) {
+function getLayoutToggleValue(layout: NormalizedSceneLayout | null, key: LayoutToggleKey) {
   return layout?.[key] ?? DEFAULT_SCENE_LAYOUT[key];
+}
+
+function getRightRailValue(layout: NormalizedSceneLayout | null) {
+  return layout?.rightRail ?? DEFAULT_SCENE_LAYOUT.rightRail;
 }
 
 interface SceneHeaderBarProps {
   scenePath: string | null;
-  layout: Required<SceneLayoutConfig> | null;
+  layout: NormalizedSceneLayout | null;
   onOpenWorkspace?: () => void;
   onOpenAbout: () => void;
   hasLocalEdits: boolean;
@@ -73,14 +89,18 @@ interface SceneHeaderBarProps {
   onOpenSamplesOverlay: () => void;
   onOpenDiagnostics: () => void;
   onOpenChannels: () => void;
-  onSetLayoutVisibility: (key: 'showRenderer' | 'showPlots' | 'showEditorRail', value: boolean) => void;
+  onSetLayoutVisibility: (key: LayoutToggleKey, value: boolean) => void;
+  onToggleRightRail: (target: RightRailTarget) => void;
   performanceOverlayOpen: boolean;
   onSetPerformanceOverlayOpen: (open: boolean) => void;
   onOpenSaveAsOverlay: () => void;
   onRedo: () => void;
   onSave: () => void;
   onRevert: () => void;
+  onSetActiveScenario?: (scenarioId: string) => void | Promise<void>;
   onUndo: () => void;
+  scenarios?: SceneScenario[];
+  activeScenario?: string | null;
 }
 
 export default function SceneHeaderBar({
@@ -100,36 +120,27 @@ export default function SceneHeaderBar({
   onOpenDiagnostics,
   onOpenChannels,
   onSetLayoutVisibility,
+  onToggleRightRail,
   performanceOverlayOpen,
   onSetPerformanceOverlayOpen,
   onOpenSaveAsOverlay,
   onRedo,
   onSave,
   onRevert,
+  onSetActiveScenario,
   onUndo,
+  scenarios = [],
+  activeScenario = null,
 }: SceneHeaderBarProps) {
   const { theme, toggleTheme } = useTheme();
   const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
   const demoDisabledTitle = 'This action is not available in the online demo';
   const saveDisabled = !canSaveScene || !hasLocalEdits || saving;
-  const saveTitle = !canPersistScenesToServer
-    ? demoDisabledTitle
-    : !canSaveScene
-      ? 'Samples are read-only — use Save As to keep your edits'
-      : !hasLocalEdits
-        ? 'No unsaved changes'
-        : 'Save';
-  const openMenuAriaLabel = isStaticHosting ? 'Samples menu' : 'Load menu';
-  const primaryOpenLabel = loading
-    ? 'Loading…'
-    : isStaticHosting
-      ? 'Samples…'
-      : 'Load…';
-  const onPrimaryOpen = isStaticHosting ? onOpenSamplesOverlay : onOpenLoadOverlay;
   const hasDiagnosticsWarnings = diagnosticsWarningCount > 0;
   const diagnosticsLabel = hasDiagnosticsWarnings
     ? `Diagnostics, ${diagnosticsWarningCount} warning${diagnosticsWarningCount === 1 ? '' : 's'}`
     : 'Diagnostics';
+  const hasSceneLoaded = scenePath !== null;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -148,23 +159,37 @@ export default function SceneHeaderBar({
         return;
       }
 
-      const paneKey = LAYOUT_PANE_BY_CODE[event.code];
-      if (!paneKey) {
+      const toggleKey = LAYOUT_TOGGLE_BY_CODE[event.code];
+      if (toggleKey) {
+        event.preventDefault();
+        onSetLayoutVisibility(toggleKey, !getLayoutToggleValue(layout, toggleKey));
         return;
       }
 
-      event.preventDefault();
-      onSetLayoutVisibility(paneKey, !getLayoutPaneValue(layout, paneKey));
+      const rightRailTarget = RIGHT_RAIL_BY_CODE[event.code];
+      if (rightRailTarget) {
+        event.preventDefault();
+        onToggleRightRail(rightRailTarget);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [layout, onSetLayoutVisibility]);
+  }, [layout, onSetLayoutVisibility, onToggleRightRail]);
 
   return (
     <header className="mb-1.5 flex items-center justify-between gap-3 rounded-md border border-border bg-card px-2 py-1.5">
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <span className="shrink-0 text-base font-bold tracking-tight">MGView</span>
+        <AppModeSwitcher
+          mode="app"
+          onBeforeNavigate={() => {
+            if (!hasLocalEdits) {
+              return true;
+            }
+
+            return window.confirm('Switching modes will discard unsaved edits. Continue?');
+          }}
+        />
         <Button
           type="button"
           variant="outline"
@@ -194,6 +219,17 @@ export default function SceneHeaderBar({
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+        {onSetActiveScenario ? (
+          <ScenarioSelector
+            activeScenario={activeScenario}
+            disabled={loading || saving}
+            editSimDataDisabled={!hasSceneLoaded || loading}
+            onEditSimData={onOpenChannels}
+            onSetActiveScenario={onSetActiveScenario}
+            scenarios={scenarios}
+          />
+        ) : null}
+
         <Button
           type="button"
           variant="ghost"
@@ -233,18 +269,15 @@ export default function SceneHeaderBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52 p-1.5" onCloseAutoFocus={(event) => event.preventDefault()}>
-            {LAYOUT_PANES.map(({ key, label, shortcut }) => {
-              const checked = layout?.[key] ?? false;
+            {LAYOUT_TOGGLE_PANES.map(({ key, label, shortcut }) => {
+              const checked = getLayoutToggleValue(layout, key);
               const inputId = `layout-${key}`;
 
               return (
-                <Label
+                <label
                   key={key}
                   htmlFor={inputId}
-                  className={cn(
-                    'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent',
-                    checked && 'bg-accent/60'
-                  )}
+                  className={cn(LAYOUT_MENU_ROW_CLASS, checked && 'bg-accent/60')}
                   onPointerDown={(event) => event.preventDefault()}
                 >
                   <Checkbox
@@ -253,17 +286,48 @@ export default function SceneHeaderBar({
                     onCheckedChange={(nextChecked) => onSetLayoutVisibility(key, nextChecked === true)}
                   />
                   <span className="flex-1">{label}</span>
-                  <span className="text-[0.65rem] text-muted-foreground">Alt+{shortcut}</span>
-                </Label>
+                  <span className={LAYOUT_MENU_SHORTCUT_CLASS}>Alt+{shortcut}</span>
+                </label>
               );
             })}
             <DropdownMenuSeparator />
-            <Label
+            <div role="radiogroup" aria-label="Editor pane" className="grid">
+              {RIGHT_RAIL_PANES.map(({ target, label, shortcut }) => {
+                const checked = getRightRailValue(layout) === target;
+
+                return (
+                  <button
+                    key={target}
+                    type="button"
+                    role="radio"
+                    aria-checked={checked}
+                    className={cn(
+                      LAYOUT_MENU_ROW_CLASS,
+                      'w-full text-left',
+                      checked && 'bg-accent/60'
+                    )}
+                    onPointerDown={(event) => event.preventDefault()}
+                    onClick={() => onToggleRightRail(target)}
+                  >
+                    <span
+                      className={cn(
+                        'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border',
+                        checked ? 'border-primary' : 'border-muted-foreground/50'
+                      )}
+                      aria-hidden
+                    >
+                      {checked ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
+                    </span>
+                    <span className="flex-1">{label}</span>
+                    <span className={LAYOUT_MENU_SHORTCUT_CLASS}>Alt+{shortcut}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <DropdownMenuSeparator />
+            <label
               htmlFor="layout-renderer-stats"
-              className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent',
-                performanceOverlayOpen && 'bg-accent/60'
-              )}
+              className={cn(LAYOUT_MENU_ROW_CLASS, performanceOverlayOpen && 'bg-accent/60')}
               onPointerDown={(event) => event.preventDefault()}
             >
               <Checkbox
@@ -272,10 +336,10 @@ export default function SceneHeaderBar({
                 onCheckedChange={(checked) => onSetPerformanceOverlayOpen(checked === true)}
               />
               <span className="flex-1">Renderer stats</span>
-            </Label>
+            </label>
             <button
               type="button"
-              className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+              className={cn(LAYOUT_MENU_ROW_CLASS, 'w-full text-left')}
               onPointerDown={(event) => event.preventDefault()}
               onClick={toggleTheme}
             >
@@ -284,7 +348,7 @@ export default function SceneHeaderBar({
               ) : (
                 <Moon className="h-4 w-4 shrink-0" aria-hidden />
               )}
-              <span className="flex-1 text-left">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+              <span className="flex-1">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
             </button>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -309,106 +373,80 @@ export default function SceneHeaderBar({
 
         <div className="mx-0.5 h-5 w-px shrink-0 bg-border" aria-hidden />
 
-        <div className="inline-flex">
-          <Button
-            type="button"
-            size="sm"
-            className="rounded-r-none"
-            onClick={onPrimaryOpen}
-            disabled={loading}
-          >
-            {primaryOpenLabel}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                size="sm"
-                variant="default"
-                className="rounded-l-none border-l border-primary-foreground/20 px-1.5"
-                disabled={loading}
-                aria-label={openMenuAriaLabel}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" size="sm" variant="default" disabled={loading} className="gap-1">
+              Scene
+              <ChevronDown className="h-3 w-3 opacity-80" aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {canPersistScenesToServer ? (
+              <DropdownMenuItem onSelect={onOpenCreateOverlay}>New…</DropdownMenuItem>
+            ) : (
+              <div
+                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs opacity-50"
+                title={demoDisabledTitle}
+                aria-disabled="true"
               >
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {isStaticHosting ? (
-                <DropdownMenuItem onSelect={onOpenLoadOverlay}>Load…</DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onSelect={onOpenSamplesOverlay}>Samples…</DropdownMenuItem>
-              )}
-              <DropdownMenuItem disabled={!hasLocalEdits || saving} onSelect={onRevert}>
-                Reload
+                New…
+              </div>
+            )}
+            {canPersistScenesToServer ? (
+              <DropdownMenuItem onSelect={onOpenLoadOverlay}>
+                <span className="flex-1">Open…</span>
+                <span className="ml-4 text-[0.65rem] text-muted-foreground">{MODIFIER_SHORTCUT_PREFIX}O</span>
               </DropdownMenuItem>
-              {canPersistScenesToServer ? (
-                <DropdownMenuItem onSelect={onOpenCreateOverlay}>New…</DropdownMenuItem>
-              ) : (
-                <div
-                  className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs opacity-50"
-                  title={demoDisabledTitle}
-                  aria-disabled="true"
-                >
-                  New…
-                </div>
-              )}
-              <DropdownMenuItem onSelect={onOpenChannels}>Sim Files…</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <div className="inline-flex">
-          <TooltipProvider delayDuration={TOOLTIP_DELAY_MS}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex">
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="rounded-r-none"
-                    onClick={onSave}
-                    disabled={saveDisabled}
-                  >
-                    {saving ? 'Saving…' : 'Save'}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{saveTitle}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider delayDuration={TOOLTIP_DELAY_MS}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="default"
-                        className="rounded-l-none border-l border-primary-foreground/20 px-1.5"
-                        disabled={saving || !canPersistScenesToServer}
-                        aria-label="Save menu"
-                      >
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        disabled={!scenePath}
-                        title={!scenePath ? 'Load a scene before using Save As' : undefined}
-                        onSelect={onOpenSaveAsOverlay}
-                      >
-                        Save As…
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </span>
-              </TooltipTrigger>
-              {!canPersistScenesToServer ? <TooltipContent side="bottom">{saveTitle}</TooltipContent> : null}
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+            ) : (
+              <div
+                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs opacity-50"
+                title={demoDisabledTitle}
+                aria-disabled="true"
+              >
+                <span className="flex-1">Open…</span>
+                <span className="ml-4 text-[0.65rem] text-muted-foreground">{MODIFIER_SHORTCUT_PREFIX}O</span>
+              </div>
+            )}
+            <DropdownMenuItem disabled={!hasLocalEdits || saving} onSelect={onRevert}>
+              Revert changes
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {canPersistScenesToServer ? (
+              <DropdownMenuItem disabled={saveDisabled} onSelect={onSave}>
+                <span className="flex-1">Save all</span>
+                <span className="ml-4 text-[0.65rem] text-muted-foreground">{MODIFIER_SHORTCUT_PREFIX}S</span>
+              </DropdownMenuItem>
+            ) : (
+              <div
+                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs opacity-50"
+                title={demoDisabledTitle}
+                aria-disabled="true"
+              >
+                <span className="flex-1">Save all</span>
+                <span className="ml-4 text-[0.65rem] text-muted-foreground">{MODIFIER_SHORTCUT_PREFIX}S</span>
+              </div>
+            )}
+            {canPersistScenesToServer ? (
+              <DropdownMenuItem
+                disabled={!scenePath}
+                title={!scenePath ? 'Load a scene before using Save As' : undefined}
+                onSelect={onOpenSaveAsOverlay}
+              >
+                Save scene as…
+              </DropdownMenuItem>
+            ) : (
+              <div
+                className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs opacity-50"
+                title={demoDisabledTitle}
+                aria-disabled="true"
+              >
+                Save scene as…
+              </div>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={onOpenSamplesOverlay}>Example Scenes…</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

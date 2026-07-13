@@ -201,6 +201,25 @@ function getConfigPath() {
   return path.join(os.homedir(), '.mgview', 'config.json');
 }
 
+function readMotionGenesisBinFromConfig() {
+  const configPath = getConfigPath();
+
+  try {
+    const raw = fs.readFileSync(configPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.motionGenesisBin === 'string') {
+      const trimmed = parsed.motionGenesisBin.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+  } catch (error) {
+    if (error && error.code !== 'ENOENT') {
+      console.warn('Could not read MGView Motion Genesis config:', error.message);
+    }
+  }
+
+  return null;
+}
+
 function readWorkspaceConfig(appRoot) {
   const configPath = getConfigPath();
   const resolvedApp = path.resolve(appRoot);
@@ -218,6 +237,7 @@ function readWorkspaceConfig(appRoot) {
       }
       return {
         workspaceRoot: normalized.workspaceRoot,
+        motionGenesisBin: readMotionGenesisBinFromConfig(),
         configPath,
       };
     }
@@ -229,6 +249,7 @@ function readWorkspaceConfig(appRoot) {
 
   return {
     workspaceRoot: null,
+    motionGenesisBin: readMotionGenesisBinFromConfig(),
     configPath,
   };
 }
@@ -261,26 +282,47 @@ function prepareWorkspaceRoot(workspacePath, appRoot) {
   return { workspaceRoot: normalized.workspaceRoot };
 }
 
-function writeWorkspaceConfig(workspaceRoot, appRoot) {
+function writeMgViewConfigFields(fields, appRoot) {
   const configPath = getConfigPath();
-  const normalized = normalizeWorkspaceRoot(workspaceRoot, appRoot);
+  const existing = readWorkspaceConfig(appRoot);
+  const payload = {};
+
+  if (fields.workspaceRoot !== undefined) {
+    const normalized = normalizeWorkspaceRoot(fields.workspaceRoot, appRoot);
+    payload.workspaceRoot = normalized.workspaceRoot;
+  } else if (existing.workspaceRoot) {
+    payload.workspaceRoot = existing.workspaceRoot;
+  }
+
+  if (fields.motionGenesisBin !== undefined) {
+    const trimmed = String(fields.motionGenesisBin || '').trim();
+    if (trimmed.length > 0) {
+      payload.motionGenesisBin = trimmed;
+    }
+  } else if (existing.motionGenesisBin) {
+    payload.motionGenesisBin = existing.motionGenesisBin;
+  }
+
   fs.mkdirSync(path.dirname(configPath), { recursive: true });
-  fs.writeFileSync(
-    configPath,
-    JSON.stringify(
-      {
-        workspaceRoot: normalized.workspaceRoot,
-      },
-      null,
-      2
-    ) + '\n',
-    'utf8'
-  );
+  fs.writeFileSync(configPath, JSON.stringify(payload, null, 2) + '\n', 'utf8');
 
   return {
-    workspaceRoot: normalized.workspaceRoot,
+    workspaceRoot: payload.workspaceRoot || null,
+    motionGenesisBin: payload.motionGenesisBin || null,
     configPath,
   };
+}
+
+function writeWorkspaceConfig(workspaceRoot, appRoot) {
+  const written = writeMgViewConfigFields({ workspaceRoot }, appRoot);
+  return {
+    workspaceRoot: written.workspaceRoot,
+    configPath: written.configPath,
+  };
+}
+
+function writeMotionGenesisBin(motionGenesisBin, appRoot) {
+  return writeMgViewConfigFields({ motionGenesisBin }, appRoot);
 }
 
 function createWorkspaceRoots(appRoot, configuredWorkspaceRoot) {
@@ -309,10 +351,13 @@ module.exports = {
   normalizeWorkspaceRoot,
   parseApiRoot,
   prepareWorkspaceRoot,
+  readMotionGenesisBinFromConfig,
   readWorkspaceConfig,
   resolveLogicalPathForRoot,
   resolveUrlAssetPath,
   toLogicalPathForRoot,
   usesAppRoot,
+  writeMgViewConfigFields,
+  writeMotionGenesisBin,
   writeWorkspaceConfig,
 };

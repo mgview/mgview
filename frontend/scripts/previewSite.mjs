@@ -3,11 +3,11 @@
  *
  * Default (GitHub Pages layout):
  *   npm run preview:site
- *   → http://localhost:8001/mgview/
+ *   → http://127.0.0.1:8001/mgview/
  *
  * Workspace layout (parent folder with mgview/ app dir):
  *   npm run preview:site:workspace
- *   → http://localhost:8001/mgview/
+ *   → http://127.0.0.1:8001/mgview/
  */
 import { spawn } from 'node:child_process';
 import { createReadStream, existsSync } from 'node:fs';
@@ -30,6 +30,41 @@ const siteRoot = useWorkspaceLayout
   : siteDir;
 const urlPrefix = useWorkspaceLayout ? workspaceBase.replace(/\/$/, '') : githubPagesBase;
 const STATIC_PORT = Number(process.env.MGVIEW_STATIC_PORT || 8001);
+const PREVIEW_HOST = '127.0.0.1';
+
+function canConnect(host, port) {
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ host, port }, () => {
+      socket.end();
+      resolve(true);
+    });
+    socket.setTimeout(500);
+    socket.on('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.on('error', () => resolve(false));
+  });
+}
+
+async function assertPortClear(port) {
+  const listeners = [];
+  for (const host of ['127.0.0.1', '::1']) {
+    if (await canConnect(host, port)) {
+      listeners.push(host);
+    }
+  }
+
+  if (listeners.length === 0) {
+    return;
+  }
+
+  throw new Error(
+    `Port ${port} is already in use (${listeners.join(', ')}). ` +
+      'Stop orphaned bin/server.js processes first (npm run cleanup:servers -- --force) ' +
+      'or choose another port: MGVIEW_STATIC_PORT=8002 npm run preview:site'
+  );
+}
 
 function isPortAvailable(port) {
   return new Promise((resolve) => {
@@ -38,7 +73,7 @@ function isPortAvailable(port) {
     probe.once('listening', () => {
       probe.close(() => resolve(true));
     });
-    probe.listen(port, '127.0.0.1');
+    probe.listen(port, PREVIEW_HOST);
   });
 }
 
@@ -73,7 +108,7 @@ async function runBuild() {
 function createServer() {
   return http.createServer(async (req, res) => {
     try {
-      const requestUrl = new URL(req.url ?? '/', `http://127.0.0.1:${STATIC_PORT}`);
+      const requestUrl = new URL(req.url ?? '/', `http://${PREVIEW_HOST}:${STATIC_PORT}`);
       let pathname = decodeURIComponent(requestUrl.pathname);
 
       if (pathname === urlPrefix) {
@@ -122,17 +157,20 @@ function createServer() {
 }
 
 async function main() {
+  await assertPortClear(STATIC_PORT);
+
   if (!(await isPortAvailable(STATIC_PORT))) {
-    console.error(`Port ${STATIC_PORT} is in use. Try MGVIEW_STATIC_PORT=8002 npm run preview:site`);
+    console.error(`Port ${STATIC_PORT} is in use on ${PREVIEW_HOST}. Try MGVIEW_STATIC_PORT=8002 npm run preview:site`);
     process.exit(1);
   }
 
   await runBuild();
 
   const server = createServer();
-  server.listen(STATIC_PORT, '127.0.0.1', () => {
-    const url = `http://localhost:${STATIC_PORT}${urlPrefix}/`;
+  server.listen(STATIC_PORT, PREVIEW_HOST, () => {
+    const url = `http://${PREVIEW_HOST}:${STATIC_PORT}${urlPrefix}/`;
     console.log(`\nStatic preview: ${url}`);
+    console.log('Use 127.0.0.1 (not localhost) if another server is bound to IPv6 on this port.');
     if (!useWorkspaceLayout) {
       console.log(`Legacy (if assembled): ${url}legacy/Examples.html\n`);
     }

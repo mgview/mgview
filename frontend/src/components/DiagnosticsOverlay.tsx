@@ -23,7 +23,7 @@ export default function DiagnosticsOverlay({ diagnostics, onClose }: Diagnostics
               className={cn(
                 'flex gap-2 rounded-sm px-2 py-1.5 text-xs',
                 diagnostic.severity === 'warning'
-                  ? 'bg-warning/15 text-warning-foreground'
+                  ? 'bg-warning/15 text-warning'
                   : 'bg-primary/10 text-foreground'
               )}
             >

@@ -1,0 +1,31 @@
+# Normalize source text to LF in the repository.
+* text=auto eol=lf
+
+# Windows launchers
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Unix launchers (no extension)
+*.sh text eol=lf
+RunMGViewMac text eol=lf
+RunMGViewLinux text eol=lf
+
+# Python
+*.py text eol=lf
+
+# Motion Genesis sample/output data — preserve bytes as committed
+samples/** -text
+legacy/** -text
+
+# Binary assets
+*.jpg -text
+*.jpeg -text
+*.png -text
+*.gif -text
+*.webp -text
+*.ico -text
+*.woff -text
+*.woff2 -text
+*.lnk -text
+*.obj -text
+*.mtl -text

@@ -1,0 +1,77 @@
+import { useState } from 'react';
+import { Button } from './ui/button.tsx';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogForm,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog.tsx';
+import { Input } from './ui/input.tsx';
+
+interface NewSimFileDialogProps {
+  currentPath: string;
+  defaultName: string;
+  errorMessage: string | null;
+  loading?: boolean;
+  onClose: () => void;
+  onCreate: (name: string) => void;
+}
+
+export default function NewSimFileDialog({
+  currentPath,
+  defaultName,
+  errorMessage,
+  loading = false,
+  onClose,
+  onCreate,
+}: NewSimFileDialogProps) {
+  const [name, setName] = useState(defaultName);
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent size="compact" onPointerDownOutside={(event) => event.preventDefault()}>
+        <DialogHeader>
+          <div className="min-w-0 flex-1">
+            <DialogTitle>New Simulation File</DialogTitle>
+            <DialogDescription className="mt-0.5">
+              Create a Motion Genesis input file in <code>{currentPath}</code>.
+            </DialogDescription>
+          </div>
+        </DialogHeader>
+        <DialogBody>
+          <DialogForm
+            errorMessage={errorMessage}
+            actions={
+              <div className="flex justify-end gap-1.5">
+                <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={() => onCreate(name)} disabled={loading}>
+                  {loading ? 'Creating…' : 'Create'}
+                </Button>
+              </div>
+            }
+          >
+            <Input
+              autoFocus
+              type="text"
+              focusVariant="soft"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !loading) {
+                  event.preventDefault();
+                  onCreate(name);
+                }
+              }}
+              placeholder="my_sim.txt"
+            />
+          </DialogForm>
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
+  );
+}

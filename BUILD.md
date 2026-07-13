@@ -51,6 +51,12 @@ These must not share a directory — the Node server routes `/mgview/bundled/` t
 
 ## Local development
 
+Git stores source text as LF (see `.gitattributes`). On Windows and macOS, use:
+
+```bash
+git config core.autocrlf false
+```
+
 ```bash
 cd frontend
 npm install

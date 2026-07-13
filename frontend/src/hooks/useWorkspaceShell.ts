@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createWorkspaceDirectory } from '../api/localFiles.ts';
 import { canPersistScenesToServer } from '../api/runtimeMode.ts';
 import { combineBrowserPath, validateFolderName } from '../core/workspacePaths.ts';
+import { expandSimulationDataEntries } from '../core/expandSimulationFiles.ts';
 import { getApiRoot, getSceneDirectory } from '../core/sceneRef.ts';
 import type { NormalizedSceneConfig } from '../core/types.ts';
 import type { LoadedSceneData } from './useSceneWorkspace.ts';
@@ -129,6 +130,10 @@ export function useWorkspaceShell({
   ]);
 
   const openLoadOverlay = () => {
+    if (!canPersistScenesToServer) {
+      return;
+    }
+
     setError(null);
     setSceneOverlayMode('load');
     setLoadOverlayOpen(true);
@@ -314,9 +319,26 @@ export function useWorkspaceShell({
       return;
     }
 
+    const expandedEntries = expandSimulationDataEntries([trimmedEntry]);
+
     updateDraftScene((scene) => {
-      if (!scene.simulationData.includes(trimmedEntry)) {
-        scene.simulationData.push(trimmedEntry);
+      if (scene.scenarios.length > 0 && scene.activeScenario) {
+        const scenario = scene.scenarios.find((entry) => entry.id === scene.activeScenario);
+        if (scenario) {
+          for (const entry of expandedEntries) {
+            if (!scenario.simulationData.includes(entry)) {
+              scenario.simulationData.push(entry);
+            }
+          }
+          scene.simulationData = [...scenario.simulationData];
+        }
+        return;
+      }
+
+      for (const entry of expandedEntries) {
+        if (!scene.simulationData.includes(entry)) {
+          scene.simulationData.push(entry);
+        }
       }
     });
     setSimulationEntryInput('');
@@ -328,8 +350,25 @@ export function useWorkspaceShell({
       return;
     }
 
+    const expandedEntries = expandSimulationDataEntries(trimmedEntries);
+
     updateDraftScene((scene) => {
-      for (const entry of trimmedEntries) {
+      if (scene.scenarios.length > 0 && scene.activeScenario) {
+        const scenario = scene.scenarios.find((entry) => entry.id === scene.activeScenario);
+        if (!scenario) {
+          return;
+        }
+
+        for (const entry of expandedEntries) {
+          if (!scenario.simulationData.includes(entry)) {
+            scenario.simulationData.push(entry);
+          }
+        }
+        scene.simulationData = [...scenario.simulationData];
+        return;
+      }
+
+      for (const entry of expandedEntries) {
         if (!scene.simulationData.includes(entry)) {
           scene.simulationData.push(entry);
         }
@@ -340,7 +379,31 @@ export function useWorkspaceShell({
 
   const removeSimulationEntry = (entry: string) => {
     updateDraftScene((scene) => {
+      if (scene.scenarios.length > 0 && scene.activeScenario) {
+        const scenario = scene.scenarios.find((item) => item.id === scene.activeScenario);
+        if (scenario) {
+          scenario.simulationData = scenario.simulationData.filter((value) => value !== entry);
+          scene.simulationData = [...scenario.simulationData];
+        }
+        return;
+      }
+
       scene.simulationData = scene.simulationData.filter((value) => value !== entry);
+    });
+  };
+
+  const clearSimulationEntries = () => {
+    updateDraftScene((scene) => {
+      if (scene.scenarios.length > 0 && scene.activeScenario) {
+        const scenario = scene.scenarios.find((item) => item.id === scene.activeScenario);
+        if (scenario) {
+          scenario.simulationData = [];
+          scene.simulationData = [];
+        }
+        return;
+      }
+
+      scene.simulationData = [];
     });
   };
 
@@ -381,5 +444,6 @@ export function useWorkspaceShell({
     updateSceneVector,
     updateSceneVectorPreview,
     removeSimulationEntry,
+    clearSimulationEntries,
   };
 }
