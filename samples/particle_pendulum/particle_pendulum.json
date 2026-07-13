@@ -129,7 +129,7 @@
           },
           "size": {
             "x": 0.2,
-            "y": 0.05,
+            "y": 0.02,
             "z": 0.025
           },
           "segments_width": 1,
@@ -436,21 +436,21 @@
     "panels": [
       {
         "id": "d42f03ce-7235-4642-a059-9e0794312628",
+        "title": "Theta vs Time",
         "channels": [
           "theta"
         ],
-        "xMode": "time",
-        "title": "Theta vs Time"
+        "xMode": "time"
       },
       {
         "id": "07de086a-87df-4897-9b4c-0a12b60c29c2",
+        "title": "Energy vs Time",
         "channels": [
           "KE",
           "PE",
           "MechanicalEnergy"
         ],
-        "xMode": "time",
-        "title": "Energy vs Time"
+        "xMode": "time"
       }
     ]
   },
