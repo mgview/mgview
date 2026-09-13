@@ -22,6 +22,7 @@ import {
   useMotionGenesisRunPreferences,
   type MotionGenesisRunLayoutMode,
 } from '../hooks/useMotionGenesisRunPreferences.ts';
+import { useToasts } from '../hooks/useToasts.ts';
 import {
   isPtyBlocked,
   NODE_LTS_DOWNLOAD_URL,
@@ -163,6 +164,7 @@ export default function MotionGenesisRunShell({
   className,
 }: MotionGenesisRunShellProps) {
   const motionGenesisRuntime = useMotionGenesisRuntime();
+  const { showError } = useToasts();
   const { layoutMode, setLayoutMode, setSplitRatio, setVimMode, splitRatio, vimMode } =
     useMotionGenesisRunPreferences(defaultLayoutMode);
 
@@ -409,6 +411,11 @@ export default function MotionGenesisRunShell({
     );
   };
 
+  const handleVimModeLoadError = useCallback(() => {
+    setVimMode(false);
+    showError('Vim keybindings could not be loaded. The standard editor keybindings are still available.');
+  }, [setVimMode, showError]);
+
   const renderEditorPanel = () => (
     <div className="relative grid h-full min-h-0 min-w-0 grid-rows-[minmax(0,1fr)] rounded-xl border border-border bg-card p-2 shadow-sm">
       {renderRunStateOverlay(status === 'waiting-input')}
@@ -421,6 +428,7 @@ export default function MotionGenesisRunShell({
           className={cn('min-h-0 transition-[filter,opacity] duration-150', runActive && 'opacity-55 grayscale-[0.2]')}
           onChange={onEditorChange}
           onRun={handleEditorRun}
+          onVimModeLoadError={handleVimModeLoadError}
           readOnly={editorLocked}
           value={editorValue}
           vimMode={vimMode}
