@@ -20,6 +20,7 @@ function getGitCommit() {
 }
 
 async function main() {
+  const frontendOnly = process.argv.slice(2).includes('--frontend-only');
   const packageJsonPath = path.join(frontendDir, 'package.json');
   const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
   const version = String(process.env.MGVIEW_RELEASE_VERSION ?? packageJson.version ?? '').trim();
@@ -55,7 +56,9 @@ export default buildInfo;
 `;
 
   await writeFile(buildInfoPath, buildInfoSource, 'utf8');
-  await writeFile(versionFilePath, `${version} (built ${buildDate})\n`, 'utf8');
+  if (!frontendOnly) {
+    await writeFile(versionFilePath, `${version} (built ${buildDate})\n`, 'utf8');
+  }
 }
 
 await main();

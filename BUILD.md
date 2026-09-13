@@ -67,8 +67,8 @@ git config core.autocrlf false
 cd frontend
 npm install
 npm test
-npm run dev            # Vite dev server (hot reload; API needs full server below)
-npm run build          # → frontend/dist/ (required before launchers)
+npm run dev            # Vite dev server with hot reload
+npm run build          # → frontend/dist/ (for the production UI served by launchers)
 cd ..
 ./RunMGViewMac         # http://localhost:8000/mgview/
 ./RunMGViewLinux       # same flags as Mac
@@ -77,6 +77,51 @@ cd ..
 ./RunMGViewMac --verbose   # log each HTTP request (quiet by default)
 ```
 
+### Full-stack development with hot reload
+
+Run the Node backend and Vite dev server in separate terminals:
+
+```bash
+# Terminal 1, from the repository root: API, workspace files, and Motion Genesis runs
+./RunMGViewMac --verbose --no-open
+
+# Terminal 2: live frontend with hot module replacement
+cd frontend
+npm run dev
+```
+
+Open the Vite URL, normally <http://localhost:5173/mgview/>. Do not use the backend URL at
+`http://localhost:8000/mgview/` for hot-reload testing. During development, Vite serves the
+frontend source and proxies `/mgview/api`, `/mgview/assets`, and `/mgview/samples` to the backend.
+You do **not** need to run `npm run build` before starting `RunMGViewMac` in this two-terminal
+workflow. The launcher is being used for its backend APIs; Vite supplies the frontend.
+
+The proxy defaults to `http://127.0.0.1:8000`. If the backend uses another port, set the matching
+target before starting Vite. For example:
+
+```bash
+./RunMGViewMac --port 9000 --verbose --no-open
+cd frontend
+MGVIEW_DEV_BACKEND=http://127.0.0.1:9000 npm run dev
+```
+
+### When to rebuild or restart
+
+| Change | What to do |
+|--------|------------|
+| Frontend source under `frontend/src/` | Nothing; Vite hot-reloads it. |
+| Frontend CSS | Nothing; Vite updates it in the open page. |
+| `frontend/vite.config.ts` or frontend environment variables | In the Vite terminal press Ctrl+C, then run `npm run dev` again. |
+| Frontend dependencies | In the Vite terminal press Ctrl+C, run `npm install`, then run `npm run dev`. |
+| Backend JavaScript under `bin/` or a launcher script | In the backend terminal press Ctrl+C, then run `./RunMGViewMac --verbose --no-open` again. No build step is required. |
+| Backend workspace or Motion Genesis configuration | Usually nothing; the backend reads current configuration. Restart if startup flags changed. |
+| Testing the production launcher UI | Run `cd frontend && npm run build`, then start or refresh the launcher-served app. |
+| Creating a distributable release | Run `cd frontend && npm run build:release`. |
+
+The backend is plain Node.js and has no normal compilation step. `npm run build` builds only the
+frontend assets consumed by the launcher; it is unnecessary while using the Vite URL. Starting
+the Vite dev server refreshes frontend build metadata without rewriting `bin/VERSION`.
+
 On Windows, double-click `RunMGViewWindows.bat` or run it from Command Prompt (same flags; `bin\RunVisualizer.bat` is the underlying script):
 
 ```bat
@@ -84,7 +129,9 @@ RunMGViewWindows.bat --port 9000 --no-open
 RunMGViewWindows.bat --workspace C:\simulations
 ```
 
-`frontend/dist/` and `frontend/dist-pages/` are gitignored. Run `npm run build` after pulling frontend changes before using the launchers.
+`frontend/dist/` and `frontend/dist-pages/` are gitignored. Run `npm run build` after pulling
+frontend changes before using the production UI at the launcher URL. The full-stack hot-reload
+workflow above does not require this build.
 
 ## Preview static site locally
 
