@@ -1,5 +1,4 @@
 import Editor, { type BeforeMount, type OnMount } from '@monaco-editor/react';
-import { initVimMode } from 'monaco-vim';
 import { useEffect, useRef, useState } from 'react';
 import type { Monaco } from '@monaco-editor/react';
 import type { editor as MonacoEditor } from 'monaco-editor';
@@ -15,6 +14,7 @@ interface CodeEditorProps {
   className?: string;
   onChange: (value: string) => void;
   onRun?: () => void | Promise<void>;
+  onVimModeLoadError?: (error: unknown) => void;
   readOnly?: boolean;
   value: string;
   vimMode?: boolean;
@@ -24,6 +24,7 @@ export default function CodeEditor({
   className,
   onChange,
   onRun,
+  onVimModeLoadError,
   readOnly = false,
   value,
   vimMode = false,
@@ -36,6 +37,7 @@ export default function CodeEditor({
   const vimStatusRef = useRef<HTMLDivElement | null>(null);
   const vimModeRef = useRef<{ dispose: () => void } | null>(null);
   const [editorReady, setEditorReady] = useState(false);
+  const [vimModeReady, setVimModeReady] = useState(false);
   const appTheme = theme === 'dark' ? 'dark' : 'light';
   const editorTheme = getMotionGenesisEditorTheme(appTheme);
 
@@ -95,16 +97,31 @@ export default function CodeEditor({
 
     vimModeRef.current?.dispose();
     vimModeRef.current = null;
+    setVimModeReady(false);
+    let cancelled = false;
 
     if (vimMode && !readOnly) {
-      vimModeRef.current = initVimMode(editor, statusNode);
+      void import('monaco-vim')
+        .then(({ initVimMode }) => {
+          if (!cancelled) {
+            vimModeRef.current = initVimMode(editor, statusNode);
+            setVimModeReady(true);
+          }
+        })
+        .catch((error: unknown) => {
+          if (!cancelled) {
+            console.error('Unable to load Vim editor bindings.', error);
+            onVimModeLoadError?.(error);
+          }
+        });
     }
 
     return () => {
+      cancelled = true;
       vimModeRef.current?.dispose();
       vimModeRef.current = null;
     };
-  }, [editorReady, readOnly, vimMode]);
+  }, [editorReady, onVimModeLoadError, readOnly, vimMode]);
 
   useEffect(() => {
     return () => {
@@ -142,7 +159,7 @@ export default function CodeEditor({
         ref={vimStatusRef}
         className={cn(
           'border-t border-border bg-muted/40 px-2 py-0.5 font-mono text-[0.68rem] text-muted-foreground',
-          !vimMode && 'hidden'
+          (!vimMode || !vimModeReady) && 'hidden'
         )}
       />
     </div>
