@@ -123,6 +123,88 @@ export default function CodeEditor({
     };
   }, [editorReady, onVimModeLoadError, readOnly, vimMode]);
 
+  // Needed to fix bug with vim normal mode commands requiring confirmation.
+  useEffect(() => {
+    const statusNode = vimStatusRef.current;
+    if (!editorReady || !vimMode || readOnly || !statusNode) {
+      return;
+    }
+
+    let focusFrame: number | null = null;
+    let observedInput: HTMLInputElement | null = null;
+    const handleConfirmationKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        !observedInput?.parentElement?.textContent?.includes('(y/n/a/q/l)') ||
+        !/^[ynqal]$/.test(event.key)
+      ) {
+        return;
+      }
+
+      // monaco-vim's confirmation handler compares native DOM key names with
+      // uppercase values. Normal typing reports lowercase keys, so forward an
+      // uppercase equivalent instead of letting the valid response be ignored.
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      observedInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          bubbles: true,
+          cancelable: true,
+          code: event.code,
+          key: event.key.toUpperCase(),
+          shiftKey: event.shiftKey,
+        })
+      );
+    };
+
+    const focusVimInput = () => {
+      const input = statusNode.querySelector('input');
+      if (!input) {
+        return;
+      }
+
+      if (input !== observedInput) {
+        observedInput?.removeEventListener('keydown', handleConfirmationKeyDown, true);
+        observedInput = input;
+        observedInput.addEventListener('keydown', handleConfirmationKeyDown, true);
+      }
+      input.setAttribute('aria-label', 'Vim command input');
+      if (focusFrame !== null) {
+        cancelAnimationFrame(focusFrame);
+      }
+      // monaco-vim focuses prompts while Monaco is still handling the key that
+      // opened them. Restore prompt focus after that editor event has finished.
+      focusFrame = requestAnimationFrame(() => {
+        focusFrame = null;
+        if (input.isConnected) {
+          input.focus({ preventScroll: true });
+        }
+      });
+    };
+
+    const mutationObserver = new MutationObserver(focusVimInput);
+    mutationObserver.observe(statusNode, { childList: true, subtree: true });
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.target instanceof HTMLInputElement) {
+        focusVimInput();
+      }
+    };
+    statusNode.addEventListener('pointerdown', handlePointerDown);
+    focusVimInput();
+
+    return () => {
+      mutationObserver.disconnect();
+      statusNode.removeEventListener('pointerdown', handlePointerDown);
+      observedInput?.removeEventListener('keydown', handleConfirmationKeyDown, true);
+      if (focusFrame !== null) {
+        cancelAnimationFrame(focusFrame);
+      }
+    };
+  }, [editorReady, readOnly, vimMode]);
+
   useEffect(() => {
     return () => {
       vimModeRef.current?.dispose();
