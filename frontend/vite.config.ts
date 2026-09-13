@@ -12,6 +12,7 @@ import { viteBundledAssetsDir } from './scripts/deployConfig.mjs';
 //   npm run build:static:github    → frontend/dist-pages/ (GitHub Pages, base /mgview/)
 //   npm run build:static:workspace → frontend/dist-pages/ (workspace static preview)
 const isStaticHostingBuild = process.env.VITE_MGVIEW_STATIC === 'true';
+const devBackendTarget = process.env.MGVIEW_DEV_BACKEND ?? 'http://127.0.0.1:8000';
 
 function mgHelpApiPlugin(): Plugin {
   const configDir = path.dirname(fileURLToPath(import.meta.url));
@@ -181,8 +182,8 @@ function staticHostingManifestPlugin(): Plugin {
   };
 }
 
-export default defineConfig({
-  base: process.env.VITE_MGVIEW_BASE ?? './',
+export default defineConfig(({ command }) => ({
+  base: process.env.VITE_MGVIEW_BASE ?? (command === 'serve' ? '/mgview/' : './'),
   plugins: [
     staticHostingFlagPlugin(),
     tailwindcss(),
@@ -226,5 +227,19 @@ export default defineConfig({
     fs: {
       allow: ['..'],
     },
+    proxy: {
+      '/mgview/api': {
+        target: devBackendTarget,
+        changeOrigin: true,
+      },
+      '/mgview/assets': {
+        target: devBackendTarget,
+        changeOrigin: true,
+      },
+      '/mgview/samples': {
+        target: devBackendTarget,
+        changeOrigin: true,
+      },
+    },
   },
-});
+}));
