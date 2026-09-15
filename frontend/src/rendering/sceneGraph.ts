@@ -16,7 +16,9 @@ export function buildRenderableScene(
   const graph = new RenderGraphManager(root, scenePath);
   graph.update(evaluation, {
     objectName: selectedObjectName,
+    visualName: null,
     spanName: selectedSpanName,
+    spanVisualName: null,
   });
   return root;
 }

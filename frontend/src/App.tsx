@@ -183,6 +183,7 @@ function WorkspaceApp() {
   const {
     changeSelectedVisualType,
     createVisual,
+    createVisualForObject,
     deleteSelectedVisual,
     liveSelectedVisual,
     renameVisual,
@@ -375,6 +376,15 @@ function WorkspaceApp() {
             selectionState.beginSpanCreation(createSpan);
           }}
           onClearSelection={selectionState.clearAllSelections}
+          onCreateViewportVisual={(objectName, type) => {
+            const visualName = createVisualForObject(objectName, type);
+            if (!visualName) {
+              return false;
+            }
+
+            selectionState.selectObjectForEditor(objectName, visualName, selectObject);
+            return true;
+          }}
           onEditorModeChange={selectionState.setEditorMode}
           onMotionGenesisInputChange={motionGenesisRun.setInput}
           onMotionGenesisOptionsChange={motionGenesisRun.setOptions}

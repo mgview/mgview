@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { createDefaultVisual } from '../components/editorShared.tsx';
+import { createUniqueVisualName } from '../core/visualNames.ts';
 import type {
   NormalizedSceneConfig,
   SceneObjectInspection,
@@ -106,23 +107,17 @@ export function useSceneSelectionEditor({
     });
   };
 
-  const createVisual = (type: VisualType) => {
-    if (!draftScene || !selectedObject?.name) {
-      return false;
+  const createVisualForObject = (objectName: string, type: VisualType) => {
+    if (!draftScene?.objects[objectName]) {
+      return null;
     }
 
-    const existingNames = new Set(
-      Object.keys(draftScene.objects[selectedObject.name]?.visual ?? {})
+    const nextName = createUniqueVisualName(
+      Object.keys(draftScene.objects[objectName]?.visual ?? {})
     );
-    let nextIndex = 1;
-    let nextName = `visual_${nextIndex}`;
-    while (existingNames.has(nextName)) {
-      nextIndex += 1;
-      nextName = `visual_${nextIndex}`;
-    }
 
     updateDraftScene((scene) => {
-      const sceneObject = scene.objects[selectedObject.name];
+      const sceneObject = scene.objects[objectName];
       if (!sceneObject) {
         return;
       }
@@ -130,6 +125,19 @@ export function useSceneSelectionEditor({
       sceneObject.visual ??= {};
       sceneObject.visual[nextName] = createDefaultVisual(type, undefined, scene.workspaceSize);
     });
+    return nextName;
+  };
+
+  const createVisual = (type: VisualType) => {
+    if (!selectedObject?.name) {
+      return false;
+    }
+
+    const nextName = createVisualForObject(selectedObject.name, type);
+    if (!nextName) {
+      return false;
+    }
+
     setSelectedVisualName(nextName);
     return true;
   };
@@ -213,6 +221,7 @@ export function useSceneSelectionEditor({
   return {
     changeSelectedVisualType,
     createVisual,
+    createVisualForObject,
     deleteSelectedVisual,
     liveSelectedVisual,
     renameVisual,
