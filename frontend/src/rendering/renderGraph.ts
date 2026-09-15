@@ -144,6 +144,10 @@ export class RenderGraphManager {
   update(evaluation: SceneEvaluation, selection: RenderSelectionState) {
     this.reconcileObjects(evaluation, selection.objectName, selection.visualName);
     this.reconcileSpans(evaluation, selection.spanName, selection.spanVisualName);
+
+    // Consumers such as TransformControls read matrixWorld immediately after an
+    // update, before the renderer gets its next opportunity to propagate matrices.
+    this.root.updateMatrixWorld(true);
   }
 
   getVisualContainer(objectName: string, visualName: string) {

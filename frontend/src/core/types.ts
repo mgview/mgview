@@ -30,7 +30,8 @@ export interface MaterialTextureDefinition {
   /** Texture repetitions in the U and V directions. Floating-point values are supported. */
   repeat?: [number, number] | undefined;
   offset?: [number, number] | undefined;
-  rotation?: number | undefined;
+  /** Texture rotation in radians. */
+  rotation_rad?: number | undefined;
 }
 
 export interface MaterialDefinition {
