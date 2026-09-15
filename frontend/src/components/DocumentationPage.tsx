@@ -43,7 +43,9 @@ const shortcutItems = [
   { keys: 'Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y', description: 'Redo the latest undone edit.' },
   { keys: 'Alt+L', description: 'Open the Layout menu.' },
   { keys: 'Alt+1 / Alt+2', description: 'Show or hide the 3D View and Plots panes.' },
-  { keys: 'Alt+3 / Alt+4', description: 'Show Scene Editor or Sim Editor (mutually exclusive).' },
+  { keys: 'Alt+E / Alt+3', description: 'Show the Scene Editor or Sim Editor.' },
+  { keys: 'M / R / S / A', description: 'Move, rotate, resize, or add geometry in the 3D view.' },
+  { keys: 'Delete / Backspace', description: 'Delete the selected geometry in the 3D view.' },
   { keys: 'Esc', description: 'Close / clear selection.' },
 ] as const;
 
@@ -130,7 +132,7 @@ export default function DocumentationPage() {
                   MGView displays simulation outputs in a browser-based 3D viewer with plots and editing tools.
                 </p>
                 <p className="max-w-3xl text-sm leading-6 text-muted-foreground sm:text-[0.95rem]">
-                  With a Motion Gensis license, you can also edit and run Motion Genesis
+                  With a Motion Genesis license, you can also edit and run Motion Genesis
                   simulations, then visualize the results without leaving your browser.
                 </p>
               </div>
@@ -384,21 +386,19 @@ export default function DocumentationPage() {
                       in the header (<code>Alt+L</code>) to show or hide the{' '}
                       <span className="font-semibold text-foreground">3D View</span>,{' '}
                       <span className="font-semibold text-foreground">Plots</span>,{' '}
-                      <span className="font-semibold text-foreground">Scene Editor</span>, and{' '}
-                      <span className="font-semibold text-foreground">Sim Editor</span> panes (
-                      <code>Alt+1</code> / <code>Alt+2</code> / <code>Alt+3</code> / <code>Alt+4</code>).
+                      and <span className="font-semibold text-foreground">Sim Editor</span> panes (
+                      <code>Alt+1</code> / <code>Alt+2</code> / <code>Alt+3</code>).
                     </li>
                     <li>
-                      In the editor rail, pick a frame or point under{' '}
-                      <span className="font-semibold text-foreground">Objects</span>, then select a geometry
-                      by clicking its name chip under{' '}
-                      <span className="font-semibold text-foreground">Geometries</span> (or click the chip again to
-                      rename).
+                      Select geometry directly in the 3D view. Use its toolbar to add, move, rotate, resize,
+                      or delete geometry; double-click a geometry to open the Editor, or right-click it for
+                      its name and material.
                     </li>
                     <li>
-                      Change type, position, size, and color in the{' '}
-                      <span className="font-semibold text-foreground">Editor</span> tab to see how geometry
-                      properties affect the 3D view.
+                      Open <span className="font-semibold text-foreground">Editor</span>,{' '}
+                      <span className="font-semibold text-foreground">Scene Settings</span>, or{' '}
+                      <span className="font-semibold text-foreground">JSON Editor</span> from the 3D view's
+                      upper-right toolbar. The Editor shortcut is <code>Alt+E</code>.
                     </li>
                     <li>
                       In the plots area, click <code>Add panel</code>, then choose channels to chart against
@@ -460,7 +460,7 @@ export default function DocumentationPage() {
                     </li>
                     <li>
                       Open the <span className="font-semibold text-foreground">Sim Editor</span> pane from the Layout
-                      menu (<code>Alt+4</code>).
+                      menu (<code>Alt+3</code>).
                     </li>
                     <li>
                       Click <code>Configure</code> and link a <code>.al</code> or <code>.txt</code> sim file. Use{' '}
@@ -482,8 +482,8 @@ export default function DocumentationPage() {
                       <code>Sim Data</code> dropdown.
                     </li>
                     <li>
-                      Switch to the <span className="font-semibold text-foreground">Scene Editor</span> pane (
-                      <code>Alt+3</code>). Add geometries on the frames and points you want to see, adjust{' '}
+                      Open the <span className="font-semibold text-foreground">Scene Editor</span> from the 3D
+                      view (<code>Alt+E</code>). Add geometries on the frames and points you want to see, adjust{' '}
                       <code>Scene Settings</code> (camera up, parent frame), and press <code>Space</code> to play the
                       timeline.
                     </li>

@@ -12,11 +12,11 @@ Stack: React 18, TypeScript, Vite, Tailwind v4, shadcn/ui, Three.js, uPlot.
 
 ## Workspace layout
 
-Header **Layout** menu (`Alt+L`, `Alt+1`–`4`): **3D View** / **Plots** (independent); **Scene Editor** / **Sim Editor** (mutually exclusive right rail).
+Header **Layout** menu (`Alt+L`, `Alt+1`–`3`): **3D View** / **Plots** (independent) and **Sim Editor**. Scene editing opens from the 3D toolbar or `Alt+E`; the two editors share the right rail.
 
 `scene.layout` (`workspaceLayout.ts`): `showRenderer`, `showPlots`, `rightRail` (`scene` | `sim` | `none`). Legacy `showEditorRail: false` → `rightRail: 'none'`.
 
-Scene Editor rail: object list + **Editor** / **Scene Settings** / **JSON Editor** (preview only). Timeline under 3D View if visible, else Plots.
+Scene Editor rail: object list + **Editor**, or the wide **Scene Settings** / **JSON Editor** views. The 3D toolbar also selects, adds, moves, rotates, resizes, deletes, and edits materials. Timeline under 3D View if visible, else Plots.
 
 ## Scenes, samples, URLs
 
