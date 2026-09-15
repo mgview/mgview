@@ -263,7 +263,7 @@ function WorkspaceApp() {
     () =>
       Object.entries(activeScene?.spans ?? {}).map(([name, span]) => ({
         name,
-        type: span.type,
+        type: span.type ?? '',
         point1: span.point1,
         point2: span.point2,
         visualCount: Object.keys(span.visual ?? {}).length,

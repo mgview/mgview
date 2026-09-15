@@ -146,7 +146,7 @@ test('computePlotYBounds spans all series extrema with padding', async () => {
   assert.ok(bounds);
   for (const series of bundle.series) {
     for (const value of series.values) {
-      if (!Number.isFinite(value)) {
+      if (value == null || !Number.isFinite(value)) {
         continue;
       }
 

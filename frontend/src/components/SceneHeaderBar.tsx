@@ -75,7 +75,7 @@ function getRightRailValue(layout: NormalizedSceneLayout | null) {
 interface SceneHeaderBarProps {
   scenePath: string | null;
   layout: NormalizedSceneLayout | null;
-  onOpenWorkspace?: () => void;
+  onOpenWorkspace?: (() => void) | undefined;
   onOpenAbout: () => void;
   hasLocalEdits: boolean;
   canSaveScene: boolean;
@@ -97,7 +97,7 @@ interface SceneHeaderBarProps {
   onRedo: () => void;
   onSave: () => void;
   onRevert: () => void;
-  onSetActiveScenario?: (scenarioId: string) => void | Promise<void>;
+  onSetActiveScenario?: (scenarioId: string) => Promise<boolean>;
   onUndo: () => void;
   scenarios?: SceneScenario[];
   activeScenario?: string | null;

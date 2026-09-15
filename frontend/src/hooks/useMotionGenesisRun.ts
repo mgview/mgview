@@ -68,14 +68,18 @@ export function useMotionGenesisRun(onRunSucceeded?: (run: MotionGenesisRunState
     if (!shouldAutoSendDefault(run) || sendingInput) {
       return;
     }
+    const activeRun = run;
+    if (!activeRun) {
+      return;
+    }
 
-    const promptKey = `${run.id}:${run.output.length}`;
+    const promptKey = `${activeRun.id}:${activeRun.output.length}`;
     if (lastAutoSubmittedPromptRef.current === promptKey) {
       return;
     }
     lastAutoSubmittedPromptRef.current = promptKey;
 
-    void sendMotionGenesisInput(run.id, '')
+    void sendMotionGenesisInput(activeRun.id, '')
       .then((nextRun) => {
         setRun(nextRun);
       })

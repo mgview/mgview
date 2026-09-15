@@ -22,7 +22,7 @@ function ensureDocumentListener() {
     'pointerdown',
     (event) => {
       const target = event.target;
-      if (!(target instanceof Node)) {
+      if (!(target instanceof Element)) {
         activePanelIndex = null;
         return;
       }

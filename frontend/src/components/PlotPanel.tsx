@@ -89,7 +89,7 @@ function isTextEditingTarget(target: EventTarget | null): boolean {
 
 /** Drawable plot area from uPlot layout (`bbox` / `pxRatio`). Pan uses `chart.rect`. */
 function plotAreaBboxCss(chart: uPlot): { width: number; height: number } | null {
-  const pxRatio = chart.pxRatio;
+  const pxRatio = uPlot.pxRatio;
   const width = chart.bbox.width / pxRatio;
   const height = chart.bbox.height / pxRatio;
   if (
@@ -208,18 +208,18 @@ function plotSizeNeedsUpdate(
 type PersistedPlotAxisFields = Pick<PlotPanelConfig, 'autoScale' | 'xMin' | 'xMax' | 'yMin' | 'yMax'>;
 
 interface PlotPanelProps {
-  title?: string;
+  title: string | undefined;
   xMode: PlotPanelXMode;
-  xChannel?: string;
-  yChannelScale?: number;
-  xChannelScale?: number;
+  xChannel: string | undefined;
+  yChannelScale: number | undefined;
+  xChannelScale: number | undefined;
   channels: string[];
   channelNames: string[];
-  autoScale?: boolean;
-  xMin?: number;
-  xMax?: number;
-  yMin?: number;
-  yMax?: number;
+  autoScale: boolean | undefined;
+  xMin: number | undefined;
+  xMax: number | undefined;
+  yMin: number | undefined;
+  yMax: number | undefined;
   panelData: PlotPanelData;
   timeline: Timeline;
   currentTimeRef: RefObject<number>;
@@ -277,7 +277,7 @@ function PlotPanel({
 }: PlotPanelProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
-  const xyMarkerRef = useRef<HTMLDivElement>(null);
+  const xyMarkerRef = useRef<HTMLDivElement | null>(null);
   const timeMarkersLayerRef = useRef<HTMLDivElement | null>(null);
   const timeMarkerElsRef = useRef<HTMLDivElement[]>([]);
   const timeValuesOverlayRef = useRef<HTMLDivElement | null>(null);
@@ -309,8 +309,14 @@ function PlotPanel({
   const timelineRef = useRef(timeline);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const axisPanel = useMemo(
-    () => ({ autoScale: autoScaleProp, xMin: storedXMin, xMax: storedXMax, yMin: storedYMin, yMax: storedYMax }),
+  const axisPanel = useMemo<PersistedPlotAxisFields>(
+    () => ({
+      ...(autoScaleProp !== undefined ? { autoScale: autoScaleProp } : {}),
+      ...(storedXMin !== undefined ? { xMin: storedXMin } : {}),
+      ...(storedXMax !== undefined ? { xMax: storedXMax } : {}),
+      ...(storedYMin !== undefined ? { yMin: storedYMin } : {}),
+      ...(storedYMax !== undefined ? { yMax: storedYMax } : {}),
+    }),
     [autoScaleProp, storedXMax, storedXMin, storedYMax, storedYMin]
   );
   const autoScale = plotPanelAutoScale(axisPanel);
@@ -369,7 +375,13 @@ function PlotPanel({
   plotLimitsRef.current = plotLimits;
 
   const plotData = useMemo((): uPlot.AlignedData => {
-    return [panelData.xValues, ...visibleSeries.map((series) => series.values)];
+    const xValues = panelData.xValues.map((value) => value ?? Number.NaN);
+    return [
+      xValues,
+      ...visibleSeries.map((series) =>
+        series.values.map((value, index) => panelData.xValues[index] == null ? null : value)
+      ),
+    ];
   }, [panelData.xValues, visibleSeries]);
 
   const colors = useMemo(
@@ -393,8 +405,11 @@ function PlotPanel({
   const yAxisLabel = !isTimePlot ? visibleSeries[0]?.label ?? 'Y' : undefined;
 
   const readChartLimits = (chart: uPlot): PlotAxisLimits | null => {
-    const { min: xMin, max: xMax } = chart.scales.x;
-    const { min: yMin, max: yMax } = chart.scales.y;
+    const xScale = chart.scales.x;
+    const yScale = chart.scales.y;
+    if (!xScale || !yScale) return null;
+    const { min: xMin, max: xMax } = xScale;
+    const { min: yMin, max: yMax } = yScale;
     if (
       xMin == null ||
       xMax == null ||
@@ -605,17 +620,17 @@ function PlotPanel({
       }
 
       if (!visibleSeries.length) {
-        plot.setCursor({ left: plot.valToPos(time, 'x') });
+        plot.setCursor({ left: plot.valToPos(time, 'x'), top: plot.cursor.top ?? -10 });
         return;
       }
 
       ensureTimePlotOverlays(plot);
       const idx = getFrameIndexAtTime(timelineRef.current, time);
       const left = plot.valToPos(time, 'x');
-      const cursorUpdate: { left: number; top?: number } = { left };
+      const cursorUpdate = { left, top: plot.cursor.top ?? -10 };
       if (visibleSeries.length === 1) {
         const yValue = visibleSeries[0]?.values[idx];
-        if (Number.isFinite(yValue)) {
+        if (yValue != null && Number.isFinite(yValue)) {
           cursorUpdate.top = plot.valToPos(yValue, 'y');
         }
       }
@@ -634,7 +649,7 @@ function PlotPanel({
 
         if (marker) {
           marker.style.background = stroke ?? '';
-          if (!series.missing && Number.isFinite(yValue)) {
+          if (!series.missing && yValue != null && Number.isFinite(yValue)) {
             const top = plot.valToPos(yValue, 'y');
             marker.style.opacity = '1';
             marker.style.left = `${left}px`;
@@ -714,7 +729,7 @@ function PlotPanel({
       }
     }
 
-    if (!Number.isFinite(xValue) || !Number.isFinite(yValue)) {
+    if (xValue == null || yValue == null || !Number.isFinite(xValue) || !Number.isFinite(yValue)) {
       if (xyMarkerRef.current) {
         xyMarkerRef.current.style.opacity = '0';
       }
@@ -761,7 +776,7 @@ function PlotPanel({
     for (let index = 0; index < yValues.length; index += 1) {
       const xValue = panelData.xValues[index];
       const yValue = yValues[index];
-      if (!Number.isFinite(xValue) || !Number.isFinite(yValue)) {
+      if (xValue == null || yValue == null || !Number.isFinite(xValue) || !Number.isFinite(yValue)) {
         continue;
       }
 
@@ -775,7 +790,7 @@ function PlotPanel({
     }
 
     const frameTime = panelData.times[bestIndex];
-    if (Number.isFinite(frameTime)) {
+    if (frameTime !== undefined && Number.isFinite(frameTime)) {
       onChangeTimeRef.current(frameTime);
       syncPlaybackCursor(plot, frameTime);
     }
@@ -1160,7 +1175,7 @@ function PlotPanel({
         },
         axes: [
           {
-            label: isTimePlot ? undefined : panelData.xLabel,
+            ...(!isTimePlot ? { label: panelData.xLabel } : {}),
             labelSize: isTimePlot ? 0 : PLOT_XY_AXIS_LABEL_SIZE,
             labelGap: isTimePlot ? 0 : PLOT_XY_AXIS_LABEL_GAP,
             stroke: colors.axis,
@@ -1169,7 +1184,7 @@ function PlotPanel({
             font: '11px IBM Plex Mono, ui-monospace, monospace',
           },
           {
-            label: isTimePlot ? undefined : yAxisLabel,
+            ...(!isTimePlot ? { label: yAxisLabel ?? 'Y' } : {}),
             stroke: colors.axis,
             grid: { stroke: colors.grid, width: 1 },
             ticks: { stroke: colors.grid },
@@ -1180,9 +1195,9 @@ function PlotPanel({
           {},
           ...visibleSeries.map((series, index) => ({
             label: series.label,
-            stroke: series.missing ? colors.grid : colors.series[index],
+            stroke: series.missing ? colors.grid : (colors.series[index] ?? colors.axis),
             width: series.missing ? 1 : 1.5,
-            dash: series.missing ? [6, 6] : undefined,
+            ...(series.missing ? { dash: [6, 6] } : {}),
             points: { show: false },
             // XY traces can have non-monotonic X values; disable sorted-X assumption.
             sorted: isTimePlot ? 1 : 0,
@@ -1196,7 +1211,7 @@ function PlotPanel({
           points: { show: false },
           drag: { x: false, y: false, setScale: false },
         },
-        select: { show: false },
+        select: { show: false, left: 0, top: 0, width: 0, height: 0 },
         hooks: {
           ready: [
             (chart) => {

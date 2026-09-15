@@ -17,24 +17,24 @@ export type InspectorEditorMode = 'visual' | 'scene' | 'json';
 
 interface InspectorDrawerProps {
   activeScene: NormalizedSceneConfig | null;
-  cameraPreview?: {
+  cameraPreview: {
     cameraParentFrame: string;
     cameraEye: [number, number, number];
     cameraFocus: [number, number, number];
     cameraUp: [number, number, number];
-  } | null;
+  } | null | undefined;
   channelNames: string[];
   clearCameraPreview: () => void;
   editorMode: InspectorEditorMode;
-  liveSelectedVisual?: SceneVisual;
+  liveSelectedVisual: SceneVisual | undefined;
   loaded: LoadedSceneData | null;
   savePreview: string;
-  selectedObject?: SceneObjectInspection;
+  selectedObject: SceneObjectInspection | undefined;
   selectedSpanName: string | null;
   selectedSpanVisualName: string | null;
-  liveSelectedSpan?: SceneSpan;
-  liveSelectedSpanVisual?: SceneSpanVisual;
-  selectedVisual?: SceneObjectInspection['visuals'][number];
+  liveSelectedSpan: SceneSpan | undefined;
+  liveSelectedSpanVisual: SceneSpanVisual | undefined;
+  selectedVisual: SceneObjectInspection['visuals'][number] | undefined;
   selectedObjectName: string | null;
   updateSelectedObject: (updater: (sceneObject: NormalizedSceneConfig['objects'][string]) => void) => void;
   createVisual: (type: VisualType) => boolean;

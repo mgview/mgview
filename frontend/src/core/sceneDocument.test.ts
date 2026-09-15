@@ -99,12 +99,14 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
   assert.equal(document.objects.N.type, 'frame');
   assert.ok(document.objects.N.visual?.label);
   assert.ok(document.objects.N.visual?.basis);
-  assert.equal(document.objects.P.type, 'point');
-  assert.ok(document.objects.P.visual?.label);
-  assert.ok(document.objects.P.visual?.point);
-  assert.equal(document.objects.P.visual?.basis, undefined);
+  const point = document.objects.P;
+  assert.ok(point);
+  assert.equal(point.type, 'point');
+  assert.ok(point.visual?.label);
+  assert.ok(point.visual?.point);
+  assert.equal(point.visual?.basis, undefined);
   assert.equal(
-    document.objects.P.visual?.point?.radius,
+    point.visual?.point?.radius,
     document.workspaceSize * DEFAULT_POINT_MARKER_WORKSPACE_FRACTION
   );
 });
@@ -158,10 +160,14 @@ test('scene normalization preserves authored layout intent and assigns plot ids'
   assert.equal(document.layout.visualSplit, 0.55);
   assert.equal(document.layout.workspaceSplit, 0.72);
   assert.equal(document.plots.panels.length, 2);
-  assert.equal(typeof document.plots.panels[0].id, 'string');
-  assert.ok(document.plots.panels[0].id);
-  assert.equal(document.plots.panels[1].id, 'plot-manual');
-  assert.deepEqual(document.plots.panels[0].channels, ['alpha', 'beta']);
+  const firstPanel = document.plots.panels[0];
+  const secondPanel = document.plots.panels[1];
+  assert.ok(firstPanel);
+  assert.ok(secondPanel);
+  assert.equal(typeof firstPanel.id, 'string');
+  assert.ok(firstPanel.id);
+  assert.equal(secondPanel.id, 'plot-manual');
+  assert.deepEqual(firstPanel.channels, ['alpha', 'beta']);
 });
 
 test('scene normalization does not auto-add defaults when authored visuals already exist', () => {
@@ -194,8 +200,8 @@ test('scene normalization does not auto-add defaults when authored visuals alrea
     },
   });
 
-  assert.deepEqual(Object.keys(document.objects.N.visual ?? {}), ['body']);
-  assert.deepEqual(Object.keys(document.objects.P.visual ?? {}), ['dot']);
+  assert.deepEqual(Object.keys(document.objects.N?.visual ?? {}), ['body']);
+  assert.deepEqual(Object.keys(document.objects.P?.visual ?? {}), ['dot']);
 });
 
 test('scene normalization drops authored objects with blank names', () => {
@@ -209,7 +215,7 @@ test('scene normalization drops authored objects with blank names', () => {
     },
   });
 
-  assert.equal(document.objects.N.type, 'frame');
+  assert.equal(document.objects.N?.type, 'frame');
   assert.equal(document.objects[''], undefined);
   assert.equal(document.objects['   '], undefined);
 });
@@ -223,9 +229,9 @@ test('channel inference promotes frames and adds missing points', async () => {
     'N_A[1,1]',
   ]);
 
-  assert.equal(document.objects.Q.type, 'point');
-  assert.equal(document.objects.A.type, 'frame');
-  assert.equal(document.objects.No.type, 'point');
+  assert.equal(document.objects.Q?.type, 'point');
+  assert.equal(document.objects.A?.type, 'frame');
+  assert.equal(document.objects.No?.type, 'point');
   assert.equal(document.newtonianFrame, 'N');
   assert.equal(document.sceneOrigin, 'No');
   assert.deepEqual(document.referenceContext.newtonianFrame.all, ['N']);

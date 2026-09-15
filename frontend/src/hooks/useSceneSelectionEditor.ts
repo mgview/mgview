@@ -198,9 +198,9 @@ export function useSceneSelectionEditor({
     updateSelectedVisual((visual) => {
       const nextVisual = createDefaultVisual(type, visual.material, draftScene.workspaceSize);
       nextVisual.visible = visual.visible ?? true;
-      nextVisual.position = visual.position ? { ...visual.position } : nextVisual.position;
-      nextVisual.rotation = visual.rotation ? { ...visual.rotation } : nextVisual.rotation;
-      nextVisual.material = visual.material ?? nextVisual.material;
+      if (visual.position) nextVisual.position = { ...visual.position };
+      if (visual.rotation) nextVisual.rotation = { ...visual.rotation };
+      if (visual.material !== undefined) nextVisual.material = visual.material;
       Object.keys(visual).forEach((key) => {
         delete visual[key];
       });

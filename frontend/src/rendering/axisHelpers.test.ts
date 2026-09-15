@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import * as THREE from 'three';
 
 import { createBasis } from './axisHelpers.ts';
 
@@ -11,9 +12,11 @@ test('basis visuals use mesh shafts and heads instead of line arrows', () => {
   for (const axisGroup of basis.children) {
     assert.equal(axisGroup.type, 'Group');
     assert.equal(axisGroup.children.length, 2);
-    assert.equal(axisGroup.children[0].type, 'Mesh');
-    assert.equal(axisGroup.children[1].type, 'Mesh');
-    assert.equal(axisGroup.children[0].geometry.type, 'CylinderGeometry');
-    assert.equal(axisGroup.children[1].geometry.type, 'ConeGeometry');
+    const shaft = axisGroup.children[0];
+    const head = axisGroup.children[1];
+    assert.ok(shaft instanceof THREE.Mesh);
+    assert.ok(head instanceof THREE.Mesh);
+    assert.equal(shaft.geometry.type, 'CylinderGeometry');
+    assert.equal(head.geometry.type, 'ConeGeometry');
   }
 });

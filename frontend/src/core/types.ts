@@ -199,7 +199,7 @@ export interface SceneReferenceContext {
   authoredNewtonianFrame: string | null;
 }
 
-export interface NormalizedSceneConfig extends Omit<SceneConfig, 'layout'> {
+export interface NormalizedSceneConfig extends Omit<SceneConfig, 'layout' | 'activeScenario'> {
   layout: NormalizedSceneLayout;
   simulationData: string[];
   scenarios: SceneScenario[];

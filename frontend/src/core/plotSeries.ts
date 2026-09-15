@@ -174,6 +174,7 @@ export function computePlotYBounds(
       if (
         xMin != null &&
         xMax != null &&
+        xValue != null &&
         Number.isFinite(xValue) &&
         (xValue < xMin || xValue > xMax)
       ) {
@@ -181,7 +182,7 @@ export function computePlotYBounds(
       }
 
       const yValue = series.values[index];
-      if (!Number.isFinite(yValue)) {
+      if (yValue == null || !Number.isFinite(yValue)) {
         continue;
       }
 

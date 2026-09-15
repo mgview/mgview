@@ -67,26 +67,26 @@ function add(left: Vector3Like, right: Vector3Like): Vector3Like {
 }
 
 function rotate(matrix: number[] | null, value: Vector3Like): Vector3Like {
-  if (!matrix) {
+  if (!matrix || matrix.length < 9) {
     return { ...value };
   }
 
   return {
-    x: matrix[0] * value.x + matrix[1] * value.y + matrix[2] * value.z,
-    y: matrix[3] * value.x + matrix[4] * value.y + matrix[5] * value.z,
-    z: matrix[6] * value.x + matrix[7] * value.y + matrix[8] * value.z,
+    x: matrix[0]! * value.x + matrix[1]! * value.y + matrix[2]! * value.z,
+    y: matrix[3]! * value.x + matrix[4]! * value.y + matrix[5]! * value.z,
+    z: matrix[6]! * value.x + matrix[7]! * value.y + matrix[8]! * value.z,
   };
 }
 
 function inverseRotate(matrix: number[] | null, value: Vector3Like): Vector3Like {
-  if (!matrix) {
+  if (!matrix || matrix.length < 9) {
     return { ...value };
   }
 
   return {
-    x: matrix[0] * value.x + matrix[3] * value.y + matrix[6] * value.z,
-    y: matrix[1] * value.x + matrix[4] * value.y + matrix[7] * value.z,
-    z: matrix[2] * value.x + matrix[5] * value.y + matrix[8] * value.z,
+    x: matrix[0]! * value.x + matrix[3]! * value.y + matrix[6]! * value.z,
+    y: matrix[1]! * value.x + matrix[4]! * value.y + matrix[7]! * value.z,
+    z: matrix[2]! * value.x + matrix[5]! * value.y + matrix[8]! * value.z,
   };
 }
 

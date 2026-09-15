@@ -4,6 +4,11 @@ import test from 'node:test';
 import { createSceneDocument } from './sceneDocument.ts';
 import { evaluateScene } from './sceneEvaluation.ts';
 
+function required<T>(value: T | undefined, label: string): T {
+  assert.ok(value, `expected ${label}`);
+  return value;
+}
+
 test('scene evaluation resolves object positions and rotation-frame orientation from timeline data', () => {
   const scene = createSceneDocument(
     {
@@ -46,9 +51,10 @@ test('scene evaluation resolves object positions and rotation-frame orientation 
     },
   });
 
-  assert.deepEqual(evaluation.objects.A.position, { x: 1, y: 2, z: 3 });
-  assert.deepEqual(evaluation.objects.C1.position, { x: 4, y: 5, z: 6 });
-  assert.deepEqual(evaluation.objects.C1.rotationMatrix, [0, -1, 0, 1, 0, 0, 0, 0, 1]);
+  assert.deepEqual(required(evaluation.objects.A, 'A').position, { x: 1, y: 2, z: 3 });
+  const c1 = required(evaluation.objects.C1, 'C1');
+  assert.deepEqual(c1.position, { x: 4, y: 5, z: 6 });
+  assert.deepEqual(c1.rotationMatrix, [0, -1, 0, 1, 0, 0, 0, 0, 1]);
 });
 
 test('scene evaluation reads object positions only from the canonical inferred origin', () => {
@@ -75,7 +81,7 @@ test('scene evaluation reads object positions only from the canonical inferred o
   });
 
   assert.equal(scene.sceneOrigin, 'No');
-  assert.deepEqual(evaluation.objects.Ao.position, { x: 1, y: 2, z: 3 });
+  assert.deepEqual(required(evaluation.objects.Ao, 'Ao').position, { x: 1, y: 2, z: 3 });
 });
 
 test('scene evaluation applies cameraParentFrame to eye, focus, and up vectors', () => {
@@ -192,7 +198,7 @@ test('scene evaluation normalizes cone, torus, and mesh visuals for rendering', 
       'World_N[3,3]': 1,
     },
   });
-  const visuals = evaluation.objects.N.visuals;
+  const visuals = required(evaluation.objects.N, 'N').visuals;
 
   assert.deepEqual(visuals.find((visual) => visual.name === 'cone'), {
     name: 'cone',
@@ -273,7 +279,7 @@ test('scene evaluation normalizes text visuals for rendering', () => {
     },
   });
 
-  assert.deepEqual(evaluation.objects.N.visuals.find((visual) => visual.name === 'label'), {
+  assert.deepEqual(required(evaluation.objects.N, 'N').visuals.find((visual) => visual.name === 'label'), {
     name: 'label',
     type: 'text',
     visible: true,
@@ -313,10 +319,12 @@ test('scene evaluation preserves explicit 3d text mode', () => {
     },
   });
 
-  assert.equal(
-    evaluation.objects.N.visuals.find((visual) => visual.name === 'label')?.textMode,
-    '3d'
+  const label = required(
+    required(evaluation.objects.N, 'N').visuals.find((visual) => visual.name === 'label'),
+    'N.label'
   );
+  assert.equal(label.type, 'text');
+  assert.equal(label.type === 'text' ? label.textMode : undefined, '3d');
 });
 
 test('scene evaluation preserves explicit 2d text mode', () => {
@@ -346,10 +354,12 @@ test('scene evaluation preserves explicit 2d text mode', () => {
     },
   });
 
-  assert.equal(
-    evaluation.objects.N.visuals.find((visual) => visual.name === 'label')?.textMode,
-    '2d'
+  const label = required(
+    required(evaluation.objects.N, 'N').visuals.find((visual) => visual.name === 'label'),
+    'N.label'
   );
+  assert.equal(label.type, 'text');
+  assert.equal(label.type === 'text' ? label.textMode : undefined, '2d');
 });
 
 test('scene evaluation skips visuals for objects with no backing simulation data', () => {
@@ -377,7 +387,7 @@ test('scene evaluation skips visuals for objects with no backing simulation data
     },
   });
 
-  assert.deepEqual(evaluation.objects.Ghost.visuals, []);
+  assert.deepEqual(required(evaluation.objects.Ghost, 'Ghost').visuals, []);
 });
 
 test('scene evaluation keeps the newtonian frame renderable without explicit sim channels', () => {
@@ -401,8 +411,9 @@ test('scene evaluation keeps the newtonian frame renderable without explicit sim
     data: {},
   });
 
-  assert.equal(evaluation.objects.N.visuals.length, 1);
-  assert.equal(evaluation.objects.N.visuals[0]?.name, 'marker');
+  const newtonianFrame = required(evaluation.objects.N, 'N');
+  assert.equal(newtonianFrame.visuals.length, 1);
+  assert.equal(newtonianFrame.visuals[0]?.name, 'marker');
 });
 
 test('scene evaluation resolves cable spans from sceneOrigin point data', () => {

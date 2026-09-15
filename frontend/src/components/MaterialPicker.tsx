@@ -24,8 +24,8 @@ import { Input } from './ui/input.tsx';
 interface MaterialPickerProps {
   compact?: boolean;
   material: SceneMaterial | undefined;
-  scenePath?: string;
-  sceneAssetRoot?: SceneAssetRoot;
+  scenePath: string | undefined;
+  sceneAssetRoot: SceneAssetRoot | undefined;
   onMaterialPreviewChange?: (material: MaterialDefinition) => void;
   onMaterialChange: (material: MaterialDefinition) => void;
 }
@@ -487,7 +487,7 @@ export default function MaterialPicker({
                       {(['u', 'v'] as const).map((axis, index) => (
                         <NumericInput
                           key={axis}
-                          value={offset[index]}
+                          value={offset[index]!}
                           dragStep={0.01}
                           decimalPlaces={3}
                           prefixLabel={`offset_${axis}`}

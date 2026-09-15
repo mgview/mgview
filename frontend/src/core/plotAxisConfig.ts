@@ -117,7 +117,7 @@ export function computeFullPlotAxisLimits(
   let count = 0;
 
   for (const xValue of panelData.xValues) {
-    if (!Number.isFinite(xValue)) {
+    if (xValue == null || !Number.isFinite(xValue)) {
       continue;
     }
 

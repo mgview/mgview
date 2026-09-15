@@ -179,7 +179,9 @@ export function buildObjectInspections(
       return {
         name: objectName,
         type: sceneObject.type,
-        rotationFrame: sceneObject.rotationFrame,
+        ...(sceneObject.rotationFrame !== undefined
+          ? { rotationFrame: sceneObject.rotationFrame }
+          : {}),
         inferred: !rawObject,
         missingSimulationData,
         visualCount: visuals.length,

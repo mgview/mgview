@@ -35,7 +35,7 @@ export function getBasePath(path: string): string {
 export function getFileExtension(path: string): string {
   const fileName = normalizePathSeparators(path).split('/').pop() ?? path;
   const pieces = fileName.split('.');
-  return pieces.length > 1 ? pieces[pieces.length - 1].toLowerCase() : '';
+  return pieces.length > 1 ? (pieces.at(-1)?.toLowerCase() ?? '') : '';
 }
 
 export function getRelativePath(fromDirectory: string, toPath: string): string {

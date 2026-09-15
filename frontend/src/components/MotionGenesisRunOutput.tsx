@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from 'react';
 import { ArrowDownToLine, ArrowUpToLine, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import type { MotionGenesisRunStatus } from '../api/localFiles.ts';
 import {
@@ -65,7 +65,7 @@ const MotionGenesisRunOutput = forwardRef<HTMLDivElement, MotionGenesisRunOutput
     const [collapsedOutputBlocks, setCollapsedOutputBlocks] = useState<Record<string, boolean>>({});
     const outputAutoFollowRef = useRef(true);
     const contentRef = useRef<HTMLDivElement>(null);
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement | null>(null);
     const prevRunStatusRef = useRef(runStatus);
     const outputSegments = useMemo(() => parseMotionGenesisOutput(output), [output]);
     const lastOdeBlockKey = useMemo(() => getLastOdeBlockKey(outputSegments), [outputSegments]);
@@ -201,7 +201,7 @@ const MotionGenesisRunOutput = forwardRef<HTMLDivElement, MotionGenesisRunOutput
         if (typeof ref === 'function') {
           ref(node);
         } else if (ref) {
-          ref.current = node;
+          (ref as MutableRefObject<HTMLDivElement | null>).current = node;
         }
       },
       [ref]

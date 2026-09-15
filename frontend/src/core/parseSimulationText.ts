@@ -46,18 +46,19 @@ export function parseSimulationText(text: string, fileLabel?: string): Simulatio
     const values: Record<string, number> = {};
     for (let index = 0; index < channelNames.length; index += 1) {
       const rawValue = tokens[index + 1];
-      if (rawValue === undefined) {
+      const channelName = channelNames[index];
+      if (rawValue === undefined || channelName === undefined) {
         continue;
       }
 
       const numericValue = Number(rawValue);
       if (Number.isFinite(numericValue)) {
-        values[channelNames[index]] = numericValue;
+        values[channelName] = numericValue;
       }
     }
 
     rows.push({ time, values });
   }
 
-  return { fileLabel, channelNames, rows };
+  return { ...(fileLabel !== undefined ? { fileLabel } : {}), channelNames, rows };
 }

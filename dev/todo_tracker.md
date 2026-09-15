@@ -5,17 +5,9 @@ Use this file instead of JIRA or similar task trackers.
 Each item should start as a level-3 heading, for example `### Task Name`.
 Within each item, add any description, notes, or bullets as needed.
 
-### TSC type cleanup
+### UI editing for torus and other "hard" types.
 
-Clean up the existing TypeScript type errors reported by `tsc`.
-
-Notes:
-- There is already a sizable backlog of strict typing issues unrelated to the recent splitter work.
-- Use the project TypeScript configuration and reduce the error count incrementally.
-
-### 3D object transform widgets
-
-Add 3D UI widgets for dragging and rotating objects directly in the scene instead of relying on the draggable numeric input boxes.
+### Make the scene editor collapsible separate from the plots, etc.
 
 ### Handle Plot commands in MG files
 

@@ -47,11 +47,11 @@ import { Checkbox } from './ui/checkbox.tsx';
 import { Input } from './ui/input.tsx';
 
 interface VisualEditorPanelProps {
-  scenePath?: string;
-  sceneAssetRoot?: SceneAssetRoot;
-  liveSelectedVisual?: SceneVisual;
-  selectedObject?: SceneObjectInspection;
-  selectedVisual?: SceneObjectInspection['visuals'][number];
+  scenePath: string | undefined;
+  sceneAssetRoot: SceneAssetRoot | undefined;
+  liveSelectedVisual: SceneVisual | undefined;
+  selectedObject: SceneObjectInspection | undefined;
+  selectedVisual: SceneObjectInspection['visuals'][number] | undefined;
   setSelectedVisualName: (name: string | null) => void;
   updateSelectedObject: (updater: (sceneObject: NormalizedSceneConfig['objects'][string]) => void) => void;
   createVisual: (type: VisualType) => boolean;
@@ -607,7 +607,7 @@ export default function VisualEditorPanel({
                               checked={value}
                               onCheckedChange={(checked) => {
                                 updateSelectedVisual((visual) => {
-                                  visual[key] = checked === true;
+                                  (visual as Record<string, unknown>)[key] = checked === true;
                                 });
                               }}
                             />
@@ -626,12 +626,12 @@ export default function VisualEditorPanel({
                               integer={isIntegerKey(key)}
                               onValuePreviewChange={(nextValue) => {
                                 updateSelectedVisualPreview((visual) => {
-                                  visual[key] = nextValue;
+                                  (visual as Record<string, unknown>)[key] = nextValue;
                                 });
                               }}
                               onValueChange={(nextValue) => {
                                 updateSelectedVisual((visual) => {
-                                  visual[key] = nextValue;
+                                  (visual as Record<string, unknown>)[key] = nextValue;
                                 });
                               }}
                             />
@@ -648,7 +648,7 @@ export default function VisualEditorPanel({
                               value={value}
                               onChange={(event) => {
                                 updateSelectedVisual((visual) => {
-                                  visual[key] = event.target.value;
+                                  (visual as Record<string, unknown>)[key] = event.target.value;
                                 });
                               }}
                             />
@@ -671,7 +671,8 @@ export default function VisualEditorPanel({
                   onChange={(event) => {
                     updateSelectedObject((sceneObject) => {
                       const nextValue = event.target.value.trim();
-                      sceneObject.rotationFrame = nextValue.length > 0 ? nextValue : undefined;
+                      if (nextValue.length > 0) sceneObject.rotationFrame = nextValue;
+                      else delete sceneObject.rotationFrame;
                     });
                   }}
                 />

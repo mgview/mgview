@@ -29,10 +29,10 @@ function isValidObjectName(name: string): boolean {
 function cloneVisual(visual: SceneVisual): SceneVisual {
   return {
     ...visual,
-    position: visual.position ? { ...visual.position } : undefined,
-    rotation: visual.rotation ? { ...visual.rotation } : undefined,
-    size: visual.size ? { ...visual.size } : undefined,
-    material: cloneMaterial(visual.material),
+    ...(visual.position ? { position: { ...visual.position } } : {}),
+    ...(visual.rotation ? { rotation: { ...visual.rotation } } : {}),
+    ...(visual.size ? { size: { ...visual.size } } : {}),
+    ...(visual.material !== undefined ? { material: cloneMaterial(visual.material)! } : {}),
   };
 }
 
@@ -50,7 +50,7 @@ function cloneMaterial(material: SceneMaterial | undefined): SceneMaterial | und
 function cloneSpanVisual(visual: SceneSpanVisual): SceneSpanVisual {
   return {
     ...visual,
-    material: cloneMaterial(visual.material),
+    ...(visual.material !== undefined ? { material: cloneMaterial(visual.material)! } : {}),
   };
 }
 
@@ -78,15 +78,21 @@ function cloneObject(sceneObject: SceneObject): SceneObject {
   };
 }
 
-function createReferenceContext(scene: SceneConfig, channelNames: string[]): SceneReferenceContext {
+type SceneDocumentInput = SceneConfig | NormalizedSceneConfig;
+
+function createReferenceContext(scene: SceneDocumentInput, channelNames: string[]): SceneReferenceContext {
   const priorReferenceContext = (scene as Partial<NormalizedSceneConfig>).referenceContext;
   return inferSceneReferenceContext(channelNames, {
-    sceneOrigin: priorReferenceContext?.authoredSceneOrigin ?? scene.sceneOrigin,
-    newtonianFrame: priorReferenceContext?.authoredNewtonianFrame ?? scene.newtonianFrame,
+    ...(priorReferenceContext?.authoredSceneOrigin !== undefined || scene.sceneOrigin !== undefined
+      ? { sceneOrigin: priorReferenceContext?.authoredSceneOrigin ?? scene.sceneOrigin }
+      : {}),
+    ...(priorReferenceContext?.authoredNewtonianFrame !== undefined || scene.newtonianFrame !== undefined
+      ? { newtonianFrame: priorReferenceContext?.authoredNewtonianFrame ?? scene.newtonianFrame }
+      : {}),
   });
 }
 
-function addEmptyDefaults(scene: SceneConfig, channelNames: string[]): NormalizedSceneConfig {
+function addEmptyDefaults(scene: SceneDocumentInput, channelNames: string[]): NormalizedSceneConfig {
   const referenceContext = createReferenceContext(scene, channelNames);
   const inferredNewtonianFrame = referenceContext.newtonianFrame.canonical;
   const inferredSceneOrigin = referenceContext.sceneOrigin.canonical;
@@ -202,19 +208,19 @@ function addDefaultPositionAndRotation(scene: NormalizedSceneConfig): Normalized
   return scene;
 }
 
-export function normalizeScene(scene: SceneConfig): NormalizedSceneConfig {
+export function normalizeScene(scene: SceneDocumentInput): NormalizedSceneConfig {
   return normalizeSceneWithChannels(scene, []);
 }
 
 export function normalizeSceneWithChannels(
-  scene: SceneConfig,
+  scene: SceneDocumentInput,
   channelNames: string[] = []
 ): NormalizedSceneConfig {
   return addDefaultPositionAndRotation(addDefaultBasesAndLabels(addEmptyDefaults(scene, channelNames)));
 }
 
 export function createSceneDocument(
-  scene: SceneConfig,
+  scene: SceneDocumentInput,
   channelNames: string[] = []
 ): NormalizedSceneConfig {
   const normalized = normalizeSceneWithChannels(scene, channelNames);

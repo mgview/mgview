@@ -15,6 +15,7 @@ import type {
   NormalizedSceneConfig,
   PlotPanelConfig,
   PlotPanelXMode,
+  ScenePlotsConfig,
   Timeline,
 } from "../core/types.ts";
 import PlotPanel from "./PlotPanel.tsx";
@@ -122,7 +123,7 @@ export default function PlotsPanel({
   const setPlotHeightScale = (nextScale: number) => {
     updateDraftScene((scene) => {
       const stored = normalizeStoredPlotHeightScale(nextScale);
-      const nextPlots = { panels: scene.plots.panels };
+      const nextPlots: ScenePlotsConfig = { panels: scene.plots.panels };
       if (stored != null) {
         nextPlots.heightScale = stored;
       }
@@ -266,10 +267,12 @@ export default function PlotsPanel({
                     updatePlotPanel(
                       updateDraftScene,
                       panelIndex,
-                      (currentPanel) => ({
-                        ...currentPanel,
-                        title: nextTitle,
-                      }),
+                      (currentPanel) => {
+                        const nextPanel = { ...currentPanel };
+                        if (nextTitle !== undefined) nextPanel.title = nextTitle;
+                        else delete nextPanel.title;
+                        return nextPanel;
+                      },
                     );
                   }}
                   onChangeXMode={(nextXMode: PlotPanelXMode) => {
@@ -382,11 +385,12 @@ export default function PlotsPanel({
                     updatePlotPanel(
                       updateDraftScene,
                       panelIndex,
-                      (currentPanel) => ({
-                        ...currentPanel,
-                        xChannel: nextXChannel,
-                        xMode: "channel",
-                      }),
+                      (currentPanel) => {
+                        const nextPanel = { ...currentPanel, xMode: "channel" as const };
+                        if (nextXChannel !== undefined) nextPanel.xChannel = nextXChannel;
+                        else delete nextPanel.xChannel;
+                        return nextPanel;
+                      },
                     );
                   }}
                   onChangeChannels={(nextChannels) => {

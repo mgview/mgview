@@ -104,14 +104,14 @@ function add(left: Vector3Like, right: Vector3Like): Vector3Like {
 }
 
 function multiplyMatrixVector(matrix: number[] | null, value: Vector3Like): Vector3Like {
-  if (!matrix) {
+  if (!matrix || matrix.length < 9) {
     return { ...value };
   }
 
   return vector(
-    matrix[0] * value.x + matrix[1] * value.y + matrix[2] * value.z,
-    matrix[3] * value.x + matrix[4] * value.y + matrix[5] * value.z,
-    matrix[6] * value.x + matrix[7] * value.y + matrix[8] * value.z
+    matrix[0]! * value.x + matrix[1]! * value.y + matrix[2]! * value.z,
+    matrix[3]! * value.x + matrix[4]! * value.y + matrix[5]! * value.z,
+    matrix[6]! * value.x + matrix[7]! * value.y + matrix[8]! * value.z
   );
 }
 
@@ -217,7 +217,7 @@ function normalizeRenderVisual(visualName: string, visual: SceneVisual): RenderV
         thickness: visual.thickness ?? 0.3,
         segmentsRadius: visual.segments_radius ?? 12,
         segmentsThickness: visual.segments_thickness ?? 8,
-        arc: typeof visual.arc === 'number' ? visual.arc : undefined,
+        ...(typeof visual.arc === 'number' ? { arc: visual.arc } : {}),
       };
     case 'grid':
       return {

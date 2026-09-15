@@ -190,7 +190,7 @@ export function parseCssColorString(value: string | undefined): ParsedCssColor |
 
   const trimmed = value.trim();
   const hexMatch = trimmed.match(/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i);
-  if (hexMatch) {
+  if (hexMatch?.[1]) {
     let payload = hexMatch[1];
     if (payload.length === 3 || payload.length === 4) {
       payload = expandShortHex(payload);
@@ -244,7 +244,7 @@ export function parseCssColorString(value: string | undefined): ParsedCssColor |
     };
   }
 
-  const namedColorHex = Color.NAMES[trimmed.toLowerCase()];
+  const namedColorHex = (Color.NAMES as Record<string, number>)[trimmed.toLowerCase()];
   if (typeof namedColorHex === 'number') {
     const red = (namedColorHex >> 16) & 0xff;
     const green = (namedColorHex >> 8) & 0xff;

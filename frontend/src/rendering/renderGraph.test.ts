@@ -113,7 +113,9 @@ test('render graph updates visual world matrices before returning', () => {
   root.position.set(3, 0, 0);
   const graph = new RenderGraphManager(root, 'samples/example.json');
   const scene = evaluation();
-  scene.objects.body.position.x = 4;
+  const body = scene.objects.body;
+  assert.ok(body);
+  body.position.x = 4;
 
   graph.update(scene, {
     objectName: 'body',

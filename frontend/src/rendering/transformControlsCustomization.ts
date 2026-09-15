@@ -27,6 +27,9 @@ export function customizeTranslationGizmo(transformControls: TransformControls) 
   const { gizmo, picker } = (transformControls as TransformControlsInternals)._gizmo;
   const translateGizmo = gizmo.translate;
   const translatePicker = picker.translate;
+  if (!translateGizmo || !translatePicker) {
+    return;
+  }
 
   for (const axis of ['X', 'Y', 'Z'] as const) {
     const component = axis.toLowerCase() as 'x' | 'y' | 'z';

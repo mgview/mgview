@@ -45,12 +45,14 @@ test('renderable scene includes line span renderables', () => {
   );
 
   assert.equal(renderRoot.children.length, 1);
-  assert.equal(renderRoot.children[0].type, 'Group');
-  assert.deepEqual(renderRoot.children[0].userData.renderEntityRef, {
+  const spanGroup = renderRoot.children[0];
+  assert.ok(spanGroup);
+  assert.equal(spanGroup.type, 'Group');
+  assert.deepEqual(spanGroup.userData.renderEntityRef, {
     kind: 'span-visual',
     spanName: 'cable1',
     visualName: 'wire1',
   });
-  assert.equal(renderRoot.children[0].children[0]?.type, 'Line');
-  assert.equal(renderRoot.children[0].children[0]?.userData.kind, 'span-line');
+  assert.equal(spanGroup.children[0]?.type, 'Line');
+  assert.equal(spanGroup.children[0]?.userData.kind, 'span-line');
 });

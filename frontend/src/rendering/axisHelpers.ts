@@ -50,6 +50,9 @@ export function createBasis(scale: number) {
 
   BASIS_COLORS.forEach((color, axisIndex) => {
     const direction = BASIS_DIRECTIONS[axisIndex];
+    if (!direction) {
+      return;
+    }
     const material = new THREE.MeshBasicMaterial({ color });
     const axisGroup = new THREE.Group();
 
