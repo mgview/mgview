@@ -30,7 +30,7 @@ MotionGenesisRunShell          ← useMotionGenesisRunPreferences() (`mgview-run
 
 | Concern | Lab | Workspace |
 |---------|-----|-----------|
-| Entry | App mode switcher or `/mgview/lab/` | Layout → Sim Editor (`Alt+4`) |
+| Entry | App mode switcher or `/mgview/lab/` | Layout → Sim Editor (`Alt+3`) |
 | Sim file | Open File picker | Configure → link `simulationSettings` |
 | Run | `beginFileRun`, save if dirty | `beginRun`, save if dirty |
 | After run | — | Import ODE outputs; reload plots/playback |
@@ -52,5 +52,5 @@ my_project/
 
 ## Related
 
-- [dev/mgview-in-place-modernization.md](dev/mgview-in-place-modernization.md) — agent handoff
-- [dev/mgview-pty-output-normalization.md](dev/mgview-pty-output-normalization.md) — PTY runner, `MGVIEW_MOTION_GENESIS_BIN`
+- [mgview-in-place-modernization.md](mgview-in-place-modernization.md) — agent handoff
+- [mgview-pty-output-normalization.md](mgview-pty-output-normalization.md) — PTY runner, `MGVIEW_MOTION_GENESIS_BIN`

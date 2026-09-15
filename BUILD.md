@@ -6,9 +6,9 @@ Handoff docs:
 
 - [dev/mgview-in-place-modernization.md](dev/mgview-in-place-modernization.md) — product status, code map, gaps, **start here for new agents**
 - [frontend/DESIGN-NOTE.md](frontend/DESIGN-NOTE.md) — UI stack, Tailwind/shadcn conventions
-- [mg-lab-workspace-run-parity.md](mg-lab-workspace-run-parity.md) — Sim Editor, MGLab, shared run shell
+- [dev/mg-lab-workspace-run-parity.md](dev/mg-lab-workspace-run-parity.md) — Sim Editor, MGLab, shared run shell
 - [dev/mgview-pty-output-normalization.md](dev/mgview-pty-output-normalization.md) — Motion Genesis PTY runner, `MGVIEW_MOTION_GENESIS_BIN`
-- [todo_tracker.md](todo_tracker.md) — open tasks
+- [dev/todo_tracker.md](dev/todo_tracker.md) — open tasks
 
 ## Three outputs
 
@@ -151,7 +151,7 @@ npm run build:site:workspace     # assemble only → build/gh-pages-workspace/mg
 
 ## CI
 
-Pull requests run `.github/workflows/ci.yml`: `npm ci`, `npm test`, and `npm run build:site` in `frontend/`.
+Pull requests run `.github/workflows/ci.yml`: `npm ci`, `npm test`, `npm run typecheck`, and `npm run build:site` in `frontend/`.
 
 ## Deploy to GitHub Pages
 
@@ -178,10 +178,10 @@ After switching to Actions, you can delete the old `gh-pages` branch once the fi
 cd frontend
 npm test
 npm run build:release
-# → build/release/mgview-0.3.2.zip  (version from package.json)
+# → build/release/mgview-0.4.1.zip  (version from package.json)
 ```
 
-Version is read from [frontend/package.json](frontend/package.json). Override with `MGVIEW_RELEASE_VERSION=0.3.3 npm run build:release`.
+Version is read from [frontend/package.json](frontend/package.json). Override with `MGVIEW_RELEASE_VERSION=0.4.1 npm run build:release`.
 
 When `HEAD` is on an exact tag `vX.Y.Z`, `build:release` checks that `X.Y.Z` matches `package.json` (same check as the release workflow). Set `MGVIEW_SKIP_VERSION_CHECK=1` to bypass.
 
@@ -190,8 +190,8 @@ When `HEAD` is on an exact tag `vX.Y.Z`, `build:release` checks that `X.Y.Z` mat
 Bump `frontend/package.json`, then tag and push — `.github/workflows/release.yml` builds the zip and attaches it:
 
 ```bash
-git tag v0.3.2
-git push origin v0.3.2
+git tag v0.4.1
+git push origin v0.4.1
 ```
 
 Or run **Actions → Release zip → Run workflow** manually (no tag required for the workflow artifact; GitHub Release attachment needs a `v*` tag push).
