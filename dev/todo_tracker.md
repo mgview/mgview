@@ -7,7 +7,26 @@ Within each item, add any description, notes, or bullets as needed.
 
 ### UI editing for torus and other "hard" types.
 
-### Make the scene editor collapsible separate from the plots, etc.
+
+### Make background color selection better.
+
+
+### Make camera state better
+
+ * Remove camera state from the scene state.
+ * Allow creation of saved views, similar to RViz.
+
+### Make json editor better
+
+ * It could jump the cursor based on objects / geometries you click on.
+ * It could have syntax highlighting, etc.
+
+### Make json schema better
+
+Right now it's kind of brittle that things are objects instead of lists in some places.
+
+Consider a schema revamp, but also note that this will require backward compat handling.
+
 
 ### Handle Plot commands in MG files
 

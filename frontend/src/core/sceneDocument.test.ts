@@ -90,7 +90,7 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
   assert.deepEqual(document.layout, {
     showRenderer: true,
     showPlots: false,
-    rightRail: 'scene',
+    rightRail: 'none',
     focusTarget: null,
     visualSplit: 0.6,
     workspaceSplit: 0.68,
@@ -111,7 +111,7 @@ test('scene normalization adds legacy defaults and generated visuals', async () 
   );
 });
 
-test('scene normalization migrates legacy showEditorRail to rightRail', () => {
+test('scene normalization treats legacy scene-editor visibility as ephemeral', () => {
   const hidden = createSceneDocument({
     layout: {
       showEditorRail: false,
@@ -124,7 +124,14 @@ test('scene normalization migrates legacy showEditorRail to rightRail', () => {
       showEditorRail: true,
     },
   });
-  assert.equal(visible.layout.rightRail, 'scene');
+  assert.equal(visible.layout.rightRail, 'none');
+
+  const formerlyPersistedSceneEditor = createSceneDocument({
+    layout: {
+      rightRail: 'scene',
+    },
+  });
+  assert.equal(formerlyPersistedSceneEditor.layout.rightRail, 'none');
 });
 
 test('scene normalization preserves authored layout intent and assigns plot ids', () => {

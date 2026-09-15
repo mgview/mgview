@@ -2,7 +2,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent, RefObject } from
 import MotionGenesisRunPanel from './MotionGenesisRunPanel.tsx';
 import WorkspaceEditorRail, { type WorkspaceSpanEntry } from './WorkspaceEditorRail.tsx';
 import WorkspaceVisualRegion from './WorkspaceVisualRegion.tsx';
-import type { InspectorEditorMode } from './InspectorDrawer.tsx';
+import type { InspectorEditorMode } from './inspectorTypes.ts';
 import type { MotionGenesisRunOptions } from '../api/localFiles.ts';
 import type { MotionGenesisRunState } from '../api/localFiles.ts';
 import type { SceneAssetRoot } from '../api/sceneAssetUrl.ts';
@@ -47,6 +47,7 @@ interface WorkspaceShellProps {
   onMotionGenesisInputChange: (value: string) => void;
   onMotionGenesisOptionsChange: (options: MotionGenesisRunOptions) => void;
   onOpenSceneEditorRail: () => void;
+  onOpenSceneEditorMode: (mode: InspectorEditorMode) => void;
   onRunMotionGenesis: () => void | Promise<void>;
   onSelectObject: (objectName: string, visualName: string | null) => void;
   onSelectSpan: (spanName: string, visualName: string | null) => void;
@@ -66,6 +67,7 @@ interface WorkspaceShellProps {
   rendererSceneBasePath: string;
   rendererSceneAssetRoot: SceneAssetRoot;
   rightRail: WorkspaceRightRail;
+  sceneEditorOpen: boolean;
   savePreview: string;
   selectedSpanName: string | null;
   selectedSpanVisualName: string | null;
@@ -131,6 +133,7 @@ export default function WorkspaceShell({
   onMotionGenesisInputChange,
   onMotionGenesisOptionsChange,
   onOpenSceneEditorRail,
+  onOpenSceneEditorMode,
   onRunMotionGenesis,
   onSelectObject,
   onSelectSpan,
@@ -146,6 +149,7 @@ export default function WorkspaceShell({
   rendererSceneBasePath,
   rendererSceneAssetRoot,
   rightRail,
+  sceneEditorOpen,
   savePreview,
   selectedSpanName,
   selectedSpanVisualName,
@@ -184,7 +188,7 @@ export default function WorkspaceShell({
   workspaceShellRef,
   workspaceShellStyle,
 }: WorkspaceShellProps) {
-  const showRightRail = rightRail !== 'none';
+  const showRightRail = sceneEditorOpen || rightRail === 'sim';
 
   return (
     <div
@@ -201,6 +205,7 @@ export default function WorkspaceShell({
           onCreateVisual={onCreateViewportVisual}
           onDeleteSelectedVisual={deleteSelectedVisual}
           onOpenSceneEditorRail={onOpenSceneEditorRail}
+          onOpenSceneEditorMode={onOpenSceneEditorMode}
           onSelectObject={onSelectObject}
           onSelectSpan={onSelectSpan}
           onStartSplitterDrag={onStartSplitterDrag}
@@ -209,7 +214,8 @@ export default function WorkspaceShell({
           rendererSceneBasePath={rendererSceneBasePath}
           rendererSceneAssetRoot={rendererSceneAssetRoot}
           renameVisual={renameVisual}
-          rightRail={rightRail}
+          sceneEditorOpen={sceneEditorOpen}
+          sceneEditorMode={editorMode}
           selectedObjectName={activeSelectedObject?.name ?? null}
           selectedSpanName={selectedSpanName}
           selectedSpanVisualName={selectedSpanVisualName}
@@ -237,7 +243,7 @@ export default function WorkspaceShell({
         />
       ) : null}
 
-      {rightRail === 'scene' ? (
+      {sceneEditorOpen ? (
         <WorkspaceEditorRail
           activeScene={activeScene}
           activeSelectedObject={activeSelectedObject}
@@ -280,7 +286,7 @@ export default function WorkspaceShell({
         />
       ) : null}
 
-      {rightRail === 'sim' ? (
+      {!sceneEditorOpen && rightRail === 'sim' ? (
         <div className="workspace-editor-rail workspace-sim-rail min-h-0">
           <MotionGenesisRunPanel
             canRun={loaded?.sceneRef.source === 'workspace' && Boolean(activeScene?.simulationSettings)}

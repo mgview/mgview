@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { InspectorEditorMode } from '../components/InspectorDrawer.tsx';
+import type { InspectorEditorMode } from '../components/inspectorTypes.ts';
 import type { SceneObjectInspection } from '../core/types.ts';
 
 interface UseInspectorSelectionStateOptions {

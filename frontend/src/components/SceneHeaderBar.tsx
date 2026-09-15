@@ -29,11 +29,6 @@ const LAYOUT_TOGGLE_PANES: ReadonlyArray<{ key: LayoutToggleKey; label: string; 
   { key: 'showPlots', label: 'Plots', shortcut: '2' },
 ];
 
-const RIGHT_RAIL_PANES: ReadonlyArray<{ target: RightRailTarget; label: string; shortcut: string }> = [
-  { target: 'scene', label: 'Scene Editor', shortcut: '3' },
-  { target: 'sim', label: 'Sim Editor', shortcut: '4' },
-];
-
 const LAYOUT_TOGGLE_BY_CODE: Record<string, LayoutToggleKey> = {
   Digit1: 'showRenderer',
   Numpad1: 'showRenderer',
@@ -42,10 +37,9 @@ const LAYOUT_TOGGLE_BY_CODE: Record<string, LayoutToggleKey> = {
 };
 
 const RIGHT_RAIL_BY_CODE: Record<string, RightRailTarget> = {
-  Digit3: 'scene',
-  Numpad3: 'scene',
-  Digit4: 'sim',
-  Numpad4: 'sim',
+  Digit3: 'sim',
+  Numpad3: 'sim',
+  KeyE: 'scene',
 };
 
 const MODIFIER_SHORTCUT_PREFIX = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -290,40 +284,22 @@ export default function SceneHeaderBar({
                 </label>
               );
             })}
-            <DropdownMenuSeparator />
-            <div role="radiogroup" aria-label="Editor pane" className="grid">
-              {RIGHT_RAIL_PANES.map(({ target, label, shortcut }) => {
-                const checked = getRightRailValue(layout) === target;
-
-                return (
-                  <button
-                    key={target}
-                    type="button"
-                    role="radio"
-                    aria-checked={checked}
-                    className={cn(
-                      LAYOUT_MENU_ROW_CLASS,
-                      'w-full text-left',
-                      checked && 'bg-accent/60'
-                    )}
-                    onPointerDown={(event) => event.preventDefault()}
-                    onClick={() => onToggleRightRail(target)}
-                  >
-                    <span
-                      className={cn(
-                        'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border',
-                        checked ? 'border-primary' : 'border-muted-foreground/50'
-                      )}
-                      aria-hidden
-                    >
-                      {checked ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
-                    </span>
-                    <span className="flex-1">{label}</span>
-                    <span className={LAYOUT_MENU_SHORTCUT_CLASS}>Alt+{shortcut}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <label
+              htmlFor="layout-sim-editor"
+              className={cn(
+                LAYOUT_MENU_ROW_CLASS,
+                getRightRailValue(layout) === 'sim' && 'bg-accent/60'
+              )}
+              onPointerDown={(event) => event.preventDefault()}
+            >
+              <Checkbox
+                id="layout-sim-editor"
+                checked={getRightRailValue(layout) === 'sim'}
+                onCheckedChange={() => onToggleRightRail('sim')}
+              />
+              <span className="flex-1">Sim Editor</span>
+              <span className={LAYOUT_MENU_SHORTCUT_CLASS}>Alt+3</span>
+            </label>
             <DropdownMenuSeparator />
             <label
               htmlFor="layout-renderer-stats"

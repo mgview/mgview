@@ -1,7 +1,7 @@
 import InspectorDrawer from './InspectorDrawer.tsx';
 import ObjectList from './ObjectList.tsx';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs.tsx';
-import type { InspectorEditorMode } from './InspectorDrawer.tsx';
+import type { InspectorEditorMode } from './inspectorTypes.ts';
 import type {
   NormalizedSceneConfig,
   SceneObjectInspection,
@@ -114,8 +114,8 @@ export default function WorkspaceEditorRail({
           </TabsList>
         </div>
 
-        <div className="workspace-editor-rail-body">
-          <div className="min-h-0 min-w-0">
+        <div className={editorMode === 'scene' ? 'workspace-editor-rail-body workspace-editor-rail-body-wide' : 'workspace-editor-rail-body'}>
+          {editorMode !== 'scene' ? <div className="min-h-0 min-w-0">
             <div className="h-full min-h-0 overflow-auto pr-0.5">
               {loaded ? (
                 <ObjectList
@@ -141,7 +141,7 @@ export default function WorkspaceEditorRail({
                 </section>
               )}
             </div>
-          </div>
+          </div> : null}
 
           <div className="workspace-content-panel">
             <div className="h-full min-h-0 overflow-auto pr-0.5">
