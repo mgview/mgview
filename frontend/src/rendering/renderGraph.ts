@@ -32,7 +32,9 @@ interface SpanNodeState {
 
 interface RenderSelectionState {
   objectName: string | null;
+  visualName: string | null;
   spanName: string | null;
+  spanVisualName: string | null;
 }
 
 function createRenderAssetContext(scenePath: string): RenderAssetContext {
@@ -150,8 +152,12 @@ export class RenderGraphManager {
   }
 
   update(evaluation: SceneEvaluation, selection: RenderSelectionState) {
-    this.reconcileObjects(evaluation, selection.objectName);
-    this.reconcileSpans(evaluation, selection.spanName);
+    this.reconcileObjects(evaluation, selection.objectName, selection.visualName);
+    this.reconcileSpans(evaluation, selection.spanName, selection.spanVisualName);
+  }
+
+  getVisualContainer(objectName: string, visualName: string) {
+    return this.objectNodes.get(objectName)?.visuals.get(visualName)?.container ?? null;
   }
 
   dispose() {
@@ -160,7 +166,11 @@ export class RenderGraphManager {
     this.spanNodes.clear();
   }
 
-  private reconcileObjects(evaluation: SceneEvaluation, selectedObjectName: string | null) {
+  private reconcileObjects(
+    evaluation: SceneEvaluation,
+    selectedObjectName: string | null,
+    selectedVisualName: string | null
+  ) {
     const activeNames = new Set<string>();
 
     for (const [objectName, snapshot] of Object.entries(evaluation.objects)) {
@@ -200,11 +210,14 @@ export class RenderGraphManager {
         visualState.container.rotation.set(visual.rotation.x, visual.rotation.y, visual.rotation.z);
         visualState.container.visible = visual.visible;
 
-        const nextSignature = createVisualSignature(visual, objectName === selectedObjectName);
+        const isSelected =
+          objectName === selectedObjectName &&
+          (selectedVisualName === null || visual.name === selectedVisualName);
+        const nextSignature = createVisualSignature(visual, isSelected);
         if (visualState.signature !== nextSignature) {
           const nextContent = createVisualMesh(visual, {
             ...this.assetContext,
-            highlightSelection: objectName === selectedObjectName,
+            highlightSelection: isSelected,
           });
           replaceGroupContent(visualState.container, nextContent);
           visualState.content = nextContent;
@@ -236,7 +249,11 @@ export class RenderGraphManager {
     }
   }
 
-  private reconcileSpans(evaluation: SceneEvaluation, selectedSpanName: string | null) {
+  private reconcileSpans(
+    evaluation: SceneEvaluation,
+    selectedSpanName: string | null,
+    selectedSpanVisualName: string | null
+  ) {
     const activeNames = new Set<string>();
 
     for (const span of evaluation.spans) {
@@ -256,11 +273,14 @@ export class RenderGraphManager {
       }
 
       spanState.group.visible = span.visible;
-      const nextSignature = createSpanSignature(span, span.spanName === selectedSpanName);
+      const isSelected =
+        span.spanName === selectedSpanName &&
+        (selectedSpanVisualName === null || span.visualName === selectedSpanVisualName);
+      const nextSignature = createSpanSignature(span, isSelected);
       if (spanState.signature !== nextSignature) {
         const nextContent = createSpanMesh(span, {
           ...this.assetContext,
-          highlightSelection: span.spanName === selectedSpanName,
+          highlightSelection: isSelected,
         });
         replaceGroupContent(spanState.group, nextContent);
         spanState.content = nextContent;

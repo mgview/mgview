@@ -2,7 +2,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import PlaybackStrip from './PlaybackStrip.tsx';
 import PlotsPanel from './PlotsPanel.tsx';
 import RendererPanel from './RendererPanel.tsx';
-import type { NormalizedSceneConfig, Timeline, TimelineFrame, WorkspaceRightRail } from '../core/types.ts';
+import type { NormalizedSceneConfig, SceneVisual, Timeline, TimelineFrame, VisualType, WorkspaceRightRail } from '../core/types.ts';
 import type { usePlaybackController } from '../hooks/usePlaybackController.ts';
 import type { useWorkspaceShell } from '../hooks/useWorkspaceShell.ts';
 
@@ -11,6 +11,8 @@ interface WorkspaceVisualRegionProps {
   channelNames: string[];
   currentFrame: TimelineFrame | undefined;
   onClearSelection: () => void;
+  onCreateVisual: (objectName: string, type: VisualType) => boolean;
+  onDeleteSelectedVisual: () => boolean;
   onOpenSceneEditorRail: () => void;
   onSelectObject: (objectName: string, visualName: string | null) => void;
   onSelectSpan: (spanName: string, visualName: string | null) => void;
@@ -22,8 +24,12 @@ interface WorkspaceVisualRegionProps {
   playback: ReturnType<typeof usePlaybackController>;
   playbackSpeed: number;
   rendererSceneBasePath: string;
+  renameVisual: (currentName: string, nextName: string) => boolean;
+  sceneObjectOptions: Array<{ name: string; type: string }>;
   selectedObjectName: string | null;
   selectedSpanName: string | null;
+  selectedSpanVisualName: string | null;
+  selectedVisualName: string | null;
   shell: ReturnType<typeof useWorkspaceShell>;
   rightRail: WorkspaceRightRail;
   showPlots: boolean;
@@ -31,6 +37,8 @@ interface WorkspaceVisualRegionProps {
   timeline: Timeline;
   timelineOwner: 'renderer' | 'plots' | null;
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
+  updateSelectedVisual: (updater: (visual: SceneVisual) => void) => void;
+  updateSelectedVisualPreview: (updater: (visual: SceneVisual) => void) => void;
   visualShellStyle: CSSProperties;
 }
 
@@ -74,6 +82,8 @@ export default function WorkspaceVisualRegion({
   channelNames,
   currentFrame,
   onClearSelection,
+  onCreateVisual,
+  onDeleteSelectedVisual,
   onOpenSceneEditorRail,
   onSelectObject,
   onSelectSpan,
@@ -81,8 +91,12 @@ export default function WorkspaceVisualRegion({
   playback,
   playbackSpeed,
   rendererSceneBasePath,
+  renameVisual,
+  sceneObjectOptions,
   selectedObjectName,
   selectedSpanName,
+  selectedSpanVisualName,
+  selectedVisualName,
   shell,
   rightRail,
   showPlots,
@@ -90,6 +104,8 @@ export default function WorkspaceVisualRegion({
   timeline,
   timelineOwner,
   updateDraftScene,
+  updateSelectedVisual,
+  updateSelectedVisualPreview,
   visualShellStyle,
 }: WorkspaceVisualRegionProps) {
   return (
@@ -108,19 +124,52 @@ export default function WorkspaceVisualRegion({
               onCameraPreviewChange={shell.setCameraPreview}
               onCameraCommit={shell.commitCameraPreview}
               onClearSelection={onClearSelection}
-              onSelectObject={(objectName, visualName) => {
-                onOpenSceneEditorRail();
-                onSelectObject(objectName, visualName);
+              onCreateVisual={onCreateVisual}
+              onDeleteSelectedVisual={onDeleteSelectedVisual}
+              onRenameVisual={renameVisual}
+              onOpenSceneEditorRail={onOpenSceneEditorRail}
+              onSelectObject={onSelectObject}
+              onSelectSpan={onSelectSpan}
+              onVisualTransformChange={({ position, rotation }) => {
+                updateSelectedVisual((visual) => {
+                  visual.position = position;
+                  visual.rotation = rotation;
+                });
               }}
-              onSelectSpan={(spanName, visualName) => {
-                onOpenSceneEditorRail();
-                onSelectSpan(spanName, visualName);
+              onVisualTransformPreviewChange={({ position, rotation }) => {
+                updateSelectedVisualPreview((visual) => {
+                  visual.position = position;
+                  visual.rotation = rotation;
+                });
+              }}
+              onVisualResizeChange={(patch) => {
+                updateSelectedVisual((visual) => {
+                  Object.assign(visual, patch);
+                });
+              }}
+              onVisualResizePreviewChange={(patch) => {
+                updateSelectedVisualPreview((visual) => {
+                  Object.assign(visual, patch);
+                });
+              }}
+              onVisualColorChange={(color) => {
+                updateSelectedVisual((visual) => {
+                  visual.material = { name: color };
+                });
+              }}
+              onVisualColorPreviewChange={(color) => {
+                updateSelectedVisualPreview((visual) => {
+                  visual.material = { name: color };
+                });
               }}
               scenePath={rendererSceneBasePath}
+              sceneObjectOptions={sceneObjectOptions}
               scene={activeScene}
               frame={currentFrame}
               selectedObjectName={selectedObjectName}
               selectedSpanName={selectedSpanName}
+              selectedSpanVisualName={selectedSpanVisualName}
+              selectedVisualName={selectedVisualName}
               showPerformanceOverlay={shell.performanceOverlayOpen}
               onHidePerformanceOverlay={() => shell.setPerformanceOverlayOpen(false)}
             />

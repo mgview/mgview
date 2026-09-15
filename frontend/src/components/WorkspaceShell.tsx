@@ -41,6 +41,7 @@ interface WorkspaceShellProps {
   objectInspections: SceneObjectInspection[];
   onBeginSpanCreation: () => void;
   onClearSelection: () => void;
+  onCreateViewportVisual: (objectName: string, type: VisualType) => boolean;
   onEditorModeChange: (mode: InspectorEditorMode) => void;
   onMotionGenesisInputChange: (value: string) => void;
   onMotionGenesisOptionsChange: (options: MotionGenesisRunOptions) => void;
@@ -123,6 +124,7 @@ export default function WorkspaceShell({
   objectInspections,
   onBeginSpanCreation,
   onClearSelection,
+  onCreateViewportVisual,
   onEditorModeChange,
   onMotionGenesisInputChange,
   onMotionGenesisOptionsChange,
@@ -193,6 +195,8 @@ export default function WorkspaceShell({
           channelNames={channelNames}
           currentFrame={currentFrame}
           onClearSelection={onClearSelection}
+          onCreateVisual={onCreateViewportVisual}
+          onDeleteSelectedVisual={deleteSelectedVisual}
           onOpenSceneEditorRail={onOpenSceneEditorRail}
           onSelectObject={onSelectObject}
           onSelectSpan={onSelectSpan}
@@ -200,15 +204,21 @@ export default function WorkspaceShell({
           playback={playback}
           playbackSpeed={playbackSpeed}
           rendererSceneBasePath={rendererSceneBasePath}
+          renameVisual={renameVisual}
           rightRail={rightRail}
           selectedObjectName={activeSelectedObject?.name ?? null}
           selectedSpanName={selectedSpanName}
+          selectedSpanVisualName={selectedSpanVisualName}
+          selectedVisualName={activeSelectedVisual?.name ?? null}
+          sceneObjectOptions={objectInspections.map(({ name, type }) => ({ name, type }))}
           shell={shell}
           showPlots={showPlots}
           showRenderer={showRenderer}
           timeline={timeline}
           timelineOwner={timelineOwner}
           updateDraftScene={updateDraftScene}
+          updateSelectedVisual={updateSelectedVisual}
+          updateSelectedVisualPreview={updateSelectedVisualPreview}
           visualShellStyle={visualShellStyle}
         />
       ) : null}
