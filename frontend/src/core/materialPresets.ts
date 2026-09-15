@@ -1,6 +1,6 @@
 import { Color } from 'three';
 
-import type { MaterialDefinition, SceneMaterial } from './types.ts';
+import type { MaterialDefinition, MaterialTextureDefinition, SceneMaterial } from './types.ts';
 
 export const LEGACY_COLOR_PRESETS: Record<string, string> = {
   SILVER: '#c7d2e2',
@@ -114,6 +114,18 @@ export interface ParsedCssColor {
   hex: string;
 }
 
+export function cloneMaterialTexture(
+  texture: MaterialTextureDefinition | undefined
+): MaterialTextureDefinition | undefined {
+  return texture
+    ? {
+        ...texture,
+        repeat: texture.repeat ? [...texture.repeat] : undefined,
+        offset: texture.offset ? [...texture.offset] : undefined,
+      }
+    : undefined;
+}
+
 export function normalizeMaterialName(name: string | undefined): string {
   return name?.trim().toUpperCase() ?? '';
 }
@@ -125,7 +137,12 @@ export function materialDefinitionFromSceneMaterial(material: SceneMaterial | un
 
   return {
     name: material?.name ?? 'SILVER',
+    preset: material?.preset,
+    texture: cloneMaterialTexture(material?.texture),
     color: material?.color,
+    colorMix: material?.colorMix,
+    opacity: material?.opacity,
+    shininess: material?.shininess,
   };
 }
 

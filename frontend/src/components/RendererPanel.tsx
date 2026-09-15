@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 import { evaluateScene } from '../core/sceneEvaluation.ts';
-import type { NormalizedSceneConfig, SceneVisual, TimelineFrame, VisualType } from '../core/types.ts';
+import type { MaterialDefinition, NormalizedSceneConfig, SceneVisual, TimelineFrame, VisualType } from '../core/types.ts';
 import { VISUAL_TYPE_OPTIONS } from './editorShared.tsx';
 import { createLegacyAxes } from '../rendering/axisHelpers.ts';
 import {
@@ -106,8 +106,8 @@ interface RendererPanelProps {
   onVisualTransformPreviewChange?: (transform: VisualTransformValue) => void;
   onVisualResizeChange?: (patch: VisualResizePatch) => void;
   onVisualResizePreviewChange?: (patch: VisualResizePatch) => void;
-  onVisualColorChange?: (color: string) => void;
-  onVisualColorPreviewChange?: (color: string) => void;
+  onVisualMaterialChange?: (material: MaterialDefinition) => void;
+  onVisualMaterialPreviewChange?: (material: MaterialDefinition) => void;
   showPerformanceOverlay?: boolean;
   onHidePerformanceOverlay?: () => void;
   sceneObjectOptions: Array<{ name: string; type: string }>;
@@ -168,8 +168,8 @@ export default function RendererPanel({
   onVisualTransformPreviewChange,
   onVisualResizeChange,
   onVisualResizePreviewChange,
-  onVisualColorChange,
-  onVisualColorPreviewChange,
+  onVisualMaterialChange,
+  onVisualMaterialPreviewChange,
   showPerformanceOverlay = false,
   onHidePerformanceOverlay,
   sceneObjectOptions,
@@ -1146,11 +1146,11 @@ export default function RendererPanel({
             <label className="grid gap-1">
               <span className="text-[0.68rem] font-medium text-muted-foreground">Material</span>
               <MaterialPicker
+                compact
                 material={contextVisual.material}
-                onMaterialChange={(material) => onVisualColorChange?.(material.name)}
-                onMaterialPreviewChange={(material) =>
-                  onVisualColorPreviewChange?.(material.name)
-                }
+                scenePath={scenePath}
+                onMaterialChange={(material) => onVisualMaterialChange?.(material)}
+                onMaterialPreviewChange={(material) => onVisualMaterialPreviewChange?.(material)}
               />
             </label>
           </div>

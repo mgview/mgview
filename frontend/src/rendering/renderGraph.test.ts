@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 
 import type { SceneEvaluation } from '../core/sceneEvaluation.ts';
-import { RenderGraphManager } from './renderGraph.ts';
+import { disposeObject3D, RenderGraphManager } from './renderGraph.ts';
 
 function sphere(name: string, x: number) {
   return {
@@ -106,4 +106,20 @@ test('a null visual selection preserves whole-object selection compatibility', (
   assert.equal(emissiveColor(second), '2e7dd7');
 
   graph.dispose();
+});
+
+test('disposing rendered content also disposes cloned image textures', () => {
+  const texture = new THREE.Texture();
+  let textureDisposals = 0;
+  texture.addEventListener('dispose', () => {
+    textureDisposals += 1;
+  });
+  const material = new THREE.MeshPhongMaterial({ map: texture });
+  const root = new THREE.Group();
+  root.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material));
+
+  disposeObject3D(root);
+
+  assert.equal(textureDisposals, 1);
+  assert.equal(material.userData.disposed, true);
 });

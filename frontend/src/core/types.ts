@@ -24,9 +24,24 @@ export interface RgbaColor {
   a?: number;
 }
 
+export interface MaterialTextureDefinition {
+  /** Scene-relative custom asset path. Omit to use the top-level material preset's texture. */
+  path?: string | undefined;
+  /** Texture repetitions in the U and V directions. Floating-point values are supported. */
+  repeat?: [number, number] | undefined;
+  offset?: [number, number] | undefined;
+  rotation?: number | undefined;
+}
+
 export interface MaterialDefinition {
-  name: string;
-  color?: RgbaColor;
+  /** Legacy preset/reference/CSS-color field. New edits use the structured fields below. */
+  name?: string | undefined;
+  preset?: string | undefined;
+  texture?: MaterialTextureDefinition | undefined;
+  color?: RgbaColor | string | undefined;
+  colorMix?: number | undefined;
+  opacity?: number | undefined;
+  shininess?: number | undefined;
 }
 
 export type SceneMaterial = MaterialDefinition | string;
@@ -273,7 +288,12 @@ export interface ConcreteVector3 {
 
 export interface RenderMaterial {
   name: string;
-  color?: RgbaColor;
+  preset?: string | undefined;
+  texture?: MaterialTextureDefinition | undefined;
+  color?: RgbaColor | string | undefined;
+  colorMix?: number | undefined;
+  opacity?: number | undefined;
+  shininess?: number | undefined;
 }
 
 export interface RenderVisualBase {

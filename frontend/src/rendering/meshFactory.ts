@@ -13,7 +13,9 @@ import {
   parseCssColorString,
 } from '../core/materialPresets.ts';
 import { createBasis } from './axisHelpers.ts';
+import { loadCachedAsset } from './assetCache.ts';
 import { toThreeVector } from './coordinateConvention.ts';
+import { disposeMaterial } from './renderResources.ts';
 
 export interface RenderAssetContext {
   highlightSelection?: boolean;
@@ -55,70 +57,88 @@ function colorFromName(materialName: string | undefined): THREE.Color {
   return new THREE.Color(presetColor ?? '#b8c7df');
 }
 
+function colorFromValue(color: RgbaColor | string): THREE.Color {
+  return typeof color === 'string' ? colorFromName(color) : colorFromRgba(color);
+}
+
 function colorFromMaterial(material: RenderMaterial): THREE.Color {
-  return material.color ? colorFromRgba(material.color) : colorFromName(material.name);
+  return material.color ? colorFromValue(material.color) : colorFromName(material.name);
 }
 
 function getOpacity(material: RenderMaterial): number {
+  if (typeof material.opacity === 'number') {
+    return THREE.MathUtils.clamp(material.opacity, 0, 1);
+  }
+
   const parsed = parseCssColorString(material.name);
   if (typeof parsed?.alpha === 'number') {
     return parsed.alpha;
   }
 
-  const alpha = material.color?.a;
+  const alpha = typeof material.color === 'object' ? material.color.a : parseCssColorString(material.color)?.alpha;
   return typeof alpha === 'number' ? alpha : 1;
 }
 
 function getMaterialKey(material: RenderMaterial): string {
-  return normalizeMaterialName(material.name);
+  return normalizeMaterialName(material.preset ?? material.name);
 }
 
-function loadTexture(url: string, repeat?: [number, number]): Promise<THREE.Texture> {
-  const existing = textureCache.get(url);
-  if (existing) {
-    return existing;
-  }
-
-  const promise = new Promise<THREE.Texture>((resolve, reject) => {
-    textureLoader.load(
-      url,
-      (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        if (repeat) {
-          texture.repeat.set(repeat[0], repeat[1]);
-        }
-        resolve(texture);
-      },
-      undefined,
-      reject
-    );
-  });
-
-  textureCache.set(url, promise);
-  return promise;
+function loadTexture(url: string): Promise<THREE.Texture> {
+  return loadCachedAsset(textureCache, url, () =>
+    new Promise<THREE.Texture>((resolve, reject) => {
+      textureLoader.load(
+        url,
+        (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          resolve(texture);
+        },
+        undefined,
+        reject
+      );
+    })
+  );
 }
 
 function createMaterial(visualMaterial: RenderMaterial, context: RenderAssetContext): THREE.MeshPhongMaterial {
   const materialKey = getMaterialKey(visualMaterial);
   const texturePreset = LEGACY_TEXTURE_PRESETS[materialKey];
+  const texturePath = visualMaterial.texture?.path ?? texturePreset?.path;
+  const repeat = visualMaterial.texture?.repeat ?? texturePreset?.repeat ?? [1, 1];
   const opacity = getOpacity(visualMaterial);
-  const color = visualMaterial.color ? colorFromRgba(visualMaterial.color) : colorFromName(visualMaterial.name);
+  const sourceColor = visualMaterial.color ? colorFromValue(visualMaterial.color) : colorFromName(visualMaterial.name);
+  const colorMix = THREE.MathUtils.clamp(visualMaterial.colorMix ?? (texturePath ? 0 : 1), 0, 1);
+  const color = texturePath
+    ? new THREE.Color('#ffffff').lerp(sourceColor, colorMix)
+    : sourceColor;
 
   const material = new THREE.MeshPhongMaterial({
-    color: texturePreset?.color ? new THREE.Color(texturePreset.color) : color,
+    color,
     specular: new THREE.Color(materialKey.startsWith('SHINY_') ? '#ffffff' : '#7f8da3'),
-    shininess: texturePreset?.metalness ? 60 : materialKey.startsWith('SHINY_') ? 70 : 30,
+    shininess: visualMaterial.shininess ?? (texturePreset?.metalness ? 60 : materialKey.startsWith('SHINY_') ? 70 : 30),
     opacity,
     transparent: opacity < 1,
     side: opacity < 1 ? THREE.DoubleSide : THREE.FrontSide,
     depthWrite: opacity >= 1,
   });
 
-  if (texturePreset) {
-    void loadTexture(context.resolveSceneAssetUrl(texturePreset.path), texturePreset.repeat)
-      .then((texture) => {
+  if (texturePath) {
+    void loadTexture(context.resolveSceneAssetUrl(texturePath))
+      .then((sourceTexture) => {
+        if (material.userData.disposed) {
+          return;
+        }
+        const texture = sourceTexture.clone();
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(repeat[0], repeat[1]);
+        const offset = visualMaterial.texture?.offset;
+        if (offset) {
+          texture.offset.set(offset[0], offset[1]);
+        }
+        texture.rotation = visualMaterial.texture?.rotation ?? 0;
+        texture.needsUpdate = true;
         material.map = texture;
         material.needsUpdate = true;
       })
@@ -132,7 +152,7 @@ function createMaterial(visualMaterial: RenderMaterial, context: RenderAssetCont
 
 function cloneMaterialForObject(material: THREE.MeshPhongMaterial) {
   const clone = material.clone();
-  clone.map = material.map;
+  clone.map = material.map?.clone() ?? null;
   if (material.emissive) {
     clone.emissive.copy(material.emissive);
     clone.emissiveIntensity = material.emissiveIntensity;
@@ -231,11 +251,7 @@ function createTextVisual2d(visual: Extract<RenderVisual, { type: 'text' }>, hig
   const selectionColor = new THREE.Color('#2e7dd7');
   const color = highlightSelection
     ? '#2e7dd7'
-    : visual.material.color
-      ? `rgba(${Math.round(visual.material.color.r * 255)}, ${Math.round(visual.material.color.g * 255)}, ${Math.round(
-          visual.material.color.b * 255
-        )}, ${visual.material.color.a ?? 1})`
-      : `#${colorFromName(visual.material.name).getHexString()}`;
+    : `#${colorFromMaterial(visual.material).getHexString()}`;
   const textCanvas = createTextCanvas(visual.text, color);
   if (!textCanvas) {
     return null;
@@ -250,6 +266,7 @@ function createTextVisual2d(visual: Extract<RenderVisual, { type: 'text' }>, hig
   const geometry = new THREE.PlaneGeometry(planeSize.width, planeSize.height);
   const material = new THREE.MeshBasicMaterial({
     map: texture,
+    opacity: highlightSelection ? 1 : getOpacity(visual.material),
     transparent: true,
     side: THREE.DoubleSide,
     depthWrite: false,
@@ -343,41 +360,19 @@ function applyMaterialToObject(root: THREE.Object3D, material: THREE.MeshPhongMa
 }
 
 function loadObj(url: string): Promise<THREE.Group> {
-  const existing = objCache.get(url);
-  if (existing) {
-    return existing;
-  }
-
-  const promise = new Promise<THREE.Group>((resolve, reject) => {
-    objLoader.load(
-      url,
-      (group) => resolve(group),
-      undefined,
-      reject
-    );
-  });
-
-  objCache.set(url, promise);
-  return promise;
+  return loadCachedAsset(objCache, url, () =>
+    new Promise<THREE.Group>((resolve, reject) => {
+      objLoader.load(url, resolve, undefined, reject);
+    })
+  );
 }
 
 function loadStl(url: string): Promise<THREE.BufferGeometry> {
-  const existing = stlCache.get(url);
-  if (existing) {
-    return existing;
-  }
-
-  const promise = new Promise<THREE.BufferGeometry>((resolve, reject) => {
-    stlLoader.load(
-      url,
-      (geometry) => resolve(geometry),
-      undefined,
-      reject
-    );
-  });
-
-  stlCache.set(url, promise);
-  return promise;
+  return loadCachedAsset(stlCache, url, () =>
+    new Promise<THREE.BufferGeometry>((resolve, reject) => {
+      stlLoader.load(url, resolve, undefined, reject);
+    })
+  );
 }
 
 function buildMeshVisual(visual: Extract<RenderVisual, { type: 'mesh' }>, context: RenderAssetContext) {
@@ -389,7 +384,7 @@ function buildMeshVisual(visual: Extract<RenderVisual, { type: 'mesh' }>, contex
   container.userData.disposed = false;
   container.userData.disposeAsyncContents = () => {
     container.userData.disposed = true;
-    material.dispose();
+    disposeMaterial(material);
   };
   if (context.highlightSelection) {
     applySelectionHighlight(material);
@@ -400,7 +395,6 @@ function buildMeshVisual(visual: Extract<RenderVisual, { type: 'mesh' }>, contex
     void loadObj(assetUrl)
       .then((template) => {
         if (container.userData.disposed) {
-          material.dispose();
           return;
         }
         const object = template.clone(true);
@@ -409,7 +403,7 @@ function buildMeshVisual(visual: Extract<RenderVisual, { type: 'mesh' }>, contex
         container.add(object);
       })
       .catch(() => {
-        material.dispose();
+        disposeMaterial(material);
       });
     return container;
   }
@@ -418,7 +412,6 @@ function buildMeshVisual(visual: Extract<RenderVisual, { type: 'mesh' }>, contex
     void loadStl(assetUrl)
       .then((geometry) => {
         if (container.userData.disposed) {
-          material.dispose();
           return;
         }
         const mesh = new THREE.Mesh(geometry.clone(), material);
@@ -428,16 +421,20 @@ function buildMeshVisual(visual: Extract<RenderVisual, { type: 'mesh' }>, contex
         container.add(mesh);
       })
       .catch(() => {
-        material.dispose();
+        disposeMaterial(material);
       });
     return container;
   }
 
-  material.dispose();
+  disposeMaterial(material);
   return null;
 }
 
 export function createVisualMesh(visual: RenderVisual, context: RenderAssetContext) {
+  if (visual.type === 'mesh') {
+    return buildMeshVisual(visual, context);
+  }
+
   const material = createMaterial(visual.material, context);
   if (context.highlightSelection) {
     applySelectionHighlight(material);
@@ -497,27 +494,25 @@ export function createVisualMesh(visual: RenderVisual, context: RenderAssetConte
         material
       ));
     case 'grid':
-      material.dispose();
+      disposeMaterial(material);
       return createGridVisual(visual, context.highlightSelection);
-    case 'mesh':
-      return buildMeshVisual(visual, context);
     case 'text':
       if (visual.textMode === '2d') {
-        material.dispose();
+        disposeMaterial(material);
         return createTextVisual2d(visual, context.highlightSelection);
       }
       {
         const mesh = createTextVisual3d(visual, material);
         if (!mesh) {
-          material.dispose();
+          disposeMaterial(material);
         }
         return mesh;
       }
     case 'basis':
-      material.dispose();
+      disposeMaterial(material);
       return createBasis(visual.scale);
     default:
-      material.dispose();
+      disposeMaterial(material);
       return null;
   }
 }

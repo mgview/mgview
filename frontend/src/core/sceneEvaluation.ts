@@ -1,6 +1,7 @@
 import type {
   TextRenderMode,
   NormalizedSceneConfig,
+  RenderMaterial,
   RenderSpan,
   RenderVisual,
   SceneMaterial,
@@ -42,24 +43,36 @@ function vector(x = 0, y = 0, z = 0): Vector3Like {
   return { x, y, z };
 }
 
-function material(name = 'SILVER', color?: { r: number; g: number; b: number; a?: number }) {
-  return {
-    name,
-    color,
+function material(input: SceneMaterial | undefined = { name: 'SILVER' }): RenderMaterial {
+  if (typeof input === 'string') {
+    return { name: input, color: undefined };
+  }
+
+  const normalized: RenderMaterial = {
+    name: input.name ?? input.preset ?? 'SILVER',
+    color: input.color,
   };
+
+  if (input.preset !== undefined) normalized.preset = input.preset;
+  if (input.texture !== undefined) {
+    normalized.texture = {
+      ...input.texture,
+      repeat: input.texture.repeat ? [...input.texture.repeat] : undefined,
+    };
+  }
+  if (input.colorMix !== undefined) normalized.colorMix = input.colorMix;
+  if (input.opacity !== undefined) normalized.opacity = input.opacity;
+  if (input.shininess !== undefined) normalized.shininess = input.shininess;
+  return normalized;
 }
 
 function normalizeMaterialDefinition(input: SceneMaterial | undefined) {
-  if (typeof input === 'string') {
-    return material(input);
-  }
-
-  return material(input?.name ?? 'SILVER', input?.color);
+  return material(input);
 }
 
 function normalizeTextMaterialDefinition(input: SceneMaterial | undefined) {
   if (input === undefined) {
-    return material(DEFAULT_TEXT_MATERIAL.name);
+    return material(DEFAULT_TEXT_MATERIAL);
   }
 
   return normalizeMaterialDefinition(input);

@@ -46,6 +46,7 @@ import { Checkbox } from './ui/checkbox.tsx';
 import { Input } from './ui/input.tsx';
 
 interface VisualEditorPanelProps {
+  scenePath?: string;
   liveSelectedVisual?: SceneVisual;
   selectedObject?: SceneObjectInspection;
   selectedVisual?: SceneObjectInspection['visuals'][number];
@@ -145,6 +146,7 @@ const geometrySelectClass =
   'h-7 w-full rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export default function VisualEditorPanel({
+  scenePath,
   liveSelectedVisual,
   selectedObject,
   selectedVisual,
@@ -315,6 +317,7 @@ export default function VisualEditorPanel({
                 <span className={editorFieldLabel}>Material</span>
                 <MaterialPicker
                   material={liveSelectedVisual.material}
+                  scenePath={scenePath}
                   onMaterialPreviewChange={(nextMaterial) => {
                     updateSelectedVisualPreview((visual) => {
                       visual.material = {
