@@ -20,7 +20,7 @@ import { useToasts } from './hooks/useToasts.ts';
 import { useWorkspaceKeyboardShortcuts } from './hooks/useWorkspaceKeyboardShortcuts.ts';
 import { useWorkspaceLayoutSplits } from './hooks/useWorkspaceLayoutSplits.ts';
 import { useWorkspaceShell } from './hooks/useWorkspaceShell.ts';
-import { createSampleRef, getSceneBasePath, resolveInitialSceneRef } from './core/sceneRef.ts';
+import { createSampleRef, getApiRoot, getSceneBasePath, resolveInitialSceneRef } from './core/sceneRef.ts';
 import { groupSampleScenes } from './core/samplesManifest.ts';
 import { useServerWorkspace } from './hooks/useServerWorkspace.ts';
 import { getCurrentAppRoute } from './core/appRoutes.ts';
@@ -286,6 +286,7 @@ function WorkspaceApp() {
 
   const groupedSamples = useMemo(() => groupSampleScenes(), []);
   const rendererSceneBasePath = loaded ? getSceneBasePath(loaded.sceneRef) : '';
+  const rendererSceneAssetRoot = loaded ? getApiRoot(loaded.sceneRef) : 'workspace';
   const sceneLayout = activeScene?.layout ?? null;
   const showRenderer = sceneLayout?.showRenderer ?? DEFAULT_SCENE_LAYOUT.showRenderer;
   const showPlots = sceneLayout?.showPlots ?? DEFAULT_SCENE_LAYOUT.showPlots;
@@ -410,6 +411,7 @@ function WorkspaceApp() {
           playback={playback}
           playbackSpeed={playbackSpeed}
           rendererSceneBasePath={rendererSceneBasePath}
+          rendererSceneAssetRoot={rendererSceneAssetRoot}
           savePreview={savePreview}
           selectedSpanName={selectedSpanResolvedName}
           selectedSpanVisualName={selectedSpanVisualResolvedName}

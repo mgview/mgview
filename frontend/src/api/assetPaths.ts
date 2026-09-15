@@ -40,6 +40,13 @@ export function resolveBundledAssetUrl(relativePath: string): string {
   return resolvePublicAssetUrl(normalized);
 }
 
+export function resolveApiFileUrl(root: 'workspace' | 'sample' | 'app', filePath: string): string {
+  const url = new URL(resolvePublicAssetUrl('api/file'));
+  url.searchParams.set('root', root);
+  url.searchParams.set('path', normalizePathSeparators(filePath).replace(/^\/+/, ''));
+  return url.toString();
+}
+
 /** @deprecated Use resolveBundledAssetUrl */
 export function resolveAppAssetUrl(relativePath: string): string {
   return resolveBundledAssetUrl(relativePath);

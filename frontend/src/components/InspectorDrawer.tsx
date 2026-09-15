@@ -11,7 +11,7 @@ import JsonEditorPanel from './JsonEditorPanel.tsx';
 import SceneSettingsPanel from './SceneSettingsPanel.tsx';
 import SpanEditorPanel from './SpanEditorPanel.tsx';
 import VisualEditorPanel from './VisualEditorPanel.tsx';
-import { getSceneBasePath } from '../core/sceneRef.ts';
+import { getApiRoot, getSceneBasePath } from '../core/sceneRef.ts';
 
 export type InspectorEditorMode = 'visual' | 'scene' | 'json';
 
@@ -161,6 +161,7 @@ export default function InspectorDrawer({
   ) : (
     <VisualEditorPanel
       scenePath={loaded ? getSceneBasePath(loaded.sceneRef) : ''}
+      sceneAssetRoot={getApiRoot(loaded.sceneRef)}
       liveSelectedVisual={liveSelectedVisual}
       selectedObject={selectedObject}
       selectedVisual={selectedVisual}
