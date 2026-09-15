@@ -16,7 +16,7 @@ export function hasSimulationPositionData(channelNames: string[], objectName: st
   const candidates = new Set(objectPositionCandidates(objectName));
   return channelNames.some((channelName) => {
     const match = channelName.match(POSITION_CHANNEL);
-    return match ? candidates.has(match[2]) : false;
+    return match?.[2] ? candidates.has(match[2]) : false;
   });
 }
 
@@ -28,14 +28,16 @@ export function hasSimulationPositionDataFromOrigin(
   const candidates = new Set(objectPositionCandidates(objectName));
   return channelNames.some((channelName) => {
     const match = channelName.match(POSITION_CHANNEL);
-    return match ? match[1] === originName && candidates.has(match[2]) : false;
+    return match?.[1] !== undefined && match[2] !== undefined
+      ? match[1] === originName && candidates.has(match[2])
+      : false;
   });
 }
 
 export function hasSimulationRotationData(channelNames: string[], frameName: string): boolean {
   return channelNames.some((channelName) => {
     const match = channelName.match(MATRIX_CHANNEL);
-    return match ? match[2] === frameName : false;
+    return match?.[2] ? match[2] === frameName : false;
   });
 }
 
@@ -44,7 +46,7 @@ export function collectPositionOrigins(channelNames: string[]): string[] {
 
   for (const channelName of channelNames) {
     const match = channelName.match(POSITION_CHANNEL);
-    if (match) {
+    if (match?.[1]) {
       origins.add(match[1]);
     }
   }
@@ -57,7 +59,7 @@ export function collectBaseFrames(channelNames: string[]): string[] {
 
   for (const channelName of channelNames) {
     const match = channelName.match(MATRIX_CHANNEL);
-    if (match) {
+    if (match?.[1]) {
       baseFrames.add(match[1]);
     }
   }

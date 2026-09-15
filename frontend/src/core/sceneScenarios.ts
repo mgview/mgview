@@ -19,7 +19,11 @@ export function hasScenarioMode(scene: Pick<SceneConfig, 'scenarios'>): boolean 
 }
 
 export function ensureScenarios(
-  scene: Pick<SceneConfig, 'scenarios' | 'simulationData' | 'activeScenario'>
+  scene: {
+    scenarios?: SceneScenario[];
+    simulationData?: string[];
+    activeScenario?: string | null;
+  }
 ): { scenarios: SceneScenario[]; activeScenario: string } {
   const normalized = normalizeScenarios(scene.scenarios);
   if (normalized.length > 0) {

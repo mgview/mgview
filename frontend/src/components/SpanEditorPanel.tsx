@@ -45,7 +45,7 @@ const visualToolbarActions = 'flex shrink-0 gap-1.5 self-start';
 
 function materialToColorValue(material: SceneSpanVisual['material']): string {
   const definition = materialDefinitionFromSceneMaterial(material);
-  if (parseCssColorString(definition.name)) {
+  if (definition.name && parseCssColorString(definition.name)) {
     return definition.name;
   }
 
@@ -66,8 +66,8 @@ interface SpanEditorPanelProps {
   createSpanVisual: () => boolean;
   deleteSelectedSpan: () => boolean;
   deleteSelectedSpanVisual: () => boolean;
-  liveSelectedSpan?: SceneSpan;
-  liveSelectedSpanVisual?: SceneSpanVisual;
+  liveSelectedSpan: SceneSpan | undefined;
+  liveSelectedSpanVisual: SceneSpanVisual | undefined;
   renameSpan: (currentName: string, nextName: string) => boolean;
   renameSpanVisual: (currentName: string, nextName: string) => boolean;
   selectedSpanName: string | null;
@@ -106,7 +106,7 @@ export default function SpanEditorPanel({
     );
     for (const channelName of channelNames) {
       const match = channelName.match(POSITION_CHANNEL);
-      if (match) {
+      if (match?.[2]) {
         names.add(match[2]);
       }
     }

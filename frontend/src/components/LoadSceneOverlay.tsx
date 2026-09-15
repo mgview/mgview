@@ -159,14 +159,12 @@ export default function LoadSceneOverlay({
               ) : undefined
             }
             onBrowse={onBrowse}
-            onOpenFile={
-              isCreateMode || isSaveAsMode
-                ? undefined
-                : (path) => {
+            {...(!(isCreateMode || isSaveAsMode)
+              ? { onOpenFile: (path: string) => {
                     setSceneInput(path);
                     onOpenScenePath(path);
-                  }
-            }
+                  } }
+              : {})}
             onSelectFile={handleSelectSceneEntry}
             getDirectoryPath={getDirectoryPath}
           />

@@ -164,10 +164,10 @@ function ScenarioHeaderControls({
   activeScenario: { id: string; label: string };
   activeScenarioId: string | null;
   disabled?: boolean;
-  onAddScenario?: () => void | Promise<void>;
-  onRemoveScenario?: (scenarioId: string) => void | Promise<void>;
-  onSetActiveScenario: (scenarioId: string) => void | Promise<void>;
-  onUpdateScenarioLabel?: (scenarioId: string, label: string) => void | Promise<void>;
+  onAddScenario?: () => Promise<boolean>;
+  onRemoveScenario?: (scenarioId: string) => Promise<boolean>;
+  onSetActiveScenario: (scenarioId: string) => Promise<boolean>;
+  onUpdateScenarioLabel?: (scenarioId: string, label: string) => Promise<boolean>;
   scenarioCount: number;
   scenarios: NormalizedSceneConfig['scenarios'];
 }) {
@@ -319,10 +319,10 @@ interface SimulationDataOverlayProps {
   onClose: () => void;
   onRemoveSimulationEntry: (entry: string) => void;
   onClearSimulationEntries?: () => void;
-  onSetActiveScenario?: (scenarioId: string) => void | Promise<void>;
-  onUpdateScenarioLabel?: (scenarioId: string, label: string) => void | Promise<void>;
-  onAddScenario?: () => void | Promise<void>;
-  onRemoveScenario?: (scenarioId: string) => void | Promise<void>;
+  onSetActiveScenario?: (scenarioId: string) => Promise<boolean>;
+  onUpdateScenarioLabel?: (scenarioId: string, label: string) => Promise<boolean>;
+  onAddScenario?: () => Promise<boolean>;
+  onRemoveScenario?: (scenarioId: string) => Promise<boolean>;
   parsedSimulationFiles: ParsedSimulationFile[];
   sceneRef: SceneRef;
   scenePath: string;

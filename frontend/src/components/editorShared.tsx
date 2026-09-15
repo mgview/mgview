@@ -232,8 +232,8 @@ function normalizeEditableNumber(
     integer,
     decimalPlaces,
   }: {
-    minValue?: number;
-    maxValue?: number;
+    minValue?: number | undefined;
+    maxValue?: number | undefined;
     integer?: boolean;
     decimalPlaces: number;
   }
@@ -282,8 +282,8 @@ export function NumericInput({
   className?: string;
   prefixLabel?: string;
   decimalPlaces?: number;
-  minValue?: number;
-  maxValue?: number;
+  minValue?: number | undefined;
+  maxValue?: number | undefined;
   integer?: boolean;
 }) {
   const [text, setText] = useState(formatEditableNumber(value, decimalPlaces));

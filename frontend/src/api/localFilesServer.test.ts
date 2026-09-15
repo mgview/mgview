@@ -72,6 +72,7 @@ test('startMotionGenesisFileRun targets the file-run endpoint', async () => {
     autoQuit: true,
     autoDefaultValues: false,
     debug: false,
+    scrollbackLimit: 0,
   });
 
   assert.match(requestedUrl, /\/mgview\/api\/mg-run-file$/);

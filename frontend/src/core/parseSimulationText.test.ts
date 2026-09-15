@@ -16,9 +16,13 @@ test('simulation parser reads channel names and numeric rows from MGView output'
 
   assert.deepEqual(table.channelNames.slice(0, 5), ['xfb', 'yfb', 'zfb', 'qa', 'qb']);
   assert.equal(table.rows.length > 0, true);
-  assert.equal(table.rows[0].time, 0);
-  assert.equal(table.rows[0].values.xfb, 0);
-  assert.equal(table.rows[1].values.yfb, 22.76352);
+  const firstRow = table.rows[0];
+  const secondRow = table.rows[1];
+  assert.ok(firstRow);
+  assert.ok(secondRow);
+  assert.equal(firstRow.time, 0);
+  assert.equal(firstRow.values.xfb, 0);
+  assert.equal(secondRow.values.yfb, 22.76352);
 });
 
 test('timeline builder merges multiple simulation tables by time', async () => {
@@ -31,8 +35,10 @@ test('timeline builder merges multiple simulation tables by time', async () => {
 
   assert.equal(timeline.tInitial, 0);
   assert.equal(timeline.frames.length > 0, true);
-  assert.equal(timeline.frames[0].data.xfb, 0);
-  assert.equal(timeline.frames[0].data.qA, 180);
+  const firstFrame = timeline.frames[0];
+  assert.ok(firstFrame);
+  assert.equal(firstFrame.data.xfb, 0);
+  assert.equal(firstFrame.data.qA, 180);
 });
 
 test('timeline lookup follows legacy clamp behavior at the ends', async () => {

@@ -16,7 +16,7 @@ export function getCompletionPrefix(lineContent: string, column: number): Comple
     };
   }
 
-  const tail = tailMatch[1];
+  const tail = tailMatch[1] ?? '';
   const dotIndex = tail.lastIndexOf('.');
   const prefix = dotIndex >= 0 ? tail.slice(dotIndex + 1) : tail;
 

@@ -25,7 +25,9 @@ export function buildTimeline(tables: SimulationTable[]): Timeline {
   }
 
   const frames = [...framesByTime.values()].sort((left, right) => left.time - right.time);
-  if (frames.length === 0) {
+  const firstFrame = frames[0];
+  const lastFrame = frames.at(-1);
+  if (!firstFrame || !lastFrame) {
     return {
       frames,
       tInitial: 0,
@@ -36,9 +38,9 @@ export function buildTimeline(tables: SimulationTable[]): Timeline {
 
   return {
     frames,
-    tInitial: frames[0].time,
-    tFinal: frames[frames.length - 1].time,
-    tStep: frames.length > 1 ? frames[1].time - frames[0].time : 0,
+    tInitial: firstFrame.time,
+    tFinal: lastFrame.time,
+    tStep: frames.length > 1 ? frames[1]!.time - firstFrame.time : 0,
   };
 }
 

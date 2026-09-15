@@ -19,8 +19,10 @@ test('createSavableScene preserves inferred objects added through the draft scen
   };
 
   const draftScene = createSceneDocument(rawScene, ['P_No_Qo[1]', 'P_No_Qo[2]', 'P_No_Qo[3]']);
-  draftScene.objects.Qo.visual ??= {};
-  draftScene.objects.Qo.visual.marker = {
+  const inferredPoint = draftScene.objects.Qo;
+  assert.ok(inferredPoint);
+  inferredPoint.visual ??= {};
+  inferredPoint.visual.marker = {
     type: 'sphere',
     radius: 0.5,
     material: { name: 'RED' },
@@ -40,7 +42,7 @@ test('createSavableScene preserves inferred objects added through the draft scen
     workspaceSplit: 0.68,
   });
   assert.equal(savableScene.objects?.Qo?.type, 'point');
-  assert.deepEqual(savableScene.objects?.Qo?.visual?.marker, draftScene.objects.Qo.visual.marker);
+  assert.deepEqual(savableScene.objects?.Qo?.visual?.marker, inferredPoint.visual.marker);
   assert.equal(savableScene.newtonianFrame, undefined);
   assert.equal(savableScene.sceneOrigin, undefined);
 });

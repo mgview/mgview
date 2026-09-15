@@ -25,5 +25,6 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
+          npm run typecheck
           npm test
           npm run build:site

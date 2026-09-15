@@ -16,7 +16,7 @@ interface ScenarioSelectorProps {
   editSimDataDisabled?: boolean;
   onAddNew?: () => void | Promise<void>;
   onEditSimData?: () => void;
-  onSetActiveScenario: (scenarioId: string) => void | Promise<void>;
+  onSetActiveScenario: (scenarioId: string) => Promise<boolean>;
   scenarios: SceneScenario[];
   triggerMode?: 'header' | 'name-only';
 }

@@ -131,7 +131,7 @@ export function registerMotionGenesisMonaco(monaco: Monaco): void {
   });
 
   monaco.languages.registerHoverProvider(LANGUAGE_ID, {
-    provideHover(model, position) {
+    provideHover(model: MonacoEditor.editor.ITextModel, position: MonacoEditor.Position) {
       const word = model.getWordAtPosition(position);
       if (!word) {
         return null;
@@ -151,7 +151,7 @@ export function registerMotionGenesisMonaco(monaco: Monaco): void {
 
   monaco.languages.registerCompletionItemProvider(LANGUAGE_ID, {
     triggerCharacters: ['.', '%'],
-    provideCompletionItems(model, position) {
+    provideCompletionItems(model: MonacoEditor.editor.ITextModel, position: MonacoEditor.Position) {
       const { prefix, startColumn } = getCompletionPrefix(
         model.getLineContent(position.lineNumber),
         position.column,

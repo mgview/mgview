@@ -69,7 +69,11 @@ export function useUndoRedo<T>(initial: T, options?: UseUndoRedoOptions<T>) {
     }
 
     indexRef.current -= 1;
-    snapshotRef.current = historyRef.current[indexRef.current];
+    const previous = historyRef.current[indexRef.current];
+    if (previous === undefined) {
+      return false;
+    }
+    snapshotRef.current = previous;
     tick();
     return true;
   }, []);
@@ -80,7 +84,11 @@ export function useUndoRedo<T>(initial: T, options?: UseUndoRedoOptions<T>) {
     }
 
     indexRef.current += 1;
-    snapshotRef.current = historyRef.current[indexRef.current];
+    const next = historyRef.current[indexRef.current];
+    if (next === undefined) {
+      return false;
+    }
+    snapshotRef.current = next;
     tick();
     return true;
   }, []);

@@ -130,7 +130,8 @@ export function createSavableScene(
 ): SceneConfig {
   const nextScene = structuredClone(rawScene);
 
-  nextScene.name = draftScene.name;
+  if (draftScene.name !== undefined) nextScene.name = draftScene.name;
+  else delete nextScene.name;
   nextScene.simulationData = [...draftScene.simulationData];
   nextScene.layout = structuredClone(draftScene.layout);
   delete nextScene.newtonianFrame;
@@ -139,16 +140,14 @@ export function createSavableScene(
   nextScene.showAxes = draftScene.showAxes;
   nextScene.workspaceSize = draftScene.workspaceSize;
   nextScene.cameraParentFrame = draftScene.cameraParentFrame;
-  nextScene.cameraUp = draftScene.cameraUp
-    ? ([...draftScene.cameraUp] as [number, number, number])
-    : undefined;
-  nextScene.cameraEye = draftScene.cameraEye
-    ? ([...draftScene.cameraEye] as [number, number, number])
-    : undefined;
-  nextScene.cameraFocus = draftScene.cameraFocus
-    ? ([...draftScene.cameraFocus] as [number, number, number])
-    : undefined;
-  nextScene.speedFactor = draftScene.speedFactor;
+  if (draftScene.cameraUp) nextScene.cameraUp = [...draftScene.cameraUp] as [number, number, number];
+  else delete nextScene.cameraUp;
+  if (draftScene.cameraEye) nextScene.cameraEye = [...draftScene.cameraEye] as [number, number, number];
+  else delete nextScene.cameraEye;
+  if (draftScene.cameraFocus) nextScene.cameraFocus = [...draftScene.cameraFocus] as [number, number, number];
+  else delete nextScene.cameraFocus;
+  if (draftScene.speedFactor !== undefined) nextScene.speedFactor = draftScene.speedFactor;
+  else delete nextScene.speedFactor;
   nextScene.plots = structuredClone(draftScene.plots);
   nextScene.scenarios = structuredClone(draftScene.scenarios);
   if (draftScene.activeScenario) {
@@ -173,8 +172,8 @@ export function createSavableScene(
     nextScene.objects[objectName] = {
       ...(rawObject ? structuredClone(rawObject) : {}),
       type: draftObject.type,
-      rotationFrame: draftObject.rotationFrame,
-      visual: draftObject.visual ? structuredClone(draftObject.visual) : undefined,
+      ...(draftObject.rotationFrame !== undefined ? { rotationFrame: draftObject.rotationFrame } : {}),
+      ...(draftObject.visual ? { visual: structuredClone(draftObject.visual) } : {}),
     };
   }
 
@@ -241,7 +240,7 @@ async function loadSceneData(sceneRef: SceneRef): Promise<LoadedSceneData> {
 }
 
 async function loadSimulationWorkspaceState(
-  scene: SceneConfig,
+  scene: Pick<SceneConfig, 'simulationData'>,
   sceneRef: SceneRef
 ): Promise<SimulationWorkspaceState> {
   const basePath = getSceneBasePath(sceneRef);
@@ -262,8 +261,10 @@ async function loadSimulationWorkspaceState(
   for (const [index, result] of tableResults.entries()) {
     if (result.status === 'fulfilled') {
       tables.push(result.value);
+      const filePath = simulationFiles[index];
+      if (!filePath) continue;
       parsedSimulationFiles.push({
-        filePath: simulationFiles[index],
+        filePath,
         channelNames: result.value.channelNames,
         sceneOrigin: inferCanonicalSceneOrigin(result.value.channelNames),
         newtonianFrame: inferCanonicalNewtonianFrame(result.value.channelNames),

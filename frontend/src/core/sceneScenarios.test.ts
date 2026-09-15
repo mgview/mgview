@@ -43,6 +43,7 @@ test('detectCompletedOdeOutputs finds completed ODE base paths', () => {
 test('discoverSimulationDataEntryFromListing prefers animate file ranges', () => {
   const entry = discoverSimulationDataEntryFromListing('stable/Data', {
     path: 'samples/babyboot/stable',
+    parentPath: 'samples/babyboot',
     entries: [
       { name: 'Data.1', path: 'samples/babyboot/stable/Data.1', type: 'file' },
       { name: 'Data.2', path: 'samples/babyboot/stable/Data.2', type: 'file' },

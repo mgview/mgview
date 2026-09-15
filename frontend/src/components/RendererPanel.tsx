@@ -49,6 +49,16 @@ const RENDERER_POINTER_DRAG_THRESHOLD_PX = 5;
 
 type ViewportTool = 'select' | 'move' | 'rotate' | 'resize';
 type TransformSpace = 'local' | 'world';
+type TransformPointer = { x: number; y: number; button: number };
+type MgTransformControls = Omit<
+  TransformControls,
+  'pointerHover' | 'pointerDown' | 'pointerMove' | 'pointerUp'
+> & {
+  pointerHover(pointer: TransformPointer): void;
+  pointerDown(pointer: TransformPointer): void;
+  pointerMove(pointer: TransformPointer): void;
+  pointerUp(pointer: TransformPointer): void;
+};
 
 function buildCameraSeedKey(
   scenePath: string,
@@ -120,7 +130,7 @@ interface SceneHandle {
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
   controls: OrbitControls;
-  transformControls: TransformControls;
+  transformControls: MgTransformControls;
   cameraLight: THREE.PointLight;
   sceneLight: THREE.PointLight;
   worldAxes: THREE.Group;
@@ -314,8 +324,9 @@ export default function RendererPanel({
       const currentFrame = latestFrameRef.current;
       const currentEvaluation = evaluateScene(currentScene, currentFrame);
       cameraOverrideRef.current = deriveCameraOverride(currentScene, currentEvaluation, camera, controls);
-      if (handleRef.current?.cameraChangeFrameId !== null) {
-        cancelAnimationFrame(handleRef.current.cameraChangeFrameId);
+      const currentHandle = handleRef.current;
+      if (currentHandle?.cameraChangeFrameId != null) {
+        cancelAnimationFrame(currentHandle.cameraChangeFrameId);
       }
       handleRef.current!.cameraChangeFrameId = requestAnimationFrame(() => {
         handleRef.current!.cameraChangeFrameId = null;
@@ -461,7 +472,7 @@ export default function RendererPanel({
       camera,
       renderer,
       controls,
-      transformControls,
+      transformControls: transformControls as MgTransformControls,
       cameraLight,
       sceneLight,
       worldAxes,

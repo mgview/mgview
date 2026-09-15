@@ -14,12 +14,12 @@ import {
 
 interface SceneSettingsPanelProps {
   activeScene: NormalizedSceneConfig | null;
-  cameraPreview?: {
+  cameraPreview: {
     cameraParentFrame: string;
     cameraEye: [number, number, number];
     cameraFocus: [number, number, number];
     cameraUp: [number, number, number];
-  } | null;
+  } | null | undefined;
   clearCameraPreview: () => void;
   objectNames: string[];
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;

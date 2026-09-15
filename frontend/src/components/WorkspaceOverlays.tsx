@@ -22,7 +22,7 @@ interface WorkspaceOverlaysProps {
   diagnostics: SceneDiagnostic[];
   draftScene: NormalizedSceneConfig | null;
   error: string | null;
-  fileErrors: Record<string, string>;
+  fileErrors: string[];
   groupedSamples: ReturnType<typeof groupSampleScenes>;
   handleBrowse: (path: string, root?: 'workspace' | 'sample') => Promise<void>;
   handleWorkspaceChange: (onComplete: () => void | Promise<void>) => Promise<void>;
@@ -34,11 +34,11 @@ interface WorkspaceOverlaysProps {
   serverWorkspace: ReturnType<typeof useServerWorkspace>;
   setSceneInput: (value: string) => void;
   shell: ReturnType<typeof useWorkspaceShell>;
-  onSetActiveScenario?: (scenarioId: string) => void | Promise<void>;
-  onUpdateScenarioLabel?: (scenarioId: string, label: string) => void | Promise<void>;
-  onAddScenario?: () => void | Promise<void>;
-  onRemoveScenario?: (scenarioId: string) => void | Promise<void>;
-  simulationFiles: Record<string, string>;
+  onSetActiveScenario: (scenarioId: string) => Promise<boolean>;
+  onUpdateScenarioLabel: (scenarioId: string, label: string) => Promise<boolean>;
+  onAddScenario: () => Promise<boolean>;
+  onRemoveScenario: (scenarioId: string) => Promise<boolean>;
+  simulationFiles: string[];
   simulationLoading: boolean;
 }
 
@@ -96,7 +96,7 @@ export default function WorkspaceOverlays({
           onOpenSelectedScene={() => {
             void shell.handleOpenSelectedScene();
           }}
-          onOpenWorkspace={canPersistScenesToServer ? serverWorkspace.openPicker : undefined}
+          {...(canPersistScenesToServer ? { onOpenWorkspace: serverWorkspace.openPicker } : {})}
           onSaveScenePath={(path) => {
             void shell.handleSaveScenePath(path);
           }}
@@ -164,7 +164,7 @@ export default function WorkspaceOverlays({
           onUpdateScenarioLabel={onUpdateScenarioLabel}
           onAddScenario={onAddScenario}
           onRemoveScenario={onRemoveScenario}
-          parsedSimulationFiles={parsedSimulationFiles}
+          parsedSimulationFiles={parsedSimulationFiles ?? []}
           sceneRef={loaded.sceneRef}
           scenePath={loaded.scenePath}
           simulationEntries={draftScene.simulationData}

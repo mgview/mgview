@@ -36,7 +36,7 @@ interface UseMotionGenesisWorkspaceOptions {
   handleImportSimulationEntries: (entries: string[]) => Promise<boolean>;
   handleLinkSimulationSettings: (relativePath: string) => Promise<boolean>;
   handleUnlinkSimulationSettings: () => Promise<boolean>;
-  handleRefreshSimulationData: (successMessage: string) => Promise<void>;
+  handleRefreshSimulationData: (successMessage?: string) => Promise<boolean>;
   handleSaveScene: () => Promise<void>;
   handleSetActiveScenario: (scenarioId: string) => Promise<boolean>;
   hasLocalEdits: boolean;
