@@ -16,6 +16,8 @@ interface UseWorkspaceKeyboardShortcutsOptions {
   selectionState: ReturnType<typeof useInspectorSelectionState>;
   shell: ReturnType<typeof useWorkspaceShell>;
   simFileSaving: boolean;
+  closeSceneEditor?: () => void;
+  sceneEditorOpen?: boolean;
 }
 
 export function useWorkspaceKeyboardShortcuts({
@@ -30,6 +32,8 @@ export function useWorkspaceKeyboardShortcuts({
   selectionState,
   shell,
   simFileSaving,
+  closeSceneEditor,
+  sceneEditorOpen = false,
 }: UseWorkspaceKeyboardShortcutsOptions) {
   useEffect(() => {
     const isMonacoEditorContext = (target: EventTarget | null) => {
@@ -92,6 +96,12 @@ export function useWorkspaceKeyboardShortcuts({
           if (selectionState.hasAnySelection) {
             event.preventDefault();
             selectionState.clearAllSelections();
+            return;
+          }
+
+          if (sceneEditorOpen) {
+            event.preventDefault();
+            closeSceneEditor?.();
             return;
           }
         }
@@ -167,6 +177,7 @@ export function useWorkspaceKeyboardShortcuts({
     };
   }, [
     canSaveAnything,
+    closeSceneEditor,
     handleRedo,
     handleSaveAll,
     handleUndo,
@@ -174,6 +185,7 @@ export function useWorkspaceKeyboardShortcuts({
     loading,
     playback.togglePlay,
     saving,
+    sceneEditorOpen,
     selectionState,
     shell.diagnosticsOpen,
     shell.loadOverlayOpen,

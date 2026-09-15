@@ -68,6 +68,10 @@
   min-width: 0;
 }
 
+.workspace-editor-rail-body-wide {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .workspace-sim-rail {
   min-height: 0;
   height: 100%;

@@ -2,7 +2,8 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import PlaybackStrip from './PlaybackStrip.tsx';
 import PlotsPanel from './PlotsPanel.tsx';
 import RendererPanel from './RendererPanel.tsx';
-import type { NormalizedSceneConfig, SceneVisual, Timeline, TimelineFrame, VisualType, WorkspaceRightRail } from '../core/types.ts';
+import type { NormalizedSceneConfig, SceneVisual, Timeline, TimelineFrame, VisualType } from '../core/types.ts';
+import type { InspectorEditorMode } from './inspectorTypes.ts';
 import type { usePlaybackController } from '../hooks/usePlaybackController.ts';
 import type { useWorkspaceShell } from '../hooks/useWorkspaceShell.ts';
 import type { SceneAssetRoot } from '../api/sceneAssetUrl.ts';
@@ -15,6 +16,7 @@ interface WorkspaceVisualRegionProps {
   onCreateVisual: (objectName: string, type: VisualType) => boolean;
   onDeleteSelectedVisual: () => boolean;
   onOpenSceneEditorRail: () => void;
+  onOpenSceneEditorMode: (mode: InspectorEditorMode) => void;
   onSelectObject: (objectName: string, visualName: string | null) => void;
   onSelectSpan: (spanName: string, visualName: string | null) => void;
   onStartSplitterDrag: (
@@ -33,7 +35,8 @@ interface WorkspaceVisualRegionProps {
   selectedSpanVisualName: string | null;
   selectedVisualName: string | null;
   shell: ReturnType<typeof useWorkspaceShell>;
-  rightRail: WorkspaceRightRail;
+  sceneEditorOpen: boolean;
+  sceneEditorMode: InspectorEditorMode;
   showPlots: boolean;
   showRenderer: boolean;
   timeline: Timeline;
@@ -87,6 +90,7 @@ export default function WorkspaceVisualRegion({
   onCreateVisual,
   onDeleteSelectedVisual,
   onOpenSceneEditorRail,
+  onOpenSceneEditorMode,
   onSelectObject,
   onSelectSpan,
   onStartSplitterDrag,
@@ -101,7 +105,8 @@ export default function WorkspaceVisualRegion({
   selectedSpanVisualName,
   selectedVisualName,
   shell,
-  rightRail,
+  sceneEditorOpen,
+  sceneEditorMode,
   showPlots,
   showRenderer,
   timeline,
@@ -123,7 +128,7 @@ export default function WorkspaceVisualRegion({
           {activeScene ? (
             <RendererPanel
               cameraSeedKey={shell.cameraSeedKey}
-              layoutSizeKey={`${showRenderer}-${showPlots}-${rightRail}`}
+              layoutSizeKey={`${showRenderer}-${showPlots}-${sceneEditorOpen}`}
               onCameraPreviewChange={shell.setCameraPreview}
               onCameraCommit={shell.commitCameraPreview}
               onClearSelection={onClearSelection}
@@ -131,6 +136,9 @@ export default function WorkspaceVisualRegion({
               onDeleteSelectedVisual={onDeleteSelectedVisual}
               onRenameVisual={renameVisual}
               onOpenSceneEditorRail={onOpenSceneEditorRail}
+              onOpenSceneEditorMode={onOpenSceneEditorMode}
+              sceneEditorOpen={sceneEditorOpen}
+              sceneEditorMode={sceneEditorMode}
               onSelectObject={onSelectObject}
               onSelectSpan={onSelectSpan}
               onVisualTransformChange={({ position, rotation }) => {

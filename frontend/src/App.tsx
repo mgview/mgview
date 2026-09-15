@@ -8,6 +8,7 @@ import SceneHeaderBar from './components/SceneHeaderBar.tsx';
 import WorkspaceNoSceneState from './components/WorkspaceNoSceneState.tsx';
 import WorkspaceOverlays from './components/WorkspaceOverlays.tsx';
 import WorkspaceShell from './components/WorkspaceShell.tsx';
+import type { InspectorEditorMode } from './components/inspectorTypes.ts';
 import { getFrameAtTime } from './core/timeline.ts';
 import { DEFAULT_SCENE_LAYOUT } from './core/workspaceLayout.ts';
 import { useInspectorSelectionState } from './hooks/useInspectorSelectionState.ts';
@@ -243,21 +244,7 @@ function WorkspaceApp() {
     if (selectedSpanResolvedName) {
       selectionState.setEditorMode('visual');
     }
-  }, [selectedSpanResolvedName, selectionState]);
-
-  useWorkspaceKeyboardShortcuts({
-    canSaveAnything,
-    handleRedo,
-    handleSaveAll,
-    handleUndo,
-    hasUnsavedChanges,
-    loading,
-    playback,
-    saving,
-    selectionState,
-    shell,
-    simFileSaving: simulationSettingsEditor.saving,
-  });
+  }, [selectedSpanResolvedName, selectionState.setEditorMode]);
 
   const spanEntries = useMemo(
     () =>
@@ -291,8 +278,6 @@ function WorkspaceApp() {
   const showRenderer = sceneLayout?.showRenderer ?? DEFAULT_SCENE_LAYOUT.showRenderer;
   const showPlots = sceneLayout?.showPlots ?? DEFAULT_SCENE_LAYOUT.showPlots;
   const rightRail = sceneLayout?.rightRail ?? DEFAULT_SCENE_LAYOUT.rightRail;
-  const timelineOwner = showRenderer ? 'renderer' : showPlots ? 'plots' : null;
-
   const layout = useWorkspaceLayoutSplits({
     loadedScenePath: loaded?.scenePath,
     sceneLayout,
@@ -300,6 +285,32 @@ function WorkspaceApp() {
     showPlots,
     rightRail,
     updateDraftScene,
+  });
+  const timelineOwner = showRenderer ? 'renderer' : layout.effectiveShowPlots ? 'plots' : null;
+  const openSceneEditorMode = (mode: InspectorEditorMode) => {
+    if (layout.sceneEditorOpen && selectionState.editorMode === mode) {
+      layout.toggleRightRail('scene');
+      return;
+    }
+
+    selectionState.setEditorMode(mode);
+    layout.openSceneEditorRailIfClosed();
+  };
+
+  useWorkspaceKeyboardShortcuts({
+    canSaveAnything,
+    closeSceneEditor: () => layout.toggleRightRail('scene'),
+    handleRedo,
+    handleSaveAll,
+    handleUndo,
+    hasUnsavedChanges,
+    loading,
+    playback,
+    saving,
+    sceneEditorOpen: layout.sceneEditorOpen,
+    selectionState,
+    shell,
+    simFileSaving: simulationSettingsEditor.saving,
   });
 
   const handleRevert = useCallback(() => {
@@ -339,8 +350,20 @@ function WorkspaceApp() {
         onOpenSamplesOverlay={shell.openSamplesOverlay}
         onOpenDiagnostics={shell.openDiagnostics}
         onOpenChannels={shell.openSimulationOverlay}
-        onSetLayoutVisibility={layout.updateSceneLayoutVisibility}
-        onToggleRightRail={layout.toggleRightRail}
+        onSetLayoutVisibility={(key, value) => {
+          if (layout.sceneEditorOpen) {
+            layout.toggleRightRail('scene');
+          } else {
+            layout.updateSceneLayoutVisibility(key, value);
+          }
+        }}
+        onToggleRightRail={(target) => {
+          if (target === 'scene') {
+            openSceneEditorMode('visual');
+          } else {
+            layout.toggleRightRail(target);
+          }
+        }}
         performanceOverlayOpen={shell.performanceOverlayOpen}
         onSetPerformanceOverlayOpen={shell.setPerformanceOverlayOpen}
         onOpenSaveAsOverlay={shell.openSaveAsOverlay}
@@ -390,6 +413,7 @@ function WorkspaceApp() {
           onMotionGenesisInputChange={motionGenesisRun.setInput}
           onMotionGenesisOptionsChange={motionGenesisRun.setOptions}
           onOpenSceneEditorRail={layout.openSceneEditorRailIfClosed}
+          onOpenSceneEditorMode={openSceneEditorMode}
           onRunMotionGenesis={runMotionGenesis}
           onSelectObject={(objectName, firstVisualName) => {
             selectionState.selectObjectForEditor(objectName, firstVisualName, selectObject);
@@ -418,7 +442,8 @@ function WorkspaceApp() {
           setSelectedVisualName={setSelectedVisualName}
           shell={shell}
           rightRail={rightRail}
-          showPlots={showPlots}
+          sceneEditorOpen={layout.sceneEditorOpen}
+          showPlots={layout.effectiveShowPlots}
           showRenderer={showRenderer}
           showVisualWorkspace={layout.showVisualWorkspace}
           simFileContent={simulationSettingsEditor.draftContent}

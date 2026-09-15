@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Box, MousePointer2, Move3D, Plus, Rotate3D, Trash2, X } from 'lucide-react';
+import { Box, Camera, FileText, MousePointer2, Move3D, Pencil, Plus, Rotate3D, Trash2, X } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
@@ -8,6 +8,7 @@ import { evaluateScene } from '../core/sceneEvaluation.ts';
 import type { SceneAssetRoot } from '../api/sceneAssetUrl.ts';
 import type { MaterialDefinition, NormalizedSceneConfig, SceneVisual, TimelineFrame, VisualType } from '../core/types.ts';
 import { VISUAL_TYPE_OPTIONS } from './editorShared.tsx';
+import type { InspectorEditorMode } from './inspectorTypes.ts';
 import { createLegacyAxes } from '../rendering/axisHelpers.ts';
 import {
   deriveCameraOverride,
@@ -114,6 +115,9 @@ interface RendererPanelProps {
   onDeleteSelectedVisual?: () => boolean;
   onRenameVisual?: (currentName: string, nextName: string) => boolean;
   onOpenSceneEditorRail?: () => void;
+  onOpenSceneEditorMode?: (mode: InspectorEditorMode) => void;
+  sceneEditorOpen?: boolean;
+  sceneEditorMode?: InspectorEditorMode;
   onVisualTransformChange?: (transform: VisualTransformValue) => void;
   onVisualTransformPreviewChange?: (transform: VisualTransformValue) => void;
   onVisualResizeChange?: (patch: VisualResizePatch) => void;
@@ -177,6 +181,9 @@ export default function RendererPanel({
   onDeleteSelectedVisual,
   onRenameVisual,
   onOpenSceneEditorRail,
+  onOpenSceneEditorMode,
+  sceneEditorOpen = false,
+  sceneEditorMode = 'visual',
   onVisualTransformChange,
   onVisualTransformPreviewChange,
   onVisualResizeChange,
@@ -983,6 +990,43 @@ export default function RendererPanel({
       >
         <TooltipProvider delayDuration={250}>
           <div
+            className="absolute right-2.5 top-2.5 z-[3] flex items-center gap-1 rounded-md border border-border bg-popover/90 p-1 shadow-lg backdrop-blur-sm"
+            role="toolbar"
+            aria-label="Scene editor modes"
+          >
+            {(
+              [
+                ['visual', 'Editor', Pencil, 'Edit objects (Alt+E)'],
+                ['scene', 'Scene Settings', Camera, 'Scene settings'],
+                ['json', 'JSON Editor', FileText, 'JSON editor'],
+              ] as const
+            ).map(([mode, label, Icon, tooltip]) => {
+              const active = sceneEditorOpen && sceneEditorMode === mode;
+              return (
+                <Tooltip key={mode}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        'h-7 w-7',
+                        active &&
+                          'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
+                      )}
+                      aria-label={label}
+                      aria-pressed={active}
+                      onClick={() => onOpenSceneEditorMode?.(mode)}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{tooltip}</TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+          <div
             className="absolute left-2.5 top-2.5 z-[3] flex items-center gap-1 rounded-md border border-border bg-popover/90 p-1 shadow-lg backdrop-blur-sm"
             role="toolbar"
             aria-label="Viewport tools"
@@ -1172,7 +1216,7 @@ export default function RendererPanel({
         ) : null}
         {showPerformanceOverlay && performanceStats ? (
           <div
-            className="pointer-events-none absolute right-2.5 top-2.5 z-[2] min-w-[168px] rounded-md border border-border bg-popover/90 p-2 shadow-lg backdrop-blur-sm"
+            className="pointer-events-none absolute right-2.5 top-12 z-[2] min-w-[168px] rounded-md border border-border bg-popover/90 p-2 shadow-lg backdrop-blur-sm"
             aria-live="off"
           >
             <div className="mb-1 flex items-center justify-between gap-2">

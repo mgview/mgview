@@ -12,8 +12,7 @@ import SceneSettingsPanel from './SceneSettingsPanel.tsx';
 import SpanEditorPanel from './SpanEditorPanel.tsx';
 import VisualEditorPanel from './VisualEditorPanel.tsx';
 import { getApiRoot, getSceneBasePath } from '../core/sceneRef.ts';
-
-export type InspectorEditorMode = 'visual' | 'scene' | 'json';
+import type { InspectorEditorMode } from './inspectorTypes.ts';
 
 interface InspectorDrawerProps {
   activeScene: NormalizedSceneConfig | null;

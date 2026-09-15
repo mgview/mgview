@@ -12,8 +12,13 @@ function normalizeSplit(value: number | undefined, fallback: number) {
 }
 
 function normalizeRightRail(layout: SceneLayoutConfig | undefined): WorkspaceRightRail {
-  if (layout?.rightRail === 'none' || layout?.rightRail === 'scene' || layout?.rightRail === 'sim') {
+  if (layout?.rightRail === 'none' || layout?.rightRail === 'sim') {
     return layout.rightRail;
+  }
+
+  // The scene editor is ephemeral UI state. Older scenes may have persisted it.
+  if (layout?.rightRail === 'scene') {
+    return 'none';
   }
 
   if (layout?.showEditorRail === false) {
@@ -26,7 +31,7 @@ function normalizeRightRail(layout: SceneLayoutConfig | undefined): WorkspaceRig
 export const DEFAULT_SCENE_LAYOUT: NormalizedSceneLayout = {
   showRenderer: true,
   showPlots: false,
-  rightRail: 'scene',
+  rightRail: 'none',
   focusTarget: null,
   visualSplit: DEFAULT_VISUAL_SPLIT,
   workspaceSplit: DEFAULT_WORKSPACE_SPLIT,

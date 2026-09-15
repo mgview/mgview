@@ -30,6 +30,35 @@ interface UseWorkspaceLayoutSplitsOptions {
   updateDraftScene: (updater: (scene: NormalizedSceneConfig) => void) => void;
 }
 
+interface SceneEditorSplitOptions {
+  shellWidth: number;
+  showPlots: boolean;
+  rightRail: WorkspaceRightRail;
+  visualSplit: number;
+  workspaceSplit: number;
+}
+
+export function calculateSceneEditorWorkspaceSplit({
+  shellWidth,
+  showPlots,
+  rightRail,
+  visualSplit,
+  workspaceSplit,
+}: SceneEditorSplitOptions): number | null {
+  const availableWorkspaceWidth = shellWidth - WORKSPACE_SPLITTER_FOOTPRINT;
+  if (availableWorkspaceWidth <= 0) {
+    return null;
+  }
+
+  const visualWorkspaceWidth = rightRail === 'sim'
+    ? availableWorkspaceWidth * workspaceSplit
+    : shellWidth;
+  const rendererWidth = showPlots
+    ? Math.max(0, visualWorkspaceWidth - WORKSPACE_SPLITTER_FOOTPRINT) * visualSplit
+    : visualWorkspaceWidth;
+  return rendererWidth / availableWorkspaceWidth;
+}
+
 export function useWorkspaceLayoutSplits({
   loadedScenePath,
   sceneLayout,
@@ -38,8 +67,10 @@ export function useWorkspaceLayoutSplits({
   rightRail,
   updateDraftScene,
 }: UseWorkspaceLayoutSplitsOptions) {
-  const showRightRail = rightRail !== 'none';
-  const showVisualWorkspace = showRenderer || showPlots;
+  const [sceneEditorOpen, setSceneEditorOpen] = useState(false);
+  const effectiveShowPlots = showPlots && !sceneEditorOpen;
+  const showRightRail = sceneEditorOpen || rightRail === 'sim';
+  const showVisualWorkspace = showRenderer || effectiveShowPlots;
 
   const [visualSplit, setVisualSplit] = useState(sceneLayout?.visualSplit ?? DEFAULT_SCENE_LAYOUT.visualSplit);
   const [workspaceSplit, setWorkspaceSplit] = useState(
@@ -66,6 +97,10 @@ export function useWorkspaceLayoutSplits({
     }
   }, [loadedScenePath, sceneLayout?.visualSplit, sceneLayout?.workspaceSplit]);
 
+  useEffect(() => {
+    setSceneEditorOpen(false);
+  }, [loadedScenePath]);
+
   const updateSceneLayoutVisibility = useCallback(
     (key: 'showRenderer' | 'showPlots', value: boolean) => {
       updateDraftScene((scene) => {
@@ -86,16 +121,48 @@ export function useWorkspaceLayoutSplits({
 
   const toggleRightRail = useCallback(
     (targetRail: 'scene' | 'sim') => {
+      if (targetRail === 'scene') {
+        setSceneEditorOpen((open) => {
+          if (open) {
+            setWorkspaceSplit(sceneLayout?.workspaceSplit ?? DEFAULT_SCENE_LAYOUT.workspaceSplit);
+          } else if (showRenderer && showPlots) {
+            setWorkspaceSplit(visualSplit);
+          }
+          return !open;
+        });
+        return;
+      }
+
+      if (sceneEditorOpen) {
+        setSceneEditorOpen(false);
+        setWorkspaceSplit(sceneLayout?.workspaceSplit ?? DEFAULT_SCENE_LAYOUT.workspaceSplit);
+        return;
+      }
+
+      setSceneEditorOpen(false);
+      setWorkspaceSplit(sceneLayout?.workspaceSplit ?? DEFAULT_SCENE_LAYOUT.workspaceSplit);
       setRightRail(rightRail === targetRail ? 'none' : targetRail);
     },
-    [rightRail, setRightRail]
+    [rightRail, sceneEditorOpen, sceneLayout?.workspaceSplit, setRightRail, showPlots, showRenderer, visualSplit]
   );
 
   const openSceneEditorRailIfClosed = useCallback(() => {
-    if (rightRail !== 'scene') {
-      setRightRail('scene');
+    if (sceneEditorOpen) {
+      return;
     }
-  }, [rightRail, setRightRail]);
+
+    const nextWorkspaceSplit = calculateSceneEditorWorkspaceSplit({
+      shellWidth: workspaceShellRef.current?.clientWidth ?? 0,
+      showPlots,
+      rightRail,
+      visualSplit,
+      workspaceSplit,
+    });
+    if (showRenderer && nextWorkspaceSplit !== null) {
+      setWorkspaceSplit(nextWorkspaceSplit);
+    }
+    setSceneEditorOpen(true);
+  }, [rightRail, sceneEditorOpen, showPlots, showRenderer, visualSplit, workspaceSplit]);
 
   const commitLayoutSplit = useCallback(
     (key: 'visualSplit' | 'workspaceSplit', value: number) => {
@@ -139,7 +206,7 @@ export function useWorkspaceLayoutSplits({
       const minimumPrimaryWidth =
         splitter === 'visual'
           ? MIN_RENDERER_PANEL_WIDTH
-          : showRenderer && showPlots
+          : showRenderer && effectiveShowPlots
             ? MIN_RENDERER_PANEL_WIDTH + MIN_PLOTS_PANEL_WIDTH + 8
             : MIN_SINGLE_VISUAL_WIDTH;
       const minimumSecondaryWidth =
@@ -174,7 +241,9 @@ export function useWorkspaceLayoutSplits({
         window.removeEventListener('pointerup', finishDrag);
         window.removeEventListener('pointercancel', finishDrag);
         document.body.classList.remove('workspace-splitter-dragging');
-        commitLayoutSplit(splitter === 'visual' ? 'visualSplit' : 'workspaceSplit', lastValue);
+        if (splitter !== 'workspace' || !sceneEditorOpen) {
+          commitLayoutSplit(splitter === 'visual' ? 'visualSplit' : 'workspaceSplit', lastValue);
+        }
         draggingSplitterRef.current = null;
       };
 
@@ -182,7 +251,7 @@ export function useWorkspaceLayoutSplits({
       window.addEventListener('pointerup', finishDrag);
       window.addEventListener('pointercancel', finishDrag);
     },
-    [clampSplit, commitLayoutSplit, showPlots, showRenderer, visualSplit, workspaceSplit]
+    [clampSplit, commitLayoutSplit, effectiveShowPlots, sceneEditorOpen, showRenderer, visualSplit, workspaceSplit]
   );
 
   useLayoutEffect(() => {
@@ -202,7 +271,7 @@ export function useWorkspaceLayoutSplits({
 
     const shellWidth = shell.clientWidth;
     const hasWorkspaceSplitter = showVisualWorkspace && showRightRail;
-    const visualNeedsDualSplit = showRenderer && showPlots;
+    const visualNeedsDualSplit = showRenderer && effectiveShowPlots;
     const minimumVisualShellWidth = visualNeedsDualSplit
       ? MIN_RENDERER_PANEL_WIDTH + MIN_PLOTS_PANEL_WIDTH + WORKSPACE_SPLITTER_FOOTPRINT
       : MIN_SINGLE_VISUAL_WIDTH;
@@ -251,7 +320,9 @@ export function useWorkspaceLayoutSplits({
 
     if (didAdjustWorkspace) {
       setWorkspaceSplit(nextWorkspaceSplit);
-      persistLayoutSplitIfNeeded('workspaceSplit', nextWorkspaceSplit);
+      if (!sceneEditorOpen) {
+        persistLayoutSplitIfNeeded('workspaceSplit', nextWorkspaceSplit);
+      }
     }
 
     if (didAdjustVisual) {
@@ -261,7 +332,8 @@ export function useWorkspaceLayoutSplits({
   }, [
     clampSplit,
     persistLayoutSplitIfNeeded,
-    showPlots,
+    sceneEditorOpen,
+    effectiveShowPlots,
     showRenderer,
     showRightRail,
     showVisualWorkspace,
@@ -288,7 +360,7 @@ export function useWorkspaceLayoutSplits({
   }, [showRightRail, showVisualWorkspace, workspaceSplit]);
 
   const visualShellStyle = useMemo((): CSSProperties => {
-    if (showRenderer && showPlots) {
+    if (showRenderer && effectiveShowPlots) {
       return {
         gridTemplateColumns: `minmax(${MIN_RENDERER_PANEL_WIDTH}px, calc((100% - ${WORKSPACE_SPLITTER_FOOTPRINT}px) * ${visualSplit})) ${WORKSPACE_SPLITTER_WIDTH}px minmax(${MIN_PLOTS_PANEL_WIDTH}px, calc((100% - ${WORKSPACE_SPLITTER_FOOTPRINT}px) * ${1 - visualSplit}))`,
       };
@@ -297,10 +369,12 @@ export function useWorkspaceLayoutSplits({
     return {
       gridTemplateColumns: 'minmax(0, 1fr)',
     };
-  }, [showPlots, showRenderer, visualSplit]);
+  }, [effectiveShowPlots, showRenderer, visualSplit]);
 
   return {
+    effectiveShowPlots,
     openSceneEditorRailIfClosed,
+    sceneEditorOpen,
     setRightRail,
     showVisualWorkspace,
     startSplitterDrag,
