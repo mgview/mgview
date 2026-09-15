@@ -383,6 +383,12 @@
   aspect-ratio: 1.6 / 1;
 }
 
+.material-option-swatch-none {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 900px) {
   .workspace-shell {
     grid-template-columns: minmax(0, 1fr);
