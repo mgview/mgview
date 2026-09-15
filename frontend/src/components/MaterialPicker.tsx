@@ -20,6 +20,7 @@ import { cn } from '../lib/utils.ts';
 import { degreesToRadians, NumericInput, radiansToDegrees } from './editorShared.tsx';
 import { Button } from './ui/button.tsx';
 import { Input } from './ui/input.tsx';
+import { OBJECT_COLOR_PRESET_ROWS } from './colorPresets.ts';
 
 interface MaterialPickerProps {
   compact?: boolean;
@@ -29,11 +30,6 @@ interface MaterialPickerProps {
   onMaterialPreviewChange?: (material: MaterialDefinition) => void;
   onMaterialChange: (material: MaterialDefinition) => void;
 }
-
-const COLOR_PRESET_ROWS = [
-  ['#111827', '#222222', '#7f8da3', '#97a3b5', '#c7d2e2', '#d7e1ee', '#edf3ff', '#f7faff', '#ffffff'],
-  ['#ff6b6b', '#ff8787', '#ffa94d', '#ffd43b', '#51cf66', '#69db7c', '#4dabf7', '#74c0fc', '#9775fa'],
-] as const;
 
 function buildCustomDraft(materialName: string) {
   const parsed = parseCssColorString(materialName);
@@ -267,34 +263,35 @@ export default function MaterialPicker({
           </div>
 
           <div className={cn('grid', compact ? 'gap-0.5' : 'gap-1')}>
-            {COLOR_PRESET_ROWS.map((row, rowIndex) => (
-            <div className="material-swatch-grid" key={rowIndex}>
-              {row.map((cssColor) => {
-                const isActive =
-                  parseCssColorString(materialName)?.cssText === parseCssColorString(cssColor)?.cssText ||
-                  normalizeMaterialName(materialName) === normalizeMaterialName(cssColor);
+            {OBJECT_COLOR_PRESET_ROWS.map((row, rowIndex) => (
+              <div className="material-swatch-grid" key={rowIndex}>
+                {row.map((cssColor) => {
+                  const isActive =
+                    parseCssColorString(materialName)?.cssText === parseCssColorString(cssColor)?.cssText ||
+                    normalizeMaterialName(materialName) === normalizeMaterialName(cssColor);
 
-                return (
-                  <Button
-                    key={cssColor}
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      'block h-auto w-full p-1',
-                      isActive && 'border-primary/50 bg-accent ring-1 ring-primary/20'
-                    )}
-                    title={cssColor}
-                    onClick={() => applyColor(cssColor)}
-                  >
-                    <span
-                      className="material-option-swatch-large border border-white/15 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
-                      aria-hidden="true"
-                      style={{ background: cssColor }}
-                    />
-                  </Button>
-                );
-              })}
-            </div>
+                  return (
+                    <Button
+                      key={cssColor}
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        'block h-auto w-full p-1',
+                        isActive && 'border-primary/50 bg-accent ring-1 ring-primary/20'
+                      )}
+                      title={cssColor}
+                      aria-label={`Use ${cssColor}`}
+                      onClick={() => applyColor(cssColor)}
+                    >
+                      <span
+                        className="material-option-swatch-large border border-white/15 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
+                        aria-hidden="true"
+                        style={{ background: cssColor }}
+                      />
+                    </Button>
+                  );
+                })}
+              </div>
             ))}
           </div>
 

@@ -1,5 +1,6 @@
 import type { NormalizedSceneConfig } from '../core/types.ts';
 import ColorPicker from './ColorPicker.tsx';
+import { BACKGROUND_COLOR_PRESET_ROWS } from './colorPresets.ts';
 import { NumericInput } from './editorShared.tsx';
 import { Checkbox } from './ui/checkbox.tsx';
 import { Label } from './ui/label.tsx';
@@ -78,6 +79,9 @@ export default function SceneSettingsPanel({
       <label className={fieldClass()}>
         <span className={editorFieldLabel}>Background</span>
         <ColorPicker
+          label="background color"
+          popoverTitle="Background Color"
+          presetRows={BACKGROUND_COLOR_PRESET_ROWS}
           value={activeScene.backgroundColor}
           onChange={(nextValue) => {
             updateDraftScene((scene) => {
