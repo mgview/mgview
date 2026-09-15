@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import {
-  parseCssColorString,
-} from '../core/materialPresets.ts';
+import { parseCssColorString } from '../core/materialPresets.ts';
 import { useAnchoredPopoverPlacement } from '../hooks/useAnchoredPopoverPlacement.ts';
 import { cn } from '../lib/utils.ts';
 import { Button } from './ui/button.tsx';
 import { Input } from './ui/input.tsx';
+import { OBJECT_COLOR_PRESET_ROWS } from './colorPresets.ts';
 
 interface ColorPickerProps {
   label?: string;
   popoverTitle?: string;
+  presetRows?: ReadonlyArray<ReadonlyArray<string>>;
   value: string;
   onChange: (nextValue: string) => void;
 }
@@ -40,18 +40,10 @@ function buildColorLabel(value: string): string {
   return value.trim() || '#e0f0ff';
 }
 
-const PRESET_COLORS = [
-  '#e0f0ff',
-  '#ffffff',
-  '#d9c7ab',
-  '#87ceeb',
-  '#0f172a',
-  '#000000',
-];
-
 export default function ColorPicker({
   label = 'color',
   popoverTitle = 'Color',
+  presetRows = OBJECT_COLOR_PRESET_ROWS,
   value,
   onChange,
 }: ColorPickerProps) {
@@ -149,41 +141,44 @@ export default function ColorPicker({
             </Button>
           </div>
 
-          <div className="grid gap-2">
-            <div className="material-swatch-grid">
-              {PRESET_COLORS.map((cssColor) => {
-                const isActive = parseCssColorString(normalizedValue)?.cssText === parseCssColorString(cssColor)?.cssText;
+          <div className="grid gap-1">
+            {presetRows.map((row, rowIndex) => (
+              <div className="material-swatch-grid" key={rowIndex}>
+                {row.map((cssColor) => {
+                  const isActive = parseCssColorString(normalizedValue)?.cssText === parseCssColorString(cssColor)?.cssText;
 
-                return (
-                  <Button
-                    key={cssColor}
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      'block h-auto w-full p-1',
-                      isActive && 'border-primary/50 bg-accent ring-1 ring-primary/20'
-                    )}
-                    title={cssColor}
-                    onClick={() => onChange(cssColor)}
-                  >
-                    <span
-                      className="material-option-swatch-large border border-white/15 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
-                      aria-hidden="true"
-                      style={{ background: cssColor }}
-                    />
-                  </Button>
-                );
-              })}
-            </div>
+                  return (
+                    <Button
+                      key={cssColor}
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        'block h-auto w-full p-1',
+                        isActive && 'border-primary/50 bg-accent ring-1 ring-primary/20'
+                      )}
+                      title={cssColor}
+                      aria-label={`Use ${cssColor}`}
+                      onClick={() => onChange(cssColor)}
+                    >
+                      <span
+                        className="material-option-swatch-large border border-white/15 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.12)]"
+                        aria-hidden="true"
+                        style={{ background: cssColor }}
+                      />
+                    </Button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
 
           <div className="grid gap-2 border-t border-border/50 pt-2">
             <div className="text-[0.72rem] uppercase tracking-wide text-muted-foreground">Custom</div>
-            <div className="grid grid-cols-1 items-center gap-2.5">
+            <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-2">
               <input
                 type="color"
                 aria-label={label}
-                className="h-[38px] w-full rounded-lg border border-input bg-background p-1"
+                className="h-8 w-full rounded-md border border-input bg-background p-1"
                 value={customHex}
                 onChange={(event) => {
                   const nextHex = event.target.value;
@@ -192,29 +187,29 @@ export default function ColorPicker({
                   onChange(nextHex);
                 }}
               />
+              <Input
+                type="text"
+                value={customCssText}
+                aria-label={`${label} CSS color`}
+                onChange={(event) => {
+                  const nextText = event.target.value;
+                  setCustomCssText(nextText);
+                  const parsed = parseCssColorString(nextText);
+                  if (parsed) {
+                    setCustomHex(parsed.hex);
+                    onChange(parsed.cssText);
+                  }
+                }}
+                onBlur={() => {
+                  const parsed = parseCssColorString(customCssText);
+                  if (parsed) {
+                    setCustomCssText(parsed.cssText);
+                    setCustomHex(parsed.hex);
+                    onChange(parsed.cssText);
+                  }
+                }}
+              />
             </div>
-            <Input
-              type="text"
-              value={customCssText}
-              aria-label={`${label} CSS color`}
-              onChange={(event) => {
-                const nextText = event.target.value;
-                setCustomCssText(nextText);
-                const parsed = parseCssColorString(nextText);
-                if (parsed) {
-                  setCustomHex(parsed.hex);
-                  onChange(parsed.cssText);
-                }
-              }}
-              onBlur={() => {
-                const parsed = parseCssColorString(customCssText);
-                if (parsed) {
-                  setCustomCssText(parsed.cssText);
-                  setCustomHex(parsed.hex);
-                  onChange(parsed.cssText);
-                }
-              }}
-            />
           </div>
             </div>,
             document.body
