@@ -41,12 +41,14 @@ import {
   visualCardList,
 } from './editorLayout.ts';
 import MaterialPicker from './MaterialPicker.tsx';
+import type { SceneAssetRoot } from '../api/sceneAssetUrl.ts';
 import { Button } from './ui/button.tsx';
 import { Checkbox } from './ui/checkbox.tsx';
 import { Input } from './ui/input.tsx';
 
 interface VisualEditorPanelProps {
   scenePath?: string;
+  sceneAssetRoot?: SceneAssetRoot;
   liveSelectedVisual?: SceneVisual;
   selectedObject?: SceneObjectInspection;
   selectedVisual?: SceneObjectInspection['visuals'][number];
@@ -147,6 +149,7 @@ const geometrySelectClass =
 
 export default function VisualEditorPanel({
   scenePath,
+  sceneAssetRoot,
   liveSelectedVisual,
   selectedObject,
   selectedVisual,
@@ -317,6 +320,7 @@ export default function VisualEditorPanel({
                 <span className={editorFieldLabel}>Material</span>
                 <MaterialPicker
                   material={liveSelectedVisual.material}
+                  sceneAssetRoot={sceneAssetRoot}
                   scenePath={scenePath}
                   onMaterialPreviewChange={(nextMaterial) => {
                     updateSelectedVisualPreview((visual) => {

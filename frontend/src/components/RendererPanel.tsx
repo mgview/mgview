@@ -5,6 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 import { evaluateScene } from '../core/sceneEvaluation.ts';
+import type { SceneAssetRoot } from '../api/sceneAssetUrl.ts';
 import type { MaterialDefinition, NormalizedSceneConfig, SceneVisual, TimelineFrame, VisualType } from '../core/types.ts';
 import { VISUAL_TYPE_OPTIONS } from './editorShared.tsx';
 import { createLegacyAxes } from '../rendering/axisHelpers.ts';
@@ -89,6 +90,7 @@ interface RendererPanelProps {
     cameraUp: [number, number, number];
   }) => void;
   scenePath: string;
+  sceneAssetRoot: SceneAssetRoot;
   scene: NormalizedSceneConfig;
   frame: TimelineFrame | undefined;
   selectedObjectName: string | null;
@@ -151,6 +153,7 @@ export default function RendererPanel({
   onCameraCommit,
   onCameraPreviewChange,
   scenePath,
+  sceneAssetRoot,
   scene,
   frame,
   selectedObjectName,
@@ -338,7 +341,7 @@ export default function RendererPanel({
       Math.max(scene.workspaceSize / 100, 0.001)
     );
     const sceneRoot = new THREE.Group();
-    const renderGraph = new RenderGraphManager(sceneRoot, scenePath);
+    const renderGraph = new RenderGraphManager(sceneRoot, scenePath, sceneAssetRoot);
     const transformControls = new TransformControls(camera, renderer.domElement);
     transformControls.disconnect();
     customizeTranslationGizmo(transformControls);
@@ -620,14 +623,14 @@ export default function RendererPanel({
       return;
     }
 
-    handle.renderGraph.setScenePath(scenePath);
+    handle.renderGraph.setScenePath(scenePath, sceneAssetRoot);
     handle.renderGraph.update(evaluateScene(scene, frame), {
       objectName: selectedObjectName,
       visualName: selectedVisualName,
       spanName: selectedSpanName,
       spanVisualName: selectedSpanVisualName,
     });
-  }, [frame, scene, scenePath, selectedObjectName, selectedSpanName, selectedSpanVisualName, selectedVisualName]);
+  }, [frame, scene, sceneAssetRoot, scenePath, selectedObjectName, selectedSpanName, selectedSpanVisualName, selectedVisualName]);
 
   useEffect(() => {
     const handle = handleRef.current;
@@ -1148,6 +1151,7 @@ export default function RendererPanel({
               <MaterialPicker
                 compact
                 material={contextVisual.material}
+                sceneAssetRoot={sceneAssetRoot}
                 scenePath={scenePath}
                 onMaterialChange={(material) => onVisualMaterialChange?.(material)}
                 onMaterialPreviewChange={(material) => onVisualMaterialPreviewChange?.(material)}

@@ -5,6 +5,7 @@ import WorkspaceVisualRegion from './WorkspaceVisualRegion.tsx';
 import type { InspectorEditorMode } from './InspectorDrawer.tsx';
 import type { MotionGenesisRunOptions } from '../api/localFiles.ts';
 import type { MotionGenesisRunState } from '../api/localFiles.ts';
+import type { SceneAssetRoot } from '../api/sceneAssetUrl.ts';
 import type {
   NormalizedSceneConfig,
   SceneObjectInspection,
@@ -63,6 +64,7 @@ interface WorkspaceShellProps {
   playback: ReturnType<typeof usePlaybackController>;
   playbackSpeed: number;
   rendererSceneBasePath: string;
+  rendererSceneAssetRoot: SceneAssetRoot;
   rightRail: WorkspaceRightRail;
   savePreview: string;
   selectedSpanName: string | null;
@@ -142,6 +144,7 @@ export default function WorkspaceShell({
   playback,
   playbackSpeed,
   rendererSceneBasePath,
+  rendererSceneAssetRoot,
   rightRail,
   savePreview,
   selectedSpanName,
@@ -204,6 +207,7 @@ export default function WorkspaceShell({
           playback={playback}
           playbackSpeed={playbackSpeed}
           rendererSceneBasePath={rendererSceneBasePath}
+          rendererSceneAssetRoot={rendererSceneAssetRoot}
           renameVisual={renameVisual}
           rightRail={rightRail}
           selectedObjectName={activeSelectedObject?.name ?? null}

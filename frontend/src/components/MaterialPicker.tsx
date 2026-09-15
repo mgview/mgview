@@ -14,7 +14,7 @@ import {
   parseCssColorString,
 } from '../core/materialPresets.ts';
 import { resolveBundledAssetUrl } from '../api/localFiles.ts';
-import { resolveSceneAssetUrl } from '../api/sceneAssetUrl.ts';
+import { resolveSceneAssetUrl, type SceneAssetRoot } from '../api/sceneAssetUrl.ts';
 import { useAnchoredPopoverPlacement } from '../hooks/useAnchoredPopoverPlacement.ts';
 import { cn } from '../lib/utils.ts';
 import { NumericInput } from './editorShared.tsx';
@@ -25,6 +25,7 @@ interface MaterialPickerProps {
   compact?: boolean;
   material: SceneMaterial | undefined;
   scenePath?: string;
+  sceneAssetRoot?: SceneAssetRoot;
   onMaterialPreviewChange?: (material: MaterialDefinition) => void;
   onMaterialChange: (material: MaterialDefinition) => void;
 }
@@ -92,6 +93,7 @@ export default function MaterialPicker({
   compact = false,
   material,
   scenePath = '',
+  sceneAssetRoot,
   onMaterialPreviewChange,
   onMaterialChange,
 }: MaterialPickerProps) {
@@ -187,7 +189,7 @@ export default function MaterialPicker({
   const offset = materialDefinition.texture?.offset ?? [0, 0];
   const previewTextureUrl = texturePath
     ? (materialDefinition.texture?.path
-        ? resolveSceneAssetUrl(scenePath, texturePath)
+        ? resolveSceneAssetUrl(scenePath, texturePath, sceneAssetRoot)
         : texturePreviewUrl(texturePath))
     : undefined;
   const parsedTint = parseCssColorString(materialName);

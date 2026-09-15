@@ -5,6 +5,7 @@ import RendererPanel from './RendererPanel.tsx';
 import type { NormalizedSceneConfig, SceneVisual, Timeline, TimelineFrame, VisualType, WorkspaceRightRail } from '../core/types.ts';
 import type { usePlaybackController } from '../hooks/usePlaybackController.ts';
 import type { useWorkspaceShell } from '../hooks/useWorkspaceShell.ts';
+import type { SceneAssetRoot } from '../api/sceneAssetUrl.ts';
 
 interface WorkspaceVisualRegionProps {
   activeScene: NormalizedSceneConfig | null;
@@ -24,6 +25,7 @@ interface WorkspaceVisualRegionProps {
   playback: ReturnType<typeof usePlaybackController>;
   playbackSpeed: number;
   rendererSceneBasePath: string;
+  rendererSceneAssetRoot: SceneAssetRoot;
   renameVisual: (currentName: string, nextName: string) => boolean;
   sceneObjectOptions: Array<{ name: string; type: string }>;
   selectedObjectName: string | null;
@@ -91,6 +93,7 @@ export default function WorkspaceVisualRegion({
   playback,
   playbackSpeed,
   rendererSceneBasePath,
+  rendererSceneAssetRoot,
   renameVisual,
   sceneObjectOptions,
   selectedObjectName,
@@ -163,6 +166,7 @@ export default function WorkspaceVisualRegion({
                 });
               }}
               scenePath={rendererSceneBasePath}
+              sceneAssetRoot={rendererSceneAssetRoot}
               sceneObjectOptions={sceneObjectOptions}
               scene={activeScene}
               frame={currentFrame}

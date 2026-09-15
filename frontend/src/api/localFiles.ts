@@ -8,6 +8,7 @@ export {
   getPublicBaseUrl,
   getServerRootPrefix,
   resolveAppAssetUrl,
+  resolveApiFileUrl,
   resolveBundledAssetUrl,
   resolvePublicAssetUrl,
 } from './assetPaths.ts';

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import type { SceneEvaluation } from '../core/sceneEvaluation.ts';
 import type { RenderSpan, RenderVisual } from '../core/types.ts';
-import { resolveSceneAssetUrl } from '../api/sceneAssetUrl.ts';
+import { resolveSceneAssetUrl, type SceneAssetRoot } from '../api/sceneAssetUrl.ts';
 import { createSpanMesh, createVisualMesh } from './meshFactory.ts';
 import { setRenderEntityRef } from './renderNodeTypes.ts';
 import { disposeMaterial } from './renderResources.ts';
@@ -37,10 +37,10 @@ interface RenderSelectionState {
   spanVisualName: string | null;
 }
 
-function createRenderAssetContext(scenePath: string): RenderAssetContext {
+function createRenderAssetContext(scenePath: string, sceneAssetRoot?: SceneAssetRoot): RenderAssetContext {
   return {
     resolveSceneAssetUrl(assetPath: string) {
-      return resolveSceneAssetUrl(scenePath, assetPath);
+      return resolveSceneAssetUrl(scenePath, assetPath, sceneAssetRoot);
     },
   };
 }
@@ -108,25 +108,29 @@ export class RenderGraphManager {
 
   private scenePath: string;
 
+  private sceneAssetRoot: SceneAssetRoot | undefined;
+
   private assetContext: RenderAssetContext;
 
   private readonly objectNodes = new Map<string, ObjectNodeState>();
 
   private readonly spanNodes = new Map<string, SpanNodeState>();
 
-  constructor(root: THREE.Group, scenePath: string) {
+  constructor(root: THREE.Group, scenePath: string, sceneAssetRoot?: SceneAssetRoot) {
     this.root = root;
     this.scenePath = scenePath;
-    this.assetContext = createRenderAssetContext(scenePath);
+    this.sceneAssetRoot = sceneAssetRoot;
+    this.assetContext = createRenderAssetContext(scenePath, sceneAssetRoot);
   }
 
-  setScenePath(scenePath: string) {
-    if (scenePath === this.scenePath) {
+  setScenePath(scenePath: string, sceneAssetRoot?: SceneAssetRoot) {
+    if (scenePath === this.scenePath && sceneAssetRoot === this.sceneAssetRoot) {
       return;
     }
 
     this.scenePath = scenePath;
-    this.assetContext = createRenderAssetContext(scenePath);
+    this.sceneAssetRoot = sceneAssetRoot;
+    this.assetContext = createRenderAssetContext(scenePath, sceneAssetRoot);
     for (const objectState of this.objectNodes.values()) {
       for (const visualState of objectState.visuals.values()) {
         visualState.signature = null;
