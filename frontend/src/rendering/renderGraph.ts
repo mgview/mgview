@@ -2,10 +2,10 @@ import * as THREE from 'three';
 
 import type { SceneEvaluation } from '../core/sceneEvaluation.ts';
 import type { RenderSpan, RenderVisual } from '../core/types.ts';
-import { getBasePath, normalizePathSeparators } from '../core/pathUtils.ts';
-import { resolveBundledAssetUrl, resolvePublicAssetUrl } from '../api/localFiles.ts';
+import { resolveSceneAssetUrl } from '../api/sceneAssetUrl.ts';
 import { createSpanMesh, createVisualMesh } from './meshFactory.ts';
 import { setRenderEntityRef } from './renderNodeTypes.ts';
+import { disposeMaterial } from './renderResources.ts';
 import { applyMatrix } from './renderTransforms.ts';
 import { toThreeVector } from './coordinateConvention.ts';
 
@@ -38,25 +38,11 @@ interface RenderSelectionState {
 }
 
 function createRenderAssetContext(scenePath: string): RenderAssetContext {
-  const sceneBasePath = getBasePath(scenePath);
   return {
     resolveSceneAssetUrl(assetPath: string) {
-      const normalizedAssetPath = normalizePathSeparators(assetPath).replace(/^\/+/, '');
-      if (normalizedAssetPath.startsWith('assets/')) {
-        return resolveBundledAssetUrl(normalizedAssetPath);
-      }
-
-      const baseUrl = resolvePublicAssetUrl(normalizePathSeparators(sceneBasePath));
-      return new URL(normalizedAssetPath, baseUrl).toString();
+      return resolveSceneAssetUrl(scenePath, assetPath);
     },
   };
-}
-
-function disposeMaterial(material: THREE.Material) {
-  if ('map' in material && material.map instanceof THREE.Texture && material.map instanceof THREE.CanvasTexture) {
-    material.map.dispose();
-  }
-  material.dispose();
 }
 
 export function disposeObject3D(root: THREE.Object3D) {

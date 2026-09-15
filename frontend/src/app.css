@@ -347,17 +347,25 @@
 }
 
 .material-popover {
-  width: min(360px, calc(100vw - 56px));
+  width: min(336px, calc(100vw - 40px));
+}
+
+.material-popover-compact {
+  width: min(244px, calc(100vw - 28px));
 }
 
 .material-swatch-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 4px;
 }
 
 .material-swatch-grid-textures {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.material-popover-compact .material-swatch-grid {
+  gap: 2px;
 }
 
 .material-option-swatch-large {

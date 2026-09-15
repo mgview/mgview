@@ -1,5 +1,5 @@
 import { inferObjectsFromChannels } from './inferObjects.ts';
-import { DEFAULT_TEXT_MATERIAL } from './materialPresets.ts';
+import { cloneMaterialTexture, DEFAULT_TEXT_MATERIAL } from './materialPresets.ts';
 import { normalizePlotsConfig } from './plotsConfig.ts';
 import { inferSceneReferenceContext } from './simulationChannels.ts';
 import { ensureScenarios, resolveActiveScenario } from './sceneScenarios.ts';
@@ -41,7 +41,10 @@ function cloneMaterial(material: SceneMaterial | undefined): SceneMaterial | und
     return material;
   }
 
-  return { ...material };
+  return {
+    ...material,
+    texture: cloneMaterialTexture(material.texture),
+  };
 }
 
 function cloneSpanVisual(visual: SceneSpanVisual): SceneSpanVisual {

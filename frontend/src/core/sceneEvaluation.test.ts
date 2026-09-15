@@ -494,3 +494,36 @@ test('scene evaluation treats sceneOrigin span endpoint as zero without sim chan
     },
   ]);
 });
+
+test('scene evaluation preserves structured custom texture material properties', () => {
+  const scene = createSceneDocument({
+    newtonianFrame: 'N',
+    objects: {
+      N: {
+        type: 'frame',
+        visual: {
+          textured: {
+            type: 'box',
+            material: {
+              texture: { path: 'textures/carbon.png', repeat: [1.25, 3.5], offset: [0.2, -0.1] },
+              color: '#336699',
+              colorMix: 0.4,
+              opacity: 0.75,
+              shininess: 82,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const material = evaluateScene(scene, undefined).objects.N?.visuals[0]?.material;
+  assert.deepEqual(material, {
+    name: 'SILVER',
+    texture: { path: 'textures/carbon.png', repeat: [1.25, 3.5], offset: [0.2, -0.1] },
+    color: '#336699',
+    colorMix: 0.4,
+    opacity: 0.75,
+    shininess: 82,
+  });
+});

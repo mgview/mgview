@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SceneMaterial, SceneVisual, TextRenderMode, Vector3Like, VisualType } from '../core/types.ts';
-import { DEFAULT_TEXT_MATERIAL } from '../core/materialPresets.ts';
+import { cloneMaterialTexture, DEFAULT_TEXT_MATERIAL } from '../core/materialPresets.ts';
 import { normalizeTextRenderMode } from '../core/sceneEvaluation.ts';
 
 export const VISUAL_TYPE_OPTIONS: VisualType[] = [
@@ -58,7 +58,10 @@ function cloneMaterial(material: SceneMaterial | undefined): SceneMaterial | und
     return material;
   }
 
-  return { ...material };
+  return {
+    ...material,
+    texture: cloneMaterialTexture(material.texture),
+  };
 }
 
 export function radiansToDegrees(value: number): number {

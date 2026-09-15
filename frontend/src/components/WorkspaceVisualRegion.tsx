@@ -152,14 +152,14 @@ export default function WorkspaceVisualRegion({
                   Object.assign(visual, patch);
                 });
               }}
-              onVisualColorChange={(color) => {
+              onVisualMaterialChange={(material) => {
                 updateSelectedVisual((visual) => {
-                  visual.material = { name: color };
+                  visual.material = material;
                 });
               }}
-              onVisualColorPreviewChange={(color) => {
+              onVisualMaterialPreviewChange={(material) => {
                 updateSelectedVisualPreview((visual) => {
-                  visual.material = { name: color };
+                  visual.material = material;
                 });
               }}
               scenePath={rendererSceneBasePath}
