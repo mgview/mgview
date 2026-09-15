@@ -108,6 +108,28 @@ test('a null visual selection preserves whole-object selection compatibility', (
   graph.dispose();
 });
 
+test('render graph updates visual world matrices before returning', () => {
+  const root = new THREE.Group();
+  root.position.set(3, 0, 0);
+  const graph = new RenderGraphManager(root, 'samples/example.json');
+  const scene = evaluation();
+  scene.objects.body.position.x = 4;
+
+  graph.update(scene, {
+    objectName: 'body',
+    visualName: 'first',
+    spanName: null,
+    spanVisualName: null,
+  });
+
+  const first = graph.getVisualContainer('body', 'first');
+  assert.ok(first);
+  const worldPosition = first.getWorldPosition(new THREE.Vector3());
+  assert.deepEqual(worldPosition.toArray(), [8, 0, 0]);
+
+  graph.dispose();
+});
+
 test('disposing rendered content also disposes cloned image textures', () => {
   const texture = new THREE.Texture();
   let textureDisposals = 0;

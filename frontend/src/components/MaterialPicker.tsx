@@ -17,7 +17,7 @@ import { resolveBundledAssetUrl } from '../api/localFiles.ts';
 import { resolveSceneAssetUrl, type SceneAssetRoot } from '../api/sceneAssetUrl.ts';
 import { useAnchoredPopoverPlacement } from '../hooks/useAnchoredPopoverPlacement.ts';
 import { cn } from '../lib/utils.ts';
-import { NumericInput } from './editorShared.tsx';
+import { degreesToRadians, NumericInput, radiansToDegrees } from './editorShared.tsx';
 import { Button } from './ui/button.tsx';
 import { Input } from './ui/input.tsx';
 
@@ -505,15 +505,25 @@ export default function MaterialPicker({
                       ))}
                     </div>
                     <NumericInput
-                      value={materialDefinition.texture?.rotation ?? 0}
-                      dragStep={0.01}
-                      decimalPlaces={3}
-                      prefixLabel="rotation"
-                      onValuePreviewChange={(rotation) =>
-                        patchMaterial({ texture: { ...materialDefinition.texture, rotation } }, true)
+                      value={radiansToDegrees(materialDefinition.texture?.rotation_rad ?? 0)}
+                      dragStep={1}
+                      decimalPlaces={1}
+                      prefixLabel="rotation °"
+                      onValuePreviewChange={(rotationDegrees) =>
+                        patchMaterial({
+                          texture: {
+                            ...materialDefinition.texture,
+                            rotation_rad: degreesToRadians(rotationDegrees),
+                          },
+                        }, true)
                       }
-                      onValueChange={(rotation) =>
-                        patchMaterial({ texture: { ...materialDefinition.texture, rotation } })
+                      onValueChange={(rotationDegrees) =>
+                        patchMaterial({
+                          texture: {
+                            ...materialDefinition.texture,
+                            rotation_rad: degreesToRadians(rotationDegrees),
+                          },
+                        })
                       }
                     />
                     <NumericInput

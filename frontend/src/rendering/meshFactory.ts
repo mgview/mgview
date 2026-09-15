@@ -137,7 +137,7 @@ function createMaterial(visualMaterial: RenderMaterial, context: RenderAssetCont
         if (offset) {
           texture.offset.set(offset[0], offset[1]);
         }
-        texture.rotation = visualMaterial.texture?.rotation ?? 0;
+        texture.rotation = visualMaterial.texture?.rotation_rad ?? 0;
         texture.needsUpdate = true;
         material.map = texture;
         material.needsUpdate = true;
