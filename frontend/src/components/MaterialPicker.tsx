@@ -296,12 +296,16 @@ export default function MaterialPicker({
           </div>
 
           <div className={cn('grid', compact ? 'gap-1' : 'gap-1.5')}>
-            {hasTexture ? (
+            <div className="material-swatch-grid material-swatch-grid-textures">
               <Button
                 type="button"
-                variant="ghost"
-                size="sm"
-                className="h-6 justify-start px-1.5 text-[0.62rem]"
+                variant="outline"
+                className={cn(
+                  'block h-auto w-full px-1 py-[0.18rem]',
+                  !hasTexture && 'border-primary/50 bg-accent ring-1 ring-primary/20'
+                )}
+                title="No texture (solid color)"
+                aria-label="Use no texture (solid color)"
                 onClick={() => patchMaterial({
                   preset: undefined,
                   texture: undefined,
@@ -309,10 +313,13 @@ export default function MaterialPicker({
                   colorMix: undefined,
                 })}
               >
-                Use solid color
+                <span
+                  className="material-option-swatch-large material-option-swatch-texture material-option-swatch-none bg-muted text-center text-[0.52rem] font-semibold uppercase leading-tight tracking-wide text-muted-foreground"
+                  aria-hidden="true"
+                >
+                  No<br />texture
+                </span>
               </Button>
-            ) : null}
-            <div className="material-swatch-grid material-swatch-grid-textures">
               {Object.entries(LEGACY_TEXTURE_PRESETS)
                 .filter(([name]) => name !== 'FOIL')
                 .map(([name, preset]) => (
